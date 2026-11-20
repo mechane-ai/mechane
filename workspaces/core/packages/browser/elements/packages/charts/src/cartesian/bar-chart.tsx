@@ -2,7 +2,7 @@ import * as stylex from '@stylexjs/stylex';
 import { scaleBand, scaleLinear } from '@visx/scale';
 import { Bar } from '@visx/shape';
 import { useEffect, useId, useState } from 'react';
-import type { KeyboardEvent, PointerEvent, ReactNode } from 'react';
+import type { PointerEvent, ReactNode } from 'react';
 import { Skeleton } from '../../../feedback/src/index.ts';
 import { chartToneColors } from '../../../foundations/src/chart-tones.ts';
 import { colors, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
@@ -14,6 +14,7 @@ import { ChartFrame } from '../chart-frame.tsx';
 import type { ChartSelection, ChartSeriesReport } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds, isFiniteDomain } from '../chart-input.tsx';
 import { ChartInspection, ChartInspectionTitle, ChartLegendLoading } from '../chart-inspection.tsx';
+import { ChartSvgSurface } from '../chart-surface.tsx';
 import { chartStyles } from '../chart-theme.ts';
 import { usePlotWidth } from '../plot-width.ts';
 import { validateComposition } from './bar-data.ts';
@@ -29,7 +30,6 @@ const styles = stylex.create({
   mutedMark: { opacity: 0.3 },
 });
 
-const selectionKeys: ReadonlySet<string> = new Set(['Enter', ' ']);
 const DEFAULT_HEIGHT = 200;
 
 export type BarChartProps = {
@@ -308,7 +308,6 @@ export function BarChart({
   const selectedIndex = categories.findIndex((category) => category.id === selection?.selectedId);
   const selected = categories[selectedIndex];
   const cursor = categories.find((category) => category.id === keyboardId) ?? selected ?? categories[0];
-  const cursorIndex = categories.findIndex((category) => category.id === cursor?.id);
   const readout = active;
   const readoutIndex = activeIndex;
   const bucket = composition?.buckets[readoutIndex];
@@ -358,44 +357,6 @@ export function BarChart({
     }
   }
 
-  function inspectKey(event: KeyboardEvent<SVGSVGElement>): void {
-    if (event.altKey || event.ctrlKey || event.metaKey) {
-      return;
-    }
-
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      event.stopPropagation();
-      setInspection(undefined);
-
-      return;
-    }
-
-    if (selectionKeys.has(event.key)) {
-      if (cursor !== undefined && selection !== undefined) {
-        event.preventDefault();
-        selection.onSelect(cursor.id);
-      }
-
-      return;
-    }
-
-    const index = {
-      ArrowRight: Math.min(categories.length - 1, cursorIndex + 1),
-      ArrowLeft: Math.max(0, cursorIndex - 1),
-      Home: 0,
-      End: categories.length - 1,
-    }[event.key];
-
-    const category = index === undefined ? undefined : categories[index];
-
-    if (category !== undefined) {
-      event.preventDefault();
-      setKeyboardId(category.id);
-      setInspection({ id: category.id, source: 'keyboard' });
-    }
-  }
-
   return (
     <BarChartFrame
       title={title}
@@ -432,14 +393,24 @@ export function BarChart({
         {categories.length === 0 || (series.length === 0 && composition === undefined) ? (
           <p {...stylex.props(styles.empty)}>No categories</p>
         ) : (
-          <svg
+          <ChartSvgSurface
             role="img"
             aria-label={`${title}. Use arrow keys to inspect categories.${selection === undefined ? '' : ' Press Enter to select.'}`}
             aria-describedby={inspectionId}
             tabIndex={0}
             viewBox={`0 0 ${width} ${height}`}
             height={height}
-            onKeyDown={inspectKey}
+            controls={{
+              items: categories,
+              cursor: cursor?.id,
+              inspected: active?.id,
+              onInspect: (id) => {
+                setKeyboardId(id);
+                setInspection({ id, source: 'keyboard' });
+              },
+              onDismiss: () => setInspection(undefined),
+              onSelect: selection?.onSelect,
+            }}
             onFocus={(event) => {
               if (event.currentTarget.matches(':focus-visible')) {
                 const category = selected ?? categories[0];
@@ -574,7 +545,7 @@ export function BarChart({
                 width={Math.max(8, x.bandwidth())}
               />
             )}
-          </svg>
+          </ChartSvgSurface>
         )}
       </div>
     </BarChartFrame>

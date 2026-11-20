@@ -34,11 +34,7 @@ const { registry } = defineRegistry(PresentationCatalog, {
     Divider: () => <Divider />,
     Actions: ({ children }) => <Row>{children}</Row>,
     LinkButton: ({ props }) => (
-      <Button
-        variant="outline"
-        nativeButton={false}
-        render={<a href={props.url} target="_blank" rel="noopener noreferrer" />}
-      >
+      <Button variant="outline" render={<a href={props.url} target="_blank" rel="noopener noreferrer" />}>
         {props.label}
       </Button>
     ),

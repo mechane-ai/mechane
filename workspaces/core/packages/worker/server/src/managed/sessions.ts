@@ -74,6 +74,7 @@ async function createSession(input: ManagedRequest) {
 
 const SessionFilters = wireStruct({
   fields: {
+    search: Schema.optionalKey(Schema.String),
     agentId: Schema.optionalKey(Schema.String),
     agentVersion: Schema.optionalKey(Schema.Int),
     order: Schema.optionalKey(Schema.Literals(['asc', 'desc'])),

@@ -12,7 +12,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Toaster reports outcomes outside the current region. A failed first read uses a local Notice with Retry. A failed refresh retains usable content and reports once through a resource-owned toast with Retry. The application owns stable notification ids and dismisses them on recovery or navigation. Field validation stays beside its field. Mount one Toaster near the application root and call toast from an event handler; no provider is needed. Elements supplies token-based appearance. Sonner owns timing, stacking, swipe, announcements, and keyboard focus. Alt+T focuses notifications; Tab reaches actions and dismiss buttons. Apply the Elements theme to the document root. These synthetic examples shouldPersist and use scoped ids to separate documentation previews. Applications normally omit the toaster id.',
+          'Toaster reports outcomes outside the current region. A failed first read uses a local Notice with Retry. A failed refresh retains usable content and reports once through a resource-owned toast with Retry. The application owns stable notification ids and dismisses them on recovery or navigation. Field validation stays beside its field. Mount one Toaster near the application root and call toast from an event handler; no provider is needed. Elements supplies token-based appearance. UI SDK owns timing, stacking, swipe, announcements, and keyboard focus. Alt+T focuses notifications; Tab reaches actions and dismiss buttons. Apply the Elements theme to the document root. These synthetic examples shouldPersist and use scoped ids to separate documentation previews. Applications normally omit the toaster id.',
       },
     },
   },

@@ -51,11 +51,7 @@ export function createMechOperations({ store, actors }: MechOperationsInput) {
       run: async ({ input, caller }) => {
         await requireWorkspaceMember({ store, caller, workspaceId: input.workspaceId });
 
-        const page = await store.listMechs({
-          workspaceId: input.workspaceId,
-          after: Option.getOrNull(input.after),
-          maxRows: PAGE_MAX_ROWS,
-        });
+        const page = await store.listMechs({ ...input, after: Option.getOrNull(input.after), maxRows: PAGE_MAX_ROWS });
 
         return { mechs: page.items.map(mechSummary), has_more: page.hasMore };
       },
@@ -128,9 +124,16 @@ export function createMechOperations({ store, actors }: MechOperationsInput) {
     listTurns: validatedOperation({
       operation: catalog.listTurns,
       run: async ({ input, caller }) => {
-        await requireMech({ ...input, caller });
+        const { workspaceId, mechId, after, ...selection } = input;
+        const scope = { workspaceId, mechId };
 
-        const page = await actors(input).listRuns({ after: Option.getOrNull(input.after), maxRows: PAGE_MAX_ROWS });
+        await requireMech({ ...scope, caller });
+
+        const page = await actors(scope).listRuns({
+          ...selection,
+          after: Option.getOrNull(after),
+          maxRows: PAGE_MAX_ROWS,
+        });
 
         return { turns: page.items.map(runRecord), has_more: page.hasMore };
       },

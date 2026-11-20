@@ -768,9 +768,10 @@ async function createData(options: CreateConsoleData, workspaceOwner: WorkspaceO
               pendingRevocations.current.set(request.id, purge);
               await purge;
 
-              const parent = request.kind === 'agent' ? readRequests.agents() : readRequests.sessions(request.agentId);
+              const refreshParent =
+                request.kind === 'agent' ? refreshKind('agents') : refreshKind('sessions', request.agentId);
 
-              void Promise.allSettled([refreshActive(parent)]);
+              void Promise.allSettled([refreshParent]);
             } else {
               await deleteReceipts([request.id]);
             }

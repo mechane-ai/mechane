@@ -85,7 +85,7 @@ export function EnvironmentPlaceholder(): ReactNode {
       <Subheading>Processes</Subheading>
       <SkeletonText width="32ch" />
       <Accordion.Root>
-        {[0, 1].map((item) => (
+        {['first', 'second'].map((item) => (
           <Accordion.Item key={item} value={item}>
             <Accordion.Header>
               <Accordion.Trigger disabled>

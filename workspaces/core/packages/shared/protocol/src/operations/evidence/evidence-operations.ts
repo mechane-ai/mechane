@@ -1,4 +1,5 @@
 import { HttpMethod } from '@mechane/records';
+import { EvidenceQuery } from '@mechane/sandbox-wire';
 import { MechNotFound, RequestInvalid, ServiceUnavailable } from '../../errors/errors.ts';
 import { EvidenceNotFound, EvidenceUnavailable } from '../../errors/evidence.errors.ts';
 import { Access } from '../../operation/constants.ts';
@@ -6,7 +7,7 @@ import { MediaResponse, ResponseKind } from '../../operation/media-response.ts';
 import { NoFields } from '../../operation/schemas.ts';
 import type { Operation } from '../../operation/types.ts';
 import { MechPath } from '../schemas.ts';
-import { EvidenceArtifact, EvidenceMediaType, EvidencePage, EvidencePath, EvidenceQuery } from './schemas.ts';
+import { EvidenceArtifact, EvidenceMediaType, EvidencePage, EvidencePath } from './schemas.ts';
 
 const listEvidence = {
   method: HttpMethod.Get,

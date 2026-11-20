@@ -9,7 +9,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Resizable Panels owns pointer and keyboard resizing. Supply stable pane IDs and initial percentages; persist size-change intent in the application. The library does not write local storage. Tab to the separator and use arrow keys.',
+          'UI SDK handles pointer and keyboard resizing. Supply stable pane IDs and initial percentages; persist size-change intent in the application. The library does not write local storage. Tab to the separator and use arrow keys.',
       },
     },
   },
@@ -21,8 +21,8 @@ type Story = StoryObj<typeof meta>;
 export const Inspector: Story = {
   render: () => (
     <div style={{ height: 320 }}>
-      <Resizable.Root initialSizes={{ source: 65, inspector: 35 }}>
-        <Resizable.Pane id="source" minimumSizePercent={30}>
+      <Resizable.Root>
+        <Resizable.Pane id="source" initialSizePercent={65} minimumSizePercent={30}>
           <Panel>
             <Stack>
               <Subheading>Source</Subheading>
@@ -31,7 +31,7 @@ export const Inspector: Story = {
           </Panel>
         </Resizable.Pane>
         <Resizable.Handle aria-label="Resize source and inspector" />
-        <Resizable.Pane id="inspector" minimumSizePercent={20}>
+        <Resizable.Pane id="inspector" initialSizePercent={35} minimumSizePercent={20}>
           <Panel>
             <Stack>
               <Subheading>Inspector</Subheading>

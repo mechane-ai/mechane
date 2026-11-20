@@ -1,3 +1,4 @@
+import { RECORD_TEXT_MAX_CHARS } from '@mechane/records';
 import { Option } from 'effect';
 import generated from './requests.generated.json' with { type: 'json' };
 
@@ -15,13 +16,20 @@ type Declaration = {
 type Params = Readonly<Record<string, string>>;
 type Segments = ReadonlyArray<string>;
 type MatchInput = { readonly segments: Segments; readonly actual: Segments };
-type RouteInput = { readonly method: string; readonly pathname: string };
+type RouteInput = { readonly method: string; readonly pathname: string; readonly isConsole: boolean };
 
 /** Opaque identifiers are bound only after the full method and path match the pinned operation. */
 export type ManagedHttpRoute = Declaration & { readonly params: Params };
 
 /** Named schemas referenced by public Managed Agents request bodies. */
 export const managedRequestDefinitions: Readonly<Record<string, JsonSchema>> = generated.definitions;
+
+const searchText = { type: 'string', maxLength: RECORD_TEXT_MAX_CHARS, pattern: String.raw`^[^\u0000]*$` } as const;
+
+const consoleListQueries: Readonly<Partial<Record<string, Declaration['query']>>> = {
+  BetaListAgents: { search: searchText, filter: { type: 'string', enum: ['active', 'archived'] } },
+  BetaListSessions: { search: searchText },
+};
 
 const routes = generated.routes.map(({ multipart, body, method, path, query, operation }) => {
   const route: Declaration = {
@@ -68,7 +76,7 @@ function matchParams({ segments, actual }: MatchInput): Option.Option<Params> {
 }
 
 /** Match a public request to its declared operation and bind its opaque path parameters. */
-export function matchManagedRoute({ method, pathname }: RouteInput): Option.Option<ManagedHttpRoute> {
+export function matchManagedRoute({ method, pathname, isConsole }: RouteInput): Option.Option<ManagedHttpRoute> {
   const actual = pathname.split('/');
 
   for (const { route, segments } of routes) {
@@ -76,7 +84,13 @@ export function matchManagedRoute({ method, pathname }: RouteInput): Option.Opti
       const params = matchParams({ segments, actual });
 
       if (Option.isSome(params)) {
-        return Option.some({ ...route, params: params.value });
+        let query = route.query;
+
+        if (isConsole) {
+          query = { ...query, ...consoleListQueries[route.operation] };
+        }
+
+        return Option.some({ ...route, query, params: params.value });
       }
     }
   }

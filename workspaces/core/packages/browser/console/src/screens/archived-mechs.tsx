@@ -1,11 +1,12 @@
 import { EmptyState } from '@mechane-ai/elements/feedback';
-import { PageLayout, ToolbarAction, Workbench, WorkbenchScroll } from '@mechane-ai/elements/layout';
+import { ToolbarAction, Workbench, WorkbenchScroll } from '@mechane-ai/elements/layout';
 import type { ConsoleData } from '@mechane/console-data';
 import { ArchivedMechList, ArchivedMechListPlaceholder, SessionPagination } from '@mechane/console-views';
 import { useRouter } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
 import { useMemo } from 'react';
 import type { ReactNode } from 'react';
+import { ListPage } from '../list-page.tsx';
 import { useManagedPaging } from '../managed-paging.ts';
 import { useArchivedMechs } from '../reads.ts';
 import { ResourceView } from '../resource.tsx';
@@ -17,7 +18,10 @@ export function ArchivedMechsScreen(props: Props): ReactNode {
   const { data, navigate } = props;
 
   return (
-    <PageLayout
+    <ListPage
+      kind="mechs"
+      location={props.location}
+      showQuery={data.workspace.role === 'owner'}
       title="Archived mechs"
       leading={
         <ToolbarAction
@@ -37,13 +41,13 @@ export function ArchivedMechsScreen(props: Props): ReactNode {
           )}
         </WorkbenchScroll>
       </Workbench>
-    </PageLayout>
+    </ListPage>
   );
 }
 
 function ArchivedMechs({ data, location, navigate }: Props): ReactNode {
   const router = useRouter();
-  const request = useMemo(() => data.reads.mechs(location.page ?? null), [data, location.page]);
+  const request = useMemo(() => data.reads.mechs(location.page ?? null, location), [data, location]);
   const archived = useArchivedMechs(data, request);
   const paging = useManagedPaging(location, data.workspace.id);
 

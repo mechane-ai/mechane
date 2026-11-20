@@ -1,12 +1,8 @@
-import { Select as BaseSelect } from '@base-ui/react/select';
 import * as stylex from '@stylexjs/stylex';
+import { mergeProps } from '@ui-sdk/react/primitive';
+import * as SelectSdk from '@ui-sdk/react/select';
 import type { ComponentProps, ReactNode } from 'react';
 import type { ControlDensity } from '../../foundations/src/control-density.ts';
-import type {
-  OpenStateProperties,
-  ReadOnlyValueProperties,
-  ValueStateProperties,
-} from '../../foundations/src/control-state.ts';
 import {
   actionTargetDensityStyles,
   controlDensityStyles,
@@ -14,46 +10,36 @@ import {
 } from '../../foundations/src/control-styles.ts';
 import { mergeStyles } from '../../foundations/src/style-composition.ts';
 import type { PlacementStyle } from '../../foundations/src/style-composition.ts';
+import type { MultipleSelectionOf, SelectionProperties, SingleSelectionOf } from './selection-state.ts';
 import { selectionStyles as styles } from './selection-styles.ts';
 
 type SelectVariant = 'outline' | 'ghost';
 
-type SelectRootProps<Value, Multiple extends boolean | undefined> = Omit<
-  BaseSelect.Root.Props<Value, Multiple>,
-  'value' | 'defaultValue' | 'onValueChange' | 'open' | 'defaultOpen' | 'onOpenChange'
-> &
-  OpenStateProperties<NonNullable<BaseSelect.Root.Props<Value, Multiple>['onOpenChange']>> &
-  (
-    | ValueStateProperties<
-        Exclude<BaseSelect.Root.Props<Value, Multiple>['value'], undefined>,
-        NonNullable<BaseSelect.Root.Props<Value, Multiple>['onValueChange']>
-      >
-    | ReadOnlyValueProperties<
-        Exclude<BaseSelect.Root.Props<Value, Multiple>['value'], undefined>,
-        NonNullable<BaseSelect.Root.Props<Value, Multiple>['onValueChange']>
-      >
-  );
+type SelectRootProps<Value> =
+  | SelectionProperties<SingleSelectionOf<SelectSdk.SelectProps<Value>>>
+  | SelectionProperties<MultipleSelectionOf<SelectSdk.SelectProps<Value, true>>>;
 
-type SelectTriggerProps = ComponentProps<typeof BaseSelect.Trigger> & {
+type SelectTriggerProps = ComponentProps<typeof SelectSdk.SelectTrigger> & {
   readonly variant?: SelectVariant;
   readonly density?: ControlDensity;
   readonly xstyle?: PlacementStyle;
 };
 
-type SelectValueProps = ComponentProps<typeof BaseSelect.Value> & { readonly xstyle?: PlacementStyle };
-type SelectIconProps = ComponentProps<typeof BaseSelect.Icon>;
-type SelectPositionerProps = ComponentProps<typeof BaseSelect.Positioner> & { readonly xstyle?: PlacementStyle };
-type SelectPopupProps = ComponentProps<typeof BaseSelect.Popup>;
-type SelectItemProps = ComponentProps<typeof BaseSelect.Item>;
-type SelectItemTextProps = ComponentProps<typeof BaseSelect.ItemText>;
-type SelectItemIndicatorProps = ComponentProps<typeof BaseSelect.ItemIndicator>;
+type SelectValueProps = ComponentProps<typeof SelectSdk.SelectValue> & { readonly xstyle?: PlacementStyle };
+type SelectIconProps = ComponentProps<'span'>;
+type SelectContentProps = ComponentProps<typeof SelectSdk.SelectContent> & { readonly xstyle?: PlacementStyle };
+type SelectItemProps = ComponentProps<typeof SelectSdk.SelectItem>;
+type SelectItemTextProps = ComponentProps<typeof SelectSdk.SelectItemText>;
+type SelectItemIndicatorProps = ComponentProps<typeof SelectSdk.SelectItemIndicator>;
 
 const variants = { outline: styles.outlined, ghost: styles.ghost } satisfies Record<SelectVariant, stylex.StyleXStyles>;
 
-function SelectRoot<Value, Multiple extends boolean | undefined = false>(
-  props: SelectRootProps<Value, Multiple>,
-): ReactNode {
-  return <BaseSelect.Root<Value, Multiple> {...props} />;
+function SelectRoot<Value>(props: SelectRootProps<Value>): ReactNode {
+  if (props.multiple === true) {
+    return <SelectSdk.Select<Value, true> {...props} />;
+  }
+
+  return <SelectSdk.Select<Value> {...props} />;
 }
 
 function SelectTrigger({
@@ -65,9 +51,9 @@ function SelectTrigger({
   ...props
 }: SelectTriggerProps): ReactNode {
   return (
-    <BaseSelect.Trigger
+    <SelectSdk.SelectTrigger
       {...props}
-      {...mergeStyles<BaseSelect.Trigger.State>({
+      {...mergeStyles<SelectSdk.SelectTriggerState>({
         className,
         style,
         styles: stylex.props(
@@ -85,76 +71,54 @@ function SelectTrigger({
 
 function SelectValue({ className, style, xstyle, ...props }: SelectValueProps): ReactNode {
   return (
-    <BaseSelect.Value
+    <SelectSdk.SelectValue
       {...props}
-      {...mergeStyles<BaseSelect.Value.State>({ className, style, styles: stylex.props(styles.value, xstyle) })}
+      {...mergeStyles<SelectSdk.SelectValueState>({ className, style, styles: stylex.props(styles.value, xstyle) })}
     />
   );
 }
 
-function SelectIcon({ className, style, ...props }: SelectIconProps): ReactNode {
-  return (
-    <BaseSelect.Icon
-      {...props}
-      {...mergeStyles<BaseSelect.Icon.State>({ className, style, styles: stylex.props(styles.icon) })}
-    />
-  );
+function SelectIcon(props: SelectIconProps): ReactNode {
+  return <span aria-hidden {...mergeProps(stylex.props(styles.icon), props)} />;
 }
 
-function SelectPositioner({
-  className,
-  style,
-  xstyle,
-  sideOffset = 4,
-  alignItemWithTrigger = false,
-  ...props
-}: SelectPositionerProps): ReactNode {
+function SelectPopup({ xstyle, className, style, sideOffset = 4, ...props }: SelectContentProps): ReactNode {
   return (
-    <BaseSelect.Positioner
+    <SelectSdk.SelectContent
       {...props}
       sideOffset={sideOffset}
-      alignItemWithTrigger={alignItemWithTrigger}
-      {...mergeStyles<BaseSelect.Positioner.State>({
+      {...mergeStyles<SelectSdk.SelectContentState>({
         className,
         style,
-        styles: stylex.props(styles.positioner, xstyle),
+        styles: stylex.props(styles.popup, styles.positioner, xstyle),
       })}
-    />
-  );
-}
-
-function SelectPopup({ className, style, ...props }: SelectPopupProps): ReactNode {
-  return (
-    <BaseSelect.Popup
-      {...props}
-      {...mergeStyles<BaseSelect.Popup.State>({ className, style, styles: stylex.props(styles.popup) })}
     />
   );
 }
 
 function SelectItem({ className, style, ...props }: SelectItemProps): ReactNode {
   return (
-    <BaseSelect.Item
+    <SelectSdk.SelectItem
       {...props}
-      {...mergeStyles<BaseSelect.Item.State>({ className, style, styles: stylex.props(styles.option) })}
+      {...mergeStyles<SelectSdk.SelectItemState>({ className, style, styles: stylex.props(styles.option) })}
     />
   );
 }
 
 function SelectItemText({ className, style, ...props }: SelectItemTextProps): ReactNode {
   return (
-    <BaseSelect.ItemText
+    <SelectSdk.SelectItemText
       {...props}
-      {...mergeStyles<BaseSelect.ItemText.State>({ className, style, styles: stylex.props(styles.optionText) })}
+      {...mergeStyles<SelectSdk.SelectItemTextState>({ className, style, styles: stylex.props(styles.optionText) })}
     />
   );
 }
 
 function SelectItemIndicator({ className, style, ...props }: SelectItemIndicatorProps): ReactNode {
   return (
-    <BaseSelect.ItemIndicator
+    <SelectSdk.SelectItemIndicator
       {...props}
-      {...mergeStyles<BaseSelect.ItemIndicator.State>({ className, style, styles: stylex.props(styles.icon) })}
+      {...mergeStyles<SelectSdk.SelectItemIndicatorState>({ className, style, styles: stylex.props(styles.icon) })}
     />
   );
 }
@@ -164,10 +128,8 @@ export const Select = {
   Trigger: SelectTrigger,
   Value: SelectValue,
   Icon: SelectIcon,
-  Portal: BaseSelect.Portal,
-  Positioner: SelectPositioner,
   Popup: SelectPopup,
-  List: BaseSelect.List,
+  List: SelectSdk.SelectList,
   Item: SelectItem,
   ItemText: SelectItemText,
   ItemIndicator: SelectItemIndicator,

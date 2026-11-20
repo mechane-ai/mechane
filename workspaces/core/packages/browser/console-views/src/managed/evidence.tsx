@@ -33,6 +33,7 @@ export function ManagedEvidenceList({
 }): ReactNode {
   return (
     <DataTable
+      query={{ mode: 'frame' }}
       caption="Session evidence"
       hideCaption
       rows={artifacts}

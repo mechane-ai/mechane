@@ -1,5 +1,5 @@
-import { mergeProps } from '@base-ui/react/merge-props';
 import * as stylex from '@stylexjs/stylex';
+import { mergeProps } from '@ui-sdk/react/primitive';
 import type { ComponentProps, ReactNode } from 'react';
 import { layers } from '../../foundations/src/constants.stylex.ts';
 import { colors, controls, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';

@@ -181,6 +181,7 @@ export { WorkspacePolicy } from './operations/workspaces/policy.schemas.ts';
 export { TurnPage } from './operations/turns/list-turns.ts';
 export { ExecutionAccess, ExecutionAccessState } from './operations/execution-access/schemas.ts';
 
+export { EvidenceQuery, EvidenceStatus } from '@mechane/sandbox-wire';
 export { EvidenceNotFound, EvidenceUnavailable } from './errors/evidence.errors.ts';
 export {
   ConsoleSessionEvidenceArtifact,
@@ -196,12 +197,10 @@ export {
   EvidenceMediaType,
   EvidencePage,
   EvidencePath,
-  EvidenceQuery,
   EvidenceSha256,
 } from './operations/evidence/schemas.ts';
 export {
   EvidenceKind,
-  EvidenceStatus,
   EVIDENCE_ARTIFACT_MAX_BYTES,
   EVIDENCE_MECH_MAX_BYTES,
   EVIDENCE_MECH_MAX_ARTIFACTS,

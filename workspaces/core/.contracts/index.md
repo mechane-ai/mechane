@@ -103,7 +103,7 @@ from 101 are Mechane's own.
 
 - [Presentation boundaries](065-ui-presentation-boundaries/CONTRACT.md): product-neutral controls, layout, and charts.
 - [Design tokens](066-ui-design-tokens/CONTRACT.md): shared visual roles and exhaustive named variants.
-- [Component APIs](067-ui-react-typescript-component-apis/CONTRACT.md): typed supported modes and Base UI composition.
+- [Component APIs](067-ui-react-typescript-component-apis/CONTRACT.md): typed supported modes and primitive composition.
 - [Control accessibility](068-ui-control-accessibility/CONTRACT.md): semantic controls, keyboard use, and managed focus.
 - [Interaction ownership](069-ui-react-interaction-ownership/CONTRACT.md): one state owner and cleanup for each interaction.
 - [Presentation state](070-ui-presentation-state/CONTRACT.md): supplied records, controlled selection, and preserved drafts.

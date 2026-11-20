@@ -1,6 +1,6 @@
 import { AgentAvatar, Button } from '@mechane-ai/elements';
 import { DataTable, DataTablePlaceholder, DataTableText, ListFooter } from '@mechane-ai/elements/collections';
-import type { DataTableColumnLayout } from '@mechane-ai/elements/collections';
+import type { DataTableColumnLayout, TableQuery } from '@mechane-ai/elements/collections';
 import { EmptyState } from '@mechane-ai/elements/feedback';
 import type { ReactNode } from 'react';
 import { SessionStatus } from './session-status.tsx';
@@ -39,12 +39,14 @@ export function ManagedListPlaceholder({ kind }: { readonly kind: 'agents' | 'se
 }
 
 export function ManagedAgentList({
+  query,
   agents,
   href,
   onOpen,
-}: RowNavigation & { readonly agents: ReadonlyArray<Agent> }): ReactNode {
+}: RowNavigation & { readonly query: TableQuery<Agent>; readonly agents: ReadonlyArray<Agent> }): ReactNode {
   return (
     <DataTable
+      query={query}
       caption="Agents"
       hideCaption
       rows={agents}
@@ -70,18 +72,21 @@ export function ManagedAgentList({
 }
 
 export function ManagedSessionList({
+  query,
   sessions,
   activeSessionId,
   queuedSessionIds,
   href,
   onOpen,
 }: RowNavigation & {
+  readonly query: TableQuery<Session>;
   readonly sessions: ReadonlyArray<Session>;
   readonly activeSessionId?: string | null | undefined;
   readonly queuedSessionIds?: ReadonlyArray<string> | undefined;
 }): ReactNode {
   return (
     <DataTable
+      query={query}
       caption="Sessions"
       hideCaption
       rows={sessions}

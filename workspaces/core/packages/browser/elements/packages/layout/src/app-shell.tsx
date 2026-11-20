@@ -5,7 +5,10 @@ import { headerStyles } from '../../foundations/src/header-styles.ts';
 import { colors, pageGeometry, typography } from '../../foundations/src/tokens.stylex.ts';
 import { Drawer } from '../../overlays/src/index.ts';
 import { frame, frameConditions } from './frame.stylex.ts';
-import { NavigationRailContext } from './navigation-rail.tsx';
+import { NavigationRailMenu } from './navigation-rail-menu.tsx';
+import type { NavigationRailMenuProps } from './navigation-rail-menu.tsx';
+import { NavigationRailContext, RailFooterGroup, RailGroup, RailPlaceholderItem } from './navigation-rail.tsx';
+import type { NavigationRailProps } from './navigation-rail.tsx';
 import { Sidebar, SidebarClose, SidebarContext } from './sidebar.tsx';
 
 const styles = stylex.create({
@@ -38,21 +41,40 @@ const styles = stylex.create({
   rail: { width: pageGeometry.toolbarHeight },
   railBody: { flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehaviorY: 'contain' },
   railFooter: { flexShrink: 0, paddingBottom: 'env(safe-area-inset-bottom, 0px)' },
-  railFooterCell: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: pageGeometry.toolbarHeight,
-    height: pageGeometry.toolbarHeight,
-  },
   hidden: { display: 'none' },
   main: { minWidth: 0, flex: 1 },
   drawer: { width: frame.sidebarWidth, maxWidth: 'calc(100vw - 48px)' },
 });
 
+type RailFooter =
+  | { readonly navigation?: Pick<NavigationRailProps, 'label' | 'links'>; readonly menu: NavigationRailMenuProps }
+  | { readonly placeholder: { readonly linkIcon?: ReactNode; readonly menuIcon: ReactNode } };
+
+function ShellRailFooter({ footer }: { readonly footer: RailFooter }): ReactNode {
+  return (
+    <div {...stylex.props(styles.railFooter)}>
+      <RailFooterGroup>
+        {'placeholder' in footer ? (
+          <>
+            {footer.placeholder.linkIcon !== undefined && (
+              <RailPlaceholderItem>{footer.placeholder.linkIcon}</RailPlaceholderItem>
+            )}
+            <RailPlaceholderItem>{footer.placeholder.menuIcon}</RailPlaceholderItem>
+          </>
+        ) : (
+          <>
+            {footer.navigation !== undefined && <RailGroup {...footer.navigation} isFooter />}
+            <NavigationRailMenu {...footer.menu} />
+          </>
+        )}
+      </RailFooterGroup>
+    </div>
+  );
+}
+
 type AppShellProps = {
   readonly rail?: ReactNode;
-  readonly railFooter?: ReactNode;
+  readonly railFooter?: RailFooter;
   readonly sidebarHeader?: ReactNode;
   readonly sidebar: ReactNode;
   readonly footer?: ReactNode;
@@ -72,11 +94,10 @@ export function AppShell({
   shouldFocus = false,
 }: AppShellProps): ReactNode {
   const hasRail = rail !== undefined && rail !== null;
-  const hasRailFooter = railFooter !== undefined && railFooter !== null;
   const [isExpanded, setIsExpanded] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const shouldHideSidebar = shouldFocus || (hasRail && !isExpanded);
-  const [drawerHandle] = useState(() => Drawer.createHandle());
+  const [drawerController] = useState(() => Drawer.createController());
   const sidebarId = useId();
   const navigationToggleRef = useRef<HTMLButtonElement>(null);
   const mobileNavigationToggleRef = useRef<HTMLButtonElement>(null);
@@ -102,7 +123,7 @@ export function AppShell({
       value={{
         isExpanded,
         sidebarId,
-        drawerHandle,
+        drawerController,
         navigationToggleRef,
         mobileNavigationToggleRef,
         onToggle: () => setIsExpanded((expanded) => !expanded),
@@ -120,11 +141,7 @@ export function AppShell({
             {...stylex.props(styles.sidebar, headerStyles.inlineEnd, styles.rail, shouldFocus && styles.hidden)}
           >
             <div {...stylex.props(styles.railBody)}>{rail}</div>
-            {hasRailFooter && (
-              <div {...stylex.props(styles.railFooter)}>
-                <div {...stylex.props(styles.railFooterCell)}>{railFooter}</div>
-              </div>
-            )}
+            {railFooter !== undefined && <ShellRailFooter footer={railFooter} />}
           </div>
         )}
         <aside
@@ -148,67 +165,61 @@ export function AppShell({
         </main>
       </div>
       {/* Screen dialogs must not inherit the navigation drawer's modal context. */}
-      <Drawer.Root handle={drawerHandle} open={isOpen && !shouldFocus} onOpenChange={setIsOpen}>
-        <Drawer.Portal>
-          <Drawer.Backdrop />
-          <Drawer.Viewport>
-            <Drawer.Popup
-              ref={drawerPopupRef}
-              xstyle={styles.drawer}
-              finalFocus={() => {
-                if (didNavigate.current) {
-                  didNavigate.current = false;
+      <Drawer.Root controller={drawerController} open={isOpen && !shouldFocus} onOpenChange={setIsOpen}>
+        <Drawer.Backdrop />
+        <Drawer.Popup
+          ref={drawerPopupRef}
+          xstyle={styles.drawer}
+          finalFocus={() => {
+            if (didNavigate.current) {
+              didNavigate.current = false;
 
-                  const main = document.querySelector<HTMLElement>(`#${CSS.escape(mainId)}`);
-                  const focused = document.activeElement;
+              const main = document.querySelector<HTMLElement>(`#${CSS.escape(mainId)}`);
+              const focused = document.activeElement;
 
-                  if (focused instanceof HTMLElement) {
-                    const dialog = focused.closest('[role="dialog"], [role="alertdialog"]');
+              if (focused instanceof HTMLElement) {
+                const dialog = focused.closest('[role="dialog"], [role="alertdialog"]');
 
-                    if (dialog !== null && dialog !== drawerPopupRef.current) {
-                      return focused;
-                    }
-                  }
-
-                  if (focused instanceof HTMLElement && main?.contains(focused) === true) {
-                    return focused;
-                  }
-
-                  return main;
+                if (dialog !== null && dialog !== drawerPopupRef.current) {
+                  return focused;
                 }
+              }
 
-                if (globalThis.matchMedia(frameConditions.sidebarDesktopQuery).matches) {
-                  return navigationToggleRef.current;
-                }
+              if (focused instanceof HTMLElement && main?.contains(focused) === true) {
+                return focused;
+              }
 
-                return mobileNavigationToggleRef.current;
-              }}
-            >
-              <Drawer.Title isVisuallyHidden>Navigation</Drawer.Title>
-              <Sidebar
-                header={sidebarHeader}
-                navigationHeader={
-                  hasRail && <NavigationRailContext.Provider value="drawer">{rail}</NavigationRailContext.Provider>
-                }
-                footer={
-                  <>
-                    {footer}
-                    {hasRail && hasRailFooter && (
-                      <NavigationRailContext.Provider value="drawer">
-                        <div {...stylex.props(styles.railFooter)}>
-                          <div {...stylex.props(styles.railFooterCell)}>{railFooter}</div>
-                        </div>
-                      </NavigationRailContext.Provider>
-                    )}
-                  </>
-                }
-                close={<SidebarClose />}
-              >
-                {sidebar}
-              </Sidebar>
-            </Drawer.Popup>
-          </Drawer.Viewport>
-        </Drawer.Portal>
+              return main;
+            }
+
+            if (globalThis.matchMedia(frameConditions.sidebarDesktopQuery).matches) {
+              return navigationToggleRef.current;
+            }
+
+            return mobileNavigationToggleRef.current;
+          }}
+        >
+          <Drawer.Title isVisuallyHidden>Navigation</Drawer.Title>
+          <Sidebar
+            header={sidebarHeader}
+            navigationHeader={
+              hasRail && <NavigationRailContext.Provider value="drawer">{rail}</NavigationRailContext.Provider>
+            }
+            footer={
+              <>
+                {footer}
+                {hasRail && railFooter !== undefined && (
+                  <NavigationRailContext.Provider value="drawer">
+                    <ShellRailFooter footer={railFooter} />
+                  </NavigationRailContext.Provider>
+                )}
+              </>
+            }
+            close={<SidebarClose />}
+          >
+            {sidebar}
+          </Sidebar>
+        </Drawer.Popup>
       </Drawer.Root>
     </SidebarContext.Provider>
   );

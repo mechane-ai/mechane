@@ -1,20 +1,51 @@
 import * as stylex from '@stylexjs/stylex';
+import {
+  ToastAction as SdkToastAction,
+  Toast,
+  ToastClose,
+  ToastDescription,
+  ToastRegion,
+  ToastTitle,
+} from '@ui-sdk/react/toast';
 import { CircleCheck, CircleX, Info, LoaderCircle, TriangleAlert, X } from 'lucide-react';
+import { useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { Toaster as SonnerToaster } from 'sonner';
-import type { ToasterProps as SonnerToasterProps } from 'sonner';
 import { conditions, layers } from '../../foundations/src/constants.stylex.ts';
 import { colors, controls, motion, radii, shadows, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { notificationQueues } from './notifications.ts';
 
 const styles = stylex.create({
+  region: {
+    'width': {
+      default: `min(356px, calc(100% - 2 * ${spacing.xl}))`,
+      [conditions.compactText]: `min(356px, calc(100% - 2 * ${spacing.lg}))`,
+    },
+    'marginBlock': { default: spacing.xl, [conditions.compactText]: spacing.lg },
+    ':not([data-align="center"])': { marginInline: { default: spacing.xl, [conditions.compactText]: spacing.lg } },
+    'height': 'var(--toast-front-height, 0px)',
+    'zIndex': layers.popup,
+    ':is([data-expanded])': { height: 'calc(var(--toast-stack-height) + (var(--toast-count) - 1) * 8px)' },
+  },
   toast: {
-    'width': 'var(--width)',
+    'position': 'absolute',
+    'boxSizing': 'border-box',
+    'insetInline': 0,
+    'overflow': 'hidden',
+    'zIndex': 'calc(100 - var(--toast-index))',
+    'height': 'var(--toast-height)',
+
+    'transitionProperty': 'opacity, transform',
+    'transitionTimingFunction': motion.easing,
+    'transitionDuration': { default: motion.duration, [conditions.reducedMotion]: '0s' },
+    ':not([data-expanded], [data-front])': { height: 'var(--toast-front-height)' },
+    ':is([data-swiping])': { transitionDuration: '0s' },
+    ':is([data-starting-style], [data-ending-style])': { opacity: 0 },
     'display': 'flex',
     'flexWrap': 'wrap',
     'alignItems': 'center',
     'gap': spacing.sm,
     'padding': spacing.md,
-    ':has([data-close-button])': {
+    ':has([data-slot="toast-close"])': {
       paddingInlineEnd: {
         default: `calc(${spacing.md} + ${controls.height})`,
         [conditions.coarsePointer]: `calc(${spacing.md} + ${controls.coarseTarget})`,
@@ -26,38 +57,44 @@ const styles = stylex.create({
     'borderRadius': radii.md,
     'backgroundColor': colors.surface,
     'color': colors.ink,
-    'boxShadow': `${shadows.popup} !important`,
+    'boxShadow': shadows.popup,
     'fontFamily': typography.fontFamily,
     'WebkitFontSmoothing': 'antialiased',
     'fontSize': typography.bodySize,
     'lineHeight': typography.bodyLineHeight,
     'fontWeight': typography.regularWeight,
   },
-  // Sonner's unlayered CSS requires important motion declarations.
-  // Keep the default in the fallback: StyleX emits custom property defaults outside layers.
-  motion: {
-    '--elements-toast-duration': { [conditions.reducedMotion]: '0s' },
-    'transitionDuration': `var(--elements-toast-duration, ${motion.duration}) !important`,
-    'transitionTimingFunction': `${motion.easing} !important`,
-    'animationDuration': `var(--elements-toast-duration, ${motion.duration}) !important`,
-    ':is([data-swiping="true"])': { '--elements-toast-duration': '0s' },
+  top: {
+    'top': 0,
+    'transform':
+      'translate(var(--toast-swipe-x, 0px), calc(var(--toast-index) * 8px + var(--toast-swipe-y, 0px))) scale(calc(1 - var(--toast-index) * 0.05))',
+    ':is([data-expanded])': {
+      transform:
+        'translate(var(--toast-swipe-x, 0px), calc(var(--toast-offset) + var(--toast-index) * 8px + var(--toast-swipe-y, 0px)))',
+    },
+  },
+  bottom: {
+    'bottom': 0,
+    'transform':
+      'translate(var(--toast-swipe-x, 0px), calc(var(--toast-index) * -8px + var(--toast-swipe-y, 0px))) scale(calc(1 - var(--toast-index) * 0.05))',
+    ':is([data-expanded])': {
+      transform:
+        'translate(var(--toast-swipe-x, 0px), calc(-1 * var(--toast-offset) - var(--toast-index) * 8px + var(--toast-swipe-y, 0px)))',
+    },
   },
   focus: {
     ':focus-visible': {
-      outlineWidth: `${controls.focusWidth} !important`,
-      outlineStyle: 'solid !important',
-      outlineColor: `${colors.focus} !important`,
+      outlineWidth: controls.focusWidth,
+      outlineStyle: 'solid',
+      outlineColor: colors.focus,
       outlineOffset: 2,
     },
   },
   part: {
-    opacity: {
-      default: 1,
-      [stylex.when.ancestor('[data-sonner-toast][data-expanded="false"][data-front="false"]')]: 0,
-    },
+    opacity: { default: 1, [stylex.when.ancestor(':is([data-slot="toast"]:not([data-expanded], [data-front]))')]: 0 },
     transitionProperty: 'opacity',
-    transitionDuration: `var(--elements-toast-duration, ${motion.duration}) !important`,
-    transitionTimingFunction: `${motion.easing} !important`,
+    transitionDuration: motion.duration,
+    transitionTimingFunction: motion.easing,
   },
   content: { display: 'flex', flexDirection: 'column', flex: '1 1 24ch', minWidth: 0, gap: spacing.xxs },
   title: {
@@ -80,7 +117,7 @@ const styles = stylex.create({
   glyph: {
     width: controls.iconSize,
     height: controls.iconSize,
-    animationDuration: { [conditions.reducedMotion]: '0s !important' },
+    animationDuration: { [conditions.reducedMotion]: '0s' },
   },
   success: { color: colors.accent },
   error: { color: colors.danger },
@@ -113,12 +150,6 @@ const styles = stylex.create({
     ':hover': { backgroundColor: { [conditions.hoverPointer]: colors.inkHover } },
     ':active': { backgroundColor: colors.inkHover },
   },
-  cancel: {
-    'backgroundColor': colors.canvas,
-    'color': colors.ink,
-    ':hover': { backgroundColor: { [conditions.hoverPointer]: colors.line } },
-    ':active': { backgroundColor: colors.line },
-  },
   close: {
     'position': 'absolute',
     'insetBlockStart': spacing.xs,
@@ -127,68 +158,83 @@ const styles = stylex.create({
     'paddingInline': 0,
     'backgroundColor': 'transparent',
     'color': colors.muted,
-    ':hover:not(:active):not([data-disabled="true"])': {
+    ':hover:not(:active):not([aria-disabled="true"])': {
       backgroundColor: { [conditions.hoverPointer]: colors.canvas },
     },
-    ':active:not([data-disabled="true"])': { backgroundColor: colors.line },
-    ':is([data-disabled="true"])': { opacity: controls.disabledOpacity, cursor: 'default' },
+    ':active:not([aria-disabled="true"])': { backgroundColor: colors.line },
+    ':is([aria-disabled="true"])': { opacity: controls.disabledOpacity, cursor: 'default' },
   },
 });
 
-export type ToasterProps = Pick<
-  SonnerToasterProps,
-  | 'id'
-  | 'position'
-  | 'hotkey'
-  | 'expand'
-  | 'visibleToasts'
-  | 'closeButton'
-  | 'offset'
-  | 'mobileOffset'
-  | 'dir'
-  | 'swipeDirections'
-  | 'containerAriaLabel'
-> & { readonly closeButtonAriaLabel?: string };
+const statusIcons = {
+  default: { Icon: Info, tone: styles.neutral },
+  info: { Icon: Info, tone: styles.neutral },
+  success: { Icon: CircleCheck, tone: styles.success },
+  warning: { Icon: TriangleAlert, tone: styles.warning },
+  error: { Icon: CircleX, tone: styles.error },
+  loading: { Icon: LoaderCircle, tone: styles.neutral },
+};
+
+export type ToasterProps = {
+  readonly id?: string;
+  readonly side?: 'top' | 'bottom';
+  readonly align?: 'start' | 'center' | 'end';
+  readonly isExpanded?: boolean;
+  readonly visibleToasts?: number;
+  readonly showCloseButton?: boolean;
+  readonly closeButtonAriaLabel?: string;
+  readonly containerAriaLabel?: string;
+};
 
 export function Toaster({
-  closeButton = true,
+  id,
+  side = 'bottom',
+  align = 'end',
+  isExpanded = false,
+  visibleToasts = 3,
+  showCloseButton = true,
   closeButtonAriaLabel = 'Dismiss notification',
-  offset = spacing.xl,
-  mobileOffset = spacing.lg,
-  ...props
+  containerAriaLabel = 'Notifications',
 }: ToasterProps): ReactNode {
+  const queue = notificationQueues.queueFor(id);
+
+  useEffect(() => notificationQueues.bind(id, queue), [id, queue]);
+
   return (
-    <SonnerToaster
-      {...props}
-      {...stylex.props(styles.motion, styles.focus)}
-      style={{ zIndex: layers.popup, transitionProperty: 'opacity, transform' }}
-      offset={offset}
-      mobileOffset={mobileOffset}
-      closeButton={closeButton}
-      icons={{
-        success: <CircleCheck aria-hidden {...stylex.props(styles.glyph, styles.success)} />,
-        error: <CircleX aria-hidden {...stylex.props(styles.glyph, styles.error)} />,
-        warning: <TriangleAlert aria-hidden {...stylex.props(styles.glyph, styles.warning)} />,
-        info: <Info aria-hidden {...stylex.props(styles.glyph, styles.neutral)} />,
-        loading: <LoaderCircle aria-hidden {...stylex.props(styles.glyph, styles.neutral)} />,
-        close: <X aria-hidden {...stylex.props(styles.glyph)} />,
+    <ToastRegion
+      toaster={queue}
+      side={side}
+      align={align}
+      expanded={isExpanded}
+      maxVisible={visibleToasts}
+      shortcut="alt+t"
+      aria-label={containerAriaLabel}
+      {...stylex.props(styles.region)}
+    >
+      {(item) => {
+        const { Icon, tone } = statusIcons[item.type];
+
+        return (
+          <Toast {...stylex.props(styles.toast, styles[side], styles.focus, stylex.defaultMarker())}>
+            <Icon aria-hidden {...stylex.props(styles.icon, styles.part, tone)} />
+            <div {...stylex.props(styles.content, styles.part)}>
+              <ToastTitle {...stylex.props(styles.title)} />
+              <ToastDescription {...stylex.props(styles.description)} />
+            </div>
+            {item.action?.label !== undefined && (
+              <SdkToastAction {...stylex.props(styles.button, styles.action, styles.focus, styles.part)} />
+            )}
+            {showCloseButton && (
+              <ToastClose
+                aria-label={closeButtonAriaLabel}
+                {...stylex.props(styles.button, styles.close, styles.focus, styles.part)}
+              >
+                <X aria-hidden {...stylex.props(styles.glyph)} />
+              </ToastClose>
+            )}
+          </Toast>
+        );
       }}
-      toastOptions={{
-        unstyled: true,
-        closeButtonAriaLabel,
-        style: { transitionProperty: 'opacity, transform' },
-        classNames: {
-          toast: stylex.props(styles.toast, styles.motion, styles.focus, stylex.defaultMarker()).className ?? '',
-          title: stylex.props(styles.title).className ?? '',
-          description: stylex.props(styles.description).className ?? '',
-          content: stylex.props(styles.content, styles.part).className ?? '',
-          icon: stylex.props(styles.icon, styles.part).className ?? '',
-          loader: stylex.props(styles.motion).className ?? '',
-          actionButton: stylex.props(styles.button, styles.action, styles.focus, styles.part).className ?? '',
-          cancelButton: stylex.props(styles.button, styles.cancel, styles.focus, styles.part).className ?? '',
-          closeButton: stylex.props(styles.button, styles.close, styles.focus, styles.part).className ?? '',
-        },
-      }}
-    />
+    </ToastRegion>
   );
 }

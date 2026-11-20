@@ -1,6 +1,8 @@
 import { ProcessHandle } from '@mechane/protocol';
 import { EvidenceArtifactId, MechId, Sequence, TurnId } from '@mechane/records';
 import { Result, Schema } from 'effect';
+import { listQuery, listQueryFields } from './list-query.ts';
+import type { ListQuery } from './list-query.ts';
 import { ManagedId } from './managed-records.ts';
 import { restoreRecord } from './records.ts';
 
@@ -36,11 +38,16 @@ type ReadId = typeof ReadId.Type;
 const PageCursor = Schema.NullOr(Schema.String);
 
 const ReadTarget = Schema.Union([
-  Schema.Struct({ kind: Schema.Literal(READ_KIND.Agents), page: PageCursor }),
+  Schema.Struct({ kind: Schema.Literal(READ_KIND.Agents), ...listQueryFields('agents'), page: PageCursor }),
   Schema.Struct({ kind: Schema.Literal(READ_KIND.Agent), agentId: ManagedId }),
   Schema.Struct({ kind: Schema.Literal(READ_KIND.Attention), agentId: ManagedId }),
   Schema.Struct({ kind: Schema.Literal(READ_KIND.ManagedEnvironments), page: PageCursor }),
-  Schema.Struct({ kind: Schema.Literal(READ_KIND.Sessions), agentId: ManagedId, page: PageCursor }),
+  Schema.Struct({
+    kind: Schema.Literal(READ_KIND.Sessions),
+    ...listQueryFields('sessions'),
+    agentId: ManagedId,
+    page: PageCursor,
+  }),
   Schema.Struct({ kind: Schema.Literal(READ_KIND.Session), agentId: ManagedId, sessionId: ManagedId }),
   Schema.Struct({
     kind: Schema.Literal(READ_KIND.Threads),
@@ -59,6 +66,7 @@ const ReadTarget = Schema.Union([
   }),
   Schema.Struct({
     kind: Schema.Literal(READ_KIND.SessionEvidence),
+    ...listQueryFields('sessionEvidence'),
     agentId: ManagedId,
     sessionId: ManagedId,
     after: Schema.NullOr(EvidenceArtifactId),
@@ -70,9 +78,18 @@ const ReadTarget = Schema.Union([
     artifactId: EvidenceArtifactId,
   }),
   Schema.Struct({ kind: Schema.Literal(READ_KIND.Archive), mechId: MechId, before: Schema.NullOr(Sequence) }),
-  Schema.Struct({ kind: Schema.Literal(READ_KIND.Mechs), after: Schema.NullOr(Schema.String) }),
+  Schema.Struct({
+    kind: Schema.Literal(READ_KIND.Mechs),
+    ...listQueryFields('mechs'),
+    after: Schema.NullOr(Schema.String),
+  }),
   Schema.Struct({ kind: Schema.Literal(READ_KIND.Mech), mechId: MechId }),
-  Schema.Struct({ kind: Schema.Literal(READ_KIND.Turns), mechId: MechId, after: Schema.NullOr(TurnId) }),
+  Schema.Struct({
+    kind: Schema.Literal(READ_KIND.Turns),
+    ...listQueryFields('turns'),
+    mechId: MechId,
+    after: Schema.NullOr(TurnId),
+  }),
   Schema.Struct({ kind: Schema.Literal(READ_KIND.Trace), mechId: MechId, turnId: TurnId }),
   Schema.Struct({
     kind: Schema.Literal(READ_KIND.Evidence),
@@ -157,10 +174,12 @@ function request<Target extends ReadTarget>(target: Target): Target & { readonly
 /** Builds stable read identities before runtime creation or during route navigation. */
 export const readRequests = {
   attention: (agentId: string) => request({ kind: READ_KIND.Attention, agentId }),
-  agents: (page: string | null = null) => request({ kind: READ_KIND.Agents, page }),
+  agents: (page: string | null = null, query?: ListQuery) =>
+    request({ kind: READ_KIND.Agents, page, ...listQuery('agents', query) }),
   agent: (agentId: string) => request({ kind: READ_KIND.Agent, agentId }),
   managedEnvironments: (page: string | null = null) => request({ kind: READ_KIND.ManagedEnvironments, page }),
-  sessions: (agentId: string, page: string | null = null) => request({ kind: READ_KIND.Sessions, agentId, page }),
+  sessions: (agentId: string, page: string | null = null, query?: ListQuery) =>
+    request({ kind: READ_KIND.Sessions, agentId, page, ...listQuery('sessions', query) }),
   session: (agentId: string, sessionId: string) => request({ kind: READ_KIND.Session, agentId, sessionId }),
   threads: (agentId: string, sessionId: string, page: string | null = null) =>
     request({ kind: READ_KIND.Threads, agentId, sessionId, page }),
@@ -178,9 +197,14 @@ export const readRequests = {
       through,
       isStatusOnly: false,
     }),
-  sessionEvidence: (agentId: string, sessionId: string, after: string | null = null) =>
+  sessionEvidence: (
+    { agentId, sessionId }: { readonly agentId: ManagedId; readonly sessionId: ManagedId },
+    after: string | null = null,
+    query?: ListQuery,
+  ) =>
     request({
       kind: READ_KIND.SessionEvidence,
+      ...listQuery('sessionEvidence', query),
       agentId,
       sessionId,
       after: after === null ? null : EvidenceArtifactId.make(after),
@@ -203,10 +227,11 @@ export const readRequests = {
       mechId: MechId.make(mechId),
       before: before === null ? null : Sequence.make(before),
     }),
-  mechs: (after: string | null) => request({ kind: READ_KIND.Mechs, after }),
+  mechs: (after: string | null, query?: ListQuery) =>
+    request({ kind: READ_KIND.Mechs, after, ...listQuery('mechs', query) }),
   mech: (mechId: string) => request({ kind: READ_KIND.Mech, mechId: MechId.make(mechId) }),
-  turns: (mechId: string, after: TurnId | null) =>
-    request({ kind: READ_KIND.Turns, mechId: MechId.make(mechId), after }),
+  turns: (mechId: string, after: TurnId | null, query?: ListQuery) =>
+    request({ kind: READ_KIND.Turns, mechId: MechId.make(mechId), after, ...listQuery('turns', query) }),
   trace: (mechId: string, turnId: TurnId) => request({ kind: READ_KIND.Trace, mechId: MechId.make(mechId), turnId }),
   evidence: (mechId: string, turnId: TurnId, after: string | null) =>
     request({

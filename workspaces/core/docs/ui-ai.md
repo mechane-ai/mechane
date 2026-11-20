@@ -40,7 +40,8 @@ without reproducing its engine in the UI package. See the
 
 `PromptInput` receives `value`, `onValueChange`, and `onSubmit`. The application owns the draft, request identifier,
 submission result, and retry policy. The component never clears text. A failed or uncertain request can therefore retain
-both the draft and the application's original request identity.
+both the draft and the application's original request identity. Drafts use a sensitive field. UI SDK's agent bridge
+requires human authorization for Send and Stop.
 
 Newline is the default Enter behavior. `enterBehavior="submit"` submits through the native form and its validation;
 Shift+Enter adds a line. Composition input and held Enter do not submit. Pending blocks submission while retaining
@@ -56,10 +57,11 @@ capacity compose through the `controls` and `attachments` slots. Applications su
 ## Activity and sources
 
 `Approval` accepts an identified pending request with approve and deny callbacks. Its `busy` state disables duplicate
-decisions. A settled approval requires the application's acknowledged outcome and exposes no decision callbacks.
-Clicking a button does not itself change the displayed status.
+decisions. A settled approval requires the application's acknowledged outcome and exposes no decision callbacks. UI
+SDK's agent bridge requires human authorization for each decision. Clicking a button dispatches the request and the
+application supplies its settled status.
 
-`Sources` renders supplied source records in their supplied order. `InlineCitation` opens the same record in a Base UI
+`Sources` renders supplied source records in their supplied order. `InlineCitation` opens the same record in the shared
 popover. It supports keyboard and touch and links to the real supplied destination. Source provenance and visibility
 remain application decisions.
 

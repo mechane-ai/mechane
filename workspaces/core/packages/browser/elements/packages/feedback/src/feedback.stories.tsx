@@ -114,6 +114,13 @@ export const InlineMeasurements: Story = {
           ),
         },
       ]}
+      query={{
+        mode: 'local',
+        search: (record) => [record.label, record.valueLabel].join(' '),
+        filters: [
+          { id: 'reading', label: 'Reading', value: (record) => (record.value === null ? 'Unavailable' : 'Reported') },
+        ],
+      }}
       rowSizing="content"
       getRowId={(record) => record.id}
       caption="Supplied measurement shares"
@@ -276,6 +283,11 @@ function ReadExample({ initialState = 'pending' }: { readonly initialState?: Asy
                 caption="Synthetic records"
                 hideCaption
                 rows={records}
+                query={{
+                  mode: 'local',
+                  search: (record) => [record.name, record.state, record.owner].join(' '),
+                  filters: [{ id: 'state', label: 'State', value: (record) => record.state }],
+                }}
                 columns={recordColumns}
                 getRowId={(record) => record.name}
                 empty="No records"

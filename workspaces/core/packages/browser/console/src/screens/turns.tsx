@@ -37,6 +37,7 @@ export function TurnsScreen({
           <>
             {notice}
             <TurnList
+              query={{ mode: 'frame' }}
               page={page}
               turnHref={(turn) => records.href({ ...base, turn })}
               onOpen={(turn) => records.open({ ...base, turn }, turn)}

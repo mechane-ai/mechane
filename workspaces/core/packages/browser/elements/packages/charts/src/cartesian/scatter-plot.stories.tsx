@@ -1,7 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
+import { expect } from 'storybook/test';
 import { Panel, Stack, Text } from '../../../core/src/index.ts';
+import { createAgent } from '../../../foundations/src/agent/index.ts';
 import { ScatterPlot } from './scatter-plot.tsx';
 import type { ScatterPoint, ScatterRange } from './scatter-plot.tsx';
 
@@ -83,7 +85,28 @@ function Embedding(): ReactNode {
   );
 }
 
-export const SelectPointsAndRanges: Story = { render: () => <Embedding /> };
+export const SelectPointsAndRanges: Story = {
+  tags: ['interaction'],
+  render: () => <Embedding />,
+  play: async ({ canvas, userEvent }) => {
+    const plot = canvas.getByRole('group', { name: /Embedding inspection/ });
+
+    plot.focus();
+
+    const agent = createAgent();
+    const chart = agent.snapshot().find((entry) => entry.label === plot.getAttribute('aria-label'));
+
+    if (chart === undefined) {
+      throw new Error('The agent could not discover the rendered scatter plot.');
+    }
+
+    const inspected = await agent.act({ steps: [{ ref: chart.ref, action: 'setValue', args: ['sample-road'] }] });
+
+    await expect(inspected.ok).toBe(true);
+    await userEvent.keyboard('{Enter}');
+    await expect(canvas.getByRole('button', { name: /^Road passage,/ })).toHaveAttribute('aria-pressed', 'true');
+  },
+};
 
 export const ReadOnly: Story = {
   render: () => (

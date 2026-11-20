@@ -1,4 +1,5 @@
 import * as stylex from '@stylexjs/stylex';
+import { Button as ChartButton } from '@ui-sdk/react/button';
 import type { ReactNode } from 'react';
 import { conditions } from '../../../foundations/src/constants.stylex.ts';
 import { colors, controls, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
@@ -7,6 +8,7 @@ import { ChartFrame, ChartReadout } from '../chart-frame.tsx';
 import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds } from '../chart-input.tsx';
 import { useChartNavigation } from '../chart-navigation.tsx';
+import { ChartSurface } from '../chart-surface.tsx';
 import { ColorLegend } from './color-legend.tsx';
 import { heatmapColor, heatmapScaleProblem, isHeatmapValueInDomain } from './heatmap-scale.ts';
 import type { HeatmapScale } from './heatmap-scale.ts';
@@ -210,7 +212,7 @@ export function Matrix({
       {rows.length === 0 || columns.length === 0 ? (
         <p {...stylex.props(styles.empty)}>{emptyLabel}</p>
       ) : (
-        <div {...navigation.props} {...stylex.props(styles.scroll)}>
+        <ChartSurface {...navigation.props} {...stylex.props(styles.scroll)}>
           <table {...stylex.props(styles.table)}>
             <thead>
               <tr>
@@ -257,7 +259,7 @@ export function Matrix({
               ))}
             </tbody>
           </table>
-        </div>
+        </ChartSurface>
       )}
     </ChartFrame>
   );
@@ -319,7 +321,7 @@ function MatrixValue({
   }
 
   return (
-    <button
+    <ChartButton
       type="button"
       tabIndex={-1}
       aria-label={accessibleLabel}
@@ -329,7 +331,7 @@ function MatrixValue({
       {...appearance}
     >
       {content}
-    </button>
+    </ChartButton>
   );
 }
 

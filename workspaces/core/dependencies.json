@@ -361,20 +361,16 @@
     "consumers": ["@mechane/console-views", "@mechane/console"],
     "confines": [
       "@base-ui/react",
-      "@daypicker/react",
       "@pierre/diffs",
       "@pierre/highlights",
-      "@pierre/theme",
-      "@pierre/trees",
       "@shadcn/react",
-      "@tanstack/react-hotkeys",
       "@tanstack/react-table",
       "@tanstack/react-virtual",
+      "@ui-sdk/core",
+      "@ui-sdk/react",
       "@visx/hierarchy",
       "@visx/scale",
       "@visx/shape",
-      "react-resizable-panels",
-      "sonner",
       "streamdown",
       "strip-ansi"
     ]

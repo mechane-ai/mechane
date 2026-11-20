@@ -20,5 +20,5 @@ export function sessionEvidenceRead(
     return;
   }
 
-  return readRequests.sessionEvidence(agentId, sessionId, location.page ?? null);
+  return readRequests.sessionEvidence({ agentId, sessionId }, location.page ?? null, location);
 }

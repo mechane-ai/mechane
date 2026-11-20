@@ -40,7 +40,7 @@ export { boundTraceText } from './trace-text.ts';
 export type { TraceText } from './trace-text.ts';
 export { wireStruct } from './wire-struct.ts';
 export { memberOrUnknown } from './member-or-unknown.ts';
-export { listQuery } from './list-query.ts';
+export { listQuery, searchableListQuery } from './list-query.ts';
 export { renamedWireStruct } from './renamed-wire-struct.ts';
 export { unknownMember } from './unknown-member.ts';
 export { boundedText } from './bounded-text.ts';

@@ -1,6 +1,6 @@
 export { PageLayout, PageSection } from './page-layout.tsx';
 export { AppShell } from './app-shell.tsx';
-export { NavigationRail } from './navigation-rail.tsx';
+export { NavigationRail, NavigationRailPlaceholder } from './navigation-rail.tsx';
 export type { NavigationRailLink, NavigationRailProps } from './navigation-rail.tsx';
 export { NavigationRailMenu } from './navigation-rail-menu.tsx';
 export type { NavigationRailMenuProps } from './navigation-rail-menu.tsx';

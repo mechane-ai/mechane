@@ -1,5 +1,4 @@
 import type { Theme } from '@pierre/highlights';
-import { conditions } from '../../foundations/src/constants.stylex.ts';
 import { colors, controls, spacing, syntaxColors, typography } from '../../foundations/src/tokens.stylex.ts';
 
 export const highlightTheme = {
@@ -73,56 +72,4 @@ pre { font-family: ${typography.monoFamily}; font-size: ${typography.captionSize
   flex-wrap: wrap;
 }
 [data-header-content] { flex: 1 1 12ch; }
-`;
-
-export const treeCSS = `
-:host {
-  color-scheme: inherit;
-  color: ${colors.ink};
-  background: ${colors.surface};
-  font-family: ${typography.fontFamily};
-  font-size: ${typography.bodySize};
-  --trees-font-family-override: ${typography.fontFamily};
-  --trees-font-size-override: ${typography.bodySize};
-  --trees-font-weight-regular-override: ${typography.regularWeight};
-  --trees-font-weight-semibold-override: ${typography.strongWeight};
-  --trees-search-font-weight-override: ${typography.strongWeight};
-  --trees-padding-inline-override: ${spacing.md};
-  --trees-item-padding-x-override: ${spacing.sm};
-  --trees-item-row-gap-override: ${controls.gap};
-  --trees-bg-override: ${colors.surface};
-  --trees-fg-override: ${colors.ink};
-  --trees-fg-muted-override: ${colors.muted};
-  --trees-bg-muted-override: ${colors.canvas};
-  --trees-input-bg-override: ${colors.surface};
-  --trees-border-color-override: ${colors.line};
-  --trees-border-radius-override: 0px;
-  --trees-accent-override: ${colors.focus};
-  --trees-focus-ring-color-override: ${colors.focus};
-  --trees-focus-ring-width-override: ${controls.focusWidth};
-  --trees-focus-ring-offset-override: -2px;
-  --trees-selected-fg-override: ${colors.ink};
-  --trees-selected-bg-override: ${colors.canvas};
-  --trees-selected-focused-border-color-override: ${colors.focus};
-  --trees-status-added-override: ${colors.accent};
-  --trees-status-deleted-override: ${colors.danger};
-  --trees-status-ignored-override: ${colors.muted};
-  --trees-status-modified-override: ${colors.warning};
-  --trees-status-renamed-override: ${colors.warning};
-  --trees-status-untracked-override: ${colors.accent};
-}
-[data-type="item"]:hover:not([data-item-selected="true"]):not([data-item-context-hover="true"]) {
-  background-color: ${colors.surface};
-  --truncate-marker-background-overlay-color: transparent;
-}
-${conditions.hoverPointer} {
-  [data-type="item"]:hover:not([data-item-selected="true"]):not([data-item-context-hover="true"]) {
-    background-color: ${colors.canvas};
-    --truncate-marker-background-overlay-color: ${colors.canvas};
-  }
-}
-[data-type="item"]:active:not([data-item-selected="true"]):not([data-item-context-hover="true"]) {
-  background-color: ${colors.canvas};
-  --truncate-marker-background-overlay-color: ${colors.canvas};
-}
 `;

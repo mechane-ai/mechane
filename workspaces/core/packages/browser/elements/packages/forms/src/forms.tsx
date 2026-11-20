@@ -1,6 +1,13 @@
-import { Field as BaseField } from '@base-ui/react/field';
-import { Input as BaseInput } from '@base-ui/react/input';
 import * as stylex from '@stylexjs/stylex';
+import {
+  Field as SdkField,
+  FieldControl as SdkFieldControl,
+  FieldDescription as SdkFieldDescription,
+  FieldError as SdkFieldError,
+  FieldLabel as SdkFieldLabel,
+} from '@ui-sdk/react/field';
+import { Input as SdkInput } from '@ui-sdk/react/input';
+import { Textarea as SdkTextarea } from '@ui-sdk/react/textarea';
 import type { ComponentProps, ReactNode } from 'react';
 import type { ControlDensity } from '../../foundations/src/control-density.ts';
 import type { TextValueProperties } from '../../foundations/src/control-state.ts';
@@ -14,99 +21,120 @@ import type { PlacementStyle } from '../../foundations/src/style-composition.ts'
 import { fieldStyles as styles, textareaAppearanceStyles } from './field-styles.ts';
 import type { TextareaAppearance } from './field-styles.ts';
 
-type FieldRootProps = ComponentProps<typeof BaseField.Root> & { readonly xstyle?: PlacementStyle };
-type FieldLabelProps = ComponentProps<typeof BaseField.Label>;
-type FieldDescriptionProps = ComponentProps<typeof BaseField.Description>;
-type FieldErrorProps = ComponentProps<typeof BaseField.Error>;
-type BaseInputProps = ComponentProps<typeof BaseInput>;
+type FieldRootProps = ComponentProps<typeof SdkField> & { readonly xstyle?: PlacementStyle };
+type FieldLabelProps = ComponentProps<typeof SdkFieldLabel>;
+type FieldDescriptionProps = ComponentProps<typeof SdkFieldDescription>;
+type FieldErrorProps = ComponentProps<typeof SdkFieldError>;
 
-export type InputProps = Omit<
-  BaseInputProps,
-  'value' | 'defaultValue' | 'onChange' | 'onValueChange' | 'readOnly' | 'size'
+type TextControlProps<Tag extends 'input' | 'textarea'> = Omit<
+  ComponentProps<Tag>,
+  'value' | 'defaultValue' | 'onChange' | 'readOnly' | 'size' | 'onSelect' | 'onSubmit'
 > &
-  TextValueProperties<
-    NonNullable<BaseInputProps['value']>,
-    NonNullable<BaseInputProps['onChange']>,
-    NonNullable<BaseInputProps['onValueChange']>
-  > & { readonly density?: ControlDensity; readonly xstyle?: PlacementStyle };
-
-type NativeTextareaProps = ComponentProps<'textarea'>;
-
-type TextareaProps = Omit<NativeTextareaProps, 'value' | 'defaultValue' | 'onChange' | 'readOnly'> &
-  TextValueProperties<
-    NonNullable<NativeTextareaProps['value']>,
-    NonNullable<NativeTextareaProps['onChange']>,
-    NonNullable<BaseInputProps['onValueChange']>
-  > & {
+  TextValueProperties<string | number, NonNullable<ComponentProps<Tag>['onChange']>, (value: string) => void> & {
+    /** Keep credentials and other private text out of the UI SDK runtime. Password inputs always use this mode. */
+    readonly isSensitive?: boolean;
     readonly xstyle?: PlacementStyle;
-    readonly isCompact?: boolean;
-    readonly shouldGrow?: boolean;
-    readonly appearance?: TextareaAppearance;
   };
+
+export type InputProps = TextControlProps<'input'> & { readonly density?: ControlDensity };
+
+type TextareaProps = TextControlProps<'textarea'> & {
+  readonly isCompact?: boolean;
+  readonly shouldGrow?: boolean;
+  readonly appearance?: TextareaAppearance;
+};
 
 function FieldRoot({ className, style, xstyle, ...props }: FieldRootProps): ReactNode {
   return (
-    <BaseField.Root
+    <SdkField
       {...props}
-      {...mergeStyles<BaseField.Root.State>({
-        className,
-        style,
-        styles: stylex.props(controlStyles.fieldRoot, xstyle),
-      })}
+      {...mergeStyles({ className, style, styles: stylex.props(controlStyles.fieldRoot, xstyle) })}
     />
   );
 }
 
 function FieldLabel({ className, style, ...props }: FieldLabelProps): ReactNode {
-  return (
-    <BaseField.Label
-      {...props}
-      {...mergeStyles<BaseField.Label.State>({ className, style, styles: stylex.props(controlStyles.label) })}
-    />
-  );
+  return <SdkFieldLabel {...props} {...mergeStyles({ className, style, styles: stylex.props(controlStyles.label) })} />;
 }
 
 function FieldDescription({ className, style, ...props }: FieldDescriptionProps): ReactNode {
   return (
-    <BaseField.Description
+    <SdkFieldDescription
       {...props}
-      {...mergeStyles<BaseField.Description.State>({
-        className,
-        style,
-        styles: stylex.props(controlStyles.description),
-      })}
+      {...mergeStyles({ className, style, styles: stylex.props(controlStyles.description) })}
     />
   );
 }
 
 function FieldError({ className, style, ...props }: FieldErrorProps): ReactNode {
-  return (
-    <BaseField.Error
-      {...props}
-      {...mergeStyles<BaseField.Error.State>({ className, style, styles: stylex.props(styles.error) })}
-    />
-  );
+  return <SdkFieldError {...props} {...mergeStyles({ className, style, styles: stylex.props(styles.error) })} />;
 }
 
 export const Field = { Root: FieldRoot, Label: FieldLabel, Description: FieldDescription, Error: FieldError };
 
-export function Input({ density = 'standard', className, style, xstyle, ...props }: InputProps): ReactNode {
+export function Input(props: InputProps): ReactNode {
+  return <TextInput {...props} />;
+}
+
+function privateAutocomplete(autoComplete: string | undefined): boolean {
+  return /(?:^|\s)(?:current-password|new-password|one-time-code|cc-[a-z-]+)(?:\s|$)/i.test(autoComplete ?? '');
+}
+
+export function TextInput({
+  density = 'standard',
+  isEmbedded = false,
+  isSensitive = false,
+  className,
+  style,
+  xstyle,
+  value,
+  defaultValue,
+  onValueChange,
+  onChange,
+  ...props
+}: InputProps & { readonly isEmbedded?: boolean }): ReactNode {
+  const styled = mergeStyles({
+    className,
+    style,
+    styles: stylex.props(
+      controlStyles.base,
+      controlStyles.field,
+      controlStyles.singleLineField,
+      controlStyles.textFieldState,
+      controlDensityStyles[density],
+      singleLineControlDensityStyles[density],
+      isEmbedded && controlStyles.embedded,
+      xstyle,
+    ),
+  });
+
+  if (isSensitive || props.type?.toLowerCase() === 'password' || privateAutocomplete(props.autoComplete)) {
+    return (
+      <SdkFieldControl
+        {...props}
+        {...styled}
+        data-agent-hidden=""
+        value={value}
+        defaultValue={defaultValue}
+        onChange={(event) => {
+          onChange?.(event);
+
+          if (!event.defaultPrevented) {
+            onValueChange?.(event.currentTarget.value);
+          }
+        }}
+      />
+    );
+  }
+
   return (
-    <BaseInput
+    <SdkInput
       {...props}
-      {...mergeStyles<BaseInput.State>({
-        className,
-        style,
-        styles: stylex.props(
-          controlStyles.base,
-          controlStyles.field,
-          controlStyles.singleLineField,
-          styles.input,
-          controlDensityStyles[density],
-          singleLineControlDensityStyles[density],
-          xstyle,
-        ),
-      })}
+      {...styled}
+      {...(value !== undefined && { value: String(value) })}
+      {...(defaultValue !== undefined && { defaultValue: String(defaultValue) })}
+      {...(onChange !== undefined && { onChange })}
+      {...(onValueChange !== undefined && { onValueChange })}
     />
   );
 }
@@ -115,42 +143,65 @@ export function Textarea({
   isCompact = false,
   shouldGrow = false,
   appearance = 'field',
-  value,
-  defaultValue,
-  onValueChange,
-  name,
-  disabled,
-  readOnly,
-  required,
+  isSensitive = false,
   className,
   style,
   xstyle,
+  value,
+  defaultValue,
+  onValueChange,
+  onChange,
   ...props
 }: TextareaProps): ReactNode {
+  const styled = mergeStyles({
+    className,
+    style,
+    styles: stylex.props(
+      controlStyles.base,
+      controlStyles.field,
+      controlStyles.textFieldState,
+      controlStyles.textarea,
+      isCompact && styles.compactTextarea,
+      shouldGrow && styles.growingTextarea,
+      textareaAppearanceStyles[appearance],
+      xstyle,
+    ),
+  });
+
+  if (isSensitive || privateAutocomplete(props.autoComplete)) {
+    return (
+      <SdkFieldControl
+        {...(props.id !== undefined && { id: props.id })}
+        {...(props.name !== undefined && { name: props.name })}
+        render={
+          <textarea
+            {...props}
+            data-agent-hidden=""
+            className={styled.className({})}
+            style={styled.style({})}
+            value={value}
+            defaultValue={defaultValue}
+            onChange={(event) => {
+              onChange?.(event);
+
+              if (!event.defaultPrevented) {
+                onValueChange?.(event.currentTarget.value);
+              }
+            }}
+          />
+        }
+      />
+    );
+  }
+
   return (
-    <BaseField.Control
-      value={value}
-      defaultValue={defaultValue}
-      onValueChange={onValueChange}
-      name={name}
-      disabled={disabled}
-      readOnly={readOnly}
-      required={required}
-      render={<textarea {...props} />}
-      {...mergeStyles<BaseField.Control.State>({
-        className,
-        style,
-        styles: stylex.props(
-          controlStyles.base,
-          controlStyles.field,
-          styles.input,
-          controlStyles.textarea,
-          isCompact && styles.compactTextarea,
-          shouldGrow && styles.growingTextarea,
-          textareaAppearanceStyles[appearance],
-          xstyle,
-        ),
-      })}
+    <SdkTextarea
+      {...props}
+      {...styled}
+      {...(value !== undefined && { value: String(value) })}
+      {...(defaultValue !== undefined && { defaultValue: String(defaultValue) })}
+      {...(onChange !== undefined && { onChange })}
+      {...(onValueChange !== undefined && { onValueChange })}
     />
   );
 }

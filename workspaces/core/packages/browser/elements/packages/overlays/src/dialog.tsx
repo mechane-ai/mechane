@@ -1,12 +1,13 @@
-import { Dialog as BaseDialog } from '@base-ui/react/dialog';
 import * as stylex from '@stylexjs/stylex';
+import * as SDK from '@ui-sdk/react/dialog';
 import type { ComponentProps, ReactNode } from 'react';
 import { layers } from '../../foundations/src/constants.stylex.ts';
-import type { OpenStateProperties } from '../../foundations/src/control-state.ts';
 import { overlayStyles } from '../../foundations/src/overlay-styles.ts';
 import { mergeStyles } from '../../foundations/src/style-composition.ts';
 import type { PlacementStyle } from '../../foundations/src/style-composition.ts';
 import { colors, radii, shadows, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { withOverlayPortal } from './overlay-root.tsx';
+import type { OpenProps } from './overlay-root.tsx';
 
 const styles = stylex.create({
   popup: {
@@ -47,84 +48,86 @@ const motionStyles = stylex.create<Record<DialogMotion, stylex.CSSProperties>>({
   none: { transitionDuration: '0ms' },
 });
 
-type DialogRootProps<Payload> = Omit<BaseDialog.Root.Props<Payload>, 'open' | 'defaultOpen' | 'onOpenChange'> &
-  OpenStateProperties<NonNullable<BaseDialog.Root.Props<Payload>['onOpenChange']>>;
+export function styledDialogParts(parts: {
+  Backdrop: typeof SDK.DialogBackdrop;
+  Content: typeof SDK.DialogContent;
+  Title: typeof SDK.DialogTitle;
+  Description: typeof SDK.DialogDescription;
+}) {
+  function Backdrop({
+    className,
+    style,
+    motion = 'standard',
+    ...props
+  }: ComponentProps<typeof parts.Backdrop> & { readonly motion?: DialogMotion }): ReactNode {
+    return (
+      <parts.Backdrop
+        {...props}
+        {...mergeStyles<SDK.DialogBackdropState>({
+          className,
+          style,
+          styles: stylex.props(overlayStyles.transition, overlayStyles.backdrop, motionStyles[motion]),
+        })}
+      />
+    );
+  }
 
-type DialogBackdropProps = ComponentProps<typeof BaseDialog.Backdrop> & { readonly motion?: DialogMotion };
+  function Popup({
+    className,
+    style,
+    xstyle,
+    motion = 'standard',
+    ...props
+  }: ComponentProps<typeof parts.Content> & {
+    readonly xstyle?: PlacementStyle;
+    readonly motion?: DialogMotion;
+  }): ReactNode {
+    return (
+      <parts.Content
+        {...props}
+        {...mergeStyles<SDK.DialogContentState>({
+          className,
+          style,
+          styles: stylex.props(
+            overlayStyles.content,
+            overlayStyles.transition,
+            styles.popup,
+            motionStyles[motion],
+            xstyle,
+          ),
+        })}
+      />
+    );
+  }
 
-type DialogPopupProps = ComponentProps<typeof BaseDialog.Popup> & {
-  readonly xstyle?: PlacementStyle;
-  readonly motion?: DialogMotion;
-};
+  function Title({ className, style, ...props }: ComponentProps<typeof parts.Title>): ReactNode {
+    return <parts.Title {...props} {...mergeStyles({ className, style, styles: stylex.props(overlayStyles.title) })} />;
+  }
 
-type DialogTitleProps = ComponentProps<typeof BaseDialog.Title>;
-type DialogDescriptionProps = ComponentProps<typeof BaseDialog.Description>;
+  function Description({ className, style, ...props }: ComponentProps<typeof parts.Description>): ReactNode {
+    return (
+      <parts.Description
+        {...props}
+        {...mergeStyles({ className, style, styles: stylex.props(overlayStyles.description) })}
+      />
+    );
+  }
 
-function DialogRoot<Payload = unknown>(props: DialogRootProps<Payload>): ReactNode {
-  return <BaseDialog.Root<Payload> {...props} />;
+  return { Backdrop, Popup, Title, Description };
 }
 
-function DialogBackdrop({ className, style, motion = 'standard', ...props }: DialogBackdropProps): ReactNode {
-  return (
-    <BaseDialog.Backdrop
-      {...props}
-      {...mergeStyles<BaseDialog.Backdrop.State>({
-        className,
-        style,
-        styles: stylex.props(overlayStyles.transition, overlayStyles.backdrop, motionStyles[motion]),
-      })}
-    />
-  );
-}
-
-function DialogPopup({ className, style, xstyle, motion = 'standard', ...props }: DialogPopupProps): ReactNode {
-  return (
-    <BaseDialog.Popup
-      {...props}
-      {...mergeStyles<BaseDialog.Popup.State>({
-        className,
-        style,
-        styles: stylex.props(
-          overlayStyles.content,
-          overlayStyles.transition,
-          styles.popup,
-          motionStyles[motion],
-          xstyle,
-        ),
-      })}
-    />
-  );
-}
-
-function DialogTitle({ className, style, ...props }: DialogTitleProps): ReactNode {
-  return (
-    <BaseDialog.Title
-      {...props}
-      {...mergeStyles<BaseDialog.Title.State>({ className, style, styles: stylex.props(overlayStyles.title) })}
-    />
-  );
-}
-
-function DialogDescription({ className, style, ...props }: DialogDescriptionProps): ReactNode {
-  return (
-    <BaseDialog.Description
-      {...props}
-      {...mergeStyles<BaseDialog.Description.State>({
-        className,
-        style,
-        styles: stylex.props(overlayStyles.description),
-      })}
-    />
-  );
+function Root(props: OpenProps<SDK.DialogProps>): ReactNode {
+  return <SDK.Dialog {...props} />;
 }
 
 export const Dialog = {
-  Root: DialogRoot,
-  Trigger: BaseDialog.Trigger,
-  Portal: BaseDialog.Portal,
-  Backdrop: DialogBackdrop,
-  Popup: DialogPopup,
-  Title: DialogTitle,
-  Description: DialogDescription,
-  Close: BaseDialog.Close,
+  Root: withOverlayPortal(Root),
+  Trigger: SDK.DialogTrigger,
+  Close: SDK.DialogClose,
+  ...styledDialogParts({
+    Backdrop: SDK.DialogBackdrop,
+    Content: SDK.DialogContent,
+    Title: SDK.DialogTitle,
+    Description: SDK.DialogDescription,
+  }),
 };

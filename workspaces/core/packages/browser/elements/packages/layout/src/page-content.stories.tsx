@@ -63,8 +63,12 @@ export const ReportWithRecords: Story = {
         </MetricGrid>
       </PageContent>
       <SectionHeading title="Review queue" />
-      <CollectionToolbar label="Review controls" />
       <DataTable
+        query={{
+          mode: 'local',
+          search: (row) => [row.title, row.owner].join(' '),
+          filters: [{ id: 'owner', label: 'Owner', value: (row) => row.owner }],
+        }}
         caption="Pending reviews"
         hideCaption
         rows={[
@@ -137,6 +141,11 @@ function ActivityReport({ isLoading = false }: { readonly isLoading?: boolean })
         </>
       </PageContent>
       <DataTable
+        query={{
+          mode: 'local',
+          search: (row) => row.label,
+          filters: [{ id: 'type', label: 'Type', value: (row) => row.label }],
+        }}
         caption="Completed operations by type"
         rows={[
           { id: 'build', label: 'Build', count: 360 },

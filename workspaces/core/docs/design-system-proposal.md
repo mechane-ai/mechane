@@ -1,5 +1,9 @@
 # Mechane design system proposal
 
+> Historical design record, November 2026. The UI SDK migration supersedes the interaction-library choices, table APIs
+> and ownership guidance below. Use the [Elements component guide](components.md), its family guides, and the
+> [package exports](../packages/browser/elements/package.json) for current implementation guidance.
+
 Status: accepted, November 3, 2026. This records the initial design and adoption decisions behind Elements by Mechane
 and its Console consumers. The later [UI expansion](ui-capability-proposal.md) supersedes the source layout and
 Console-consumer prerequisite below. The [component guide](components.md) describes supported APIs, and the

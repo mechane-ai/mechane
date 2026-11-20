@@ -53,19 +53,15 @@ function StatusSelect({ id, density = 'standard' }: StatusSelectProps): ReactNod
           <ChevronDown size={16} aria-hidden />
         </Select.Icon>
       </Select.Trigger>
-      <Select.Portal>
-        <Select.Positioner>
-          <Select.Popup>
-            <Select.List>
-              {choices.map((choice) => (
-                <Select.Item key={choice} value={choice}>
-                  <Select.ItemText>{choice}</Select.ItemText>
-                </Select.Item>
-              ))}
-            </Select.List>
-          </Select.Popup>
-        </Select.Positioner>
-      </Select.Portal>
+      <Select.Popup>
+        <Select.List>
+          {choices.map((choice) => (
+            <Select.Item key={choice} value={choice}>
+              <Select.ItemText>{choice}</Select.ItemText>
+            </Select.Item>
+          ))}
+        </Select.List>
+      </Select.Popup>
     </Select.Root>
   );
 }
@@ -98,24 +94,20 @@ function ControlGeometry({ density = 'standard' }: ControlGeometryProps): ReactN
         </Field.Root>
         <Field.Root>
           <Field.Label>Search status</Field.Label>
-          <Combobox.Root density={density} items={choices} defaultValue="Ready">
+          <Combobox.Root density={density} defaultValue="Ready">
             <Combobox.InputGroup>
               <Combobox.Input />
               <Combobox.Trigger />
             </Combobox.InputGroup>
-            <Combobox.Portal>
-              <Combobox.Positioner>
-                <Combobox.Popup>
-                  <Combobox.List>
-                    {(choice: string) => (
-                      <Combobox.Item key={choice} value={choice}>
-                        {choice}
-                      </Combobox.Item>
-                    )}
-                  </Combobox.List>
-                </Combobox.Popup>
-              </Combobox.Positioner>
-            </Combobox.Portal>
+            <Combobox.Popup>
+              <Combobox.List>
+                {choices.map((choice) => (
+                  <Combobox.Item key={choice} value={choice}>
+                    {choice}
+                  </Combobox.Item>
+                ))}
+              </Combobox.List>
+            </Combobox.Popup>
           </Combobox.Root>
           <FieldPlaceholder density={density} />
         </Field.Root>
@@ -152,7 +144,7 @@ function ControlGeometry({ density = 'standard' }: ControlGeometryProps): ReactN
         <Button density={density} variant="ghost">
           Preview
         </Button>
-        <Button density={density} nativeButton={false} render={<a href="#control-settings" />}>
+        <Button density={density} render={<a href="#control-settings" />}>
           Open settings
         </Button>
         <ButtonPlaceholder density={density} />

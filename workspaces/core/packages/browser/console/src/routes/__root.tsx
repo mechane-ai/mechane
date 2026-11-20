@@ -13,6 +13,7 @@ export const Route = createRootRoute({
   head: () => ({
     meta: [
       { charSet: 'utf8' },
+      { property: 'csp-nonce' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       { title: 'Mechane Console' },
     ],

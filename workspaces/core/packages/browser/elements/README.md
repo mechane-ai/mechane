@@ -4,6 +4,15 @@ React components for applications, AI interfaces, and analytical graphics. Eleme
 surfaces, shared visual tokens, and accessible interactions. Mechane's Console consumes the same package. Components
 receive values and callbacks; applications own routing, data, identity, and persistence.
 
+Interactive Elements use the UI SDK React primitives or compose other Elements. StyleX owns their appearance.
+Applications import the Elements family that owns the interaction. When adding a control, start with the matching family
+and its Storybook example. Keep focus, value changes, and dismissal with one primitive. Native links retain browser
+navigation and modifier-key behavior.
+
+Hosts that expose component actions can import `createAgent` from `@mechane-ai/elements/agent`. Mounting Elements alone
+does not grant an external agent access. Keep credentials out of observable values and retain human approval for
+privileged actions.
+
 ## Workspace implementation guides
 
 - [Workspace layout](skills/elements-workspace/SKILL.md) covers shell lifetime, full-width reports, task navigation and
@@ -34,14 +43,12 @@ export function Example() {
   return (
     <Dialog.Root>
       <Dialog.Trigger render={<Button />}>Details</Dialog.Trigger>
-      <Dialog.Portal>
-        <Dialog.Backdrop />
-        <Dialog.Popup>
-          <Dialog.Title>Details</Dialog.Title>
-          <Dialog.Description>The application supplies this content.</Dialog.Description>
-          <Dialog.Close render={<Button variant="outline" />}>Close</Dialog.Close>
-        </Dialog.Popup>
-      </Dialog.Portal>
+      <Dialog.Backdrop />
+      <Dialog.Popup>
+        <Dialog.Title>Details</Dialog.Title>
+        <Dialog.Description>The application supplies this content.</Dialog.Description>
+        <Dialog.Close render={<Button variant="outline" />}>Close</Dialog.Close>
+      </Dialog.Popup>
     </Dialog.Root>
   );
 }
@@ -84,6 +91,7 @@ Every path below belongs to `@mechane-ai/elements`. There is one package, versio
 | `/charts/hierarchy`    | Treemaps.                                                                           |
 | `/charts/timeline`     | Waterfall intervals and instants.                                                   |
 | `/theme`               | Light and dark theme props.                                                         |
+| `/agent`               | Optional UI SDK bridge for a host that enables component inspection and actions.    |
 | `/csp`                 | Application-supplied content security policy configuration.                         |
 | `/tokens`              | Compiled token references for runtime styles.                                       |
 | `/tokens.stylex`       | Variable definitions for StyleX authoring and themes.                               |
@@ -103,7 +111,7 @@ before adding a surface. Stack related page sections. `PageContent` insets conte
 with full-width finite rows, and `CollectionLayout` gives a primary collection its available height. Dialogs, inspectors
 and structured message Cards retain their own containing width. `Panel` bounds an independent unit.
 
-Use Base UI's `render` composition and named variants for appearance. Native attributes, events, and refs remain
+Use Elements' `render` composition and named variants for appearance. Native attributes, events, and refs remain
 available. Typed `xstyle` inputs permit placement styles compiled by the application's StyleX setup. Applications own
 asynchronous work and pass its pending, success, or failure state to controls.
 
@@ -114,11 +122,12 @@ Detail titles wrap; list metadata truncates. Sidebar items share contiguous hit 
 `NavigationRail` in its `rail` slot for persistent area links. It occupies 48px of the 240px navigation budget beside a
 192px contextual sidebar. Collapsing hides the contextual sidebar and retains the rail. The phone drawer renders those
 area links with visible labels above its pages. Its width, toolbar height, and footer cell share the same 48px geometry.
-Put a `NavigationRailMenu` in `railFooter` for a pinned icon menu beside the desktop rail and above the phone drawer's
-bottom-left control. Applications supply the menu content and actions. `Avatar` supports `shape="circle"` for an
-initials or photo trigger. Applications supply selection, URLs, native link handlers, and action callbacks. Omit the
-rail for a sidebar that collapses to page icons. `SidebarFooter layout="navigation"` holds persistent controls in the
-contextual sidebar and reserves their intrinsic height while its pages scroll independently.
+Use `railFooter={{ navigation, menu }}` to group persistent links such as Settings with the account menu. The shell
+supplies the same gap between these targets as between the primary links. Supply menu content and actions in `menu`.
+`Avatar` supports `shape="circle"` for an initials or photo trigger. Applications supply selection, URLs, native link
+handlers, and action callbacks. Omit the rail for a sidebar that collapses to page icons.
+`SidebarFooter layout="navigation"` holds persistent controls in the contextual sidebar and reserves their intrinsic
+height while its pages scroll independently.
 
 Use `PageLayout` for a screen. Give it the page title, actions, and optional `navigation` with the destination links,
 selected ID, and view actions. The toolbar and navigation keep their natural height above the scrolling body. Wrap each
@@ -147,6 +156,22 @@ supplied selection; Escape dismisses details while retaining the cursor.
 `Workbench` accepts an optional `inspector={{ label: 'Workspace', content: <WorkspaceFiles /> }}`. The application
 supplies the accessible name with the panel content and owns opening, closing, and focus restoration. The inspector
 replaces the main column at compact widths while keeping that column mounted.
+
+Every `DataTable` requires a `query`. For a finite list, supply the complete authorized rows and declare how users can
+search and filter them.
+
+```tsx
+query={{
+  mode: 'local',
+  search: (item) => item.name,
+  filters: [{ id: 'status', label: 'Status', value: (item) => item.status }],
+}}
+```
+
+For paged records use `mode: 'controlled'` with query values and callbacks. Apply search and filters before server
+pagination. When an enclosing collection already supplies the controls, declare its capabilities with `TableQueryFrame`
+and use `mode: 'frame'` on its table. A static table, or an individual capability that does not apply, requires a
+reason.
 
 Each `DataTable` column declares a role: `primary`, `text`, `status`, `number`, `timestamp`, or `actions`. Roles own
 alignment and minimum sizing; the primary column uses available space. Headers and placeholders follow the same
@@ -232,18 +257,17 @@ compiler. Consumer styles can then use `[conditions.coarsePointer]` from that en
 `stylex.createTheme(colors, ...)` with `colors` from `/tokens.stylex`.
 
 When an application's Content Security Policy requires nonces, wrap its component tree in `CSPProvider` from
-`@mechane-ai/elements/csp` and pass the same request nonce used in its policy. Preserve that nonce during hydration.
-This is [Base UI's CSP provider](https://base-ui.com/react/utils/csp-provider); it authorizes component style tags such
-as Select's scrollbar rules. The application owns nonce generation and its security policy.
+`@mechane-ai/elements/csp` and pass the same request nonce used in its policy. Preserve that nonce during hydration. The
+application owns nonce generation and its security policy.
 
 Mount one `Toaster` from `/feedback` and call its exported `toast` API with a plain-text object such as
-`toast.error({ title: 'Could not save' })`. Elements includes Sonner's structural styles in the published stylesheet, so
-the production package injects no additional toast style tag. Keep initial-read failures and field validation local;
-retained-content refresh failures can use one notification with Retry. Loading updates require a stable ID, and
-dismissal names its ID through `toast.dismiss({ id })`. Actions and loading notices persist. Keep titles, descriptions
-and action labels brief; longer explanations belong in the relevant view. Shared toasts bound visible text and wrap
-actions without narrowing the message. Opening a page or discovering background status does not warrant a notification.
-The application owns stable IDs and dismissal on recovery or navigation.
+`toast.error({ title: 'Could not save' })`. The feedback family owns UI SDK toast behavior and Elements styling. Keep
+initial-read failures and field validation local; retained-content refresh failures can use one notification with Retry.
+Loading updates require a stable ID, and dismissal names its ID through `toast.dismiss({ id })`. Actions and loading
+notices persist. Keep titles, descriptions and action labels brief; longer explanations belong in the relevant view.
+Shared toasts bound visible text and wrap actions without narrowing the message. Opening a page or discovering
+background status does not warrant a notification. The application owns stable IDs and dismissal on recovery or
+navigation.
 
 ## Loading content
 

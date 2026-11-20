@@ -3,7 +3,7 @@ import { Outlet, useMatch, useNavigate, useParams, useRouterState } from '@tanst
 import { Option } from 'effect';
 import type { ReactNode } from 'react';
 import { ConsoleApplication } from './application.tsx';
-import { managedDestination, managedSearch } from './managed-navigation.ts';
+import { managedDestination, managedSearch, tableSearch } from './managed-navigation.ts';
 import { consoleTransition } from './navigation.tsx';
 import type { ConsoleLocation } from './types.ts';
 
@@ -38,6 +38,7 @@ export function ConsoleRoute(): ReactNode {
       return {
         workspace: params.workspaceId,
         isArchiveIndex: true,
+        ...tableSearch(route.search),
         ...(typeof route.search.page === 'string' ? { page: route.search.page } : {}),
       };
     }

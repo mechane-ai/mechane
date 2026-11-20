@@ -1,6 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
 import { ListFilter, Search, X } from 'lucide-react';
-import { Children, useLayoutEffect, useRef, useState } from 'react';
+import { Children, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent, ReactNode } from 'react';
 import { IconButton } from '../../core/src/index.ts';
 import { Input } from '../../forms/src/index.ts';
@@ -9,6 +9,8 @@ import { Popover } from '../../overlays/src/index.ts';
 import { FilterChips } from './collection-controls.tsx';
 import { CollectionFilters } from './collection-filters.tsx';
 import type { CollectionFilter } from './collection-filters.tsx';
+import { QueryControls } from './query-controls.tsx';
+import type { CollectionSearch } from './query-controls.tsx';
 
 const styles = stylex.create({
   controls: {
@@ -32,15 +34,8 @@ const styles = stylex.create({
   popup: { width: 320, maxWidth: 'calc(100vw - 32px)' },
 });
 
-export type CollectionSearch = {
-  readonly value: string;
-  readonly onChange: (value: string) => void;
-  readonly onSubmit?: () => void;
-  readonly label?: string;
-  readonly placeholder?: string;
-};
-
 export type CollectionControlsProps = {
+  readonly label?: string;
   readonly search?: CollectionSearch;
   readonly filters?: ReadonlyArray<CollectionFilter>;
   readonly filterContent?: (close: () => void) => ReactNode;
@@ -50,6 +45,7 @@ export type CollectionControlsProps = {
 };
 
 export function useCollectionControls({
+  label = 'Collection controls',
   search,
   filters = [],
   filterContent,
@@ -64,6 +60,7 @@ export function useCollectionControls({
   const trigger = useRef<HTMLButtonElement>(null);
   const collectionControls = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLInputElement>(null);
+  const selections = useMemo(() => Object.fromEntries(filters.map((group) => [group.id, group.value])), [filters]);
   const isUnavailable = isPlaceholder || !isReady;
   const isOpen = search !== undefined && (isFinding || search.value.length > 0);
 
@@ -133,7 +130,17 @@ export function useCollectionControls({
   const searchPlaceholder = search?.placeholder ?? 'Find in view…';
 
   const actions = hasActions ? (
-    <div ref={collectionControls} aria-hidden={isUnavailable} inert={isUnavailable} {...stylex.props(styles.controls)}>
+    <QueryControls
+      search={search}
+      groups={filters}
+      selections={selections}
+      isDisabled={isUnavailable}
+      ref={collectionControls}
+      aria-label={label}
+      aria-hidden={isUnavailable}
+      inert={isUnavailable}
+      {...stylex.props(styles.controls)}
+    >
       {search !== undefined && (
         <IconButton
           ref={trigger}
@@ -158,7 +165,7 @@ export function useCollectionControls({
             aria-label={searchLabel}
             placeholder={searchPlaceholder}
             value={search.value}
-            onChange={(event) => search.onChange(event.target.value)}
+            onValueChange={search.onChange}
             onKeyDown={(event) => {
               const shouldSubmit = event.key === 'Enter' && search.onSubmit !== undefined;
 
@@ -196,19 +203,15 @@ export function useCollectionControls({
           <Popover.Trigger render={<IconButton aria-label="Filters" title="Filters" />}>
             <ListFilter size={14} aria-hidden />
           </Popover.Trigger>
-          <Popover.Portal>
-            <Popover.Positioner align="end">
-              <Popover.Popup {...stylex.props(styles.popup)}>
-                <Popover.Title>Filters</Popover.Title>
-                {filterContent(() => setFilterOpen(false))}
-              </Popover.Popup>
-            </Popover.Positioner>
-          </Popover.Portal>
+          <Popover.Popup align="end" {...stylex.props(styles.popup)}>
+            <Popover.Title>Filters</Popover.Title>
+            {filterContent(() => setFilterOpen(false))}
+          </Popover.Popup>
         </Popover.Root>
       )}
       {viewActions}
       {display}
-    </div>
+    </QueryControls>
   ) : undefined;
 
   return {

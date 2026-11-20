@@ -26,7 +26,19 @@ export function PresentationTable({ headers, rows, caption }: PresentationTableP
   const records = rows.map((cells, index) => ({ id: String(index), cells }));
 
   return (
-    <DataTable
+    <DataTable<TableRow>
+      query={{
+        mode: 'local',
+        search: (row) => row.cells.join(' '),
+        filters:
+          headers.length === 0
+            ? { reason: 'This result has no columns to filter.' }
+            : headers.map((header, index) => ({
+                id: String(index),
+                label: header,
+                value: (row) => row.cells[index] ?? '',
+              })),
+      }}
       rows={records}
       columns={columns}
       getRowId={(row) => row.id}

@@ -1,6 +1,8 @@
 import * as stylex from '@stylexjs/stylex';
-import type { HTMLAttributes, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { colors, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
+import type { useChartNavigation } from '../chart-navigation.tsx';
+import { ChartSurface } from '../chart-surface.tsx';
 import { usePlotWidth } from '../plot-width.ts';
 import type { NumericDomain } from './distribution-input.ts';
 
@@ -76,7 +78,7 @@ export const distributionStyles = stylex.create({
 });
 
 type NumericPlotProps = {
-  readonly navigation?: HTMLAttributes<HTMLElement>;
+  readonly navigation: ReturnType<typeof useChartNavigation>['props'];
   readonly onInspectValue?: (value: number) => void;
   readonly xDomain: NumericDomain;
   readonly yDomain: NumericDomain;
@@ -113,7 +115,7 @@ export function NumericPlot({
           <span key={tick}>{formatY(tick)}</span>
         ))}
       </div>
-      <div ref={ref} {...navigation} {...stylex.props(distributionStyles.plotArea)}>
+      <ChartSurface ref={ref} {...navigation} {...stylex.props(distributionStyles.plotArea)}>
         <svg
           aria-hidden
           onPointerMove={(event) => {
@@ -142,7 +144,7 @@ export function NumericPlot({
           ))}
           {children(width)}
         </svg>
-      </div>
+      </ChartSurface>
       <span />
       <div aria-hidden {...stylex.props(distributionStyles.axis)}>
         {xTicks.map((tick, index) => (

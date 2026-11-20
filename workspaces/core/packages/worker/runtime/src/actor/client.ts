@@ -6,7 +6,7 @@ import {
   ServerFailure,
   SourceCompletion,
 } from '@mechane/protocol';
-import type { MechHistoryImportBatch } from '@mechane/protocol';
+import type { catalog, MechHistoryImportBatch } from '@mechane/protocol';
 import { HttpHeader, HttpMethod, MechId, MediaType, WorkspaceId } from '@mechane/records';
 import { SandboxCompletion } from '@mechane/sandbox-wire';
 import { Schema } from 'effect';
@@ -24,6 +24,7 @@ import {
 export type MechScope = { readonly workspaceId: string; readonly mechId: string };
 
 export type ActorPageInput = { readonly after?: string | null | undefined; readonly maxRows?: number | undefined };
+export type RunPageInput = ActorPageInput & Pick<typeof catalog.listTurns.query.Type, 'search' | 'filter'>;
 export type ActorPage<T> = { readonly items: ReadonlyArray<T>; readonly hasMore: boolean };
 
 export type ActorRoutine = typeof RoutineRecord.Type;
@@ -89,7 +90,7 @@ export type MechActorClient = {
     readonly nextCursor: string | null;
   }>;
   readonly maintenance: (input: { readonly action: 'quiesce' | 'resume' }) => Promise<ActorMaintenance>;
-  readonly listRuns: (input: ActorPageInput) => Promise<ActorPage<Run>>;
+  readonly listRuns: (input: RunPageInput) => Promise<ActorPage<Run>>;
   readonly readRun: (input: { readonly turnId: string }) => Promise<Run | null>;
   readonly readTrace: (input: { readonly turnId: string }) => Promise<ActorTrace>;
   readonly readCancellation: (input: {

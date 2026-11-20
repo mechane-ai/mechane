@@ -53,15 +53,15 @@ Run the repository's automated accessibility checks where they exist; they do no
 
 ## Local adaptations
 
-Base UI is the adopted control behavior library. Elements wrappers keep its native form behavior and typed callbacks.
-Sonner owns notification stacking, timing, dismissal, and keyboard access. Mount one Toaster per application; report
+UI SDK owns interactive control behavior. Elements wrappers preserve native form semantics and typed callbacks.
+UI SDK owns notification stacking, timing, dismissal, and keyboard access. Mount one Toaster per application; report
 each operation through one feedback owner. Elements owns the toast's shared typography, color, geometry, and motion.
 Keep toast titles and descriptions brief, bounded to two visible lines each, with short action labels. Actions must not
 compress the message into a narrow column. Wrap actions instead, preserving keyboard access and touch targets.
 Opening a page does not warrant a notification. Put background status and durable diagnostics in their owning view.
 Use local initial-read failures and validation; a failed refresh may notify once while retaining usable content.
 Field composition associates labels, descriptions, and errors without adding a second form-state protocol.
-Empty values and form resets keep the semantics of the chosen native or Base UI control.
+Empty values and form resets keep the semantics of the chosen native or SDK control.
 
 Standalone controls meet the shared `controls.coarseTarget` token on coarse pointers. Inline text links retain normal
 text flow. The Storybook accessibility addon assists review; keyboard operation, focus return, names, and announcements
@@ -70,7 +70,7 @@ are also checked in the packaged Console. The addon does not make every story an
 Gate hover styles with `conditions.hoverPointer`. Give clickable rows, disclosures, and navigation visible hover and
 press feedback without changing their geometry. Touch and keyboard activation remain usable without hover.
 Text-entry controls use `typography.touchInputSize` on coarse pointers so mobile focus does not require zooming.
-Pending actions preserve keyboard focus through Base UI's `focusableWhenDisabled` and keep their label space stable.
+Pending actions preserve keyboard focus while pending and keep their label space stable.
 Keep ordinary unavailable controls disabled, and honor caller-supplied accessible names during pending changes.
 
 The hover rule checks the named condition's presence. Browser review verifies its effect, pending focus, and touch sizing.
@@ -81,7 +81,7 @@ target. Pending decisions, errors, and current activity remain visible without h
 and coarse-pointer states separately; a tooltip supplements an accessible control name and never supplies it alone.
 
 Use the shared Collapsible or Accordion for application disclosures, including chart data and supplied source.
-Their chevrons point right when closed and down when open. Derive that shape from Base UI's trigger state, without
+Their chevrons point right when closed and down when open. Derive that shape from the primitive's trigger state, without
 mirroring open state in another hook. Native details remain appropriate inside a structured-data tree.
 Check a nested disclosure: opening its parent must not change the child's indicator.
 

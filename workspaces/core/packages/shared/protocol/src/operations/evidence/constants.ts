@@ -4,10 +4,6 @@ import { BYTES_PER_KIBIBYTE, BYTES_PER_MEBIBYTE } from '@mechane/records';
 export const EvidenceKind = { Screenshot: 'screenshot', Recording: 'recording' } as const;
 export type EvidenceKind = (typeof EvidenceKind)[keyof typeof EvidenceKind];
 
-/** Only ready captures may serve media; pending and failed captures retain their receipts. */
-export const EvidenceStatus = { Pending: 'pending', Ready: 'ready', Failed: 'failed' } as const;
-export type EvidenceStatus = (typeof EvidenceStatus)[keyof typeof EvidenceStatus];
-
 /** An upload cannot reserve more bytes than this for one immutable capture. */
 export const EVIDENCE_ARTIFACT_MAX_BYTES = 100 * BYTES_PER_MEBIBYTE;
 /** Staged chunks count toward this limit before an artifact becomes readable. */

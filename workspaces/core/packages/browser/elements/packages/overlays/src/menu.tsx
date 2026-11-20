@@ -1,166 +1,142 @@
-import { Menu as BaseMenu } from '@base-ui/react/menu';
 import * as stylex from '@stylexjs/stylex';
+import * as SDK from '@ui-sdk/react/menu';
 import { Check } from 'lucide-react';
 import type { ComponentProps, ReactNode } from 'react';
-import type { OpenStateProperties } from '../../foundations/src/control-state.ts';
 import { popupStyles } from '../../foundations/src/popup-styles.ts';
 import { mergeStyles } from '../../foundations/src/style-composition.ts';
+import { withOverlayPortal } from './overlay-root.tsx';
+import type { OpenProps } from './overlay-root.tsx';
 
-type MenuRootProps<Payload> = Omit<BaseMenu.Root.Props<Payload>, 'open' | 'defaultOpen' | 'onOpenChange'> &
-  OpenStateProperties<NonNullable<BaseMenu.Root.Props<Payload>['onOpenChange']>>;
-
-type MenuPositionerProps = ComponentProps<typeof BaseMenu.Positioner>;
-type MenuPopupProps = ComponentProps<typeof BaseMenu.Popup>;
-type MenuItemProps = ComponentProps<typeof BaseMenu.Item>;
-type MenuLinkItemProps = ComponentProps<typeof BaseMenu.LinkItem>;
-type MenuGroupLabelProps = ComponentProps<typeof BaseMenu.GroupLabel>;
-type MenuSeparatorProps = ComponentProps<typeof BaseMenu.Separator>;
-
-type MenuCheckboxItemProps = Omit<
-  ComponentProps<typeof BaseMenu.CheckboxItem>,
-  'checked' | 'defaultChecked' | 'onCheckedChange'
-> & {
-  readonly checked: boolean;
-  readonly onCheckedChange: NonNullable<BaseMenu.CheckboxItem.Props['onCheckedChange']>;
-};
-
-type MenuRadioGroupProps = Omit<
-  ComponentProps<typeof BaseMenu.RadioGroup>,
-  'value' | 'defaultValue' | 'onValueChange'
-> & { readonly value: string; readonly onValueChange: NonNullable<BaseMenu.RadioGroup.Props['onValueChange']> };
-
-type MenuRadioItemProps = ComponentProps<typeof BaseMenu.RadioItem>;
-type MenuSubmenuTriggerProps = ComponentProps<typeof BaseMenu.SubmenuTrigger>;
-
-type MenuSubmenuRootProps = Omit<BaseMenu.SubmenuRoot.Props, 'open' | 'defaultOpen' | 'onOpenChange'> &
-  OpenStateProperties<NonNullable<BaseMenu.SubmenuRoot.Props['onOpenChange']>>;
-
-function MenuRoot<Payload = unknown>(props: MenuRootProps<Payload>): ReactNode {
-  return <BaseMenu.Root<Payload> {...props} />;
+function Root(props: OpenProps<SDK.MenuProps>): ReactNode {
+  return <SDK.Menu {...props} />;
 }
 
-function MenuSubmenuRoot(props: MenuSubmenuRootProps): ReactNode {
-  return <BaseMenu.SubmenuRoot {...props} />;
+function SubmenuRoot(props: OpenProps<SDK.MenuSubProps>): ReactNode {
+  return <SDK.MenuSub {...props} />;
 }
 
-function MenuPositioner({ className, style, sideOffset = 4, ...props }: MenuPositionerProps): ReactNode {
+function Popup({ className, style, sideOffset = 4, ...props }: ComponentProps<typeof SDK.MenuContent>): ReactNode {
   return (
-    <BaseMenu.Positioner
+    <SDK.MenuContent
       {...props}
       sideOffset={sideOffset}
-      {...mergeStyles<BaseMenu.Positioner.State>({ className, style, styles: stylex.props(popupStyles.positioner) })}
-    />
-  );
-}
-
-function MenuPopup({ className, style, ...props }: MenuPopupProps): ReactNode {
-  return (
-    <BaseMenu.Popup
-      {...props}
-      {...mergeStyles<BaseMenu.Popup.State>({
+      {...mergeStyles<SDK.MenuContentState>({
         className,
         style,
-        styles: stylex.props(popupStyles.surface, popupStyles.menu),
+        styles: stylex.props(popupStyles.positioner, popupStyles.surface, popupStyles.menu),
       })}
     />
   );
 }
 
-function MenuItem({ className, style, ...props }: MenuItemProps): ReactNode {
+type ItemProps = Omit<ComponentProps<typeof SDK.MenuItem>, 'onClick'>;
+
+function Item({ className, style, ...props }: ItemProps): ReactNode {
   return (
-    <BaseMenu.Item
+    <SDK.MenuItem
       {...props}
-      {...mergeStyles<BaseMenu.Item.State>({ className, style, styles: stylex.props(popupStyles.item) })}
+      {...mergeStyles<SDK.MenuItemState>({ className, style, styles: stylex.props(popupStyles.item) })}
     />
   );
 }
 
-function MenuLinkItem({ className, style, ...props }: MenuLinkItemProps): ReactNode {
+type LinkItemProps = Omit<ItemProps, 'render'> &
+  Pick<ComponentProps<'a'>, 'target' | 'rel'> & { readonly href: string };
+
+function LinkItem({ href, target, rel, ...props }: LinkItemProps): ReactNode {
+  return <Item {...props} render={<a href={href} target={target} rel={rel} />} />;
+}
+
+function GroupLabel({ className, style, ...props }: ComponentProps<typeof SDK.MenuGroupLabel>): ReactNode {
   return (
-    <BaseMenu.LinkItem
-      {...props}
-      {...mergeStyles<BaseMenu.LinkItem.State>({ className, style, styles: stylex.props(popupStyles.item) })}
-    />
+    <SDK.MenuGroupLabel {...props} {...mergeStyles({ className, style, styles: stylex.props(popupStyles.label) })} />
   );
 }
 
-function MenuGroupLabel({ className, style, ...props }: MenuGroupLabelProps): ReactNode {
+function Separator({ className, style, ...props }: ComponentProps<typeof SDK.MenuSeparator>): ReactNode {
   return (
-    <BaseMenu.GroupLabel
-      {...props}
-      {...mergeStyles<BaseMenu.GroupLabel.State>({ className, style, styles: stylex.props(popupStyles.label) })}
-    />
+    <SDK.MenuSeparator {...props} {...mergeStyles({ className, style, styles: stylex.props(popupStyles.separator) })} />
   );
 }
 
-function MenuSeparator({ className, style, ...props }: MenuSeparatorProps): ReactNode {
+function Indicator(): ReactNode {
   return (
-    <BaseMenu.Separator
-      {...props}
-      {...mergeStyles<BaseMenu.Separator.State>({ className, style, styles: stylex.props(popupStyles.separator) })}
-    />
+    <span {...stylex.props(popupStyles.indicator)}>
+      <SDK.MenuItemIndicator>
+        <Check size={14} aria-hidden />
+      </SDK.MenuItemIndicator>
+    </span>
   );
 }
 
-function MenuCheckboxItem({ className, style, children, ...props }: MenuCheckboxItemProps): ReactNode {
+type CheckboxItemProps = Omit<
+  ComponentProps<typeof SDK.MenuCheckboxItem>,
+  'children' | 'defaultChecked' | 'checked' | 'onCheckedChange'
+> & {
+  readonly checked: boolean;
+  readonly onCheckedChange: NonNullable<SDK.MenuCheckboxItemProps['onCheckedChange']>;
+  readonly children?: ReactNode;
+};
+
+function CheckboxItem({ className, style, children, ...props }: CheckboxItemProps): ReactNode {
   return (
-    <BaseMenu.CheckboxItem
+    <SDK.MenuCheckboxItem
       {...props}
-      {...mergeStyles<BaseMenu.CheckboxItem.State>({ className, style, styles: stylex.props(popupStyles.item) })}
+      {...mergeStyles<SDK.MenuCheckboxItemState>({ className, style, styles: stylex.props(popupStyles.item) })}
     >
-      <span {...stylex.props(popupStyles.indicator)}>
-        <BaseMenu.CheckboxItemIndicator>
-          <Check size={14} aria-hidden />
-        </BaseMenu.CheckboxItemIndicator>
-      </span>
+      <Indicator />
       {children}
-    </BaseMenu.CheckboxItem>
+    </SDK.MenuCheckboxItem>
   );
 }
 
-function MenuRadioGroup(props: MenuRadioGroupProps): ReactNode {
-  return <BaseMenu.RadioGroup {...props} />;
+type RadioGroupProps<T extends string> = Omit<
+  ComponentProps<typeof SDK.MenuRadioGroup<T>>,
+  'defaultValue' | 'value' | 'onValueChange'
+> & { readonly value: T; readonly onValueChange: NonNullable<SDK.MenuRadioGroupProps<T>['onValueChange']> };
+
+function RadioGroup<T extends string>(props: RadioGroupProps<T>): ReactNode {
+  return <SDK.MenuRadioGroup<T> {...props} />;
 }
 
-function MenuRadioItem({ className, style, children, ...props }: MenuRadioItemProps): ReactNode {
+function RadioItem({
+  children,
+  className,
+  style,
+  ...props
+}: Omit<ComponentProps<typeof SDK.MenuRadioItem>, 'children'> & { readonly children?: ReactNode }): ReactNode {
   return (
-    <BaseMenu.RadioItem
+    <SDK.MenuRadioItem
       {...props}
-      {...mergeStyles<BaseMenu.RadioItem.State>({ className, style, styles: stylex.props(popupStyles.item) })}
+      {...mergeStyles<SDK.MenuRadioItemState>({ className, style, styles: stylex.props(popupStyles.item) })}
     >
-      <span {...stylex.props(popupStyles.indicator)}>
-        <BaseMenu.RadioItemIndicator>
-          <Check size={14} aria-hidden />
-        </BaseMenu.RadioItemIndicator>
-      </span>
+      <Indicator />
       {children}
-    </BaseMenu.RadioItem>
+    </SDK.MenuRadioItem>
   );
 }
 
-function MenuSubmenuTrigger({ className, style, ...props }: MenuSubmenuTriggerProps): ReactNode {
+function SubmenuTrigger({ className, style, ...props }: ComponentProps<typeof SDK.MenuSubTrigger>): ReactNode {
   return (
-    <BaseMenu.SubmenuTrigger
+    <SDK.MenuSubTrigger
       {...props}
-      {...mergeStyles<BaseMenu.SubmenuTrigger.State>({ className, style, styles: stylex.props(popupStyles.item) })}
+      {...mergeStyles<SDK.MenuTriggerState>({ className, style, styles: stylex.props(popupStyles.item) })}
     />
   );
 }
 
 export const Menu = {
-  Root: MenuRoot,
-  Trigger: BaseMenu.Trigger,
-  Portal: BaseMenu.Portal,
-  Positioner: MenuPositioner,
-  Popup: MenuPopup,
-  Item: MenuItem,
-  LinkItem: MenuLinkItem,
-  Group: BaseMenu.Group,
-  GroupLabel: MenuGroupLabel,
-  Separator: MenuSeparator,
-  CheckboxItem: MenuCheckboxItem,
-  RadioGroup: MenuRadioGroup,
-  RadioItem: MenuRadioItem,
-  SubmenuRoot: MenuSubmenuRoot,
-  SubmenuTrigger: MenuSubmenuTrigger,
+  Root: withOverlayPortal(Root),
+  Trigger: SDK.MenuTrigger,
+  Popup,
+  Item,
+  LinkItem,
+  Group: SDK.MenuGroup,
+  GroupLabel,
+  Separator,
+  CheckboxItem,
+  RadioGroup,
+  RadioItem,
+  SubmenuRoot,
+  SubmenuTrigger,
 };

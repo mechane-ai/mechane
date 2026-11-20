@@ -76,10 +76,10 @@ without reserving hidden text width.
 
 The upstream clause "Do not accept unrestricted style overrides, such as arbitrary style classes or style values,
 on public components." is replaced by this composition boundary: expose named variants and `PlacementStyle` for root
-placement, while preserving Base UI's `className`, `style`, `render`, refs, events, and state transport.
+placement, while preserving the primitive's `className`, `style`, `render`, refs, events, and state transport.
 Application code must not use that transport to change control height, padding, radius, typography, internal parts,
 focus, or disabled states. Upstream positioning and state styles remain part of composition.
-Preserve Sonner's notification API for content and behavior; Elements' Toaster owns appearance.
+Elements owns the notification API and Toaster appearance. UI SDK manages notification behavior.
 Contract 114 owns composition-prop preservation and production compiler checks.
 
 The registry loads both shipped `variant-style-comparisons` rules from `assets/ast-grep/rules` in place.
@@ -101,7 +101,7 @@ outside these syntax patterns against the same ownership boundary.
 
 The Console and ConsoleViews control-override rule resolves named Elements imports and aliases. It rejects explicit
 `className`, `style`, and `stylex.props` spreads on the listed controls and control parts. Use supported variants and
-typed `xstyle` placement. Base UI's injected prop spreads, rendered native elements, and Positioner styles remain valid.
+typed `xstyle` placement. The primitive's injected props, rendered native elements, and popup positioning styles remain valid.
 This rule does not resolve arbitrary stylesheet references or prove that a prop spread contains only composition data.
 
 Use one tab geometry for route links and local panels. `PageNavigation` and `Tabs` share the navigation family's

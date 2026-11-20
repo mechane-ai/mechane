@@ -1,5 +1,5 @@
-import { mergeProps } from '@base-ui/react/merge-props';
 import * as stylex from '@stylexjs/stylex';
+import { mergeProps } from '@ui-sdk/react/primitive';
 import { Circle, CircleCheck, CircleX, Clock } from 'lucide-react';
 import type { ComponentProps, ReactNode } from 'react';
 import { conditions } from '../../foundations/src/constants.stylex.ts';

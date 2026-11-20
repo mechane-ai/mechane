@@ -9,6 +9,7 @@ import { useRouterState } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
+import { ListPage } from '../list-page.tsx';
 import { useMechPageReads } from '../mech-page-reads.ts';
 import type { MechPageReads } from '../mech-page-reads.ts';
 import { readReaderPositions, restoreReaderPositions, useReaderPosition, useRecordNavigation } from '../navigation.tsx';
@@ -246,7 +247,10 @@ function MechDetails({
   }
 
   return (
-    <PageLayout
+    <ListPage
+      kind="turns"
+      location={location}
+      showQuery={view === 'runs'}
       title={mech.name}
       navigation={{
         label: 'Diagnostics',
@@ -268,6 +272,6 @@ function MechDetails({
           </WorkbenchScroll>
         )}
       </Workbench>
-    </PageLayout>
+    </ListPage>
   );
 }

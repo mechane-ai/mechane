@@ -1,6 +1,6 @@
 import { Status } from '@mechane-ai/elements';
 import { Skeleton } from '@mechane-ai/elements/feedback';
-import { PageLayout, ToolbarAction, Workbench, WorkbenchScroll } from '@mechane-ai/elements/layout';
+import { ToolbarAction, Workbench, WorkbenchScroll } from '@mechane-ai/elements/layout';
 import type { ConsoleData, ManagedAgent } from '@mechane/console-data';
 import {
   CreateEnvironmentForm,
@@ -16,6 +16,7 @@ import { useRouter } from '@tanstack/react-router';
 import { ArrowLeft, Plus } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
+import { ListPage } from '../list-page.tsx';
 import { useManagedCommand } from '../managed-command.ts';
 import { managedDestination } from '../managed-navigation.ts';
 import { useManagedPaging } from '../managed-paging.ts';
@@ -45,7 +46,7 @@ function AgentDirectory({ data, location, navigate }: ManagedProps): ReactNode {
   const router = useRouter();
   const [isCreating, setCreating] = useState(false);
   const command = useManagedCommand();
-  const request = useMemo(() => data.reads.agents(location.page ?? null), [data, location.page]);
+  const request = useMemo(() => data.reads.agents(location.page ?? null, location), [data, location]);
   const agents = useManagedAgents(data, request);
   const workspace = data.workspace.id;
   const paging = useManagedPaging(location, workspace);
@@ -55,7 +56,10 @@ function AgentDirectory({ data, location, navigate }: ManagedProps): ReactNode {
   }
 
   return (
-    <PageLayout
+    <ListPage
+      kind="agents"
+      location={location}
+      showQuery={!isCreating}
       title={isCreating ? 'New agent' : 'Agents'}
       actions={
         !isCreating && (
@@ -86,6 +90,7 @@ function AgentDirectory({ data, location, navigate }: ManagedProps): ReactNode {
                 <>
                   {notice}
                   <ManagedAgentList
+                    query={{ mode: 'frame' }}
                     agents={page.items}
                     href={(id) => router.buildLocation(managedDestination({ workspace, agent: id })).publicHref}
                     onOpen={open}
@@ -97,7 +102,7 @@ function AgentDirectory({ data, location, navigate }: ManagedProps): ReactNode {
           )}
         </WorkbenchScroll>
       </Workbench>
-    </PageLayout>
+    </ListPage>
   );
 }
 
@@ -126,7 +131,10 @@ function AgentScreen({ data, agentId, location, navigate }: ManagedProps & { rea
   }, [data, request, forget, agentId, read.kind]);
 
   return (
-    <PageLayout
+    <ListPage
+      kind="sessions"
+      location={location}
+      showQuery={!isCreating}
       title={isCreating ? 'New session' : (agent?.name ?? 'Agent')}
       leading={
         <ToolbarAction
@@ -177,7 +185,7 @@ function AgentScreen({ data, agentId, location, navigate }: ManagedProps & { rea
           </>
         )}
       </ResourceView>
-    </PageLayout>
+    </ListPage>
   );
 }
 
@@ -195,7 +203,12 @@ function AgentSessions({
 }): ReactNode {
   const router = useRouter();
   const workspace = data.workspace.id;
-  const request = useMemo(() => data.reads.sessions(agent.id, location.page ?? null), [data, agent.id, location.page]);
+
+  const request = useMemo(
+    () => data.reads.sessions(agent.id, location.page ?? null, location),
+    [data, agent.id, location],
+  );
+
   const sessions = useManagedSessions(data, request);
   const attention = useAgentAttention(data, agent.id);
   const paging = useManagedPaging(location, workspace);
@@ -219,6 +232,7 @@ function AgentSessions({
               <>
                 {notice}
                 <ManagedSessionList
+                  query={{ mode: 'frame' }}
                   sessions={page.items}
                   activeSessionId={attention?.sessionId}
                   queuedSessionIds={attention?.queuedSessionIds}

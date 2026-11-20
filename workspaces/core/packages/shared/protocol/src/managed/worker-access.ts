@@ -57,7 +57,7 @@ export function canForwardManagedWorkerRequest({ request }: WorkerRequest): bool
   }
 
   const url = new URL(request.url);
-  const route = matchManagedRoute({ method, pathname: url.pathname });
+  const route = matchManagedRoute({ method, pathname: url.pathname, isConsole: false });
 
   if (Option.isSome(route)) {
     return publicAccess.has(route.value.operation);

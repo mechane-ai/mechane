@@ -1,5 +1,11 @@
-@layer reset, priority1, priority2, priority3, priority4, priority5;
+@layer ui-sdk, reset, priority1, priority2, priority3, priority4, priority5;
 @import 'streamdown/styles.css' (prefers-reduced-motion: no-preference);
+
+@layer ui-sdk {
+  :where([data-slot][hidden]:not([hidden='until-found'])) {
+    display: none !important;
+  }
+}
 
 [data-streamdown-paused] [data-sd-animate],
 [data-streamdown-paused] [data-sd-animate-marker]::marker {

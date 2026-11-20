@@ -20,3 +20,12 @@ the toolbar. Keep drill-down on the data mark or row it explains.
 Use `ToggleGroup` from `/forms` for short sets of pressed choices. For a required selection, keep the active value when
 pressing the selected item returns an empty array. Put the group beside a native Elements field and select. Compare
 their outer heights with a fine pointer and a coarse pointer, and check wrapping at phone width.
+
+Use the shell's `railFooter.navigation` and `railFooter.menu` for persistent settings and account controls. Let the
+shell space and position both groups. Put route tabs and their actions in `PageLayout.navigation`. Wrap each report
+heading and its content in a sibling `PageSection` so scrolling advances the sticky heading while preserving the page
+toolbar.
+
+Give every table a query. Use local search and filter dimensions for complete finite data. Route remote search and
+filters through the collection owner before the server takes a page. A table inside its collection's query frame reuses
+the same controls. Record a specific reason for a static reference table or an unavailable capability.

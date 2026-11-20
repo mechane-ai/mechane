@@ -1,4 +1,3 @@
-import { mergeProps } from '@base-ui/react/merge-props';
 import type { StyleXStyles } from '@stylexjs/stylex';
 import type { CSSProperties } from 'react';
 
@@ -39,22 +38,13 @@ type StyleProperties<State> = {
 type CompiledStyles = { readonly className?: string | undefined; readonly style?: CSSProperties | undefined };
 type MergeStylesInput<State> = StyleProperties<State> & { readonly styles: CompiledStyles };
 
-// Resolve this component's callbacks before Base UI merges its concrete classes and styles into the rendered element.
-export function mergeStyles<State>({ className, style, styles }: MergeStylesInput<State>): StyleProperties<State> {
+export function mergeStyles<State>({ className, style, styles }: MergeStylesInput<State>) {
   return {
-    className: (state) => {
-      if (typeof className === 'function') {
-        return mergeProps<'div'>(styles, { className: className(state) }).className;
-      }
-
-      return mergeProps<'div'>(styles, { className }).className;
-    },
-    style: (state) => {
-      if (typeof style === 'function') {
-        return mergeProps<'div'>(styles, { style: style(state) }).style;
-      }
-
-      return mergeProps<'div'>(styles, { style }).style;
-    },
+    className: (state: State) =>
+      [styles.className, typeof className === 'function' ? className(state) : className].filter(Boolean).join(' '),
+    style: (state: State): CSSProperties => ({
+      ...styles.style,
+      ...(typeof style === 'function' ? style(state) : style),
+    }),
   };
 }

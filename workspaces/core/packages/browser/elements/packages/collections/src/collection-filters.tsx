@@ -79,21 +79,17 @@ export function CollectionFilters({ groups }: { groups: ReadonlyArray<Collection
       <Menu.Trigger render={<IconButton aria-label={label} title="Filters" />}>
         <ListFilter size={14} aria-hidden />
       </Menu.Trigger>
-      <Menu.Portal>
-        <Menu.Positioner align="end">
-          <Menu.Popup>
-            <MenuSearch label="Find a filter" value={query} onChange={setQuery} />
-            {visible.map((group) => (
-              <FilterSubmenu key={group.id} group={group} />
-            ))}
-            {visible.length === 0 && (
-              <div {...stylex.props(styles.label)}>
-                <Muted>No filters found</Muted>
-              </div>
-            )}
-          </Menu.Popup>
-        </Menu.Positioner>
-      </Menu.Portal>
+      <Menu.Popup align="end">
+        <MenuSearch label="Find a filter" value={query} onChange={setQuery} />
+        {visible.map((group) => (
+          <FilterSubmenu key={group.id} group={group} />
+        ))}
+        {visible.length === 0 && (
+          <div {...stylex.props(styles.label)}>
+            <Muted>No filters found</Muted>
+          </div>
+        )}
+      </Menu.Popup>
     </Menu.Root>
   );
 }
@@ -114,7 +110,7 @@ function MenuSearch({
       placeholder="Filter…"
       autoFocus
       value={value}
-      onChange={(event) => onChange(event.target.value)}
+      onValueChange={onChange}
       onKeyDown={(event) => {
         if (event.key.length === 1 || EDITING_KEYS.has(event.key)) {
           event.stopPropagation();
@@ -146,26 +142,22 @@ function FilterSubmenu({ group }: { group: CollectionFilter }) {
         </span>
         <ChevronRight size={14} aria-hidden />
       </Menu.SubmenuTrigger>
-      <Menu.Portal>
-        <Menu.Positioner align="start">
-          <Menu.Popup aria-label={group.label}>
-            <MenuSearch label={`Find ${group.label.toLowerCase()}`} value={query} onChange={setQuery} />
-            <Menu.RadioGroup value={group.value} onValueChange={group.onChange}>
-              {visible.map((option) => (
-                <Menu.RadioItem key={option.value} value={option.value} closeOnClick>
-                  <OptionIcon option={option} />
-                  <span {...stylex.props(styles.optionLabel)}>{option.label}</span>
-                </Menu.RadioItem>
-              ))}
-            </Menu.RadioGroup>
-            {visible.length === 0 && (
-              <div {...stylex.props(styles.label)}>
-                <Muted>No options found</Muted>
-              </div>
-            )}
-          </Menu.Popup>
-        </Menu.Positioner>
-      </Menu.Portal>
+      <Menu.Popup align="start" aria-label={group.label}>
+        <MenuSearch label={`Find ${group.label.toLowerCase()}`} value={query} onChange={setQuery} />
+        <Menu.RadioGroup value={group.value} onValueChange={group.onChange}>
+          {visible.map((option) => (
+            <Menu.RadioItem key={option.value} value={option.value} closeOnSelect>
+              <OptionIcon option={option} />
+              <span {...stylex.props(styles.optionLabel)}>{option.label}</span>
+            </Menu.RadioItem>
+          ))}
+        </Menu.RadioGroup>
+        {visible.length === 0 && (
+          <div {...stylex.props(styles.label)}>
+            <Muted>No options found</Muted>
+          </div>
+        )}
+      </Menu.Popup>
     </Menu.SubmenuRoot>
   );
 }

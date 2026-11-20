@@ -29,7 +29,7 @@ export function Welcome({ returnTo = '/console' }: { readonly returnTo?: string 
           <Heading>Your agents, at work.</Heading>
           <Muted>Pick up a conversation. Follow the work. See how it happened.</Muted>
         </Stack>
-        <Button variant="solid" nativeButton={false} render={<a href={signInPath({ returnTo })} />}>
+        <Button variant="solid" render={<a href={signInPath({ returnTo })} />}>
           Continue with GitHub →
         </Button>
         <Muted>Sign in to your Mechane workspace.</Muted>

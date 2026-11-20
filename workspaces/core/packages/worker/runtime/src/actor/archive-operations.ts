@@ -2,7 +2,7 @@ import { BACKGROUND_CONTEXT } from '@earendil-works/chord/context';
 import { ROOT_CONVERSATION_ID } from '@earendil-works/pi-durable';
 import type { Conversation, Session, Storage } from '@earendil-works/pi-durable';
 import type { ControlStore } from '@mechane/control-store';
-import { MechHistoryImportBatch, RequestConflict } from '@mechane/protocol';
+import { catalog, MechHistoryImportBatch, RequestConflict } from '@mechane/protocol';
 import { RecordId } from '@mechane/records';
 import { SandboxCompletion } from '@mechane/sandbox-wire';
 import { Schema } from 'effect';
@@ -45,6 +45,12 @@ const EventRange = Schema.Struct({
   maxRows: Schema.optionalKey(Schema.Int),
   runId: Schema.optionalKey(Schema.String),
   isNewestFirst: Schema.optionalKey(Schema.Boolean),
+});
+
+const RunPage = Schema.Struct({
+  ...Page.fields,
+  search: catalog.listTurns.query.fields.search,
+  filter: catalog.listTurns.query.fields.filter,
 });
 
 const Turn = Schema.Struct({ turnId: RecordId });
@@ -92,7 +98,7 @@ export async function archiveOperation(archive: Archive, method: string, input: 
     case 'listArchivedCompletions':
       return await listArchivedCompletions(storage, Schema.decodeUnknownSync(Page)(input));
     case 'listRuns':
-      return await listRuns(view, Schema.decodeUnknownSync(Page)(input));
+      return await listRuns(view, Schema.decodeUnknownSync(RunPage)(input));
     case 'readRun':
       return await readRun(view, Schema.decodeUnknownSync(Turn)(input));
     case 'readTrace':

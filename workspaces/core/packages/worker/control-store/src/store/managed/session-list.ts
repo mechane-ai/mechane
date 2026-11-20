@@ -7,6 +7,7 @@ import { renderSession, SessionRow } from './session-records.ts';
 import type { ManagedPageQuery, ManagedScope } from './types.ts';
 
 export type SessionQuery = ManagedPageQuery & {
+  readonly search?: string;
   readonly agentId?: string;
   readonly agentVersion?: number;
   readonly deploymentId?: string;
@@ -109,6 +110,7 @@ export async function listSessions(context: StoreContext, { scope, query = {} }:
     `SELECT * FROM mechane.managed_sessions
      WHERE workspace_id=$1 AND (creator_id=$2 OR $3::boolean)
        AND (archived_at IS NULL OR $4::boolean)
+       AND ($18::text IS NULL OR strpos(lower(concat_ws(' ',id,configuration->>'title')),lower($18))>0)
        AND ($5::text IS NULL OR agent_id=$5 AND ($6::int IS NULL OR agent_version=$6))
        AND ($7::text[] IS NULL OR status=ANY($7)) AND $8::text IS NULL
        AND ($9::text IS NULL OR configuration->'resources' @> jsonb_build_array(
@@ -137,6 +139,7 @@ export async function listSessions(context: StoreContext, { scope, query = {} }:
       key?.id ?? null,
       isAscending,
       limit + 1,
+      query.search?.trim() ?? null,
     ],
   );
 

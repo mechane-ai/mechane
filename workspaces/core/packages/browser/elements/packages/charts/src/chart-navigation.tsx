@@ -1,8 +1,7 @@
 import { useId, useState } from 'react';
-import type { HTMLAttributes, KeyboardEvent } from 'react';
+import type { HTMLAttributes } from 'react';
 import type { ChartSelection } from './chart-frame.tsx';
-
-const ACTIVATION_KEYS: ReadonlySet<string> = new Set(['Enter', ' ']);
+import type { ChartControls } from './chart-surface.tsx';
 
 type ChartNavigationItem = { readonly id: string; readonly label: string };
 
@@ -29,49 +28,20 @@ export function useChartNavigation({ title, items, selection }: ChartNavigationI
     setInspecting(true);
   }
 
-  function onKeyDown(event: KeyboardEvent<HTMLElement>): void {
-    const hasModifier = event.altKey || event.ctrlKey || event.metaKey;
-
-    if (event.defaultPrevented || hasModifier || items.length === 0) {
-      return;
-    }
-
-    const lastIndex = items.length - 1;
-
-    const steps: Readonly<Record<string, number>> = {
-      ArrowLeft: -1,
-      ArrowRight: 1,
-      ArrowUp: -1,
-      ArrowDown: 1,
-      Home: -index,
-      End: lastIndex - index,
-    };
-
-    const step = steps[event.key];
-
-    if (step !== undefined) {
-      event.preventDefault();
-
-      const item = items[Math.max(0, Math.min(lastIndex, index + step))];
-
-      if (item !== undefined) {
-        inspect(item.id);
-      }
-    } else if (ACTIVATION_KEYS.has(event.key) && selection !== undefined && active !== undefined) {
-      event.preventDefault();
-      selection.onSelect(active.id);
-    } else if (event.key === 'Escape') {
-      event.preventDefault();
-      setInspecting(false);
-    }
-  }
-
-  const props: HTMLAttributes<HTMLElement> = {
+  const props = {
+    'controls': {
+      items,
+      cursor: active?.id,
+      inspected: isInspecting ? active?.id : undefined,
+      allowVerticalNavigation: true,
+      onInspect: inspect,
+      onDismiss: () => setInspecting(false),
+      onSelect: selection?.onSelect,
+    },
     'role': 'group',
     'tabIndex': items.length > 0 ? 0 : undefined,
     'aria-label': `${title}. Use arrow keys to inspect.${selection === undefined ? '' : ' Press Enter to select.'}`,
     'aria-describedby': id,
-    onKeyDown,
     'onFocus': () => setInspecting(true),
     'onBlur': (event) => {
       if (!event.currentTarget.contains(event.relatedTarget)) {
@@ -83,7 +53,7 @@ export function useChartNavigation({ title, items, selection }: ChartNavigationI
         setInspecting(false);
       }
     },
-  };
+  } satisfies HTMLAttributes<HTMLElement> & { controls: ChartControls };
 
   return { id, props, activeId: active?.id, label: isInspecting ? active?.label : undefined, inspect };
 }

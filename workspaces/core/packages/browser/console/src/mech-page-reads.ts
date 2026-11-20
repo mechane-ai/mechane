@@ -45,7 +45,7 @@ export function useMechPageReads(data: ConsoleData, mechId: string, location: Co
     key: 'turns',
     scope: mechId,
     isEnabled: !hasDetail && view === 'runs',
-    create: (cursors) => data.reads.turns(mechId, cursors.at(-1) ?? null),
+    create: (cursors) => data.reads.turns(mechId, cursors.at(-1) ?? null, location),
   });
 
   const activity = usePageRead({

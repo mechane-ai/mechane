@@ -181,6 +181,7 @@ export function PromptInput({
         <Field.Label {...stylex.props(accessibility.hidden)}>{label}</Field.Label>
         <div {...stylex.props(styles.frame, isInline && styles.inlineFrame, error !== undefined && styles.invalid)}>
           <Textarea
+            isSensitive
             appearance="plain"
             rows={isCompact ? 1 : 2}
             isCompact={isCompact}
@@ -188,7 +189,7 @@ export function PromptInput({
             xstyle={isInline ? styles.inlineInput : undefined}
             name={name}
             value={value}
-            onChange={(event) => onValueChange(event.currentTarget.value)}
+            onValueChange={onValueChange}
             onKeyDown={handleKeyDown}
             placeholder={placeholder ?? label}
             maxLength={maxLength}
@@ -206,6 +207,7 @@ export function PromptInput({
                     <IconButton
                       xstyle={styles.action}
                       type="submit"
+                      data-agent-confirm={submitLabel}
                       variant="solid"
                       aria-label={isPending ? pendingLabel : submitLabel}
                       disabled={disabled || isSubmitDisabled}
@@ -217,6 +219,7 @@ export function PromptInput({
                     <IconButton
                       xstyle={styles.action}
                       type="button"
+                      data-agent-confirm={stopLabel}
                       aria-label={isStopPending ? 'Stopping…' : stopLabel}
                       onClick={(event) => {
                         // The action can replace this button with Send before the click default runs.
@@ -231,11 +234,7 @@ export function PromptInput({
                   )
                 }
               />
-              <Tooltip.Portal>
-                <Tooltip.Positioner>
-                  <Tooltip.Popup>{tooltipLabel}</Tooltip.Popup>
-                </Tooltip.Positioner>
-              </Tooltip.Portal>
+              <Tooltip.Popup>{tooltipLabel}</Tooltip.Popup>
             </Tooltip.Root>
           </div>
         </div>

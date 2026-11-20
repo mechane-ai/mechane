@@ -36,8 +36,7 @@ selection, and save operations. The rules about drafts also apply to the applica
 
 The upstream clause "Do not filter, sort, paginate, fetch, or mutate supplied records inside a component." applies
 to presentation components. Application owners may process their complete input domain before passing records to a view.
-Intrinsic option matching inside the adopted selection primitive is allowed; it must not filter or reorder a bounded
-server collection as though that page were the full dataset.
+Selection controls may match their options. A DataTable explicitly supplied the complete authorized collection in local query mode may match its rows. Applications own remote filtering before pagination and pass the resulting page to the controlled table.
 
 Contract 113 owns the API page boundary, session/workspace invalidation, and revision-conflict semantics.
 Check draft behavior through create/edit screens, including refreshes, rejected saves, and a record switch during a save.

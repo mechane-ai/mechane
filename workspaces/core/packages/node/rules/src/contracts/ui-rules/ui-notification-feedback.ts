@@ -9,12 +9,9 @@ export const uiNotificationFeedback = {
       ...ADOPTED,
       name: 'ui-toast-vendor-owner',
       comment:
-        'Import Elements notifications, such as `import { toast } from "@mechane-ai/elements/feedback"`; Sonner belongs only to the adapter and renderer (133)',
-      from: {
-        path: '^packages/browser/',
-        pathNot: '^packages/browser/elements/packages/feedback/src/(?:notifications[.]ts|toast[.]tsx)$',
-      },
-      to: { path: 'node_modules/sonner' },
+        'Import Elements notifications, such as `import { toast } from "@mechane-ai/elements/feedback"`; UI SDK toast primitives belong to the notification family (133)',
+      from: { path: '^packages/browser/', pathNot: '^packages/browser/elements/packages/feedback/src/' },
+      to: { path: 'node_modules/@ui-sdk/(?:react|core)/(?:dist/)?toast(?:/|[.]|$)' },
       standard: '133',
     },
   ],

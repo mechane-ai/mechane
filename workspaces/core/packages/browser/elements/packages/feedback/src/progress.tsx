@@ -1,6 +1,6 @@
-import { Meter as BaseMeter } from '@base-ui/react/meter';
-import { Progress as BaseProgress } from '@base-ui/react/progress';
 import * as stylex from '@stylexjs/stylex';
+import { MeterIndicator, MeterLabel, MeterTrack, Meter as SdkMeter } from '@ui-sdk/react/meter';
+import { ProgressIndicator, ProgressLabel, ProgressTrack, Progress as SdkProgress } from '@ui-sdk/react/progress';
 import type { ReactNode } from 'react';
 import { accessibility } from '../../foundations/src/accessibility.ts';
 import { chartToneColors } from '../../foundations/src/chart-tones.ts';
@@ -80,21 +80,15 @@ const meterLayouts = {
 
 export function Progress({ label, value, max, valueLabel }: ProgressProps): ReactNode {
   return (
-    <BaseProgress.Root
-      value={value}
-      max={max}
-      locale="en-US"
-      getAriaValueText={() => valueLabel}
-      {...stylex.props(styles.root)}
-    >
+    <SdkProgress value={value} max={max} locale="en-US" getValueLabel={() => valueLabel} {...stylex.props(styles.root)}>
       <div {...stylex.props(styles.heading)}>
-        <BaseProgress.Label {...stylex.props(styles.label)}>{label}</BaseProgress.Label>
+        <ProgressLabel {...stylex.props(styles.label)}>{label}</ProgressLabel>
         <span {...stylex.props(styles.value)}>{valueLabel}</span>
       </div>
-      <BaseProgress.Track {...stylex.props(styles.track, value === null && styles.unknown)}>
-        {value !== null && <BaseProgress.Indicator {...stylex.props(styles.indicator)} />}
-      </BaseProgress.Track>
-    </BaseProgress.Root>
+      <ProgressTrack {...stylex.props(styles.track, value === null && styles.unknown)}>
+        {value !== null && <ProgressIndicator {...stylex.props(styles.indicator)} />}
+      </ProgressTrack>
+    </SdkProgress>
   );
 }
 
@@ -120,20 +114,20 @@ export function Meter({ label, value, max, valueLabel, layout = 'stacked', tone 
   }
 
   return (
-    <BaseMeter.Root
+    <SdkMeter
       value={value}
       max={max}
       locale="en-US"
-      getAriaValueText={() => valueLabel}
+      getValueLabel={() => valueLabel}
       {...stylex.props(styles.root, appearance.root)}
     >
       <div {...stylex.props(styles.heading, appearance.heading)}>
-        <BaseMeter.Label {...stylex.props(styles.label, appearance.label)}>{label}</BaseMeter.Label>
+        <MeterLabel {...stylex.props(styles.label, appearance.label)}>{label}</MeterLabel>
         <span {...stylex.props(styles.value, appearance.value)}>{valueLabel}</span>
       </div>
-      <BaseMeter.Track {...stylex.props(styles.track, appearance.track)}>
-        <BaseMeter.Indicator {...stylex.props(styles.indicator, indicatorTone)} />
-      </BaseMeter.Track>
-    </BaseMeter.Root>
+      <MeterTrack {...stylex.props(styles.track, appearance.track)}>
+        <MeterIndicator {...stylex.props(styles.indicator, indicatorTone)} />
+      </MeterTrack>
+    </SdkMeter>
   );
 }

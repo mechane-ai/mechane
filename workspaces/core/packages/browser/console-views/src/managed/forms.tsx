@@ -80,7 +80,7 @@ export function StartSessionForm({
         </Field.Root>
         <Field.Root name="firstMessage" disabled={isPending}>
           <Field.Label>First message (optional)</Field.Label>
-          <Textarea value={firstMessage} onChange={(event) => setFirstMessage(event.currentTarget.value)} />
+          <Textarea isSensitive value={firstMessage} onValueChange={setFirstMessage} />
         </Field.Root>
         {error !== undefined && <Notice hasError>{error}</Notice>}
         <Row>
@@ -89,6 +89,7 @@ export function StartSessionForm({
             variant="solid"
             isPending={isPending}
             disabled={environment === undefined}
+            data-agent-confirm="Start this session?"
             pendingLabel="Starting…"
           >
             Start session
@@ -172,6 +173,7 @@ export function SessionComposer({
           <Button
             variant="ghost"
             type="button"
+            data-agent-confirm="Interrupt this session?"
             onClick={onInterrupt}
             isPending={isInterruptPending ?? false}
             pendingLabel="Interrupting…"

@@ -77,7 +77,12 @@ function agentPage({ rows, maxRows, cursorFor }: AgentPageInput): ManagedPage {
 
 type ListInput = { readonly scope: ManagedScope; readonly query?: ManagedPageQuery };
 
-export async function listAgents(context: StoreContext, { scope, query = {} }: ListInput): Promise<ManagedPage> {
+type AgentListInput = {
+  readonly scope: ManagedScope;
+  readonly query?: ManagedPageQuery & { readonly search?: string; readonly filter?: 'active' | 'archived' };
+};
+
+export async function listAgents(context: StoreContext, { scope, query = {} }: AgentListInput): Promise<ManagedPage> {
   const limit = pageSize(query);
   const cursor = decodePage(query.page);
 
@@ -85,7 +90,10 @@ export async function listAgents(context: StoreContext, { scope, query = {} }: L
     `
     SELECT a.id,a.runtime_id,a.created_at,a.archived_at,v.version,v.definition,v.updated_at
     FROM mechane.managed_agents a JOIN mechane.managed_agent_versions v ON v.agent_id=a.id AND v.version=a.version
-    WHERE a.workspace_id=$1 AND (a.creator_id=$2 OR $3) AND (a.archived_at IS NULL OR $4)
+    WHERE a.workspace_id=$1 AND (a.creator_id=$2 OR $3)
+      AND CASE WHEN $10::text IS NULL THEN (a.archived_at IS NULL OR $4)
+        ELSE (a.archived_at IS NOT NULL)=($10='archived') END
+      AND ($11::text IS NULL OR strpos(lower(concat_ws(' ',a.id,v.definition->>'name',v.definition#>>'{model,id}',v.version)),lower($11))>0)
       AND ($5::timestamptz IS NULL OR a.created_at >= $5) AND ($6::timestamptz IS NULL OR a.created_at <= $6)
       AND ($7::timestamptz IS NULL OR (a.created_at,a.id) < ($7,$8))
     ORDER BY a.created_at DESC,a.id DESC LIMIT $9`,
@@ -99,6 +107,8 @@ export async function listAgents(context: StoreContext, { scope, query = {} }: L
       cursor?.createdAt ?? null,
       cursor?.id ?? null,
       limit + 1,
+      query.filter ?? null,
+      query.search?.trim() ?? null,
     ],
   );
 

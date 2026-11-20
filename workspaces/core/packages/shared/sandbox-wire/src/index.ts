@@ -218,6 +218,7 @@ export {
   InstalledProcessCommand,
   InstalledProcessSubmission,
 } from './installed-computer.ts';
+export { EvidenceStatus, EvidenceQuery } from './evidence-query.ts';
 export { installedComputerQuery } from './installed-computer-query.ts';
 export { installedCommandEnvironmentPath, matchInstalledCommandEnvironment } from './installed-command-environment.ts';
 

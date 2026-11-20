@@ -33,25 +33,21 @@ export function NavigationRailMenu({ label, icon, children }: NavigationRailMenu
 
   return (
     <Menu.Root open={isOpen} onOpenChange={setIsOpen} modal={false}>
-      <Tooltip.Provider>
-        <Tooltip.Root disabled={isOpen || presentation === 'drawer'}>
-          <Tooltip.Trigger render={<Menu.Trigger render={<IconButton variant="ghost" aria-label={label} />} />}>
-            {icon}
-          </Tooltip.Trigger>
-          <Tooltip.Portal>
-            <Tooltip.Positioner side="right">
-              <Tooltip.Popup>{label}</Tooltip.Popup>
-            </Tooltip.Positioner>
-          </Tooltip.Portal>
-        </Tooltip.Root>
-      </Tooltip.Provider>
-      <Menu.Portal>
-        <Menu.Positioner {...placements[presentation]} sideOffset={4} collisionPadding={8}>
-          <Menu.Popup aria-label={label} {...stylex.props(styles.popup)}>
-            {children}
-          </Menu.Popup>
-        </Menu.Positioner>
-      </Menu.Portal>
+      <Tooltip.Root disabled={isOpen || presentation === 'drawer'}>
+        <Tooltip.Trigger render={<Menu.Trigger render={<IconButton variant="ghost" aria-label={label} />} />}>
+          {icon}
+        </Tooltip.Trigger>
+        <Tooltip.Popup side="right">{label}</Tooltip.Popup>
+      </Tooltip.Root>
+      <Menu.Popup
+        {...placements[presentation]}
+        sideOffset={4}
+        collisionPadding={8}
+        aria-label={label}
+        {...stylex.props(styles.popup)}
+      >
+        {children}
+      </Menu.Popup>
     </Menu.Root>
   );
 }

@@ -11,7 +11,6 @@ const meta = {
   component: Dialog.Root,
   subcomponents: {
     Trigger: Dialog.Trigger,
-    Portal: Dialog.Portal,
     Backdrop: Dialog.Backdrop,
     Popup: Dialog.Popup,
     Title: Dialog.Title,
@@ -22,7 +21,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Supported. Dialog.Root owns the open state. Trigger opens a Popup through Portal and Backdrop; Title and Description give the dialog its accessible name and context. Close composes the dismissal control. Use a dialog for a focused decision, and an inline Notice for a recoverable page error. The application supplies the decision, action, permissions, and pending state. Keep the trigger mounted so dismissal can restore focus. Use render to compose triggers instead of nesting buttons. Frequent compositions such as CommandPalette set motion="none" on Popup and Backdrop; ordinary dialogs use the standard motion and respect reduced motion.',
+          'Supported. Dialog.Root owns the open state. Trigger opens the Popup above its Backdrop. Title and Description give the dialog its accessible name and context. Close composes the dismissal control. Use a dialog for a focused decision, and an inline Notice for a recoverable page error. The application supplies the decision, action, permissions, and pending state. Keep the trigger mounted so dismissal can restore focus. Use render to compose triggers instead of nesting buttons. Frequent compositions such as CommandPalette set motion="none" on Popup and Backdrop; ordinary dialogs use the standard motion and respect reduced motion.',
       },
     },
   },
@@ -55,39 +54,31 @@ function ArchiveDialog({ isComposed = false, shouldRenderFromState = false }: Ar
 
   return (
     <Stack isCompact>
-      <Tooltip.Provider>
-        <Dialog.Root>
-          {isComposed ? (
-            <Tooltip.Root>
-              <Tooltip.Trigger render={trigger} />
-              <Tooltip.Portal>
-                <Tooltip.Positioner sideOffset={8}>
-                  <Tooltip.Popup>Review before archiving</Tooltip.Popup>
-                </Tooltip.Positioner>
-              </Tooltip.Portal>
-            </Tooltip.Root>
-          ) : (
-            trigger
-          )}
-          <Dialog.Portal>
-            <Dialog.Backdrop />
-            <Dialog.Popup>
-              <Stack>
-                <Stack isCompact>
-                  <Dialog.Title>Archive release notes?</Dialog.Title>
-                  <Dialog.Description>
-                    The saved notes remain available, but this item will no longer appear in the active collection.
-                  </Dialog.Description>
-                </Stack>
-                <Row>
-                  <Dialog.Close render={<Button tone="danger" variant="solid" />}>Archive item</Dialog.Close>
-                  <Dialog.Close render={<Button />}>Keep item</Dialog.Close>
-                </Row>
-              </Stack>
-            </Dialog.Popup>
-          </Dialog.Portal>
-        </Dialog.Root>
-      </Tooltip.Provider>
+      <Dialog.Root>
+        {isComposed ? (
+          <Tooltip.Root>
+            <Tooltip.Trigger render={trigger} />
+            <Tooltip.Popup sideOffset={8}>Review before archiving</Tooltip.Popup>
+          </Tooltip.Root>
+        ) : (
+          trigger
+        )}
+        <Dialog.Backdrop />
+        <Dialog.Popup>
+          <Stack>
+            <Stack isCompact>
+              <Dialog.Title>Archive release notes?</Dialog.Title>
+              <Dialog.Description>
+                The saved notes remain available, but this item will no longer appear in the active collection.
+              </Dialog.Description>
+            </Stack>
+            <Row>
+              <Dialog.Close render={<Button tone="danger" variant="solid" />}>Archive item</Dialog.Close>
+              <Dialog.Close render={<Button />}>Keep item</Dialog.Close>
+            </Row>
+          </Stack>
+        </Dialog.Popup>
+      </Dialog.Root>
       <Muted>Trigger activations: {openCount}. This example makes no external changes.</Muted>
     </Stack>
   );
@@ -112,7 +103,7 @@ export const RenderFromState: Story = {
     docs: {
       description: {
         story:
-          'Use a render function for state-dependent composition. Spread its supplied props to preserve the merged refs, handlers, classes, and styles, then choose a named Button variant from Dialog state. This trigger becomes solid while its dialog is open. ClassName and style callbacks on a nested React render element are not supported by the pinned Base UI release.',
+          'Use a render function for state-dependent composition. Spread its supplied props to preserve the merged refs, handlers, classes, and styles, then choose a named Button variant from Dialog state. This trigger becomes solid while its dialog is open.',
       },
     },
   },

@@ -1,5 +1,5 @@
-import { Avatar as BaseAvatar } from '@base-ui/react/avatar';
 import * as stylex from '@stylexjs/stylex';
+import { AvatarFallback, AvatarImage, Avatar as SdkAvatar } from '@ui-sdk/react/avatar';
 import type { ReactNode } from 'react';
 import { colors, radii, typography } from '../../foundations/src/tokens.stylex.ts';
 
@@ -50,9 +50,9 @@ const shapes = { rounded: styles.rounded, circle: styles.circle } satisfies Reco
 
 export function Avatar({ label, fallback, src, size = 'md', shape = 'rounded' }: AvatarProps): ReactNode {
   return (
-    <BaseAvatar.Root role="img" aria-label={label} {...stylex.props(styles.avatar, sizes[size], shapes[shape])}>
-      {src !== undefined && <BaseAvatar.Image src={src} alt="" {...stylex.props(styles.image)} />}
-      <BaseAvatar.Fallback aria-hidden>{fallback}</BaseAvatar.Fallback>
-    </BaseAvatar.Root>
+    <SdkAvatar role="img" aria-label={label} {...stylex.props(styles.avatar, sizes[size], shapes[shape])}>
+      {src !== undefined && <AvatarImage src={src} alt="" {...stylex.props(styles.image)} />}
+      <AvatarFallback aria-hidden>{fallback}</AvatarFallback>
+    </SdkAvatar>
   );
 }

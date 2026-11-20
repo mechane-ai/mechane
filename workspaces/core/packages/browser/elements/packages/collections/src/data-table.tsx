@@ -1,6 +1,8 @@
 import * as stylex from '@stylexjs/stylex';
 import { createColumnHelper, tableFeatures, useTable } from '@tanstack/react-table';
 import { defaultRangeExtractor, useVirtualizer } from '@tanstack/react-virtual';
+import { Button as ButtonPrimitive } from '@ui-sdk/react/button';
+import { useShortcut } from '@ui-sdk/react/shortcuts';
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 import { Children, Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { ComponentProps, KeyboardEvent, MouseEvent, ReactNode } from 'react';
@@ -11,6 +13,18 @@ import { conditions, layers, tableGeometry } from '../../foundations/src/constan
 import { colors, controls, pageGeometry, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import { useScrollTabIndex } from '../../foundations/src/use-scroll-tab-index.ts';
 import { Tooltip } from '../../overlays/src/index.ts';
+import { CollectionToolbar } from './collection-controls.tsx';
+import type { CollectionFilter } from './collection-filters.tsx';
+import type { CollectionSearch } from './query-controls.tsx';
+import {
+  checkTableQueryException,
+  controlledTableControls,
+  TableQueryFrame,
+  useFrameTableQuery,
+  useLocalTableQuery,
+} from './table-query.tsx';
+import type { LocalTableQuery, TableQuery } from './table-query.tsx';
+import { useCollectionControls } from './use-collection-controls.tsx';
 import { useEndReached } from './use-end-reached.ts';
 
 const features = tableFeatures({});
@@ -375,7 +389,7 @@ export function DataTablePlaceholder({
 
   return (
     <div aria-hidden inert {...stylex.props(frameStyles[sizing], styles.placeholder)}>
-      <DataTable
+      <TableRows
         {...props}
         hideCaption={hideCaption}
         rows={positions}
@@ -487,12 +501,13 @@ type OptionalSelection<Row> =
 
 type ReportedRowHighlight = { readonly id: string | undefined };
 
-export type DataTableProps<Row> = SortProperties<Row> &
+type TableRowsProps<Row> = SortProperties<Row> &
   OptionalSelection<Row> & {
     readonly rows: ReadonlyArray<Row>;
     readonly getRowId: (row: Row) => string;
     readonly caption: string;
     readonly empty: ReactNode;
+    readonly filteredEmpty?: ReactNode;
     readonly rowAction?: DataTableRowAction<Row>;
     readonly activeRowId?: string | undefined;
     readonly focusRowId?: string | undefined;
@@ -506,7 +521,130 @@ export type DataTableProps<Row> = SortProperties<Row> &
     readonly footer?: ReactNode;
   };
 
-export function DataTable<Row extends object>({
+export type DataTableProps<Row> = TableRowsProps<Row> & { readonly query: TableQuery<Row> };
+
+export function DataTable<Row extends object>({ query, ...table }: DataTableProps<Row>): ReactNode {
+  switch (query.mode) {
+    case 'local':
+      if (table.onEndReached !== undefined) {
+        throw new Error('Local table queries require all rows. Use a controlled or frame query for a paged source.');
+      }
+
+      return <LocalTable query={query} table={table} />;
+    case 'controlled':
+      return (
+        <QueriedTable
+          table={{ ...table, filteredEmpty: table.filteredEmpty ?? table.empty }}
+          {...controlledTableControls(query)}
+        />
+      );
+    case 'frame':
+      return <FrameTable table={table} />;
+    case 'static':
+      checkTableQueryException(query);
+
+      return (
+        <TableQueryFrame>
+          <TableRows {...table} />
+        </TableQueryFrame>
+      );
+  }
+}
+
+function FrameTable<Row extends object>({ table }: { table: TableRowsProps<Row> }): ReactNode {
+  const isFiltered = useFrameTableQuery();
+
+  return (
+    <TableQueryFrame>
+      <TableRows {...table} empty={isFiltered ? (table.filteredEmpty ?? 'No matching records.') : table.empty} />
+    </TableQueryFrame>
+  );
+}
+
+function LocalTable<Row extends object>({
+  query,
+  table,
+}: {
+  query: LocalTableQuery<Row>;
+  table: TableRowsProps<Row>;
+}): ReactNode {
+  const { rows, search, filters, isFiltered } = useLocalTableQuery(table.rows, query);
+
+  return <QueriedTable table={{ ...table, rows }} search={search} filters={filters} isFiltered={isFiltered} />;
+}
+
+function QueriedTable<Row extends object>({
+  table,
+  search,
+  filters,
+  isFiltered,
+}: {
+  table: TableRowsProps<Row>;
+  search: CollectionSearch | undefined;
+  filters: ReadonlyArray<CollectionFilter>;
+  isFiltered: boolean;
+}): ReactNode {
+  const queryControls = useCollectionControls({
+    ...(search !== undefined && { search }),
+    filters,
+    isReady: true,
+    label: table.caption,
+  });
+
+  const region = useRef<HTMLDivElement>(null);
+
+  const shortcutOptions = {
+    description: `Find in ${table.caption}`,
+    layer: region,
+    when: () => {
+      const root = region.current;
+
+      if (root === null) {
+        return false;
+      }
+
+      const active = root.ownerDocument.activeElement;
+
+      if (
+        active === null ||
+        active.closest(
+          '[data-native-find], textarea, select, input:not([data-view-find]), [contenteditable="true"], [role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"]',
+        ) !== null
+      ) {
+        return false;
+      }
+
+      return (
+        active.closest('[data-table-query]') === root ||
+        (active === root.ownerDocument.body &&
+          root.ownerDocument.querySelectorAll('[data-view-find-trigger]').length === 1)
+      );
+    },
+  };
+
+  useShortcut(search === undefined ? null : '/', queryControls.openSearch, shortcutOptions);
+  useShortcut(search === undefined ? null : 'mod+f', queryControls.openSearch, shortcutOptions);
+
+  return (
+    <TableQueryFrame>
+      <div
+        ref={region}
+        data-table-query
+        onKeyDown={queryControls.onKeyDown}
+        {...stylex.props(frameStyles[typeof table.window?.height === 'string' ? table.window.height : 'content'])}
+      >
+        {(search !== undefined || filters.length > 0) && (
+          <CollectionToolbar label={`${table.caption} controls`} actions={queryControls.actions}>
+            {queryControls.chips}
+          </CollectionToolbar>
+        )}
+        <TableRows {...table} empty={isFiltered ? (table.filteredEmpty ?? 'No matching records.') : table.empty} />
+      </div>
+    </TableQueryFrame>
+  );
+}
+
+function TableRows<Row extends object>({
   rows,
   columns: suppliedColumns,
   getRowId,
@@ -528,7 +666,7 @@ export function DataTable<Row extends object>({
   endContent,
   onEndReached,
   footer,
-}: DataTableProps<Row>): ReactNode {
+}: TableRowsProps<Row>): ReactNode {
   const columns = useMemo(() => prepareColumns(suppliedColumns), [suppliedColumns]);
   const isCompact = useSyncExternalStore(subscribeToCompactTable, isCompactTable, () => false);
 
@@ -612,9 +750,14 @@ export function DataTable<Row extends object>({
         return indices;
       }
 
-      return [...new Set([...indices, focusedIndex - 1, focusedIndex, focusedIndex + 1])]
-        .filter((index) => index >= 0 && index < rows.length)
-        .toSorted((first, second) => first - second);
+      const pinned = [focusedIndex - 1, focusedIndex, focusedIndex + 1].filter(
+        (index) => index >= 0 && index < rows.length,
+      );
+
+      const first = indices[0] ?? 0;
+      const last = indices.at(-1) ?? -1;
+
+      return [...pinned.filter((index) => index < first), ...indices, ...pinned.filter((index) => index > last)];
     },
   });
 
@@ -822,7 +965,7 @@ export function DataTable<Row extends object>({
                     )}
                   >
                     {column.canSort === true && onSortChange !== undefined ? (
-                      <button
+                      <ButtonPrimitive
                         type="button"
                         {...stylex.props(styles.sort)}
                         onClick={() => {
@@ -843,7 +986,7 @@ export function DataTable<Row extends object>({
                         ) : (
                           <ArrowUpDown size={14} aria-hidden="true" {...stylex.props(styles.sortIcon)} />
                         )}
-                      </button>
+                      </ButtonPrimitive>
                     ) : (
                       <span {...stylex.props(styles.headerLabel)}>{column.label}</span>
                     )}
@@ -1045,9 +1188,9 @@ function RowTrigger<Row>({ row, action, isActive, children, onKeyDown }: RowTrig
 
   const trigger =
     action.href === undefined ? (
-      <button
+      <ButtonPrimitive
         type="button"
-        disabled={action.disabled}
+        disabled={action.disabled === true}
         aria-label={label}
         aria-pressed={isActive}
         data-row-action
@@ -1060,7 +1203,7 @@ function RowTrigger<Row>({ row, action, isActive, children, onKeyDown }: RowTrig
         {...stylex.props(styles.trigger)}
       >
         {children}
-      </button>
+      </ButtonPrimitive>
     ) : (
       <a
         href={action.href(row)}
@@ -1086,11 +1229,9 @@ function RowTrigger<Row>({ row, action, isActive, children, onKeyDown }: RowTrig
   return (
     <Tooltip.Root>
       <Tooltip.Trigger render={trigger} />
-      <Tooltip.Portal>
-        <Tooltip.Positioner side="top" align="start">
-          <Tooltip.Popup>{label}</Tooltip.Popup>
-        </Tooltip.Positioner>
-      </Tooltip.Portal>
+      <Tooltip.Popup side="top" align="start">
+        {label}
+      </Tooltip.Popup>
     </Tooltip.Root>
   );
 }

@@ -1,4 +1,5 @@
 import * as stylex from '@stylexjs/stylex';
+import { Button as ChartButton } from '@ui-sdk/react/button';
 import { Children, useId } from 'react';
 import type { ReactNode } from 'react';
 import { conditions } from '../../foundations/src/constants.stylex.ts';
@@ -246,7 +247,7 @@ export function ChartDatumButton({
   }
 
   return (
-    <button
+    <ChartButton
       type="button"
       aria-label={label}
       aria-pressed={isSelected}
@@ -254,7 +255,7 @@ export function ChartDatumButton({
       {...stylex.props(styles.datum, styles.action, isSelected && styles.selected)}
     >
       {children}
-    </button>
+    </ChartButton>
   );
 }
 

@@ -1,13 +1,8 @@
-import type { Dialog } from '@base-ui/react/dialog';
 import type { ComponentProps } from 'react';
 
 export type OpenStateProperties<Change> =
-  | {
-      readonly open: NonNullable<Dialog.Root.Props['open']>;
-      readonly defaultOpen?: never;
-      readonly onOpenChange: Change;
-    }
-  | { readonly open?: never; readonly defaultOpen?: Dialog.Root.Props['defaultOpen']; readonly onOpenChange?: Change };
+  | { readonly open: boolean; readonly defaultOpen?: never; readonly onOpenChange: Change }
+  | { readonly open?: never; readonly defaultOpen?: boolean; readonly onOpenChange?: Change };
 
 export type ValueStateProperties<Value, Change, DefaultValue = Value> =
   | { readonly value: Value; readonly defaultValue?: never; readonly onValueChange: Change }

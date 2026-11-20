@@ -1,6 +1,8 @@
 import * as stylex from '@stylexjs/stylex';
+import { bindDrag } from '@ui-sdk/core';
+import { Button as ChartButton } from '@ui-sdk/react/button';
 import { scaleLinear } from '@visx/scale';
-import { useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { PointerEvent, ReactNode } from 'react';
 import { TextButton } from '../../../core/src/index.ts';
 import { Slider } from '../../../forms/src/index.ts';
@@ -13,6 +15,7 @@ import { ChartFrame, ChartReadout } from '../chart-frame.tsx';
 import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds, isFiniteDomain } from '../chart-input.tsx';
 import { useChartNavigation } from '../chart-navigation.tsx';
+import { ChartSurface } from '../chart-surface.tsx';
 import { chartStyles } from '../chart-theme.ts';
 import { usePlotWidth } from '../plot-width.ts';
 
@@ -51,7 +54,7 @@ export type ScatterPlotProps = {
 };
 
 type Coordinate = { readonly x: number; readonly y: number };
-type Gesture = { readonly start: Coordinate; readonly end: Coordinate; readonly pointerId: number };
+type Gesture = { readonly start: Coordinate; readonly end: Coordinate };
 
 const PLOT_HEIGHT = 260;
 const LEFT_MARGIN = 56;
@@ -174,7 +177,7 @@ export function ScatterPlot(props: ScatterPlotProps): ReactNode {
       {points.length === 0 ? (
         <p {...stylex.props(styles.empty)}>{emptyLabel}</p>
       ) : (
-        <div ref={ref} {...navigation.props} {...stylex.props(styles.plot)}>
+        <ChartSurface ref={ref} {...navigation.props} {...stylex.props(styles.plot)}>
           <ScatterCanvas
             key={`${xDomain[0]}:${xDomain[1]}:${yDomain[0]}:${yDomain[1]}:${width}`}
             width={width}
@@ -188,7 +191,7 @@ export function ScatterPlot(props: ScatterPlotProps): ReactNode {
                 const isInspected = navigation.label !== undefined && navigation.activeId === point.id;
 
                 return (
-                  <button
+                  <ChartButton
                     key={point.id}
                     type="button"
                     tabIndex={-1}
@@ -209,12 +212,12 @@ export function ScatterPlot(props: ScatterPlotProps): ReactNode {
                         (selection?.selectedId === point.id || isInspected) && styles.selected,
                       )}
                     />
-                  </button>
+                  </ChartButton>
                 );
               })}
             </div>
           )}
-        </div>
+        </ChartSurface>
       )}
       {rangeSelection !== undefined && <RangeControls {...props} rangeSelection={rangeSelection} />}
       <ChartData
@@ -247,6 +250,10 @@ function ScatterCanvas({
   const clipId = useId();
   const [gesture, setGesture] = useState<Gesture | null>(null);
 
+  const releaseDrag = useRef<(() => void) | null>(null);
+
+  useEffect(() => () => releaseDrag.current?.(), []);
+
   const range: ScatterRange | null | undefined =
     gesture === null
       ? rangeSelection?.value
@@ -255,24 +262,24 @@ function ScatterCanvas({
           y: [Math.min(gesture.start.y, gesture.end.y), Math.max(gesture.start.y, gesture.end.y)],
         };
 
-  function coordinate(event: PointerEvent<SVGSVGElement>): Coordinate {
-    const rectangle = event.currentTarget.getBoundingClientRect();
-
+  function coordinate(rectangle: DOMRect, clientX: number, clientY: number): Coordinate {
     return {
       x: scaleX
         .copy()
         .clamp(true)
-        .invert(((event.clientX - rectangle.left) / rectangle.width) * width),
+        .invert(((clientX - rectangle.left) / rectangle.width) * width),
       y: scaleY
         .copy()
         .clamp(true)
-        .invert(((event.clientY - rectangle.top) / rectangle.height) * PLOT_HEIGHT),
+        .invert(((clientY - rectangle.top) / rectangle.height) * PLOT_HEIGHT),
     };
   }
 
   function begin(event: PointerEvent<SVGSVGElement>): void {
     // Touch gestures scroll the page; range sliders own touch selection.
-    if (rangeSelection === undefined || event.button !== 0 || event.pointerType === 'touch') {
+    const isBrushPress = event.button === 0 && event.pointerType !== 'touch';
+
+    if (rangeSelection === undefined || releaseDrag.current !== null || !isBrushPress) {
       return;
     }
 
@@ -287,35 +294,38 @@ function ScatterCanvas({
       return;
     }
 
-    const point = coordinate(event);
+    const svg = event.currentTarget;
+    const container = svg.parentElement;
 
-    event.currentTarget.setPointerCapture(event.pointerId);
-    setGesture({ start: point, end: point, pointerId: event.pointerId });
-  }
-
-  function move(event: PointerEvent<SVGSVGElement>): void {
-    if (gesture === null || gesture.pointerId !== event.pointerId) {
+    if (container === null) {
       return;
     }
 
-    setGesture({ ...gesture, end: coordinate(event) });
-  }
+    const start = coordinate(rectangle, event.clientX, event.clientY);
 
-  function finish(event: PointerEvent<SVGSVGElement>): void {
-    if (gesture === null || gesture.pointerId !== event.pointerId) {
-      return;
-    }
+    setGesture({ start, end: start });
 
-    const end = coordinate(event);
+    releaseDrag.current = bindDrag(container, event.nativeEvent, {
+      cancelOnEscape: true,
+      onMove: ({ x: clientX, y: clientY }) =>
+        setGesture({ start, end: coordinate(svg.getBoundingClientRect(), clientX, clientY) }),
+      onEnd: (up, canceled) => {
+        releaseDrag.current = null;
 
-    const nextRange: ScatterRange = {
-      x: [Math.min(gesture.start.x, end.x), Math.max(gesture.start.x, end.x)],
-      y: [Math.min(gesture.start.y, end.y), Math.max(gesture.start.y, end.y)],
-    };
+        setGesture(null);
 
-    setGesture(null);
-    event.currentTarget.releasePointerCapture(event.pointerId);
-    rangeSelection?.onChange(nextRange);
+        if (canceled) {
+          return;
+        }
+
+        const end = coordinate(svg.getBoundingClientRect(), up.clientX, up.clientY);
+
+        rangeSelection.onChange({
+          x: [Math.min(start.x, end.x), Math.max(start.x, end.x)],
+          y: [Math.min(start.y, end.y), Math.max(start.y, end.y)],
+        });
+      },
+    });
   }
 
   return (
@@ -325,10 +335,6 @@ function ScatterCanvas({
       viewBox={`0 0 ${width} ${PLOT_HEIGHT}`}
       aria-hidden
       onPointerDown={begin}
-      onPointerMove={move}
-      onPointerUp={finish}
-      onPointerCancel={() => setGesture(null)}
-      onLostPointerCapture={() => setGesture(null)}
       {...stylex.props(chartStyles.svg, rangeSelection !== undefined && styles.brush)}
     >
       <defs>
@@ -422,13 +428,13 @@ function RangeControls({
       <legend {...stylex.props(styles.legend)}>
         Drag with a mouse, or adjust these bounds to select a coordinate range.
       </legend>
-      <Slider.Root
-        value={value.x}
+      <Slider.Root<[number, number]>
+        value={[...value.x]}
+        format={formatX}
         min={xDomain[0]}
         max={xDomain[1]}
         step={rangeSelection.xStep}
         locale={rangeSelection.locale}
-        thumbCollisionBehavior="none"
         onValueChange={(x) => rangeSelection.onChange({ x, y: value.y })}
       >
         <div {...stylex.props(styles.rangeTitle)}>
@@ -440,26 +446,18 @@ function RangeControls({
         <Slider.Control>
           <Slider.Track>
             <Slider.Indicator />
-            <Slider.Thumb
-              index={0}
-              aria-label={`${xLabel} minimum`}
-              getAriaValueText={(_, number) => formatX(number)}
-            />
-            <Slider.Thumb
-              index={1}
-              aria-label={`${xLabel} maximum`}
-              getAriaValueText={(_, number) => formatX(number)}
-            />
+            <Slider.Thumb index={0} aria-label={`${xLabel} minimum`} />
+            <Slider.Thumb index={1} aria-label={`${xLabel} maximum`} />
           </Slider.Track>
         </Slider.Control>
       </Slider.Root>
-      <Slider.Root
-        value={value.y}
+      <Slider.Root<[number, number]>
+        value={[...value.y]}
+        format={formatY}
         min={yDomain[0]}
         max={yDomain[1]}
         step={rangeSelection.yStep}
         locale={rangeSelection.locale}
-        thumbCollisionBehavior="none"
         onValueChange={(y) => rangeSelection.onChange({ x: value.x, y })}
       >
         <div {...stylex.props(styles.rangeTitle)}>
@@ -471,16 +469,8 @@ function RangeControls({
         <Slider.Control>
           <Slider.Track>
             <Slider.Indicator />
-            <Slider.Thumb
-              index={0}
-              aria-label={`${yLabel} minimum`}
-              getAriaValueText={(_, number) => formatY(number)}
-            />
-            <Slider.Thumb
-              index={1}
-              aria-label={`${yLabel} maximum`}
-              getAriaValueText={(_, number) => formatY(number)}
-            />
+            <Slider.Thumb index={0} aria-label={`${yLabel} minimum`} />
+            <Slider.Thumb index={1} aria-label={`${yLabel} maximum`} />
           </Slider.Track>
         </Slider.Control>
       </Slider.Root>

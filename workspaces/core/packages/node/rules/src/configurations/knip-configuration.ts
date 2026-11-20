@@ -97,8 +97,6 @@ function memberWorkspace({ member }: MemberWorkspaceInput): MemberWorkspace {
       vite: false,
       entry: [VITE_CONFIGURATION, '.storybook/*.{ts,tsx}', 'packages/**/*.stories.tsx'],
       project: ['packages/**/*.{ts,tsx,mdx}!'],
-      // Trees loads this peer through its theming dependency; Diffs requires a separate major version.
-      ignoreDependencies: ['@pierre/theme'],
     };
   }
 

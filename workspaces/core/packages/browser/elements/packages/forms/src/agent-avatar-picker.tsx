@@ -1,6 +1,5 @@
-import { Radio as BaseRadio } from '@base-ui/react/radio';
-import { RadioGroup as BaseRadioGroup } from '@base-ui/react/radio-group';
 import * as stylex from '@stylexjs/stylex';
+import { Radio, RadioGroup } from '@ui-sdk/react/radio';
 import { useId } from 'react';
 import type { ReactNode } from 'react';
 import { AgentAvatar, agentAvatarColors, agentAvatarShapes } from '../../core/src/index.ts';
@@ -99,37 +98,45 @@ export function AgentAvatarPicker({ value, onValueChange, disabled = false }: Ag
         <span id={shapeLabel} {...stylex.props(styles.label)}>
           Shape
         </span>
-        <BaseRadioGroup<AgentAvatarShape>
+        <RadioGroup<AgentAvatarShape>
           aria-labelledby={shapeLabel}
           value={value.shape}
-          onValueChange={(shape) => onValueChange({ ...value, shape })}
+          onValueChange={(shape) => {
+            if (shape !== null) {
+              onValueChange({ ...value, shape });
+            }
+          }}
           disabled={disabled}
           {...stylex.props(styles.choices)}
         >
           {agentAvatarShapes.map((shape) => (
-            <BaseRadio.Root key={shape} value={shape} aria-label={shape} title={shape} {...stylex.props(styles.choice)}>
+            <Radio key={shape} value={shape} aria-label={shape} title={shape} {...stylex.props(styles.choice)}>
               <AgentAvatar seed={shape} appearance={{ ...value, shape }} size="md" />
-            </BaseRadio.Root>
+            </Radio>
           ))}
-        </BaseRadioGroup>
+        </RadioGroup>
       </div>
       <div {...stylex.props(styles.section)}>
         <span id={colorLabel} {...stylex.props(styles.label)}>
           Color
         </span>
-        <BaseRadioGroup<AgentAvatarColor>
+        <RadioGroup<AgentAvatarColor>
           aria-labelledby={colorLabel}
           value={value.color}
-          onValueChange={(color) => onValueChange({ ...value, color })}
+          onValueChange={(color) => {
+            if (color !== null) {
+              onValueChange({ ...value, color });
+            }
+          }}
           disabled={disabled}
           {...stylex.props(styles.choices)}
         >
           {agentAvatarColors.map((color) => (
-            <BaseRadio.Root key={color} value={color} aria-label={color} title={color} {...stylex.props(styles.choice)}>
+            <Radio key={color} value={color} aria-label={color} title={color} {...stylex.props(styles.choice)}>
               <AgentAvatar seed={color} appearance={{ ...value, color }} size="md" />
-            </BaseRadio.Root>
+            </Radio>
           ))}
-        </BaseRadioGroup>
+        </RadioGroup>
       </div>
     </div>
   );

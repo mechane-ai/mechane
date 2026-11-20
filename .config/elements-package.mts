@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, cpSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 
 export const elementsVersionDeclaration = {
@@ -29,7 +29,6 @@ export function buildElementsPackage(source: string, destination: string) {
   const staged = join(output, 'package');
   const distribution = join(staged, 'dist');
   cpSync(join(sourcePackage, 'dist'), distribution, { recursive: true });
-  copyFileSync(join(sourcePackage, 'packages/foundations/src/styles.css'), join(distribution, 'foundations.css'));
   // StyleX hashes references from the package and defining path, which must match the compiled CSS.
   for (const [name, definition] of Object.entries(manifest.exports as Record<string, string>)) {
     if (!name.endsWith('.stylex')) continue;
@@ -38,13 +37,10 @@ export function buildElementsPackage(source: string, destination: string) {
   }
   cpSync(join(sourcePackage, 'skills'), join(staged, 'skills'), { recursive: true });
   copyFileSync(join(sourcePackage, 'README.md'), join(staged, 'README.md'));
-  copyFileSync(join(sourcePackage, 'styles.css'), join(staged, 'styles.css'));
-  for (const name of ['LICENSE', 'NOTICE']) copyFileSync(join(root, name), join(staged, name));
-  const sonnerLicense = readFileSync(join(sourcePackage, 'node_modules/sonner/LICENSE.md'), 'utf8');
-  writeFileSync(
-    join(staged, 'NOTICE'),
-    `${readFileSync(join(root, 'NOTICE'), 'utf8')}\nBundled Sonner\n\n${sonnerLicense}`,
-  );
+  copyFileSync(join(root, 'LICENSE'), join(staged, 'LICENSE'));
+  const notice = readFileSync(join(root, 'NOTICE'), 'utf8');
+  const streamdownLicense = readFileSync(join(sourcePackage, 'node_modules/streamdown/LICENSE'), 'utf8');
+  writeFileSync(join(staged, 'NOTICE'), `${notice}\nBundled Streamdown stylesheet\n\n${streamdownLicense}\n`);
   const { scripts, devDependencies, publishConfig, ...published } = manifest;
   assert.ok(scripts.build && devDependencies.typescript, 'Elements by Mechane needs its canonical build and compiler');
   for (const [dependency, range] of Object.entries(published.dependencies)) {
@@ -54,7 +50,11 @@ export function buildElementsPackage(source: string, destination: string) {
   assert.equal(publishConfig.access, 'public');
   const exports = Object.fromEntries(
     Object.entries(manifest.exports as Record<string, string>).map(([name, source]) => {
-      if (name === './styles.css') return [name, './styles.css'];
+      if (name === './styles.css') {
+        const stylesheets = readdirSync(distribution).filter((filename) => filename.endsWith('.css'));
+        assert.equal(stylesheets.length, 1, 'Publish one compiled Elements stylesheet');
+        return [name, `./dist/${stylesheets[0]}`];
+      }
       if (name.endsWith('.stylex')) return [name, source];
       const types = `./dist/${source.slice(2).replace(/\.tsx?$/, '.d.ts')}`;
       const entry = `./dist/${name === '.' ? 'index' : name.slice(2)}.js`;

@@ -1,4 +1,5 @@
 import * as stylex from '@stylexjs/stylex';
+import { Button as ChartButton } from '@ui-sdk/react/button';
 import type { ReactNode } from 'react';
 import { conditions } from '../../../foundations/src/constants.stylex.ts';
 import { colors, controls, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
@@ -7,6 +8,7 @@ import { ChartFrame, ChartReadout } from '../chart-frame.tsx';
 import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds } from '../chart-input.tsx';
 import { useChartNavigation } from '../chart-navigation.tsx';
+import { ChartTextSurface } from '../chart-surface.tsx';
 import { ColorLegend } from './color-legend.tsx';
 import { heatmapColor, heatmapScaleProblem, isHeatmapValueInDomain } from './heatmap-scale.ts';
 import type { HeatmapScale } from './heatmap-scale.ts';
@@ -133,7 +135,7 @@ export function TokenHeatmap({
       {tokens.length === 0 ? (
         <p {...stylex.props(styles.empty)}>{emptyLabel}</p>
       ) : (
-        <p {...navigation.props} {...stylex.props(styles.text)}>
+        <ChartTextSurface {...navigation.props} {...stylex.props(styles.text)}>
           {tokens.map((token) => {
             const isInspected = navigation.label !== undefined && navigation.activeId === token.id;
 
@@ -155,7 +157,7 @@ export function TokenHeatmap({
                 {token.text}
               </span>
             ) : (
-              <button
+              <ChartButton
                 key={token.id}
                 type="button"
                 tabIndex={-1}
@@ -166,10 +168,10 @@ export function TokenHeatmap({
                 {...appearance}
               >
                 {token.text}
-              </button>
+              </ChartButton>
             );
           })}
-        </p>
+        </ChartTextSurface>
       )}
       <ChartData
         label={`${title} token values`}

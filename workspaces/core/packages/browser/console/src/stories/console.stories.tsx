@@ -1,4 +1,5 @@
 import { AgentAvatar, Button, TextButton } from '@mechane-ai/elements';
+import type { TableQuery } from '@mechane-ai/elements/collections';
 import { Notice } from '@mechane-ai/elements/feedback';
 import {
   DetailPage,
@@ -271,7 +272,16 @@ function DirectoryStory({ isEmpty = false }: { readonly isEmpty?: boolean }): Re
       <PageLayout title="Agents">
         <Workbench>
           <WorkbenchScroll isFlush label="Agents">
-            <ManagedAgentList agents={isEmpty ? [] : agents} href={(id) => `#${id}`} onOpen={() => undefined} />
+            <ManagedAgentList
+              query={{
+                mode: 'local',
+                search: (agent) => [agent.name, agent.id, agent.model].join(' '),
+                filters: [{ id: 'model', label: 'Model', value: (agent) => agent.model }],
+              }}
+              agents={isEmpty ? [] : agents}
+              href={(id) => `#${id}`}
+              onOpen={() => undefined}
+            />
           </WorkbenchScroll>
         </Workbench>
       </PageLayout>
@@ -542,11 +552,18 @@ const importedTrace = Schema.decodeUnknownSync(Trace)({
 
 export const ImportedTurn: Story = { render: () => <TraceStory trace={importedTrace} /> };
 
+const runQuery: TableQuery<TurnPage['turns'][number]> = {
+  mode: 'local',
+  search: (turn) => [turn.id, 'inputExcerpt' in turn && turn.inputExcerpt].filter(Boolean).join(' '),
+  filters: [{ id: 'outcome', label: 'Outcome', value: (turn) => turn.status }],
+};
+
 export const ImportedRuns: Story = {
   render: () => (
     <StoryShell>
       <DetailPage>
         <TurnList
+          query={runQuery}
           page={{ turns: [importedTrace.turn], hasMore: false }}
           turnHref={(id) => `?turn=${id}`}
           onOpen={() => undefined}
@@ -644,6 +661,7 @@ export const LongTitlesAndRuns: Story = {
         <Workbench>
           <WorkbenchScroll isFlush label="Runs">
             <TurnList
+              query={runQuery}
               page={longRunPage}
               turnHref={(id) => `?mech=${nativeMechId}&turn=${id}`}
               onOpen={() => undefined}
@@ -751,6 +769,11 @@ export const Sessions: Story = {
         <Workbench>
           <WorkbenchScroll isFlush label="Sessions">
             <ManagedSessionList
+              query={{
+                mode: 'local',
+                search: (session) => [session.title, session.id].join(' '),
+                filters: [{ id: 'status', label: 'Status', value: (session) => session.status }],
+              }}
               sessions={[dependencyUpdate, releaseReview]}
               activeSessionId={dependencyUpdate.id}
               href={(id) => `#${id}`}

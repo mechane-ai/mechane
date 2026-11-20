@@ -50,6 +50,7 @@ export const selectionStyles = stylex.create({
   },
   option: {
     'display': 'flex',
+    ':is([hidden])': { display: 'none' },
     'boxSizing': 'border-box',
     'alignItems': 'center',
     'gap': spacing.sm,

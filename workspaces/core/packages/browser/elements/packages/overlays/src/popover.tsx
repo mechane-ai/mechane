@@ -1,75 +1,50 @@
-import { Popover as BasePopover } from '@base-ui/react/popover';
 import * as stylex from '@stylexjs/stylex';
+import * as SDK from '@ui-sdk/react/popover';
 import type { ComponentProps, ReactNode } from 'react';
-import type { OpenStateProperties } from '../../foundations/src/control-state.ts';
 import { overlayStyles } from '../../foundations/src/overlay-styles.ts';
 import { popupStyles } from '../../foundations/src/popup-styles.ts';
 import { mergeStyles } from '../../foundations/src/style-composition.ts';
+import { withOverlayPortal } from './overlay-root.tsx';
+import type { OpenProps } from './overlay-root.tsx';
 
-type PopoverRootProps<Payload> = Omit<BasePopover.Root.Props<Payload>, 'open' | 'defaultOpen' | 'onOpenChange'> &
-  OpenStateProperties<NonNullable<BasePopover.Root.Props<Payload>['onOpenChange']>>;
-
-type PopoverPositionerProps = ComponentProps<typeof BasePopover.Positioner>;
-type PopoverPopupProps = ComponentProps<typeof BasePopover.Popup>;
-type PopoverTitleProps = ComponentProps<typeof BasePopover.Title>;
-type PopoverDescriptionProps = ComponentProps<typeof BasePopover.Description>;
-
-function PopoverRoot<Payload = unknown>(props: PopoverRootProps<Payload>): ReactNode {
-  return <BasePopover.Root<Payload> {...props} />;
+function Root(props: OpenProps<SDK.PopoverProps>): ReactNode {
+  return <SDK.Popover {...props} />;
 }
 
-function PopoverPositioner({ className, style, sideOffset = 4, ...props }: PopoverPositionerProps): ReactNode {
+function Popup({ className, style, sideOffset = 4, ...props }: ComponentProps<typeof SDK.PopoverContent>): ReactNode {
   return (
-    <BasePopover.Positioner
+    <SDK.PopoverContent
       {...props}
       sideOffset={sideOffset}
-      {...mergeStyles<BasePopover.Positioner.State>({ className, style, styles: stylex.props(popupStyles.positioner) })}
-    />
-  );
-}
-
-function PopoverPopup({ className, style, ...props }: PopoverPopupProps): ReactNode {
-  return (
-    <BasePopover.Popup
-      {...props}
-      {...mergeStyles<BasePopover.Popup.State>({
+      {...mergeStyles<SDK.PopoverContentState>({
         className,
         style,
-        styles: stylex.props(popupStyles.surface, popupStyles.content),
+        styles: stylex.props(popupStyles.positioner, popupStyles.surface, popupStyles.content),
       })}
     />
   );
 }
 
-function PopoverTitle({ className, style, ...props }: PopoverTitleProps): ReactNode {
+function Title({ className, style, ...props }: ComponentProps<typeof SDK.PopoverTitle>): ReactNode {
   return (
-    <BasePopover.Title
-      {...props}
-      {...mergeStyles<BasePopover.Title.State>({ className, style, styles: stylex.props(overlayStyles.title) })}
-    />
+    <SDK.PopoverTitle {...props} {...mergeStyles({ className, style, styles: stylex.props(overlayStyles.title) })} />
   );
 }
 
-function PopoverDescription({ className, style, ...props }: PopoverDescriptionProps): ReactNode {
+function Description({ className, style, ...props }: ComponentProps<typeof SDK.PopoverDescription>): ReactNode {
   return (
-    <BasePopover.Description
+    <SDK.PopoverDescription
       {...props}
-      {...mergeStyles<BasePopover.Description.State>({
-        className,
-        style,
-        styles: stylex.props(overlayStyles.description),
-      })}
+      {...mergeStyles({ className, style, styles: stylex.props(overlayStyles.description) })}
     />
   );
 }
 
 export const Popover = {
-  Root: PopoverRoot,
-  Trigger: BasePopover.Trigger,
-  Portal: BasePopover.Portal,
-  Positioner: PopoverPositioner,
-  Popup: PopoverPopup,
-  Title: PopoverTitle,
-  Description: PopoverDescription,
-  Close: BasePopover.Close,
+  Root: withOverlayPortal(Root),
+  Trigger: SDK.PopoverTrigger,
+  Popup,
+  Title,
+  Description,
+  Close: SDK.PopoverClose,
 };

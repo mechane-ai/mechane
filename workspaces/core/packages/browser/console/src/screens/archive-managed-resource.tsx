@@ -29,29 +29,28 @@ export function ArchiveManagedResource({
       }}
     >
       <AlertDialog.Trigger render={<Button variant="ghost" />}>{label}</AlertDialog.Trigger>
-      <AlertDialog.Portal>
-        <AlertDialog.Backdrop />
-        <AlertDialog.Popup>
-          <AlertDialog.Title>Archive {name}?</AlertDialog.Title>
-          <AlertDialog.Description>
-            {kind === 'agent'
-              ? 'This agent will leave the directory. Its existing sessions retain their history.'
-              : 'This session will leave the session list and stop accepting messages. Its history stays available.'}
-          </AlertDialog.Description>
-          {command.error !== undefined && <Notice hasError>{command.error}</Notice>}
-          <Row>
-            <AlertDialog.Close render={<Button disabled={isPending} />}>Cancel</AlertDialog.Close>
-            <Button
-              tone="danger"
-              variant="solid"
-              disabled={isPending}
-              onClick={() => command.run('archive', archive, () => setOpen(false))}
-            >
-              {label}
-            </Button>
-          </Row>
-        </AlertDialog.Popup>
-      </AlertDialog.Portal>
+      <AlertDialog.Backdrop />
+      <AlertDialog.Popup>
+        <AlertDialog.Title>Archive {name}?</AlertDialog.Title>
+        <AlertDialog.Description>
+          {kind === 'agent'
+            ? 'This agent will leave the directory. Its existing sessions retain their history.'
+            : 'This session will leave the session list and stop accepting messages. Its history stays available.'}
+        </AlertDialog.Description>
+        {command.error !== undefined && <Notice hasError>{command.error}</Notice>}
+        <Row>
+          <AlertDialog.Close render={<Button disabled={isPending} />}>Cancel</AlertDialog.Close>
+          <Button
+            tone="danger"
+            data-agent-confirm={`Archive ${kind} ${name}?`}
+            variant="solid"
+            disabled={isPending}
+            onClick={() => command.run('archive', archive, () => setOpen(false))}
+          >
+            {label}
+          </Button>
+        </Row>
+      </AlertDialog.Popup>
     </AlertDialog.Root>
   );
 }

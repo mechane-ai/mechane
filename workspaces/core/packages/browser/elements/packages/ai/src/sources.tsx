@@ -72,17 +72,13 @@ export function InlineCitation({ source, label }: InlineCitationProps): ReactNod
         <Popover.Trigger render={<TextButton />} aria-label={`Source ${label}: ${source.title}`}>
           {label}
         </Popover.Trigger>
-        <Popover.Portal>
-          <Popover.Positioner side="top">
-            <Popover.Popup>
-              <Stack isCompact>
-                <Popover.Title>{source.title}</Popover.Title>
-                {source.description !== undefined && <Popover.Description>{source.description}</Popover.Description>}
-                <ContentLink href={source.href}>Open source</ContentLink>
-              </Stack>
-            </Popover.Popup>
-          </Popover.Positioner>
-        </Popover.Portal>
+        <Popover.Popup side="top">
+          <Stack isCompact>
+            <Popover.Title>{source.title}</Popover.Title>
+            {source.description !== undefined && <Popover.Description>{source.description}</Popover.Description>}
+            <ContentLink href={source.href}>Open source</ContentLink>
+          </Stack>
+        </Popover.Popup>
       </Popover.Root>
     </span>
   );

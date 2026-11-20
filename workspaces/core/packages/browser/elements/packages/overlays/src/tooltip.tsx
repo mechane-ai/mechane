@@ -1,10 +1,19 @@
-import { Tooltip as BaseTooltip } from '@base-ui/react/tooltip';
 import * as stylex from '@stylexjs/stylex';
-import type { ComponentProps, ReactNode } from 'react';
+import type {
+  TooltipContentProps,
+  TooltipContentState,
+  TooltipOptions,
+  TooltipTriggerProps,
+  TooltipTriggerState,
+} from '@ui-sdk/core/tooltip';
+import type { PartProps } from '@ui-sdk/react/primitive';
+import * as SDK from '@ui-sdk/react/tooltip';
+import type { ReactNode } from 'react';
 import { layers } from '../../foundations/src/constants.stylex.ts';
-import type { OpenStateProperties } from '../../foundations/src/control-state.ts';
 import { mergeStyles } from '../../foundations/src/style-composition.ts';
 import { colors, radii, shadows, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { withOverlayPortal } from './overlay-root.tsx';
+import type { OpenProps } from './overlay-root.tsx';
 
 const styles = stylex.create({
   positioner: { zIndex: layers.tooltip },
@@ -25,40 +34,29 @@ const styles = stylex.create({
   },
 });
 
-type TooltipRootProps<Payload> = Omit<BaseTooltip.Root.Props<Payload>, 'open' | 'defaultOpen' | 'onOpenChange'> &
-  OpenStateProperties<NonNullable<BaseTooltip.Root.Props<Payload>['onOpenChange']>>;
+type RootProps = OpenProps<TooltipOptions> & { readonly children?: ReactNode };
 
-type TooltipPositionerProps = ComponentProps<typeof BaseTooltip.Positioner>;
-type TooltipPopupProps = ComponentProps<typeof BaseTooltip.Popup>;
+type TriggerProps = Omit<PartProps<'button', TooltipTriggerState>, 'value' | 'defaultValue' | 'onChange'> &
+  TooltipTriggerProps;
 
-function TooltipRoot<Payload = unknown>(props: TooltipRootProps<Payload>): ReactNode {
-  return <BaseTooltip.Root<Payload> {...props} />;
+type PopupProps = PartProps<'div', TooltipContentState> & TooltipContentProps;
+
+function Root(props: RootProps): ReactNode {
+  return <SDK.Tooltip {...props} />;
 }
 
-function TooltipPositioner({ className, style, sideOffset = 4, ...props }: TooltipPositionerProps): ReactNode {
+function Popup({ className, style, sideOffset = 4, ...props }: PopupProps): ReactNode {
   return (
-    <BaseTooltip.Positioner
+    <SDK.TooltipContent
       {...props}
       sideOffset={sideOffset}
-      {...mergeStyles<BaseTooltip.Positioner.State>({ className, style, styles: stylex.props(styles.positioner) })}
+      {...mergeStyles<TooltipContentState>({ className, style, styles: stylex.props(styles.positioner, styles.popup) })}
     />
   );
 }
 
-function TooltipPopup({ className, style, ...props }: TooltipPopupProps): ReactNode {
-  return (
-    <BaseTooltip.Popup
-      {...props}
-      {...mergeStyles<BaseTooltip.Popup.State>({ className, style, styles: stylex.props(styles.popup) })}
-    />
-  );
-}
-
-export const Tooltip = {
-  Provider: BaseTooltip.Provider,
-  Root: TooltipRoot,
-  Trigger: BaseTooltip.Trigger,
-  Portal: BaseTooltip.Portal,
-  Positioner: TooltipPositioner,
-  Popup: TooltipPopup,
-};
+export const Tooltip: {
+  Root: (props: RootProps) => ReactNode;
+  Trigger: (props: TriggerProps) => ReactNode;
+  Popup: (props: PopupProps) => ReactNode;
+} = { Root: withOverlayPortal(Root), Trigger: SDK.TooltipTrigger, Popup };

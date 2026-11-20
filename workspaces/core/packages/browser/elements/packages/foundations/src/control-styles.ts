@@ -38,6 +38,17 @@ export const controlStyles = stylex.create({
     color: colors.ink,
     fontSize: { default: typography.bodySize, [conditions.coarsePointer]: typography.touchInputSize },
   },
+  textFieldState: {
+    ':focus-visible': {
+      outlineWidth: controls.focusWidth,
+      outlineStyle: 'solid',
+      outlineColor: colors.focus,
+      outlineOffset: 1,
+    },
+    ':is([data-invalid], [aria-invalid="true"])': { borderColor: colors.danger },
+    ':disabled': { color: colors.muted, backgroundColor: colors.canvas, cursor: 'not-allowed' },
+    '::placeholder': { color: colors.muted },
+  },
   singleLineField: { height: { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget } },
   fieldRoot: {
     display: 'flex',

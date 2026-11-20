@@ -10,8 +10,6 @@ const meta = {
   component: Menu.Root,
   subcomponents: {
     Trigger: Menu.Trigger,
-    Portal: Menu.Portal,
-    Positioner: Menu.Positioner,
     Popup: Menu.Popup,
     Item: Menu.Item,
     LinkItem: Menu.LinkItem,
@@ -28,7 +26,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Supported. Menu groups actions and immediate settings. Use Select or Combobox for a submitted form value. Item reports an action; LinkItem preserves navigation semantics. CheckboxItem and RadioGroup receive controlled values and callbacks. Base UI owns keyboard navigation, typeahead, dismissal and focus return. The application supplies command eligibility and destinations. Compose the Trigger with Button through render.',
+          'Supported. Menu groups actions and immediate settings. Use Select or Combobox for a submitted form value. Item reports an action; LinkItem preserves navigation semantics. CheckboxItem and RadioGroup receive controlled values and callbacks. UI SDK owns keyboard navigation, typeahead, dismissal and focus return. The application supplies command eligibility and destinations. Compose the Trigger with Button through render.',
       },
     },
   },
@@ -46,37 +44,29 @@ function MenuExample(): ReactNode {
     <Stack isCompact>
       <Menu.Root>
         <Menu.Trigger render={<Button />}>View options</Menu.Trigger>
-        <Menu.Portal>
-          <Menu.Positioner align="start">
+        <Menu.Popup align="start">
+          <Menu.Group>
+            <Menu.GroupLabel>Current view</Menu.GroupLabel>
+            <Menu.Item onSelect={() => setAction('Refresh requested')}>Refresh</Menu.Item>
+            <Menu.LinkItem href="#menu-docs">View documentation</Menu.LinkItem>
+            <Menu.Item disabled>Export unavailable</Menu.Item>
+          </Menu.Group>
+          <Menu.Separator />
+          <Menu.CheckboxItem value="show-details" checked={showDetails} onCheckedChange={setShowDetails}>
+            Show details
+          </Menu.CheckboxItem>
+          <Menu.SubmenuRoot>
+            <Menu.SubmenuTrigger>
+              Density <ChevronRight size={14} aria-hidden />
+            </Menu.SubmenuTrigger>
             <Menu.Popup>
-              <Menu.Group>
-                <Menu.GroupLabel>Current view</Menu.GroupLabel>
-                <Menu.Item onClick={() => setAction('Refresh requested')}>Refresh</Menu.Item>
-                <Menu.LinkItem href="#menu-docs">View documentation</Menu.LinkItem>
-                <Menu.Item disabled>Export unavailable</Menu.Item>
-              </Menu.Group>
-              <Menu.Separator />
-              <Menu.CheckboxItem checked={showDetails} onCheckedChange={setShowDetails}>
-                Show details
-              </Menu.CheckboxItem>
-              <Menu.SubmenuRoot>
-                <Menu.SubmenuTrigger>
-                  Density <ChevronRight size={14} aria-hidden />
-                </Menu.SubmenuTrigger>
-                <Menu.Portal>
-                  <Menu.Positioner>
-                    <Menu.Popup>
-                      <Menu.RadioGroup value={density} onValueChange={setDensity}>
-                        <Menu.RadioItem value="compact">Compact</Menu.RadioItem>
-                        <Menu.RadioItem value="comfortable">Comfortable</Menu.RadioItem>
-                      </Menu.RadioGroup>
-                    </Menu.Popup>
-                  </Menu.Positioner>
-                </Menu.Portal>
-              </Menu.SubmenuRoot>
+              <Menu.RadioGroup value={density} onValueChange={setDensity}>
+                <Menu.RadioItem value="compact">Compact</Menu.RadioItem>
+                <Menu.RadioItem value="comfortable">Comfortable</Menu.RadioItem>
+              </Menu.RadioGroup>
             </Menu.Popup>
-          </Menu.Positioner>
-        </Menu.Portal>
+          </Menu.SubmenuRoot>
+        </Menu.Popup>
       </Menu.Root>
       <Muted>
         {action}. Density: {density}. Details {showDetails ? 'shown' : 'hidden'}.

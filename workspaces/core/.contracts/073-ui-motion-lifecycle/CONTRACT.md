@@ -40,10 +40,10 @@ For a positioned overlay, confirm animation does not change its anchor or collis
 
 Apply these requirements to implemented components that animate. Static components need no animation machinery.
 Use shared motion tokens and named reduced-motion conditions from `ui/tokens`.
-Base UI continues to own overlay positioning and focus; the component owns any decorative transition it adds.
+UI SDK owns overlay positioning and focus; the component owns any decorative transition it adds.
 
 Keep high-frequency controls, tab selection, tooltips, and data refreshes immediate. Dialogs use a short opacity and
-small-scale transition. The left drawer follows Base UI's swipe displacement and open/close state attributes.
+small-scale transition. The left drawer follows the primitive's swipe displacement and open/close state attributes.
 Use the shared duration and easing tokens; reduced motion removes transition time, while dragging follows the pointer
 without easing. Do not add a timer, animation library, or second open-state owner for these transitions.
 

@@ -1,7 +1,8 @@
-import { Button as BaseButton } from '@base-ui/react/button';
-import { mergeProps } from '@base-ui/react/merge-props';
-import { useRender } from '@base-ui/react/use-render';
 import * as stylex from '@stylexjs/stylex';
+import { Button as SdkButton } from '@ui-sdk/react/button';
+import type { ButtonState } from '@ui-sdk/react/button';
+import { mergeProps, renderElement } from '@ui-sdk/react/primitive';
+import type { PartProps } from '@ui-sdk/react/primitive';
 import { useId } from 'react';
 import type { ComponentProps, ReactNode } from 'react';
 import { conditions } from '../../foundations/src/constants.stylex.ts';
@@ -143,26 +144,30 @@ type ButtonVariant = 'solid' | 'outline' | 'ghost';
 type ButtonTone = 'neutral' | 'danger';
 type PendingProps = { readonly isPending?: boolean; readonly pendingLabel?: string | undefined };
 
-type ButtonProps = ComponentProps<typeof BaseButton> &
+type SdkButtonProps = ComponentProps<typeof SdkButton>;
+
+type SharedButtonProps = Omit<SdkButtonProps, 'children' | 'onClick'> &
   PendingProps & {
-    readonly variant?: ButtonVariant;
-    readonly tone?: ButtonTone;
-    readonly density?: ControlDensity;
-    readonly xstyle?: PlacementStyle;
+    readonly 'children'?: ReactNode;
+    readonly 'onClick'?: SdkButtonProps['onClick'];
+    readonly 'data-agent-confirm'?: string;
+    readonly 'tone'?: ButtonTone;
+    readonly 'density'?: ControlDensity;
+    readonly 'xstyle'?: PlacementStyle;
   };
+
+type ButtonProps = SharedButtonProps & { readonly variant?: ButtonVariant };
 
 type ActionButtonProps = ButtonProps & { readonly isIconOnly?: boolean };
 
 type IconButtonProps = Omit<ButtonProps, 'aria-label' | 'pendingLabel'> & { readonly 'aria-label': string };
 
-type IconLinkProps = Omit<useRender.ComponentProps<'a'>, 'aria-label'> & {
+type IconLinkProps = Omit<PartProps<'a'>, 'aria-label' | 'children'> & {
   readonly 'aria-label': string;
+  readonly 'children'?: ReactNode;
   readonly 'density'?: ControlDensity;
   readonly 'xstyle'?: PlacementStyle;
 };
-
-type TextButtonProps = ComponentProps<typeof BaseButton> &
-  PendingProps & { readonly tone?: ButtonTone; readonly density?: ControlDensity; readonly xstyle?: PlacementStyle };
 
 type TextLinkProps = ComponentProps<'a'> & { readonly xstyle?: PlacementStyle };
 
@@ -186,6 +191,20 @@ const textTones = { neutral: styles.neutralText, danger: styles.dangerText } sat
   ButtonTone,
   stylex.StyleXStyles
 >;
+
+function agentConfirmation(
+  tone: ButtonTone,
+  accessibleLabel: string | undefined,
+  children: ReactNode,
+): string | undefined {
+  if (tone !== 'danger') {
+    return undefined;
+  }
+
+  const label = (accessibleLabel ?? (typeof children === 'string' ? children : '')).trim();
+
+  return label.length > 0 ? label : 'Confirm this destructive action';
+}
 
 function ButtonLabels({ id, density, children, isPending = false, pendingLabel }: ButtonLabelsProps): ReactNode {
   const shouldShowPendingLabel = isPending && pendingLabel !== undefined;
@@ -221,6 +240,7 @@ function ActionButton({
   className,
   style,
   xstyle,
+  onClick,
   disabled = false,
   ...props
 }: ActionButtonProps): ReactNode {
@@ -238,11 +258,13 @@ function ActionButton({
   );
 
   return (
-    <BaseButton
+    <SdkButton
       {...props}
-      {...mergeStyles<BaseButton.State>({ className, style, styles: appearance })}
+      data-agent-confirm={props['data-agent-confirm'] ?? agentConfirmation(tone, props['aria-label'], children)}
+      {...(onClick !== undefined && { onClick })}
+      {...mergeStyles<ButtonState>({ className, style, styles: appearance })}
       disabled={disabled || isPending}
-      focusableWhenDisabled={isPending || props.focusableWhenDisabled}
+      focusableWhenDisabled={isPending || props.focusableWhenDisabled === true}
       aria-labelledby={
         props['aria-labelledby'] ??
         (props['aria-label'] === undefined && pendingLabel !== undefined ? labelId : undefined)
@@ -252,7 +274,7 @@ function ActionButton({
       <ButtonLabels id={labelId} density={density} isPending={isPending} pendingLabel={pendingLabel}>
         {children}
       </ButtonLabels>
-    </BaseButton>
+    </SdkButton>
   );
 }
 
@@ -279,18 +301,21 @@ export function TextButton({
   className,
   style,
   xstyle,
+  onClick,
   disabled = false,
   ...props
-}: TextButtonProps): ReactNode {
+}: SharedButtonProps): ReactNode {
   const labelId = useId();
   const appearance = stylex.props(styles.text, actionTargetDensityStyles[density], textTones[tone], xstyle);
 
   return (
-    <BaseButton
+    <SdkButton
       {...props}
-      {...mergeStyles<BaseButton.State>({ className, style, styles: appearance })}
+      data-agent-confirm={props['data-agent-confirm'] ?? agentConfirmation(tone, props['aria-label'], children)}
+      {...(onClick !== undefined && { onClick })}
+      {...mergeStyles<ButtonState>({ className, style, styles: appearance })}
       disabled={disabled || isPending}
-      focusableWhenDisabled={isPending || props.focusableWhenDisabled}
+      focusableWhenDisabled={isPending || props.focusableWhenDisabled === true}
       aria-labelledby={
         props['aria-labelledby'] ??
         (props['aria-label'] === undefined && pendingLabel !== undefined ? labelId : undefined)
@@ -300,7 +325,7 @@ export function TextButton({
       <ButtonLabels id={labelId} density={density} isPending={isPending} pendingLabel={pendingLabel}>
         {children}
       </ButtonLabels>
-    </BaseButton>
+    </SdkButton>
   );
 }
 
@@ -309,11 +334,9 @@ export function TextLink({ xstyle, ...props }: TextLinkProps): ReactNode {
 }
 
 export function IconLink({ children, density = 'standard', xstyle, render, ref, ...props }: IconLinkProps): ReactNode {
-  return useRender({
-    defaultTagName: 'a',
-    render,
-    ref,
-    props: mergeProps(
+  return renderElement(
+    'a',
+    mergeProps(
       stylex.props(
         controlStyles.base,
         controlStyles.button,
@@ -325,7 +348,8 @@ export function IconLink({ children, density = 'standard', xstyle, render, ref, 
         xstyle,
       ),
       props,
-      { children: <span {...stylex.props(styles.icon)}>{children}</span> },
+      { ref, children: <span {...stylex.props(styles.icon)}>{children}</span> },
     ),
-  });
+    render,
+  );
 }

@@ -19,8 +19,8 @@ import { Select } from '../../forms/src/index.ts';
 import { Menu } from '../../overlays/src/index.ts';
 import { AppShell } from './app-shell.tsx';
 import { DetailPage } from './detail-page.tsx';
-import { NavigationRailMenu } from './navigation-rail-menu.tsx';
 import { NavigationRail } from './navigation-rail.tsx';
+import type { NavigationRailLink } from './navigation-rail.tsx';
 import { PageLayout } from './page-layout.tsx';
 import { PageToolbar, ToolbarAction } from './page-toolbar.tsx';
 import {
@@ -80,19 +80,15 @@ function WorkspaceHeader(): ReactNode {
           </Select.Icon>
         </SidebarLabel>
       </Select.Trigger>
-      <Select.Portal>
-        <Select.Positioner>
-          <Select.Popup>
-            <Select.List>
-              {workspaceOptions.map((workspace) => (
-                <Select.Item key={workspace.value} value={workspace.value}>
-                  <Select.ItemText>{workspace.label}</Select.ItemText>
-                </Select.Item>
-              ))}
-            </Select.List>
-          </Select.Popup>
-        </Select.Positioner>
-      </Select.Portal>
+      <Select.Popup>
+        <Select.List>
+          {workspaceOptions.map((workspace) => (
+            <Select.Item key={workspace.value} value={workspace.value}>
+              <Select.ItemText>{workspace.label}</Select.ItemText>
+            </Select.Item>
+          ))}
+        </Select.List>
+      </Select.Popup>
     </Select.Root>
   );
 }
@@ -190,47 +186,46 @@ function AreaShell(): ReactNode {
     return <Button onClick={() => setIsSignedOut(false)}>Return to workspace</Button>;
   }
 
+  const areaLinks = areas.map((item): NavigationRailLink => ({
+    label: item.label,
+    icon: item.icon,
+    href: `#${item.label.toLowerCase()}`,
+    isCurrent: item === area,
+    onClick: (event) => {
+      const hasCommandModifier = event.metaKey || event.ctrlKey;
+      const hasAlternateModifier = event.shiftKey || event.altKey;
+
+      if (event.button !== 0 || hasCommandModifier || hasAlternateModifier) {
+        return;
+      }
+
+      event.preventDefault();
+      setArea(item);
+      setPage(item.pages[0]);
+    },
+  }));
+
   return (
     <AppShell
       shouldFocus={shouldFocus}
-      rail={
-        <NavigationRail
-          label="Workspace areas"
-          links={areas.map((item) => ({
-            label: item.label,
-            icon: item.icon,
-            href: `#${item.label.toLowerCase()}`,
-            isCurrent: item === area,
-            onClick: (event) => {
-              const hasCommandModifier = event.metaKey || event.ctrlKey;
-              const hasAlternateModifier = event.shiftKey || event.altKey;
-
-              if (event.button !== 0 || hasCommandModifier || hasAlternateModifier) {
-                return;
-              }
-
-              event.preventDefault();
-              setArea(item);
-              setPage(item.pages[0]);
-            },
-          }))}
-        />
-      }
-      railFooter={
-        <NavigationRailMenu
-          label="Account menu, PO"
-          icon={<Avatar label="Preview Operator" fallback="PO" size="sm" shape="circle" />}
-        >
-          <Menu.Group>
-            <Menu.GroupLabel>Preview Operator</Menu.GroupLabel>
-            <Menu.Separator />
-            <Menu.Item onClick={() => setIsSignedOut(true)}>
-              <LogOut size={16} aria-hidden />
-              Sign out
-            </Menu.Item>
-          </Menu.Group>
-        </NavigationRailMenu>
-      }
+      rail={<NavigationRail label="Workspace areas" links={areaLinks.filter((item) => item.label !== 'Settings')} />}
+      railFooter={{
+        navigation: { label: 'Settings', links: areaLinks.filter((item) => item.label === 'Settings') },
+        menu: {
+          label: 'Account menu, PO',
+          icon: <Avatar label="Preview Operator" fallback="PO" size="sm" shape="circle" />,
+          children: (
+            <Menu.Group>
+              <Menu.GroupLabel>Preview Operator</Menu.GroupLabel>
+              <Menu.Separator />
+              <Menu.Item onSelect={() => setIsSignedOut(true)}>
+                <LogOut size={16} aria-hidden />
+                Sign out
+              </Menu.Item>
+            </Menu.Group>
+          ),
+        },
+      }}
       sidebarHeader={<SidebarLabel>{area.label}</SidebarLabel>}
       sidebar={
         <Navigation label="Pages">

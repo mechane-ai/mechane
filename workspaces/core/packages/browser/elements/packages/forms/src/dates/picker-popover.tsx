@@ -89,65 +89,61 @@ export function PickerPopover<Value>({
       }}
     >
       <Popover.Trigger
-        disabled={disabled}
+        disabled={disabled ?? false}
         render={<Button density={density} variant="outline" />}
         aria-label={value === undefined ? label : `${label}: ${formatValue(value)}`}
       >
         <CalendarDays size={16} aria-hidden="true" />
         {value === undefined ? label : formatValue(value)}
       </Popover.Trigger>
-      <Popover.Portal>
-        <Popover.Positioner align="end" collisionPadding={1}>
-          <Popover.Popup aria-label={label} {...stylex.props(styles.calendarPopup)}>
-            <div {...stylex.props(styles.content)}>
-              <Popover.Title>{label}</Popover.Title>
-              {presets.length > 0 && (
-                <div role="group" aria-label="Date presets" {...stylex.props(styles.presets)}>
-                  {presets.map((preset) => (
-                    <Button
-                      key={preset.id}
-                      variant="ghost"
-                      disabled={validateValue(preset.value) !== undefined}
-                      onClick={() => commit(preset.value)}
-                    >
-                      {preset.label}
-                    </Button>
-                  ))}
-                </div>
-              )}
-              {isOpen && children(draft, setDraft)}
-              <div id={errorId} aria-live="polite" {...stylex.props(styles.error)}>
-                {error}
-              </div>
-              <div {...stylex.props(styles.footer)}>
-                <span {...stylex.props(styles.zone)}>{timeZone}</span>
-                <div {...stylex.props(styles.actions)}>
-                  {isClearable && (
-                    <TextButton disabled={value === undefined} onClick={() => commit(undefined)}>
-                      Clear
-                    </TextButton>
-                  )}
-                  <Button variant="ghost" onClick={() => setOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="solid"
-                    disabled={draft === undefined || error !== undefined}
-                    aria-describedby={error === undefined ? undefined : errorId}
-                    onClick={() => {
-                      if (draft !== undefined && validateValue(draft) === undefined) {
-                        commit(draft);
-                      }
-                    }}
-                  >
-                    Apply
-                  </Button>
-                </div>
-              </div>
+      <Popover.Popup align="end" collisionPadding={1} aria-label={label} {...stylex.props(styles.calendarPopup)}>
+        <div {...stylex.props(styles.content)}>
+          <Popover.Title>{label}</Popover.Title>
+          {presets.length > 0 && (
+            <div role="group" aria-label="Date presets" {...stylex.props(styles.presets)}>
+              {presets.map((preset) => (
+                <Button
+                  key={preset.id}
+                  variant="ghost"
+                  disabled={validateValue(preset.value) !== undefined}
+                  onClick={() => commit(preset.value)}
+                >
+                  {preset.label}
+                </Button>
+              ))}
             </div>
-          </Popover.Popup>
-        </Popover.Positioner>
-      </Popover.Portal>
+          )}
+          {isOpen && children(draft, setDraft)}
+          <div id={errorId} aria-live="polite" {...stylex.props(styles.error)}>
+            {error}
+          </div>
+          <div {...stylex.props(styles.footer)}>
+            <span {...stylex.props(styles.zone)}>{timeZone}</span>
+            <div {...stylex.props(styles.actions)}>
+              {isClearable && (
+                <TextButton disabled={value === undefined} onClick={() => commit(undefined)}>
+                  Clear
+                </TextButton>
+              )}
+              <Button variant="ghost" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                variant="solid"
+                disabled={draft === undefined || error !== undefined}
+                aria-describedby={error === undefined ? undefined : errorId}
+                onClick={() => {
+                  if (draft !== undefined && validateValue(draft) === undefined) {
+                    commit(draft);
+                  }
+                }}
+              >
+                Apply
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Popover.Popup>
     </Popover.Root>
   );
 }

@@ -1,15 +1,11 @@
-import { Combobox as BaseCombobox } from '@base-ui/react/combobox';
 import * as stylex from '@stylexjs/stylex';
+import * as ComboboxSdk from '@ui-sdk/react/combobox';
+import { mergeProps } from '@ui-sdk/react/primitive';
 import { Check, ChevronDown, X } from 'lucide-react';
 import { createContext, useContext } from 'react';
 import type { ComponentProps, ReactNode } from 'react';
 import { conditions } from '../../foundations/src/constants.stylex.ts';
 import type { ControlDensity } from '../../foundations/src/control-density.ts';
-import type {
-  OpenStateProperties,
-  ReadOnlyValueProperties,
-  ValueStateProperties,
-} from '../../foundations/src/control-state.ts';
 import {
   actionTargetDensityStyles,
   controlDensityStyles,
@@ -20,7 +16,7 @@ import {
 import { mergeStyles } from '../../foundations/src/style-composition.ts';
 import type { PlacementStyle } from '../../foundations/src/style-composition.ts';
 import { colors, controls, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
-import { fieldStyles } from './field-styles.ts';
+import type { MultipleSelectionOf, SelectionProperties, SingleSelectionOf } from './selection-state.ts';
 import { selectionStyles } from './selection-styles.ts';
 
 const ComboboxDensityContext = createContext<ControlDensity>('standard');
@@ -30,6 +26,7 @@ const styles = stylex.create({
   input: { flex: '1 1 12ch', width: '12ch' },
   action: {
     'display': 'inline-flex',
+    ':is([hidden])': { display: 'none' },
     'alignItems': 'center',
     'justifyContent': 'center',
     'flexShrink': 0,
@@ -85,6 +82,7 @@ const styles = stylex.create({
   },
   chip: {
     'display': 'inline-flex',
+    ':is([hidden])': { display: 'none' },
     'alignItems': 'center',
     'gap': spacing.xs,
     'minWidth': 0,
@@ -102,113 +100,85 @@ const styles = stylex.create({
 });
 
 type InputQueryProperties<Change> =
-  | { readonly inputValue: string; readonly defaultInputValue?: never; readonly onInputValueChange: Change }
-  | { readonly inputValue?: never; readonly defaultInputValue?: string; readonly onInputValueChange?: Change };
+  | { readonly query: string; readonly defaultQuery?: never; readonly onQueryChange: Change }
+  | { readonly query?: never; readonly defaultQuery?: string; readonly onQueryChange?: Change };
 
-type ComboboxRootProps<Value, Multiple extends boolean | undefined, Item> = Omit<
-  BaseCombobox.Root.Props<Value, Multiple, Item>,
-  | 'value'
-  | 'defaultValue'
-  | 'onValueChange'
-  | 'open'
-  | 'defaultOpen'
-  | 'onOpenChange'
-  | 'inputValue'
-  | 'defaultInputValue'
-  | 'onInputValueChange'
-> &
-  OpenStateProperties<NonNullable<BaseCombobox.Root.Props<Value, Multiple, Item>['onOpenChange']>> &
-  InputQueryProperties<NonNullable<BaseCombobox.Root.Props<Value, Multiple, Item>['onInputValueChange']>> &
-  (
-    | ValueStateProperties<
-        Exclude<BaseCombobox.Root.Props<Value, Multiple, Item>['value'], undefined>,
-        NonNullable<BaseCombobox.Root.Props<Value, Multiple, Item>['onValueChange']>
-      >
-    | ReadOnlyValueProperties<
-        Exclude<BaseCombobox.Root.Props<Value, Multiple, Item>['value'], undefined>,
-        NonNullable<BaseCombobox.Root.Props<Value, Multiple, Item>['onValueChange']>
-      >
-  ) & { readonly density?: ControlDensity };
+type ComboboxRootProps<Value> = (
+  | SelectionProperties<SingleSelectionOf<ComboboxSdk.ComboboxProps<Value>>>
+  | SelectionProperties<MultipleSelectionOf<ComboboxSdk.ComboboxProps<Value, true>>>
+) &
+  InputQueryProperties<NonNullable<ComboboxSdk.ComboboxProps<Value>['onQueryChange']>> & {
+    readonly density?: ControlDensity;
+    readonly items?: never;
+  };
 
-type ComboboxInputGroupProps = ComponentProps<typeof BaseCombobox.InputGroup> & { readonly xstyle?: PlacementStyle };
-type ComboboxLabelProps = ComponentProps<typeof BaseCombobox.Label>;
+type ComboboxInputGroupProps = ComponentProps<'div'> & { readonly xstyle?: PlacementStyle };
+type ComboboxLabelProps = ComponentProps<typeof ComboboxSdk.ComboboxLabel>;
 
-type ComboboxValueProps<Value> = Omit<ComponentProps<typeof BaseCombobox.Value>, 'children'> & {
-  readonly children?: ReactNode | ((value: Value) => ReactNode);
-};
+type ComboboxInputProps = ComponentProps<typeof ComboboxSdk.ComboboxInput>;
+type ComboboxTriggerProps = ComponentProps<typeof ComboboxSdk.ComboboxTrigger>;
+type ComboboxClearProps = ComponentProps<typeof ComboboxSdk.ComboboxClear>;
+type ComboboxContentProps = ComponentProps<typeof ComboboxSdk.ComboboxContent> & { readonly xstyle?: PlacementStyle };
 
-type ComboboxInputProps = ComponentProps<typeof BaseCombobox.Input>;
-type ComboboxTriggerProps = ComponentProps<typeof BaseCombobox.Trigger>;
-type ComboboxClearProps = ComponentProps<typeof BaseCombobox.Clear>;
-type ComboboxPositionerProps = ComponentProps<typeof BaseCombobox.Positioner> & { readonly xstyle?: PlacementStyle };
-type ComboboxPopupProps = ComponentProps<typeof BaseCombobox.Popup>;
+type ComboboxListProps = ComponentProps<typeof ComboboxSdk.ComboboxList>;
 
-type ComboboxListProps<Item> = Omit<ComponentProps<typeof BaseCombobox.List>, 'children'> & {
-  readonly children?: ReactNode | ((item: Item, index: number) => ReactNode);
-};
+type ComboboxItemProps = ComponentProps<typeof ComboboxSdk.ComboboxItem>;
+type ComboboxIndicatorProps = ComponentProps<typeof ComboboxSdk.ComboboxItemIndicator>;
+type ComboboxEmptyProps = ComponentProps<typeof ComboboxSdk.ComboboxEmpty>;
+type ComboboxStatusProps = ComponentProps<typeof ComboboxSdk.ComboboxStatus>;
+type ComboboxGroupLabelProps = ComponentProps<typeof ComboboxSdk.ComboboxGroupLabel>;
+type ComboboxChipsProps = ComponentProps<typeof ComboboxSdk.ComboboxChips>;
+type ComboboxChipProps = ComponentProps<typeof ComboboxSdk.ComboboxChip>;
+type ComboboxChipRemoveProps = ComponentProps<typeof ComboboxSdk.ComboboxChipRemove>;
 
-type ComboboxItemProps = ComponentProps<typeof BaseCombobox.Item>;
-type ComboboxIndicatorProps = ComponentProps<typeof BaseCombobox.ItemIndicator>;
-type ComboboxEmptyProps = ComponentProps<typeof BaseCombobox.Empty>;
-type ComboboxStatusProps = ComponentProps<typeof BaseCombobox.Status>;
-type ComboboxGroupLabelProps = ComponentProps<typeof BaseCombobox.GroupLabel>;
-type ComboboxChipsProps = ComponentProps<typeof BaseCombobox.Chips>;
-type ComboboxChipProps = ComponentProps<typeof BaseCombobox.Chip>;
-type ComboboxChipRemoveProps = ComponentProps<typeof BaseCombobox.ChipRemove>;
-
-function ComboboxRoot<Value, Multiple extends boolean | undefined = false, Item = Value>({
-  density = 'standard',
-  ...props
-}: ComboboxRootProps<Value, Multiple, Item>): ReactNode {
+function ComboboxRoot<Value>(props: ComboboxRootProps<Value>): ReactNode {
   return (
-    <ComboboxDensityContext value={density}>
-      <BaseCombobox.Root<Value, Multiple, Item> {...props} />
+    <ComboboxDensityContext value={props.density ?? 'standard'}>
+      {props.multiple === true ? (
+        <ComboboxSdk.Combobox<Value, true> {...props} />
+      ) : (
+        <ComboboxSdk.Combobox<Value> {...props} />
+      )}
     </ComboboxDensityContext>
   );
 }
 
-function ComboboxInputGroup({ className, style, xstyle, ...props }: ComboboxInputGroupProps): ReactNode {
+function ComboboxInputGroup({ xstyle, ...props }: ComboboxInputGroupProps): ReactNode {
   const density = useContext(ComboboxDensityContext);
 
   return (
-    <BaseCombobox.InputGroup
-      {...props}
-      {...mergeStyles<BaseCombobox.InputGroup.State>({
-        className,
-        style,
-        styles: stylex.props(controlStyles.group, controlTargetDensityStyles[density], styles.inputGroup, xstyle),
-      })}
+    <div
+      {...mergeProps(
+        stylex.props(controlStyles.group, controlTargetDensityStyles[density], styles.inputGroup, xstyle),
+        props,
+      )}
     />
   );
 }
 
 function ComboboxLabel({ className, style, ...props }: ComboboxLabelProps): ReactNode {
   return (
-    <BaseCombobox.Label
+    <ComboboxSdk.ComboboxLabel
       {...props}
-      {...mergeStyles<BaseCombobox.Label.State>({ className, style, styles: stylex.props(controlStyles.label) })}
+      {...mergeStyles({ className, style, styles: stylex.props(controlStyles.label) })}
     />
   );
-}
-
-function ComboboxValue<Value>(props: ComboboxValueProps<Value>): ReactNode {
-  return <BaseCombobox.Value {...props} />;
 }
 
 function ComboboxInput({ className, style, ...props }: ComboboxInputProps): ReactNode {
   const density = useContext(ComboboxDensityContext);
 
   return (
-    <BaseCombobox.Input
+    <ComboboxSdk.ComboboxInput
       {...props}
-      {...mergeStyles<BaseCombobox.Input.State>({
+      {...mergeStyles({
         className,
         style,
         styles: stylex.props(
           controlStyles.base,
           controlStyles.field,
           controlStyles.singleLineField,
-          fieldStyles.input,
+          controlStyles.textFieldState,
           controlDensityStyles[density],
           singleLineControlDensityStyles[density],
           controlStyles.embedded,
@@ -229,17 +199,13 @@ function ComboboxTrigger({
   const density = useContext(ComboboxDensityContext);
 
   return (
-    <BaseCombobox.Trigger
+    <ComboboxSdk.ComboboxTrigger
       {...props}
       aria-label={label}
-      {...mergeStyles<BaseCombobox.Trigger.State>({
-        className,
-        style,
-        styles: stylex.props(actionTargetDensityStyles[density], styles.action),
-      })}
+      {...mergeStyles({ className, style, styles: stylex.props(actionTargetDensityStyles[density], styles.action) })}
     >
       {children}
-    </BaseCombobox.Trigger>
+    </ComboboxSdk.ComboboxTrigger>
   );
 }
 
@@ -253,63 +219,44 @@ function ComboboxClear({
   const density = useContext(ComboboxDensityContext);
 
   return (
-    <BaseCombobox.Clear
+    <ComboboxSdk.ComboboxClear
       {...props}
       aria-label={label}
-      {...mergeStyles<BaseCombobox.Clear.State>({
-        className,
-        style,
-        styles: stylex.props(actionTargetDensityStyles[density], styles.action),
-      })}
+      {...mergeStyles({ className, style, styles: stylex.props(actionTargetDensityStyles[density], styles.action) })}
     >
       {children}
-    </BaseCombobox.Clear>
+    </ComboboxSdk.ComboboxClear>
   );
 }
 
-function ComboboxPositioner({
-  sideOffset = 4,
-  className,
-  style,
-  xstyle,
-  ...props
-}: ComboboxPositionerProps): ReactNode {
+function ComboboxPopup({ className, style, xstyle, sideOffset = 4, ...props }: ComboboxContentProps): ReactNode {
   return (
-    <BaseCombobox.Positioner
+    <ComboboxSdk.ComboboxContent
       {...props}
       sideOffset={sideOffset}
-      {...mergeStyles<BaseCombobox.Positioner.State>({
+      {...mergeStyles<ComboboxSdk.ComboboxContentState>({
         className,
         style,
-        styles: stylex.props(selectionStyles.positioner, xstyle),
+        styles: stylex.props(selectionStyles.popup, selectionStyles.positioner, xstyle),
       })}
     />
   );
 }
 
-function ComboboxPopup({ className, style, ...props }: ComboboxPopupProps): ReactNode {
+function ComboboxList({ className, style, ...props }: ComboboxListProps): ReactNode {
   return (
-    <BaseCombobox.Popup
+    <ComboboxSdk.ComboboxList
       {...props}
-      {...mergeStyles<BaseCombobox.Popup.State>({ className, style, styles: stylex.props(selectionStyles.popup) })}
-    />
-  );
-}
-
-function ComboboxList<Item>({ className, style, ...props }: ComboboxListProps<Item>): ReactNode {
-  return (
-    <BaseCombobox.List
-      {...props}
-      {...mergeStyles<BaseCombobox.List.State>({ className, style, styles: stylex.props(styles.list) })}
+      {...mergeStyles<ComboboxSdk.ComboboxContentState>({ className, style, styles: stylex.props(styles.list) })}
     />
   );
 }
 
 function ComboboxItem({ className, style, ...props }: ComboboxItemProps): ReactNode {
   return (
-    <BaseCombobox.Item
+    <ComboboxSdk.ComboboxItem
       {...props}
-      {...mergeStyles<BaseCombobox.Item.State>({ className, style, styles: stylex.props(selectionStyles.option) })}
+      {...mergeStyles({ className, style, styles: stylex.props(selectionStyles.option) })}
     />
   );
 }
@@ -321,52 +268,42 @@ function ComboboxIndicator({
   ...props
 }: ComboboxIndicatorProps): ReactNode {
   return (
-    <BaseCombobox.ItemIndicator
+    <ComboboxSdk.ComboboxItemIndicator
       {...props}
-      {...mergeStyles<BaseCombobox.ItemIndicator.State>({
-        className,
-        style,
-        styles: stylex.props(selectionStyles.icon),
-      })}
+      {...mergeStyles({ className, style, styles: stylex.props(selectionStyles.icon) })}
     >
       {children}
-    </BaseCombobox.ItemIndicator>
+    </ComboboxSdk.ComboboxItemIndicator>
   );
 }
 
 function ComboboxEmpty({ className, style, ...props }: ComboboxEmptyProps): ReactNode {
   return (
-    <BaseCombobox.Empty
-      {...props}
-      {...mergeStyles<BaseCombobox.Empty.State>({ className, style, styles: stylex.props(styles.status) })}
-    />
+    <ComboboxSdk.ComboboxEmpty {...props} {...mergeStyles({ className, style, styles: stylex.props(styles.status) })} />
   );
 }
 
 function ComboboxStatus({ className, style, ...props }: ComboboxStatusProps): ReactNode {
   return (
-    <BaseCombobox.Status
+    <ComboboxSdk.ComboboxStatus
       {...props}
-      {...mergeStyles<BaseCombobox.Status.State>({ className, style, styles: stylex.props(styles.status) })}
+      {...mergeStyles({ className, style, styles: stylex.props(styles.status) })}
     />
   );
 }
 
 function ComboboxGroupLabel({ className, style, ...props }: ComboboxGroupLabelProps): ReactNode {
   return (
-    <BaseCombobox.GroupLabel
+    <ComboboxSdk.ComboboxGroupLabel
       {...props}
-      {...mergeStyles<BaseCombobox.GroupLabel.State>({ className, style, styles: stylex.props(styles.groupLabel) })}
+      {...mergeStyles({ className, style, styles: stylex.props(styles.groupLabel) })}
     />
   );
 }
 
 function ComboboxChips({ className, style, ...props }: ComboboxChipsProps): ReactNode {
   return (
-    <BaseCombobox.Chips
-      {...props}
-      {...mergeStyles<BaseCombobox.Chips.State>({ className, style, styles: stylex.props(styles.chips) })}
-    />
+    <ComboboxSdk.ComboboxChips {...props} {...mergeStyles({ className, style, styles: stylex.props(styles.chips) })} />
   );
 }
 
@@ -374,9 +311,9 @@ function ComboboxChip({ className, style, ...props }: ComboboxChipProps): ReactN
   const density = useContext(ComboboxDensityContext);
 
   return (
-    <BaseCombobox.Chip
+    <ComboboxSdk.ComboboxChip
       {...props}
-      {...mergeStyles<BaseCombobox.Chip.State>({
+      {...mergeStyles({
         className,
         style,
         styles: stylex.props(controlStyles.group, controlTargetDensityStyles[density], styles.chip),
@@ -394,16 +331,12 @@ function ComboboxChipRemove({
   const density = useContext(ComboboxDensityContext);
 
   return (
-    <BaseCombobox.ChipRemove
+    <ComboboxSdk.ComboboxChipRemove
       {...props}
-      {...mergeStyles<BaseCombobox.ChipRemove.State>({
-        className,
-        style,
-        styles: stylex.props(actionTargetDensityStyles[density], styles.action),
-      })}
+      {...mergeStyles({ className, style, styles: stylex.props(actionTargetDensityStyles[density], styles.action) })}
     >
       {children}
-    </BaseCombobox.ChipRemove>
+    </ComboboxSdk.ComboboxChipRemove>
   );
 }
 
@@ -414,19 +347,16 @@ export const Combobox = {
   Input: ComboboxInput,
   Trigger: ComboboxTrigger,
   Clear: ComboboxClear,
-  Portal: BaseCombobox.Portal,
-  Positioner: ComboboxPositioner,
   Popup: ComboboxPopup,
   List: ComboboxList,
   Item: ComboboxItem,
   ItemIndicator: ComboboxIndicator,
   Empty: ComboboxEmpty,
   Status: ComboboxStatus,
-  Group: BaseCombobox.Group,
+  Group: ComboboxSdk.ComboboxGroup,
   GroupLabel: ComboboxGroupLabel,
   Chips: ComboboxChips,
   Chip: ComboboxChip,
   ChipRemove: ComboboxChipRemove,
-  Value: ComboboxValue,
-  Collection: BaseCombobox.Collection,
+  Value: ComboboxSdk.ComboboxValue,
 };

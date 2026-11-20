@@ -292,16 +292,23 @@ function createCollection<T>({ name, schema, removal }: CollectionDefinition<T>)
     return { items, hasMore: false, nextOffset: position };
   }
 
-  async function all(reader: ActorRecordReader, context: Context = BACKGROUND_CONTEXT): Promise<ReadonlyArray<T>> {
-    const items: Array<T> = [];
-    let current = await page(reader, {}, context);
+  async function* scan(reader: ActorRecordReader, input: ActorRecordPageInput, context: Context = BACKGROUND_CONTEXT) {
+    let current = await page(reader, input, context);
 
-    items.push(...current.items);
+    yield* current.items;
 
     while (current.hasMore) {
-      current = await page(reader, { offset: current.nextOffset }, context);
+      current = await page(reader, { ...input, after: undefined, offset: current.nextOffset }, context);
 
-      items.push(...current.items);
+      yield* current.items;
+    }
+  }
+
+  async function all(reader: ActorRecordReader, context: Context = BACKGROUND_CONTEXT): Promise<ReadonlyArray<T>> {
+    const items: Array<T> = [];
+
+    for await (const item of scan(reader, {}, context)) {
+      items.push(item);
     }
 
     return items;
@@ -352,6 +359,7 @@ function createCollection<T>({ name, schema, removal }: CollectionDefinition<T>)
     readAt,
     lastInTransaction,
     page,
+    scan,
     all,
     allInTransaction,
     retire,

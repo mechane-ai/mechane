@@ -1,6 +1,6 @@
 {
   "name": "@mechane-ai/elements",
-  "version": "0.39.0",
+  "version": "0.40.0",
   "description": "Elements by Mechane — React components for applications, AI interfaces, and analytical graphics",
   "license": "Apache-2.0",
   "repository": {
@@ -13,7 +13,6 @@
     "skills",
     "packages/foundations/src/constants.stylex.ts",
     "packages/foundations/src/tokens.stylex.ts",
-    "styles.css",
     "README.md",
     "LICENSE",
     "NOTICE"
@@ -47,6 +46,7 @@
     "./charts/hierarchy": "./packages/charts/src/hierarchy/index.ts",
     "./charts/timeline": "./packages/charts/src/timeline/index.ts",
     "./theme": "./packages/foundations/src/theme.ts",
+    "./agent": "./packages/foundations/src/agent/index.ts",
     "./csp": "./packages/foundations/src/csp/index.ts",
     "./tokens": "./packages/foundations/src/tokens.ts",
     "./constants.stylex": "./packages/foundations/src/constants.stylex.ts",
@@ -63,22 +63,18 @@
   },
   "dependencies": {
     "@base-ui/react": "1.9.0",
-    "@daypicker/react": "10.0.2",
     "@pierre/diffs": "1.6.4",
     "@pierre/highlights": "0.4.0",
-    "@pierre/theme": "1.1.0",
-    "@pierre/trees": "1.0.0-beta.6",
     "@shadcn/react": "0.3.1",
     "@stylexjs/stylex": "0.19.1",
-    "@tanstack/react-hotkeys": "0.22.0",
     "@tanstack/react-table": "9.3.1",
     "@tanstack/react-virtual": "3.14.26",
+    "@ui-sdk/core": "0.1.0-beta.13",
+    "@ui-sdk/react": "0.1.0-beta.13",
     "@visx/hierarchy": "4.0.0",
     "@visx/scale": "4.0.0",
     "@visx/shape": "4.0.0",
     "lucide-react": "1.66.0",
-    "react-resizable-panels": "4.18.0",
-    "sonner": "2.0.8",
     "streamdown": "2.7.1",
     "strip-ansi": "7.2.0"
   },

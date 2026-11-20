@@ -1,6 +1,6 @@
-import { Button as BaseButton } from '@base-ui/react/button';
-import { mergeProps } from '@base-ui/react/merge-props';
 import * as stylex from '@stylexjs/stylex';
+import { Button as SdkButton } from '@ui-sdk/react/button';
+import type { ButtonState } from '@ui-sdk/react/button';
 import { Check, Copy } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { ComponentProps, ReactNode } from 'react';
@@ -71,9 +71,10 @@ const copiedVisibility = {
   failed: styles.hidden,
 } satisfies Record<CopyStatus, stylex.StyleXStyles>;
 
-type CopyValueProps = Omit<ComponentProps<typeof BaseButton>, 'value'> & {
+type CopyValueProps = Omit<ComponentProps<typeof SdkButton>, 'value' | 'children'> & {
   readonly value: CopySource;
   readonly label: string;
+  readonly children?: ReactNode;
   readonly display?: 'value' | 'icon';
 };
 
@@ -140,30 +141,23 @@ export function CopyValue({
     failed: `Could not copy ${label}. Select and copy the value.`,
   } satisfies Record<CopyStatus, string>;
 
-  const events = mergeProps<'button'>(
-    {
-      onClick: () => {
-        void copy();
-      },
-    },
-    { onClick },
-  );
-
   return (
-    <BaseButton
+    <SdkButton
       {...props}
-      render={render}
-      {...events}
-      {...mergeStyles<BaseButton.State>({
-        className,
-        style,
-        styles: stylex.props(render === undefined && styles.button),
-      })}
+      {...(render !== undefined && { render })}
+      onClick={(event, details) => {
+        onClick?.(event, details);
+
+        if (!event.defaultPrevented) {
+          void copy();
+        }
+      }}
+      {...mergeStyles<ButtonState>({ className, style, styles: stylex.props(render === undefined && styles.button) })}
       type="button"
       aria-label={`Copy ${label}`}
       aria-busy={status === 'pending' || props['aria-busy']}
       disabled={disabled || status === 'pending'}
-      focusableWhenDisabled={status === 'pending' || props.focusableWhenDisabled}
+      focusableWhenDisabled={status === 'pending' || props.focusableWhenDisabled === true}
       title={props.title ?? (typeof value === 'string' ? value : label)}
     >
       {display === 'value' && (
@@ -180,6 +174,6 @@ export function CopyValue({
       <span role="status" {...stylex.props(accessibility.hidden)}>
         {messages[status]}
       </span>
-    </BaseButton>
+    </SdkButton>
   );
 }

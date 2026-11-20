@@ -1,9 +1,11 @@
-import { Autocomplete } from '@base-ui/react/autocomplete';
 import * as stylex from '@stylexjs/stylex';
-import { useFormatForDisplay, useHotkeys } from '@tanstack/react-hotkeys';
+import { matchesShortcut } from '@ui-sdk/core/shortcuts';
+import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from '@ui-sdk/react/command';
+import { useShortcutHint } from '@ui-sdk/react/shortcuts';
+import { useEffect, useEffectEvent } from 'react';
 import type { ReactElement, ReactNode, RefObject } from 'react';
-import { Input } from '../../../forms/src/index.ts';
 import { conditions } from '../../../foundations/src/constants.stylex.ts';
+import { controlStyles } from '../../../foundations/src/control-styles.ts';
 import { colors, controls, radii, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { Dialog } from '../../../overlays/src/index.ts';
 import { Kbd } from '../navigation.tsx';
@@ -71,66 +73,84 @@ export type CommandShortcutsOptions = {
   readonly isEnabled: boolean;
 };
 
+function shortcutKeys(shortcut: CommandShortcut): string {
+  return [
+    shortcut.mod === true && 'mod',
+    shortcut.ctrl === true && 'ctrl',
+    shortcut.meta === true && 'meta',
+    shortcut.shift === true && 'shift',
+    shortcut.alt === true && 'alt',
+    shortcut.key,
+  ]
+    .filter(Boolean)
+    .join('+');
+}
+
 export function useCommandShortcuts({ commands, target, isEnabled }: CommandShortcutsOptions): void {
-  const bindings = commands.flatMap((command) => {
-    if (!isEnabled || command.isDisabled === true || command.shortcut === undefined) {
-      return [];
+  const handleKey = useEffectEvent((event: KeyboardEvent, region: HTMLElement) => {
+    if (event.defaultPrevented || event.repeat || event.isComposing) {
+      return;
     }
 
-    return [
-      {
-        hotkey: command.shortcut,
-        callback: (event: KeyboardEvent) => {
-          if (event.defaultPrevented || event.repeat || command.shouldRun?.(event) === false) {
-            return;
-          }
+    if (
+      event.target instanceof Element &&
+      event.target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])') !== null
+    ) {
+      return;
+    }
 
-          const region = target !== null && 'current' in target ? target.current : target;
+    const command = commands.find((action) => {
+      if (action.isDisabled === true || action.shortcut === undefined) {
+        return false;
+      }
 
-          const document = region?.ownerDocument ?? globalThis.document;
+      return matchesShortcut(event, shortcutKeys(action.shortcut)) && action.shouldRun?.(event) !== false;
+    });
 
-          const overlays = document.querySelectorAll(
-            ':is(dialog[open], [role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], [data-base-ui-popover-popup]):not([data-closed])',
-          );
+    if (command === undefined) {
+      return;
+    }
 
-          for (const overlay of overlays) {
-            if (region === null || !overlay.contains(region)) {
-              return;
-            }
-          }
+    const overlays = region.ownerDocument.querySelectorAll(
+      ':is(dialog[open], [role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], [data-slot="popover-content"]):not([data-closed])',
+    );
 
-          if (
-            event.target instanceof Element &&
-            event.target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])') !== null
-          ) {
-            return;
-          }
+    for (const overlay of overlays) {
+      if (overlay.getClientRects().length > 0 && !overlay.contains(region)) {
+        return;
+      }
+    }
 
-          event.preventDefault();
-          event.stopPropagation();
-          command.onSelect();
-        },
-        options: { requireReset: true, meta: { name: command.label } },
-      },
-    ];
+    event.preventDefault();
+    event.stopPropagation();
+    command.onSelect();
   });
 
-  useHotkeys(bindings, {
-    target,
-    ignoreInputs: true,
-    ignoreDefaultPrevented: true,
-    preventDefault: false,
-    stopPropagation: false,
-    conflictBehavior: 'error',
-  });
+  useEffect(() => {
+    const region = target !== null && 'current' in target ? target.current : target;
+
+    if (!isEnabled || region === null) {
+      return;
+    }
+
+    const scope = region;
+
+    function onKeyDown(event: KeyboardEvent): void {
+      handleKey(event, scope);
+    }
+
+    region.addEventListener('keydown', onKeyDown);
+
+    return () => region.removeEventListener('keydown', onKeyDown);
+  }, [isEnabled, target]);
 }
 
 export type ShortcutHintProps = { readonly shortcut: CommandShortcut };
 
 export function ShortcutHint({ shortcut }: ShortcutHintProps): ReactNode {
-  const format = useFormatForDisplay();
+  const { text } = useShortcutHint(shortcutKeys(shortcut));
 
-  return <Kbd>{format(shortcut)}</Kbd>;
+  return <Kbd>{text}</Kbd>;
 }
 
 export type CommandPaletteProps = {
@@ -155,46 +175,55 @@ export function CommandPalette({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       {trigger !== undefined && <Dialog.Trigger render={trigger} />}
-      <Dialog.Portal>
-        <Dialog.Backdrop motion="none" />
-        <Dialog.Popup motion="none">
-          <div {...stylex.props(styles.content)}>
-            <Dialog.Title>{title}</Dialog.Title>
-            <Autocomplete.Root
-              items={commands}
-              itemToStringValue={(command) => command.label}
-              inline
-              open
-              autoHighlight="always"
-            >
-              <Autocomplete.Input aria-label={placeholder} placeholder={placeholder} render={<Input />} />
-              <Autocomplete.List {...stylex.props(styles.list)}>
-                {(command: CommandAction) => (
-                  <Autocomplete.Item
-                    key={command.id}
-                    value={command}
-                    disabled={command.isDisabled}
-                    {...stylex.props(styles.item)}
-                    onClick={() => {
-                      onOpenChange(false);
-                      command.onSelect();
-                    }}
-                  >
-                    <span {...stylex.props(styles.text)}>
-                      {command.label}
-                      {command.description !== undefined && (
-                        <span {...stylex.props(styles.description)}>{command.description}</span>
-                      )}
-                    </span>
-                    {command.shortcut !== undefined && <ShortcutHint shortcut={command.shortcut} />}
-                  </Autocomplete.Item>
-                )}
-              </Autocomplete.List>
-              <Autocomplete.Empty {...stylex.props(styles.empty)}>{empty}</Autocomplete.Empty>
-            </Autocomplete.Root>
-          </div>
-        </Dialog.Popup>
-      </Dialog.Portal>
+      <Dialog.Backdrop motion="none" />
+      <Dialog.Popup motion="none">
+        <div {...stylex.props(styles.content)}>
+          <Dialog.Title>{title}</Dialog.Title>
+          <Command
+            filter="contains"
+            onAction={(id) => {
+              const command = commands.find((action) => action.id === id && action.isDisabled !== true);
+
+              if (command !== undefined) {
+                onOpenChange(false);
+                command.onSelect();
+              }
+            }}
+            {...stylex.props(styles.content)}
+          >
+            <CommandInput
+              aria-label={placeholder}
+              placeholder={placeholder}
+              {...stylex.props(
+                controlStyles.base,
+                controlStyles.field,
+                controlStyles.singleLineField,
+                controlStyles.textFieldState,
+              )}
+            />
+            <CommandList {...stylex.props(styles.list)}>
+              {commands.map((command) => (
+                <CommandItem
+                  key={command.id}
+                  value={command.id}
+                  label={command.label}
+                  disabled={command.isDisabled === true}
+                  {...stylex.props(styles.item)}
+                >
+                  <span {...stylex.props(styles.text)}>
+                    {command.label}
+                    {command.description !== undefined && (
+                      <span {...stylex.props(styles.description)}>{command.description}</span>
+                    )}
+                  </span>
+                  {command.shortcut !== undefined && <ShortcutHint shortcut={command.shortcut} />}
+                </CommandItem>
+              ))}
+            </CommandList>
+            <CommandEmpty {...stylex.props(styles.empty)}>{empty}</CommandEmpty>
+          </Command>
+        </div>
+      </Dialog.Popup>
     </Dialog.Root>
   );
 }

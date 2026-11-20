@@ -11,7 +11,14 @@ import { pageFromRows } from '../page.ts';
 import type { Page } from '../page.ts';
 
 export type MechScope = { readonly workspaceId: string; readonly mechId: string };
-export type MechPageInput = { readonly workspaceId: string; readonly after: string | null; readonly maxRows: number };
+
+export type MechPageInput = {
+  readonly workspaceId: string;
+  readonly after: string | null;
+  readonly maxRows: number;
+  readonly search?: string;
+  readonly filter?: Mech['status'];
+};
 
 export type CreateMechInput = {
   readonly workspaceId: string;
@@ -151,8 +158,11 @@ async function listMechs(context: StoreContext, input: MechPageInput): Promise<P
   forked_from AS "forkedFrom", creation_fingerprint AS "creationFingerprint" FROM mechane.mechs
      WHERE workspace_id = $1 AND ($2::uuid IS NULL OR (created_at,id) >
        (SELECT created_at,id FROM mechane.mechs WHERE workspace_id = $1 AND id = $2))
+       AND ($4::text IS NULL OR status = $4)
+       AND ($5::text IS NULL OR strpos(lower(name), lower($5)) > 0 OR strpos(lower(model), lower($5)) > 0
+         OR strpos(id::text, lower($5)) > 0)
      ORDER BY created_at,id LIMIT $3`,
-    [input.workspaceId, input.after, input.maxRows + 1],
+    [input.workspaceId, input.after, input.maxRows + 1, input.filter ?? null, input.search ?? null],
   );
 
   return pageFromRows({ rows: result.rows, maxRows: input.maxRows });

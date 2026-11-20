@@ -1,9 +1,29 @@
-import { Fieldset as BaseFieldset } from '@base-ui/react/fieldset';
-import { Input as BaseInput } from '@base-ui/react/input';
 import { mergeProps } from '@base-ui/react/merge-props';
-import { NumberField as BaseNumberField } from '@base-ui/react/number-field';
-import { Slider as BaseSlider } from '@base-ui/react/slider';
 import * as stylex from '@stylexjs/stylex';
+import {
+  Field as SdkField,
+  FieldControl as SdkFieldControl,
+  FieldLabel as SdkFieldLabel,
+  FieldLegend as SdkFieldLegend,
+  FieldSet as SdkFieldSet,
+  useFieldControl,
+} from '@ui-sdk/react/field';
+import { InputGroup as SdkInputGroup } from '@ui-sdk/react/input';
+import {
+  NumberInputControl,
+  NumberInputDecrement,
+  NumberInputGroup,
+  NumberInputIncrement,
+  NumberInput as SdkNumberInput,
+} from '@ui-sdk/react/number-input';
+import {
+  Slider as SdkSlider,
+  SliderControl as SdkSliderControl,
+  SliderIndicator as SdkSliderIndicator,
+  SliderThumb as SdkSliderThumb,
+  SliderTrack as SdkSliderTrack,
+  SliderValue as SdkSliderValue,
+} from '@ui-sdk/react/slider';
 import { createContext, useContext } from 'react';
 import type { ComponentProps, ReactNode } from 'react';
 import { conditions } from '../../foundations/src/constants.stylex.ts';
@@ -19,13 +39,14 @@ import {
 import { mergeStyles } from '../../foundations/src/style-composition.ts';
 import type { PlacementStyle } from '../../foundations/src/style-composition.ts';
 import { colors, controls, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
-import { fieldStyles } from './field-styles.ts';
+import { TextInput } from './forms.tsx';
 import type { InputProps } from './forms.tsx';
 
 const InputGroupDensityContext = createContext<ControlDensity>('standard');
 const NumberFieldDensityContext = createContext<ControlDensity>('standard');
 
 const styles = stylex.create({
+  fieldContext: { display: 'contents' },
   fieldset: {
     display: 'flex',
     flexDirection: 'column',
@@ -132,7 +153,7 @@ const styles = stylex.create({
     'backgroundColor': colors.surface,
     ':hover:not([data-disabled])': { backgroundColor: { [conditions.hoverPointer]: colors.canvas } },
     ':is([data-dragging]):not([data-disabled])': { backgroundColor: colors.canvas },
-    ':focus-visible': {
+    ':has(:focus-visible)': {
       outlineWidth: controls.focusWidth,
       outlineStyle: 'solid',
       outlineColor: colors.focus,
@@ -216,75 +237,72 @@ const fileDensityStyles = { standard: fileStyles.standard, compact: fileStyles.c
   stylex.CompiledStyles
 >;
 
-type FieldsetRootProps = ComponentProps<typeof BaseFieldset.Root> & { readonly xstyle?: PlacementStyle };
-type FieldsetLegendProps = ComponentProps<typeof BaseFieldset.Legend>;
+type FieldsetRootProps = ComponentProps<typeof SdkFieldSet> & { readonly xstyle?: PlacementStyle };
+type FieldsetLegendProps = ComponentProps<typeof SdkFieldLegend>;
 
-type InputGroupRootProps = ComponentProps<'div'> & {
+type InputGroupRootProps = ComponentProps<typeof SdkInputGroup> & {
   readonly density?: ControlDensity;
   readonly xstyle?: PlacementStyle;
 };
 
 type InputGroupAddonProps = ComponentProps<'span'>;
-type InputGroupInputProps = Omit<InputProps, 'density'>;
+type InputGroupInputProps = InputProps & { readonly density?: never };
 
 type NumberFieldRootProps = Omit<
-  ComponentProps<typeof BaseNumberField.Root>,
+  ComponentProps<typeof SdkNumberInput>,
   'value' | 'defaultValue' | 'onValueChange' | 'locale'
 > &
   (
-    | ValueStateProperties<number | null, NonNullable<BaseNumberField.Root.Props['onValueChange']>, number>
-    | ReadOnlyValueProperties<number | null, NonNullable<BaseNumberField.Root.Props['onValueChange']>>
+    | ValueStateProperties<number | null, NonNullable<ComponentProps<typeof SdkNumberInput>['onValueChange']>, number>
+    | ReadOnlyValueProperties<number | null, NonNullable<ComponentProps<typeof SdkNumberInput>['onValueChange']>>
   ) & { readonly locale: string; readonly density?: ControlDensity; readonly xstyle?: PlacementStyle };
 
-type NumberFieldGroupProps = ComponentProps<typeof BaseNumberField.Group>;
-type NumberFieldInputProps = ComponentProps<typeof BaseNumberField.Input>;
-type NumberFieldIncrementProps = ComponentProps<typeof BaseNumberField.Increment>;
-type NumberFieldDecrementProps = ComponentProps<typeof BaseNumberField.Decrement>;
+type NumberFieldGroupProps = ComponentProps<typeof NumberInputGroup>;
+type NumberFieldInputProps = ComponentProps<typeof NumberInputControl>;
+type NumberFieldIncrementProps = ComponentProps<typeof NumberInputIncrement>;
+type NumberFieldDecrementProps = ComponentProps<typeof NumberInputDecrement>;
 
-type SliderRootProps<Value extends number | ReadonlyArray<number>> = Omit<
-  BaseSlider.Root.Props<Value>,
+type SliderRootProps<Value extends number | Array<number>> = Omit<
+  ComponentProps<typeof SdkSlider<Value>>,
   'value' | 'defaultValue' | 'onValueChange' | 'locale'
 > &
-  ValueStateProperties<Value, NonNullable<BaseSlider.Root.Props<Value>['onValueChange']>> & {
+  ValueStateProperties<Value, NonNullable<ComponentProps<typeof SdkSlider<Value>>['onValueChange']>> & {
     readonly locale: string;
     readonly xstyle?: PlacementStyle;
   };
 
-type SliderControlProps = ComponentProps<typeof BaseSlider.Control>;
-type SliderTrackProps = ComponentProps<typeof BaseSlider.Track>;
-type SliderIndicatorProps = ComponentProps<typeof BaseSlider.Indicator>;
-type SliderThumbProps = ComponentProps<typeof BaseSlider.Thumb>;
-type SliderLabelProps = ComponentProps<typeof BaseSlider.Label>;
-type SliderValueProps = ComponentProps<typeof BaseSlider.Value>;
+type SliderControlProps = ComponentProps<typeof SdkSliderControl>;
+type SliderTrackProps = ComponentProps<typeof SdkSliderTrack>;
+type SliderIndicatorProps = ComponentProps<typeof SdkSliderIndicator>;
+type SliderThumbProps = ComponentProps<typeof SdkSliderThumb>;
+type SliderLabelProps = ComponentProps<typeof SdkFieldLabel>;
+type SliderValueProps = ComponentProps<typeof SdkSliderValue>;
 
-type FilePickerProps = Omit<ComponentProps<typeof BaseInput>, 'type' | 'value' | 'defaultValue' | 'onValueChange'> & {
-  readonly density?: ControlDensity;
-  readonly xstyle?: PlacementStyle;
-};
+type FilePickerProps = Omit<
+  ComponentProps<typeof SdkFieldControl>,
+  'type' | 'value' | 'defaultValue' | 'onValueChange'
+> & { readonly density?: ControlDensity; readonly xstyle?: PlacementStyle };
 
 function FieldsetRoot({ className, style, xstyle, ...props }: FieldsetRootProps): ReactNode {
   return (
-    <BaseFieldset.Root
-      {...props}
-      {...mergeStyles<BaseFieldset.Root.State>({ className, style, styles: stylex.props(styles.fieldset, xstyle) })}
-    />
+    <SdkFieldSet {...props} {...mergeStyles({ className, style, styles: stylex.props(styles.fieldset, xstyle) })} />
   );
 }
 
 function FieldsetLegend({ className, style, ...props }: FieldsetLegendProps): ReactNode {
-  return (
-    <BaseFieldset.Legend
-      {...props}
-      {...mergeStyles<BaseFieldset.Legend.State>({ className, style, styles: stylex.props(styles.legend) })}
-    />
-  );
+  return <SdkFieldLegend {...props} {...mergeStyles({ className, style, styles: stylex.props(styles.legend) })} />;
 }
 
-function InputGroupRoot({ density = 'standard', xstyle, ...props }: InputGroupRootProps): ReactNode {
+function InputGroupRoot({ density = 'standard', className, style, xstyle, ...props }: InputGroupRootProps): ReactNode {
   return (
     <InputGroupDensityContext value={density}>
-      <div
-        {...mergeProps<'div'>(stylex.props(controlStyles.group, controlTargetDensityStyles[density], xstyle), props)}
+      <SdkInputGroup
+        {...props}
+        {...mergeStyles({
+          className,
+          style,
+          styles: stylex.props(controlStyles.group, controlTargetDensityStyles[density], xstyle),
+        })}
       />
     </InputGroupDensityContext>
   );
@@ -296,28 +314,10 @@ function InputGroupAddon(props: InputGroupAddonProps): ReactNode {
   return <span {...mergeProps<'span'>(stylex.props(styles.addon, addonDensityStyles[density]), props)} />;
 }
 
-function InputGroupInput({ className, style, xstyle, ...props }: InputGroupInputProps): ReactNode {
+function InputGroupInput(props: InputGroupInputProps): ReactNode {
   const density = useContext(InputGroupDensityContext);
 
-  return (
-    <BaseInput
-      {...props}
-      {...mergeStyles<BaseInput.State>({
-        className,
-        style,
-        styles: stylex.props(
-          controlStyles.base,
-          controlStyles.field,
-          controlStyles.singleLineField,
-          fieldStyles.input,
-          controlDensityStyles[density],
-          singleLineControlDensityStyles[density],
-          controlStyles.embedded,
-          xstyle,
-        ),
-      })}
-    />
-  );
+  return <TextInput {...props} density={density} isEmbedded />;
 }
 
 function NumberFieldRoot({
@@ -329,13 +329,9 @@ function NumberFieldRoot({
 }: NumberFieldRootProps): ReactNode {
   return (
     <NumberFieldDensityContext value={density}>
-      <BaseNumberField.Root
+      <SdkNumberInput
         {...props}
-        {...mergeStyles<BaseNumberField.Root.State>({
-          className,
-          style,
-          styles: stylex.props(controlStyles.fieldRoot, xstyle),
-        })}
+        {...mergeStyles({ className, style, styles: stylex.props(controlStyles.fieldRoot, xstyle) })}
       />
     </NumberFieldDensityContext>
   );
@@ -345,9 +341,9 @@ function NumberFieldGroup({ className, style, ...props }: NumberFieldGroupProps)
   const density = useContext(NumberFieldDensityContext);
 
   return (
-    <BaseNumberField.Group
+    <NumberInputGroup
       {...props}
-      {...mergeStyles<BaseNumberField.Group.State>({
+      {...mergeStyles({
         className,
         style,
         styles: stylex.props(controlStyles.group, controlTargetDensityStyles[density]),
@@ -360,16 +356,16 @@ function NumberFieldInput({ className, style, ...props }: NumberFieldInputProps)
   const density = useContext(NumberFieldDensityContext);
 
   return (
-    <BaseNumberField.Input
+    <NumberInputControl
       {...props}
-      {...mergeStyles<BaseNumberField.Input.State>({
+      {...mergeStyles({
         className,
         style,
         styles: stylex.props(
           controlStyles.base,
           controlStyles.field,
           controlStyles.singleLineField,
-          fieldStyles.input,
+          controlStyles.textFieldState,
           controlDensityStyles[density],
           singleLineControlDensityStyles[density],
           controlStyles.embedded,
@@ -390,17 +386,13 @@ function NumberFieldIncrement({
   const density = useContext(NumberFieldDensityContext);
 
   return (
-    <BaseNumberField.Increment
+    <NumberInputIncrement
       {...props}
       aria-label={label}
-      {...mergeStyles<BaseNumberField.Increment.State>({
-        className,
-        style,
-        styles: stylex.props(actionTargetDensityStyles[density], styles.stepper),
-      })}
+      {...mergeStyles({ className, style, styles: stylex.props(actionTargetDensityStyles[density], styles.stepper) })}
     >
       {children}
-    </BaseNumberField.Increment>
+    </NumberInputIncrement>
   );
 }
 
@@ -414,101 +406,70 @@ function NumberFieldDecrement({
   const density = useContext(NumberFieldDensityContext);
 
   return (
-    <BaseNumberField.Decrement
+    <NumberInputDecrement
       {...props}
       aria-label={label}
-      {...mergeStyles<BaseNumberField.Decrement.State>({
-        className,
-        style,
-        styles: stylex.props(actionTargetDensityStyles[density], styles.stepper),
-      })}
+      {...mergeStyles({ className, style, styles: stylex.props(actionTargetDensityStyles[density], styles.stepper) })}
     >
       {children}
-    </BaseNumberField.Decrement>
+    </NumberInputDecrement>
   );
 }
 
-function SliderRoot<Value extends number | ReadonlyArray<number>>({
+function SliderRoot<Value extends number | Array<number>>({
   className,
   style,
   xstyle,
   ...props
 }: SliderRootProps<Value>): ReactNode {
-  return (
-    <BaseSlider.Root<Value>
-      {...props}
-      {...mergeStyles<BaseSlider.Root.State>({ className, style, styles: stylex.props(styles.slider, xstyle) })}
-    />
+  const field = useFieldControl();
+
+  const slider = (
+    <SdkSlider<Value> {...props} {...mergeStyles({ className, style, styles: stylex.props(styles.slider, xstyle) })} />
   );
+
+  return field === null ? <SdkField {...stylex.props(styles.fieldContext)}>{slider}</SdkField> : slider;
 }
 
 function SliderControl({ className, style, ...props }: SliderControlProps): ReactNode {
   return (
-    <BaseSlider.Control
-      {...props}
-      {...mergeStyles<BaseSlider.Control.State>({ className, style, styles: stylex.props(styles.sliderControl) })}
-    />
+    <SdkSliderControl {...props} {...mergeStyles({ className, style, styles: stylex.props(styles.sliderControl) })} />
   );
 }
 
 function SliderTrack({ className, style, ...props }: SliderTrackProps): ReactNode {
-  return (
-    <BaseSlider.Track
-      {...props}
-      {...mergeStyles<BaseSlider.Track.State>({ className, style, styles: stylex.props(styles.track) })}
-    />
-  );
+  return <SdkSliderTrack {...props} {...mergeStyles({ className, style, styles: stylex.props(styles.track) })} />;
 }
 
 function SliderIndicator({ className, style, ...props }: SliderIndicatorProps): ReactNode {
-  return (
-    <BaseSlider.Indicator
-      {...props}
-      {...mergeStyles<BaseSlider.Indicator.State>({ className, style, styles: stylex.props(styles.range) })}
-    />
-  );
+  return <SdkSliderIndicator {...props} {...mergeStyles({ className, style, styles: stylex.props(styles.range) })} />;
 }
 
 function SliderThumb({ className, style, ...props }: SliderThumbProps): ReactNode {
-  return (
-    <BaseSlider.Thumb
-      {...props}
-      {...mergeStyles<BaseSlider.Thumb.State>({ className, style, styles: stylex.props(styles.thumb) })}
-    />
-  );
+  return <SdkSliderThumb {...props} {...mergeStyles({ className, style, styles: stylex.props(styles.thumb) })} />;
 }
 
 function SliderLabel({ className, style, ...props }: SliderLabelProps): ReactNode {
-  return (
-    <BaseSlider.Label
-      {...props}
-      {...mergeStyles<BaseSlider.Label.State>({ className, style, styles: stylex.props(controlStyles.label) })}
-    />
-  );
+  return <SdkFieldLabel {...props} {...mergeStyles({ className, style, styles: stylex.props(controlStyles.label) })} />;
 }
 
 function SliderValue({ className, style, ...props }: SliderValueProps): ReactNode {
-  return (
-    <BaseSlider.Value
-      {...props}
-      {...mergeStyles<BaseSlider.Value.State>({ className, style, styles: stylex.props(styles.value) })}
-    />
-  );
+  return <SdkSliderValue {...props} {...mergeStyles({ className, style, styles: stylex.props(styles.value) })} />;
 }
 
 export function FilePicker({ density = 'standard', className, style, xstyle, ...props }: FilePickerProps): ReactNode {
   return (
-    <BaseInput
+    <SdkFieldControl
       {...props}
       type="file"
-      {...mergeStyles<BaseInput.State>({
+      {...mergeStyles({
         className,
         style,
         styles: stylex.props(
           controlStyles.base,
           controlStyles.field,
           controlStyles.singleLineField,
-          fieldStyles.input,
+          controlStyles.textFieldState,
           controlDensityStyles[density],
           singleLineControlDensityStyles[density],
           styles.file,

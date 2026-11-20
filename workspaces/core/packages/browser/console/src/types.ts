@@ -1,8 +1,8 @@
-import type { ManagedEvent } from '@mechane/console-data';
+import type { ListQuery, ManagedEvent } from '@mechane/console-data';
 import type { ConsoleView, Turn } from '@mechane/protocol';
 
 /** Only shareable record selections go in the URL. */
-export type ConsoleLocation = {
+export type ConsoleLocation = ListQuery & {
   /** Absent selects the remembered workspace or opens the workspace chooser. */
   readonly workspace?: string;
   /** Managed resource selections resolve under the selected installation and workspace. */

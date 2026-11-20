@@ -1,26 +1,24 @@
-import { SANDBOX_SERVICE_PREFIX } from '@mechane/sandbox-wire';
+import { EvidenceQuery, SANDBOX_SERVICE_PREFIX } from '@mechane/sandbox-wire';
 import type { SandboxServiceIdentity } from '@mechane/sandbox-wire';
 import { Schema } from 'effect';
-import { EvidenceQuery } from './schemas.ts';
 import type { EvidencePath } from './schemas.ts';
 
 type EvidenceListPathInput = SandboxServiceIdentity & EvidenceQuery;
 
-function evidenceListQuery({ after, turnId }: EvidenceQuery): string {
-  const query = Schema.encodeSync(EvidenceQuery)({ after, turnId });
+function evidenceListQuery({ ...fields }: EvidenceQuery): string {
+  const query = Schema.encodeSync(EvidenceQuery)(fields);
   const parameters = new URLSearchParams(query);
-  const text = parameters.toString();
 
-  if (text.length === 0) {
+  if (parameters.size === 0) {
     return '';
   }
 
-  return `?${text}`;
+  return `?${parameters.toString()}`;
 }
 
 /** Private service routes are called only after the Node runtime admits the workspace member. */
-export function sandboxEvidenceListPath({ workspaceId, mechId, after, turnId }: EvidenceListPathInput): string {
-  const query = evidenceListQuery({ after, turnId });
+export function sandboxEvidenceListPath({ workspaceId, mechId, ...fields }: EvidenceListPathInput): string {
+  const query = evidenceListQuery(fields);
 
   return `${SANDBOX_SERVICE_PREFIX}/${encodeURIComponent(workspaceId)}/${encodeURIComponent(mechId)}/evidence${query}`;
 }

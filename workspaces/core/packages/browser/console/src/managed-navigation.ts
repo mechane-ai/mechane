@@ -10,8 +10,12 @@ export function managedDestination({
   page,
   through,
   eventId,
+  search: text,
+  filter,
 }: ConsoleLocation & { readonly workspace: string; readonly agent: string }) {
   const search = {
+    ...(text !== undefined && { search: text }),
+    ...(filter !== undefined && { filter }),
     ...(thread === undefined ? {} : { thread }),
     ...(page === undefined ? {} : { page }),
     ...(through === undefined ? {} : { through }),
@@ -44,13 +48,21 @@ export function managedDestination({
 /** Each nested path determines its agent and session; query parameters select only the view within that path. */
 export function managedSearch(
   search: Readonly<Record<string, unknown>>,
-): Pick<ConsoleLocation, 'thread' | 'page' | 'through' | 'eventId'> {
+): Pick<ConsoleLocation, 'thread' | 'page' | 'through' | 'eventId' | 'search' | 'filter'> {
   return {
+    ...tableSearch(search),
     ...(typeof search['thread'] === 'string' ? { thread: search['thread'] } : {}),
     ...(typeof search['through'] === 'string' && Number.isFinite(Date.parse(search['through']))
       ? { through: search['through'] }
       : {}),
     ...(typeof search['eventId'] === 'string' ? { eventId: search['eventId'] } : {}),
     ...(typeof search['page'] === 'string' ? { page: search['page'] } : {}),
+  };
+}
+
+export function tableSearch(search: Readonly<Record<string, unknown>>) {
+  return {
+    ...(typeof search['search'] === 'string' && search['search'] !== '' && { search: search['search'] }),
+    ...(typeof search['filter'] === 'string' && search['filter'] !== '' && { filter: search['filter'] }),
   };
 }

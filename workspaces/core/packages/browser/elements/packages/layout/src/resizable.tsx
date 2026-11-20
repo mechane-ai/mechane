@@ -1,18 +1,47 @@
-import { mergeProps } from '@base-ui/react/merge-props';
 import * as stylex from '@stylexjs/stylex';
+import { mergeProps } from '@ui-sdk/react/primitive';
+import { ResizablePanel, ResizableHandle as SdkHandle, Resizable as SdkResizable } from '@ui-sdk/react/resizable';
 import type { ComponentProps, ReactNode } from 'react';
-import { Group, Panel, Separator } from 'react-resizable-panels';
+import { conditions } from '../../foundations/src/constants.stylex.ts';
 import { colors, controls } from '../../foundations/src/tokens.stylex.ts';
+
+const fineHandleSize = 12;
+const fineHandleInset = (fineHandleSize - 1) / 2;
+const fineHandleMargin = -fineHandleInset;
 
 const styles = stylex.create({
   group: { minWidth: 0, minHeight: 0, width: '100%', height: '100%' },
   panel: { minWidth: 0, minHeight: 0, overflow: 'auto' },
   handle: {
+    'position': 'relative',
+    'zIndex': 1,
+    'boxSizing': 'border-box',
     'backgroundColor': colors.line,
-    'width': 1,
-    'minWidth': 1,
-    ':is([aria-orientation="horizontal"])': { height: 1, minHeight: 1, width: '100%' },
-    ':is([data-separator="active"])': { backgroundColor: colors.focus },
+    'backgroundClip': 'content-box',
+    'width': { default: fineHandleSize, [conditions.coarsePointer]: controls.coarseTarget },
+    'paddingInline': {
+      default: fineHandleInset,
+      [conditions.coarsePointer]: `calc((${controls.coarseTarget} - 1px) / 2)`,
+    },
+    'marginInline': {
+      default: fineHandleMargin,
+      [conditions.coarsePointer]: `calc((1px - ${controls.coarseTarget}) / 2)`,
+    },
+    ':is([aria-orientation="horizontal"])': {
+      width: '100%',
+      paddingInline: 0,
+      marginInline: 0,
+      height: { default: fineHandleSize, [conditions.coarsePointer]: controls.coarseTarget },
+      paddingBlock: {
+        default: fineHandleInset,
+        [conditions.coarsePointer]: `calc((${controls.coarseTarget} - 1px) / 2)`,
+      },
+      marginBlock: {
+        default: fineHandleMargin,
+        [conditions.coarsePointer]: `calc((1px - ${controls.coarseTarget}) / 2)`,
+      },
+    },
+    ':is([data-dragging])': { backgroundColor: colors.focus },
     ':focus-visible': {
       outlineWidth: controls.focusWidth,
       outlineStyle: 'solid',
@@ -24,8 +53,8 @@ const styles = stylex.create({
 
 export type ResizableRootProps = {
   readonly orientation?: 'horizontal' | 'vertical';
-  readonly initialSizes?: Readonly<Record<string, number>>;
-  readonly onSizesChange?: (sizes: Readonly<Record<string, number>>) => void;
+  readonly initialSizes?: Array<number>;
+  readonly onSizesChange?: (sizes: Array<number>) => void;
   readonly disabled?: boolean;
 } & Omit<ComponentProps<'div'>, 'onChange' | 'defaultValue'>;
 
@@ -46,22 +75,21 @@ function ResizableRoot({
   orientation = 'horizontal',
   initialSizes,
   onSizesChange,
-  disabled,
+  disabled = false,
   ref,
   ...props
 }: ResizableRootProps): ReactNode {
   return (
-    <Group
+    <SdkResizable
       orientation={orientation}
-      defaultLayout={initialSizes}
-      onLayoutChanged={(sizes, metadata) => {
-        if (metadata.isUserInteraction) {
+      {...(initialSizes !== undefined && { defaultLayout: initialSizes })}
+      onLayoutCommit={(sizes, { event }) => {
+        if (event !== undefined) {
           onSizesChange?.(sizes);
         }
       }}
       disabled={disabled}
-      elementRef={ref}
-      resizeTargetMinimumSize={{ coarse: 44, fine: 12 }}
+      ref={ref}
       {...mergeProps(stylex.props(styles.group), props)}
     />
   );
@@ -77,20 +105,20 @@ function ResizablePane({
   ...props
 }: ResizablePaneProps): ReactNode {
   return (
-    <Panel
+    <ResizablePanel
       id={id}
-      defaultSize={initialSizePercent === undefined ? undefined : `${initialSizePercent}%`}
-      minSize={`${minimumSizePercent}%`}
-      maxSize={`${maximumSizePercent}%`}
+      {...(initialSizePercent !== undefined && { defaultSize: initialSizePercent })}
+      minSize={minimumSizePercent}
+      maxSize={maximumSizePercent}
       collapsible={canCollapse}
-      elementRef={ref}
+      ref={ref}
       {...mergeProps(stylex.props(styles.panel), props)}
     />
   );
 }
 
 function ResizableHandle({ ref, ...props }: ResizableHandleProps): ReactNode {
-  return <Separator elementRef={ref} {...mergeProps(stylex.props(styles.handle), props)} />;
+  return <SdkHandle ref={ref} {...mergeProps(stylex.props(styles.handle), props)} />;
 }
 
 export const Resizable = { Root: ResizableRoot, Pane: ResizablePane, Handle: ResizableHandle };

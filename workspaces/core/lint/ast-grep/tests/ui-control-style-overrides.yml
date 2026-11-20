@@ -2,7 +2,7 @@
 id: ui-control-style-overrides
 valid:
   - "import { Button } from '@mechane-ai/elements'; const control = <Button xstyle={styles.placement} {...injectedProps} />;"
-  - "import { Select } from '@mechane-ai/elements/forms'; const control = <Select.Positioner style={{ left: position }} />;"
+  - "import { Select } from '@mechane-ai/elements/forms'; const control = <Select.Popup sideOffset={8} />;"
   - 'import { SelectControl } from ''@mechane-ai/elements/forms''; const control = <SelectControl density="compact" xstyle={styles.placement} />;'
   - 'const control = <input style={{ width: measuredWidth }} />;'
   - "import { Input } from './local-input'; const control = <Input className={styles.input} />;"

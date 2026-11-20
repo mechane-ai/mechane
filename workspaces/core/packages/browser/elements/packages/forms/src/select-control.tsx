@@ -1,30 +1,27 @@
+import type { SelectProps } from '@ui-sdk/react/select';
 import { Check, ChevronDown } from 'lucide-react';
-import { useRef } from 'react';
 import type { ComponentProps, ReactNode } from 'react';
 import { Select } from './select.tsx';
+import type { SingleSelectionOf } from './selection-state.ts';
 
 export type SelectOption<Value extends string> = Pick<ComponentProps<typeof Select.Item>, 'disabled'> & {
   readonly value: Value;
   readonly label: string;
 };
 
-type SelectValueChange<Value extends string> = NonNullable<ComponentProps<typeof Select.Root<Value>>['onValueChange']>;
+type SelectValueChange<Value extends string> = NonNullable<SingleSelectionOf<SelectProps<Value>>['onValueChange']>;
 
 type SelectControlValueProps<Value extends string> = { readonly value: Value | null } & (
   | { readonly readOnly?: false; readonly onValueChange: SelectValueChange<Value> }
   | { readonly readOnly: true; readonly onValueChange?: never }
 );
 
-type SelectFormProps<Value extends string> = Pick<
-  ComponentProps<typeof Select.Root<Value>>,
-  'name' | 'form' | 'required' | 'autoComplete' | 'inputRef'
->;
+type SelectFormProps<Value extends string> = Pick<SelectProps<Value>, 'name' | 'form' | 'required' | 'autoComplete'>;
 
 type SelectControlTriggerProps = Omit<
   ComponentProps<typeof Select.Trigger>,
   | 'children'
   | 'render'
-  | 'nativeButton'
   | 'type'
   | 'value'
   | 'defaultValue'
@@ -55,35 +52,22 @@ export function SelectControl<Value extends string>({
   value,
   readOnly,
   onValueChange,
+  disabled,
+  id,
   name,
   form,
   required,
   autoComplete,
-  inputRef,
-  disabled,
-  id,
-  onKeyDown,
   ...triggerProps
 }: SelectControlProps<Value>): ReactNode {
-  const typeaheadEvent = useRef<KeyboardEvent | null>(null);
-
   const changeValue: SelectValueChange<Value> = (nextValue, details) => {
-    // Base UI uses the same synthetic event for typeahead and removed-option reconciliation.
-    // Only the active key dispatch makes that synthetic change a user selection.
-    const isSyntheticChange = details.reason === 'none' && details.event.type === 'base-ui';
-    const isReconciliation = isSyntheticChange && typeaheadEvent.current === null;
-
     const isAvailableValue =
       nextValue === null || items.some((item) => item.value === nextValue && item.disabled !== true);
 
-    if (isReconciliation || !isAvailableValue) {
+    if (!isAvailableValue) {
       details.cancel();
 
       return;
-    }
-
-    if (isSyntheticChange) {
-      typeaheadEvent.current = null;
     }
 
     onValueChange?.(nextValue, details);
@@ -95,61 +79,31 @@ export function SelectControl<Value extends string>({
   return (
     <Select.Root<Value>
       {...valueProps}
-      items={items}
-      name={name}
-      form={form}
-      required={required}
-      autoComplete={autoComplete}
-      inputRef={inputRef}
-      disabled={disabled}
-      id={id}
+      items={[...items]}
+      {...(name !== undefined && { name })}
+      {...(form !== undefined && { form })}
+      required={required ?? false}
+      {...(autoComplete !== undefined && { autoComplete })}
+      disabled={disabled ?? false}
     >
-      <Select.Trigger
-        {...triggerProps}
-        id={id}
-        aria-label={label}
-        disabled={disabled}
-        onKeyDown={(event) => {
-          onKeyDown?.(event);
-
-          const hasCommandModifier = event.ctrlKey || event.metaKey || event.altKey;
-          const canTypeahead = !event.defaultPrevented && event.key.length === 1 && !hasCommandModifier;
-
-          if (!canTypeahead) {
-            return;
-          }
-
-          const nativeEvent = event.nativeEvent;
-          typeaheadEvent.current = nativeEvent;
-
-          queueMicrotask(() => {
-            if (typeaheadEvent.current === nativeEvent) {
-              typeaheadEvent.current = null;
-            }
-          });
-        }}
-      >
-        <Select.Value placeholder={placeholder} />
+      <Select.Trigger {...triggerProps} id={id} aria-label={label} disabled={disabled ?? false}>
+        <Select.Value placeholder={placeholder ?? ''} />
         <Select.Icon>
           <ChevronDown size={16} aria-hidden />
         </Select.Icon>
       </Select.Trigger>
-      <Select.Portal>
-        <Select.Positioner align={align}>
-          <Select.Popup>
-            <Select.List>
-              {items.map((item) => (
-                <Select.Item key={item.value} value={item.value} disabled={item.disabled}>
-                  <Select.ItemText>{item.label}</Select.ItemText>
-                  <Select.ItemIndicator>
-                    <Check size={16} aria-hidden />
-                  </Select.ItemIndicator>
-                </Select.Item>
-              ))}
-            </Select.List>
-          </Select.Popup>
-        </Select.Positioner>
-      </Select.Portal>
+      <Select.Popup align={align}>
+        <Select.List>
+          {items.map((item) => (
+            <Select.Item key={item.value} value={item.value} disabled={item.disabled ?? false}>
+              <Select.ItemText>{item.label}</Select.ItemText>
+              <Select.ItemIndicator>
+                <Check size={16} aria-hidden />
+              </Select.ItemIndicator>
+            </Select.Item>
+          ))}
+        </Select.List>
+      </Select.Popup>
     </Select.Root>
   );
 }

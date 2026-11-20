@@ -1,5 +1,7 @@
 export { createConsoleData, createConsoleDataOwner } from './console-data.ts';
 export type { ConsoleData, ConsoleDataOwner } from './console-data.ts';
+export { listFilters, listQuery } from './list-query.ts';
+export type { ListKind, ListQuery } from './list-query.ts';
 export { readRequests } from './requests.ts';
 export type { ReadReceipt, ReadRequest } from './requests.ts';
 export type { CanonicalCollectionOptions } from './collections.ts';

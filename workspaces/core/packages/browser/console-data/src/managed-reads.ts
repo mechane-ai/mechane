@@ -8,6 +8,7 @@ import type { WorkspaceId } from '@mechane/records';
 import { Schema } from 'effect';
 import { upsertRows } from './collections.ts';
 import type { CanonicalCollection, CanonicalTables, CanonicalWriter } from './collections.ts';
+import { listQuery } from './list-query.ts';
 import { isManagedResourceDenied, ManagedResourceMismatch, ManagedSessionUnavailable } from './managed-errors.ts';
 import { ManagedId, projectAgent, projectEvent, projectSession, projectThread } from './managed-records.ts';
 import type { ReadReceipt, ReadRequest } from './requests.ts';
@@ -195,7 +196,7 @@ export async function loadManagedRead({
     case 'sessionArtifact':
       return await loadSessionEvidence({ client, workspaceId, request, signal, tables, canList, writeRows });
     case 'agents': {
-      const page = await client.beta.agents.list(pagination, options);
+      const page = await client.beta.agents.list({ ...pagination, ...listQuery('agents', request) }, options);
 
       return await save(tables.managedAgents, page.data.map(projectAgent), page.next_page);
     }
@@ -222,7 +223,15 @@ export async function loadManagedRead({
       );
     }
     case 'sessions': {
-      const page = await client.beta.sessions.list({ ...pagination, agent_id: request.agentId }, options);
+      const page = await client.beta.sessions.list(
+        {
+          ...pagination,
+          agent_id: request.agentId,
+          ...(request.filter !== undefined && { statuses: [request.filter] }),
+          ...(request.search !== undefined && { search: request.search }),
+        },
+        options,
+      );
 
       if (page.data.some((session) => session.agent.id !== request.agentId)) {
         throw new ManagedResourceMismatch({});
@@ -263,8 +272,18 @@ async function loadSessionEvidence({
   const path = consoleSessionEvidencePath({ workspaceId, ...request });
   const url = new URL(path, client.baseURL);
 
-  if (request.kind === 'sessionEvidence' && request.after !== null) {
-    url.searchParams.set('after', request.after);
+  if (request.kind === 'sessionEvidence') {
+    if (request.after !== null) {
+      url.searchParams.set('after', request.after);
+    }
+
+    if (request.search !== undefined) {
+      url.searchParams.set('search', request.search);
+    }
+
+    if (request.filter !== undefined) {
+      url.searchParams.set('filter', request.filter);
+    }
   }
 
   const wire = await client.get<unknown>(url.href, { signal });

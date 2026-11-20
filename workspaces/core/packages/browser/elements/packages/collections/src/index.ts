@@ -33,6 +33,10 @@ export { Timeline } from './timeline.tsx';
 export type { TimelineProps, TimelineItemProps } from './timeline.tsx';
 
 export { useCollectionControls } from './use-collection-controls.tsx';
-export type { CollectionSearch, CollectionControlsProps } from './use-collection-controls.tsx';
+export type { CollectionSearch } from './query-controls.tsx';
+export type { CollectionControlsProps } from './use-collection-controls.tsx';
 export { CollectionFilters } from './collection-filters.tsx';
 export type { CollectionFilter, FilterOption } from './collection-filters.tsx';
+
+export { TableQueryFrame, useLocalTableQuery } from './table-query.tsx';
+export type { LocalTableQuery, TableFilterDimension, TableQuery, TableQueryException } from './table-query.tsx';

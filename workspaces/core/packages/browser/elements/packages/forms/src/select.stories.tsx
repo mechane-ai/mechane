@@ -15,8 +15,6 @@ const meta = {
     Trigger: Select.Trigger,
     Value: Select.Value,
     Icon: Select.Icon,
-    Portal: Select.Portal,
-    Positioner: Select.Positioner,
     Popup: Select.Popup,
     List: Select.List,
     Item: Select.Item,
@@ -27,7 +25,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Use SelectControl for one choice from labeled string values. It composes Select with the standard trigger icons, option list and popup. Supply items once, a controlled value and onValueChange; readOnly=true can omit the callback. label names the trigger without adding a visible label row, and an enclosing Field supplies form descriptions and errors. name, form, required and inputRef connect the hidden form input; ref and native events belong to the trigger. Disabled options remain visible and cannot be selected. Use compound Select for object or multiple values, custom trigger content or rich option layouts; use Combobox when choices need search. Standard density is the default; compact changes the trigger while popup options stay standard. Selection stays supplied when options change, and opening or focusing never chooses a value.',
+          'Use SelectControl for one choice from labeled string values. It composes Select with the standard trigger icons, option list and popup. Supply items once, a controlled value and onValueChange; readOnly=true can omit the callback. label names the trigger without adding a visible label row, and an enclosing Field supplies form descriptions and errors. name, form, and required connect the form control; ref and native events belong to the trigger. Disabled options remain visible and cannot be selected. Use compound Select for object or multiple values, custom trigger content or rich option layouts; use Combobox when choices need search. Standard density is the default; compact changes the trigger while popup options stay standard. Selection stays supplied when options change, and opening or focusing never chooses a value.',
       },
     },
   },
@@ -81,22 +79,18 @@ function ComposedSelect(): ReactNode {
           <ChevronDown size={16} aria-hidden />
         </Select.Icon>
       </Select.Trigger>
-      <Select.Portal>
-        <Select.Positioner align="end">
-          <Select.Popup>
-            <Select.List>
-              {options.map((option) => (
-                <Select.Item key={option.value} value={option.value} disabled={option.disabled}>
-                  <Select.ItemText>{option.label}</Select.ItemText>
-                  <Select.ItemIndicator>
-                    <Check size={16} aria-hidden />
-                  </Select.ItemIndicator>
-                </Select.Item>
-              ))}
-            </Select.List>
-          </Select.Popup>
-        </Select.Positioner>
-      </Select.Portal>
+      <Select.Popup align="end">
+        <Select.List>
+          {options.map((option) => (
+            <Select.Item key={option.value} value={option.value} disabled={option.disabled ?? false}>
+              <Select.ItemText>{option.label}</Select.ItemText>
+              <Select.ItemIndicator>
+                <Check size={16} aria-hidden />
+              </Select.ItemIndicator>
+            </Select.Item>
+          ))}
+        </Select.List>
+      </Select.Popup>
     </Select.Root>
   );
 }

@@ -37,7 +37,7 @@ Ordinary React composition and inferred framework return types remain allowed un
 
 The upstream clause "Export the package's own prop and value types, and keep third-party component, chart,
 positioning, and animation library types out of exported props." is replaced by this boundary: public props may
-derive from the selected Base UI primitives, Sonner notification API, and React native attributes. Keep query, database, transport, and visx
+describe supported Elements behavior and extend React native attributes. Keep SDK-specific types behind the Elements entry when callers only need a value or an action. Keep query, database, transport, and visx
 implementation types private. Preserve upstream refs, event details, and generic record types.
 
 The upstream clause "Type catalogued choices such as icon names as a finite union of stable names, and keep the
@@ -49,7 +49,7 @@ and type it as `code-typescript-effect-absent-values` requires." uses ordinary R
 That Effect contract is not adopted for browser props.
 
 Mechane-owned interactive controls reject mixed controlled/default inputs and require the controlled change callback.
-An explicit upstream read-only mode may omit the callback. Native inputs retain their native events, and Base UI
+An explicit upstream read-only mode may omit the callback. Native inputs retain their native events, and Elements
 controls retain their typed change callbacks.
 
 The upstream clause "Guard a consequential rejected combination with a compile-time assertion such as

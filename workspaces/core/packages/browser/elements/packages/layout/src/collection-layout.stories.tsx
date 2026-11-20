@@ -3,11 +3,17 @@ import * as stylex from '@stylexjs/stylex';
 import { useState } from 'react';
 import { BarChart, BarChartPlaceholder } from '../../charts/src/cartesian/index.ts';
 import { ChartSeriesMarker } from '../../charts/src/index.ts';
-import { DataTable, DataTablePlaceholder, DataTableText } from '../../collections/src/index.ts';
+import {
+  DataTable,
+  DataTablePlaceholder,
+  DataTableText,
+  TableQueryFrame,
+  useCollectionControls,
+  useLocalTableQuery,
+} from '../../collections/src/index.ts';
 import type { DataTableColumn } from '../../collections/src/index.ts';
 import { Button } from '../../core/src/index.ts';
 import { AsyncRegion, EmptyState, Meter } from '../../feedback/src/index.ts';
-import { Input, SelectControl } from '../../forms/src/index.ts';
 import { CollectionLayout } from './collection-layout.tsx';
 import { PageLayout, PageSection } from './page-layout.tsx';
 
@@ -15,10 +21,12 @@ const records = Array.from({ length: 80 }, (_, index) => ({
   id: String(index),
   name: `Example record ${index + 1}`,
   count: index + 1,
+  status: index % 3 === 0 ? 'Archived' : 'Active',
 }));
 
 const columns = [
   { id: 'name', label: 'Record', role: 'primary', cell: (row) => row.name },
+  { id: 'status', label: 'Status', role: 'text', cell: (row) => row.status },
   { id: 'count', label: 'Count', role: 'number', cell: (row) => row.count },
 ] satisfies ReadonlyArray<DataTableColumn<(typeof records)[number]>>;
 
@@ -50,53 +58,57 @@ type Story = StoryObj;
 
 type ReadState = 'ready' | 'pending' | 'failed' | 'empty';
 
+const readyStates: ReadonlySet<ReadState> = new Set(['ready', 'empty']);
+
 function CollectionExample({ initialState = 'ready' }: { readonly initialState?: ReadState }) {
   const [state, setState] = useState(initialState);
-  const [query, setQuery] = useState('');
-  const rows = state === 'empty' ? [] : records.filter((row) => row.name.toLowerCase().includes(query.toLowerCase()));
+
+  const query = useLocalTableQuery(state === 'empty' ? [] : records, {
+    mode: 'local',
+    search: (row) => row.name,
+    filters: [{ id: 'status', label: 'Status', value: (row) => row.status }],
+  });
+
+  const controls = useCollectionControls({
+    search: query.search,
+    filters: query.filters,
+    isReady: readyStates.has(state),
+  });
+
   const placeholder = <DataTablePlaceholder caption="Records" columns={columns} window={{ height: 'fill' }} />;
 
   return (
-    <PageLayout
-      title="Records"
-      showNavigation={false}
-      actions={
-        <Input
-          type="search"
-          aria-label="Find records"
-          placeholder="Find records…"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-        />
-      }
-    >
-      <CollectionLayout>
-        {state === 'pending' ? (
-          <AsyncRegion state="pending" label="Loading records" placeholder={placeholder} />
-        ) : (
-          <AsyncRegion
-            state={state === 'failed' ? 'failed' : 'ready'}
-            label="Loading records"
-            placeholder={placeholder}
-          >
-            {state === 'failed' ? (
-              <EmptyState
-                title="Records unavailable"
-                action={<Button onClick={() => setState('ready')}>Retry records</Button>}
-              />
-            ) : (
-              <DataTable
-                rows={rows}
-                columns={columns}
-                getRowId={(row) => row.id}
-                caption="Records"
-                window={{ height: 'fill' }}
-                empty="No matching records."
-              />
-            )}
-          </AsyncRegion>
-        )}
-      </CollectionLayout>
+    <PageLayout title="Records" showNavigation={false} actions={controls.actions}>
+      <TableQueryFrame search filters isFiltered={query.isFiltered}>
+        <CollectionLayout>
+          {state === 'pending' ? (
+            <AsyncRegion state="pending" label="Loading records" placeholder={placeholder} />
+          ) : (
+            <AsyncRegion
+              state={state === 'failed' ? 'failed' : 'ready'}
+              label="Loading records"
+              placeholder={placeholder}
+            >
+              {state === 'failed' ? (
+                <EmptyState
+                  title="Records unavailable"
+                  action={<Button onClick={() => setState('ready')}>Retry records</Button>}
+                />
+              ) : (
+                <DataTable
+                  query={{ mode: 'frame' }}
+                  rows={query.rows}
+                  columns={columns}
+                  getRowId={(row) => row.id}
+                  caption="Records"
+                  window={{ height: 'fill' }}
+                  empty="No matching records."
+                />
+              )}
+            </AsyncRegion>
+          )}
+        </CollectionLayout>
+      </TableQueryFrame>
     </PageLayout>
   );
 }
@@ -110,12 +122,6 @@ const services = [
   { id: 'api', name: 'API', tone: 'series1', count: 60, values: [15, 20, 25] },
   { id: 'worker', name: 'Worker', tone: 'series2', count: 40, values: [10, 15, 15] },
 ] as const;
-
-const periods = [
-  { id: 'all', label: 'All services' },
-  { id: 'api', label: 'API' },
-  { id: 'worker', label: 'Worker' },
-];
 
 const categories = [
   { id: 'monday', label: 'Monday' },
@@ -132,23 +138,20 @@ function RecordReport({
   readonly hasSummary?: boolean;
   readonly isPending?: boolean;
 }) {
-  const [service, setService] = useState<string | null>('all');
   const [highlightedId, setHighlightedId] = useState<string>();
-  const rows = services.filter((row) => service === 'all' || row.id === service);
+
+  const { rows, search, filters, isFiltered } = useLocalTableQuery(services, {
+    mode: 'local',
+    search: (row) => row.name,
+    filters: [{ id: 'service', label: 'Service', value: (row) => row.name }],
+  });
+
+  const controls = useCollectionControls({ search, filters, isReady: !isPending });
   const series = rows.map((row) => ({ id: row.id, label: row.name, tone: row.tone, values: row.values }));
 
   const report = {
     meta: 'Monday–Wednesday · requests',
     seriesValues: Object.fromEntries(rows.map((row) => [row.id, isPending ? undefined : `${row.count} requests`])),
-    actions: (
-      <SelectControl
-        label="Report service"
-        items={periods.map((period) => ({ value: period.id, label: period.label }))}
-        value={service}
-        onValueChange={setService}
-        density="compact"
-      />
-    ),
   };
 
   const reportColumns = [
@@ -195,25 +198,29 @@ function RecordReport({
   ) : undefined;
 
   const content = (
-    <PageSection
-      title="Services"
-      summary={summary}
-      breakdown={
-        isPending ? (
-          <DataTablePlaceholder caption="Records" columns={reportColumns} />
-        ) : (
-          <DataTable
-            rows={rows}
-            columns={reportColumns}
-            getRowId={(row) => row.id}
-            caption="Reported requests"
-            hideCaption
-            onRowHighlightChange={setHighlightedId}
-            empty="No reported requests."
-          />
-        )
-      }
-    />
+    <TableQueryFrame search filters isFiltered={isFiltered}>
+      <PageSection
+        title="Services"
+        actions={controls.actions}
+        summary={summary}
+        breakdown={
+          isPending ? (
+            <DataTablePlaceholder caption="Records" columns={reportColumns} />
+          ) : (
+            <DataTable
+              query={{ mode: 'frame' }}
+              rows={rows}
+              columns={reportColumns}
+              getRowId={(row) => row.id}
+              caption="Reported requests"
+              hideCaption
+              onRowHighlightChange={setHighlightedId}
+              empty="No reported requests."
+            />
+          )
+        }
+      />
+    </TableQueryFrame>
   );
 
   if (isPending) {

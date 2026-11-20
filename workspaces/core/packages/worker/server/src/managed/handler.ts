@@ -75,7 +75,9 @@ export function createManagedHandler(dependencies: Dependencies) {
     const url = new URL(request.url);
     let path = url.pathname;
 
-    if (path.startsWith('/console-api/v1/')) {
+    const isConsole = path.startsWith('/console-api/v1/');
+
+    if (isConsole) {
       path = path.slice('/console-api'.length);
     }
 
@@ -147,7 +149,7 @@ export function createManagedHandler(dependencies: Dependencies) {
         return managedResponse(result, requestId);
       }
 
-      const matched = matchManagedRoute({ method: request.method, pathname: path });
+      const matched = matchManagedRoute({ method: request.method, pathname: path, isConsole });
 
       if (Option.isNone(matched)) {
         throw new ManagedHttpError(HttpStatusCode.NotFound, 'Resource not found');

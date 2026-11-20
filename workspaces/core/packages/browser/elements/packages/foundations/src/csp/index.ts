@@ -1,2 +1,2 @@
-export { CSPProvider } from '@base-ui/react/csp-provider';
+export { CSPProvider } from './provider.tsx';
 export type { CSPProviderProps } from '@base-ui/react/csp-provider';

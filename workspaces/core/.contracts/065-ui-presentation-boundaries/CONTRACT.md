@@ -73,14 +73,12 @@ Give each implementation library one job inside its owning family:
 
 | Library | Owner and responsibility |
 | --- | --- |
-| Base UI | Accessible controls, focus, overlays, and composition in the family owning that interaction. |
+| UI SDK core and React | Interactive primitives, controlled changes, keyboard navigation, focus and overlay lifecycle in the family owning each interaction. |
+| Base UI | The forms implementation uses `merge-props` for native event composition. Foundations retains `csp-provider` for the public nonce provider. |
 | Lucide | Control and navigation icons with shared sizing. |
 | StyleX | `foundations/src/tokens.stylex.ts` defines shared visual roles; components own their styles. |
 | TanStack Table and Virtual | `collections` models prepared rows and bounds their rendered window. |
-| TanStack Hotkeys | `navigation/src/commands` binds application-owned commands within their focus scope. |
-| DayPicker | `forms/src/dates` supplies calendar mechanics for explicit date selection. |
-| Resizable Panels | `layout` supplies pointer and keyboard pane resizing. |
-| Pierre Highlights, Diffs, and Trees | `content` owns tokenization, diff geometry, and file-tree mechanics. |
+| Pierre Highlights and Diffs | `content` owns tokenization and diff rendering. |
 | Streamdown | `content` parses supplied Markdown through Elements renderers. |
 | shadcn message scroller | `ai` owns scroll anchoring and live-edge following through its headless primitive. |
 | visx | `charts` computes and renders geometry from supplied presentation records. |
@@ -88,8 +86,12 @@ Give each implementation library one job inside its owning family:
 `AgentAvatar` owns its finite catalog of original identity glyphs. Their stable names are presentation data, not a
 second control-icon vocabulary. The forms picker reports an appearance choice; the application owns its persistence.
 
+Implement new interactive Elements with UI SDK or compose other Elements. Keep one owner for each interaction.
+Use semantic HTML and StyleX for static output. Record any specialist behavior retained by a family with the
+capability and browser check it requires. Product code imports Elements public entries.
+
 The application supplies resource reads, mutations, routing, permissions, and record-to-presentation mappings.
-The `/csp` entry exposes Base UI's provider for an application-supplied nonce. Applications own the security policy,
+The `/csp` entry carries the application-supplied nonce to component styles. Applications own the security policy,
 nonce generation, and hydration handoff; components must not generate a replacement nonce or relax that policy.
 The declared package edges and dependency-cruiser enforce import boundaries. Storybook builds the same components
 from synthetic inputs. Lazy loading renderer code and packaged assets is component initialization, not a domain read.
@@ -118,12 +120,12 @@ from synthetic inputs. Lazy loading renderer code and packaged assets is compone
 - dependency-cruiser `ui-ai-dependencies` (065): enforced: Compose independent areas in the application, such as `<AppShell>{chart}</AppShell>`
 - dependency-cruiser `ui-charts-public-entry` (065): enforced: Import another Elements family through its public entry, such as `../../core/src/index.ts`; shared foundation definitions have explicit internal entries
 - dependency-cruiser `ui-charts-dependencies` (065): enforced: Compose independent areas in the application, such as `<AppShell>{chart}</AppShell>`
-- dependency-cruiser `ui-dates-vendor-owner` (065): enforced: Import the Elements dates API, such as `@mechane-ai/elements/forms/dates`, instead of its implementation dependency
-- dependency-cruiser `ui-commands-vendor-owner` (065): enforced: Import the Elements commands API, such as `@mechane-ai/elements/navigation/commands`, instead of its implementation dependency
+- dependency-cruiser `ui-sdk-element-owner` (065): enforced: Compose Elements controls, such as `Button` from `@mechane-ai/elements`; the family owns UI SDK behavior
+- dependency-cruiser `ui-base-utility-owner` (065): enforced: Use the owning Elements component, such as `Dialog` from `@mechane-ai/elements/overlays`; only forms and CSP retain Base UI utilities
+- dependency-cruiser `ui-base-utility-entry` (065): enforced: Implement controls with UI SDK, such as `@ui-sdk/react/dialog`; Base UI supplies only merge-props and csp-provider
 - dependency-cruiser `ui-tables-vendor-owner` (065): enforced: Import the Elements tables API, such as `@mechane-ai/elements/collections`, instead of its implementation dependency
 - dependency-cruiser `ui-content-vendor-owner` (065): enforced: Import the Elements content API, such as `@mechane-ai/elements/content`, instead of its implementation dependency
 - dependency-cruiser `ui-conversation-vendor-owner` (065): enforced: Import the Elements conversation API, such as `@mechane-ai/elements/ai`, instead of its implementation dependency
 - dependency-cruiser `ui-charts-vendor-owner` (065): enforced: Import the Elements charts API, such as `@mechane-ai/elements/charts`, instead of its implementation dependency
-- dependency-cruiser `ui-panes-vendor-owner` (065): enforced: Import the Elements panes API, such as `@mechane-ai/elements/layout`, instead of its implementation dependency
 
 <!-- End of the generated block. -->

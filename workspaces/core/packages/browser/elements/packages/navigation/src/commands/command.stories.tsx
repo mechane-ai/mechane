@@ -63,7 +63,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Application-owned actions power both the command palette and scoped shortcuts. Base UI owns the dialog and search list. TanStack Hotkeys owns registration cleanup and chord matching. Choose CommandPalette for a searchable action list and a Button for a single visible action. ShortcutHint formats the same shortcut definition used by useCommandShortcuts; it does not register a binding. Always supply a scope and explicit eligibility; shortcut activation never bypasses the action’s disabled state.',
+          'Application-owned actions power both the command palette and scoped shortcuts. UI SDK handles command search, keyboard selection, shortcut matching and platform-specific hints. Choose CommandPalette for a searchable action list and a Button for a single visible action. ShortcutHint formats the same shortcut definition used by useCommandShortcuts; it does not register a binding. Always supply a scope and explicit eligibility; shortcut activation never bypasses the action’s disabled state.',
       },
     },
   },

@@ -6,8 +6,8 @@ message: Render application-prepared rows as given, and report sorting and pagin
 
 ## Rules
 
-Pass a data table rows that the application has already filtered, ordered, projected onto the table's columns, and windowed to the current page.
-Give a data table no inputs that process rows, such as a page size, comparator, filter predicate, search text, or data loader; see `ui-presentation-state`.
+Declare how each table supports search and filters with its required `query` prop. Use `local` with a complete finite set of authorized rows. Supply searchable text and meaningful filter dimensions. Use `controlled` for remote or paged collections, or `frame` when the enclosing collection already owns the controls. The application applies access rules, search, filters and stable order before taking a page.
+Supply a concrete reason for a static table or a capability that does not apply. Never treat a partial page as the complete local dataset. See `ui-presentation-state`.
 Use an internal table engine, when there is one, only for its row and column model, and enable none of its sorting, filtering, grouping, or pagination processing.
 Define rows, columns, sort values, and pagination values with the table's own presentation types, never with data-access types or the internal table engine's types.
 
@@ -32,7 +32,7 @@ Use `useCollectionControls` for reusable search disclosure, filter picking, appl
 
 ## Checks
 
-Review the data table's public interface for row-processing inputs, data-access types, and internal table-engine types.
+Check a local search beyond the initial virtual window and a remote search beyond the first page. Check that clearing search and filters restores results and that an enclosing query frame renders one toolbar.
 Supply rows in an order that no column defines, and confirm the table renders that order.
 Activate a sortable header and a page control with callbacks that do not apply the change, and confirm the rows, header sort state, and page position stay as supplied.
 Page through a sorted query whose sort column has tied values, and confirm no row repeats or goes missing.

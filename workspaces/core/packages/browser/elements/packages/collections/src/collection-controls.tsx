@@ -159,32 +159,28 @@ export function DisplayOptions({
       <Popover.Trigger render={<IconButton aria-label={label} title={label} />}>
         <Settings2 size={14} aria-hidden="true" />
       </Popover.Trigger>
-      <Popover.Portal>
-        <Popover.Positioner align="end">
-          <Popover.Popup>
-            <Popover.Title>Display</Popover.Title>
-            <div {...stylex.props(styles.choices)}>
-              {options.map((option) => (
-                <label key={option.id} {...stylex.props(styles.choice)}>
-                  <Checkbox.Root
-                    checked={option.isChecked}
-                    onCheckedChange={(checked) => onChange(option.id, checked)}
-                    disabled={option.isRequired}
-                  >
-                    <Checkbox.Indicator />
-                  </Checkbox.Root>
-                  {option.label}
-                </label>
-              ))}
-              {onReset !== undefined && (
-                <Button type="button" variant="ghost" onClick={onReset}>
-                  Reset defaults
-                </Button>
-              )}
-            </div>
-          </Popover.Popup>
-        </Popover.Positioner>
-      </Popover.Portal>
+      <Popover.Popup align="end">
+        <Popover.Title>Display</Popover.Title>
+        <div {...stylex.props(styles.choices)}>
+          {options.map((option) => (
+            <label key={option.id} {...stylex.props(styles.choice)}>
+              <Checkbox.Root
+                checked={option.isChecked}
+                onCheckedChange={(checked) => onChange(option.id, checked)}
+                disabled={option.isRequired === true}
+              >
+                <Checkbox.Indicator />
+              </Checkbox.Root>
+              {option.label}
+            </label>
+          ))}
+          {onReset !== undefined && (
+            <Button type="button" variant="ghost" onClick={onReset}>
+              Reset defaults
+            </Button>
+          )}
+        </div>
+      </Popover.Popup>
     </Popover.Root>
   );
 }

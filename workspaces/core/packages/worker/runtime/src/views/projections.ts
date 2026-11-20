@@ -10,7 +10,7 @@ import {
   TurnId,
 } from '@mechane/records';
 import { Schema } from 'effect';
-import type { ActorPageInput, ActorTrace, MechScope } from '../actor/client.ts';
+import type { ActorTrace, MechScope, RunPageInput } from '../actor/client.ts';
 import {
   Cancellations,
   Effects,
@@ -251,46 +251,73 @@ async function runPageCursor(access: HistoricalView, after: string | undefined):
   return { nativeAfter: undefined, importedAfter: after };
 }
 
-export async function listRuns(access: HistoricalView, input: ActorPageInput) {
-  const limit = Math.max(1, Math.min(input.maxRows ?? ACTOR_PAGE_DEFAULT_ROWS, ACTOR_PAGE_MAX_ROWS));
+async function* runsAfter(access: HistoricalView, input: RunPageInput, batchRows: number) {
   const cursor = await runPageCursor(access, input.after ?? undefined);
-  const items: Array<Run> = [];
-  let hasMore = false;
 
   if (cursor.importedAfter === undefined) {
-    const native = await Turns.page(
-      access.harness,
-      { after: cursor.nativeAfter, maxRows: limit + 1, isReversed: true },
-      BACKGROUND_CONTEXT,
-    );
+    const options = { after: cursor.nativeAfter, maxRows: batchRows, isReversed: true };
 
-    items.push(...native.items.map((row) => decodeStored(RunRecord, row.value)));
-
-    hasMore = native.hasMore;
+    for await (const row of Turns.scan(access.harness, options)) {
+      yield decodeStored(RunRecord, row.value);
+    }
   }
 
-  if (items.length <= limit) {
-    const imported = await ImportedRunPointers.page(
-      access.harness,
-      { after: cursor.importedAfter, maxRows: limit + 1 - items.length },
-      BACKGROUND_CONTEXT,
-    );
+  if (input.filter !== undefined && input.filter !== 'imported') {
+    return;
+  }
 
-    for (const pointer of imported.items) {
-      const raw = await ImportedHistory.get(access.harness, pointer, BACKGROUND_CONTEXT);
-      const trace = importedTraces([raw], access.scope)[0];
+  for await (const pointer of ImportedRunPointers.scan(access.harness, {
+    after: cursor.importedAfter,
+    maxRows: batchRows,
+  })) {
+    const raw = await ImportedHistory.get(access.harness, pointer, BACKGROUND_CONTEXT);
+    const trace = importedTraces([raw], access.scope)[0];
 
-      if (trace === undefined) {
-        throw new RequestInvalid({ reason: 'The preserved turn pointer has no trace' });
-      }
-
-      items.push(trace.run);
+    if (trace === undefined) {
+      throw new RequestInvalid({ reason: 'The preserved turn pointer has no trace' });
     }
 
-    hasMore = imported.hasMore;
+    yield trace.run;
+  }
+}
+
+function runOutcome(run: Run): NonNullable<RunPageInput['filter']> {
+  if (run.runtimeSource === 'imported') {
+    return 'imported';
   }
 
-  return { items: items.slice(0, limit), hasMore: hasMore || items.length > limit };
+  if (run.status === 'waiting') {
+    return 'running';
+  }
+
+  if (run.status === 'cancelled') {
+    return 'stopped';
+  }
+
+  return run.status;
+}
+
+export async function listRuns(access: HistoricalView, input: RunPageInput) {
+  const limit = Math.max(1, Math.min(input.maxRows ?? ACTOR_PAGE_DEFAULT_ROWS, ACTOR_PAGE_MAX_ROWS));
+  const query = input.search?.toLowerCase() ?? '';
+  const items: Array<Run> = [];
+
+  for await (const run of runsAfter(access, input, limit + 1)) {
+    const matchesFilter = input.filter === undefined || runOutcome(run) === input.filter;
+
+    const matchesSearch =
+      query.length === 0 || run.id.toLowerCase().includes(query) || run.inputText.toLowerCase().includes(query);
+
+    if (matchesFilter && matchesSearch) {
+      if (items.length === limit) {
+        return { items, hasMore: true };
+      }
+
+      items.push(run);
+    }
+  }
+
+  return { items, hasMore: false };
 }
 
 export async function readRun(access: HistoricalView, input: TurnInput): Promise<Run | null> {

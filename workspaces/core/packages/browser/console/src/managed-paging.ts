@@ -1,6 +1,6 @@
 import { useNavigate, useRouterState } from '@tanstack/react-router';
 import type { HistoryState } from '@tanstack/react-router';
-import { managedDestination } from './managed-navigation.ts';
+import { managedDestination, tableSearch } from './managed-navigation.ts';
 import type { ConsoleLocation } from './types.ts';
 
 export function useManagedPaging(location: ConsoleLocation, workspaceId: string) {
@@ -23,18 +23,19 @@ export function useManagedPaging(location: ConsoleLocation, workspaceId: string)
       void navigate({
         to: '/workspaces/$workspaceId/archives',
         params: { workspaceId },
-        search: cursor === null ? {} : { page: cursor },
+        search: { ...tableSearch(location), ...(cursor !== null && { page: cursor }) },
         state,
       });
     } else if (location.agent === undefined) {
       void navigate({
         to: '/',
-        search: { workspace: workspaceId, ...(cursor === null ? {} : { page: cursor }) },
+        search: { ...tableSearch(location), workspace: workspaceId, ...(cursor === null ? {} : { page: cursor }) },
         state,
       });
     } else {
       void navigate({
         ...managedDestination({
+          ...tableSearch(location),
           workspace: workspaceId,
           agent: location.agent,
           ...(location.session === undefined ? {} : { session: location.session }),

@@ -1,4 +1,5 @@
 import * as stylex from '@stylexjs/stylex';
+import { Button as ChartButton } from '@ui-sdk/react/button';
 import { scaleLinear } from '@visx/scale';
 import { Bar } from '@visx/shape';
 import type { ReactNode, Ref } from 'react';
@@ -187,7 +188,7 @@ export function Waterfall({
         const timing = formatGeometry({ geometry: item.geometry, start, formatOffset });
 
         return (
-          <button
+          <ChartButton
             key={item.id}
             ref={selectedId === item.id ? selectedRef : undefined}
             type="button"
@@ -239,7 +240,7 @@ export function Waterfall({
                 </Text>
               )}
             </span>
-          </button>
+          </ChartButton>
         );
       })}
     </div>

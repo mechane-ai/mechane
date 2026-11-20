@@ -53,6 +53,7 @@ const VALUES = {
       './charts/hierarchy': './packages/charts/src/hierarchy/index.ts',
       './charts/timeline': './packages/charts/src/timeline/index.ts',
       './theme': './packages/foundations/src/theme.ts',
+      './agent': './packages/foundations/src/agent/index.ts',
       './csp': './packages/foundations/src/csp/index.ts',
       './tokens': './packages/foundations/src/tokens.ts',
       './constants.stylex': './packages/foundations/src/constants.stylex.ts',

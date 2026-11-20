@@ -96,7 +96,7 @@ Choose the containing task before its inset, scrolling behavior, or visual bound
 | Related sections in ordinary page flow                             | `Stack` with section headings and shared gaps.                                                                  |
 | Independent section title, metadata and scoped actions             | `PageSection` groups the heading and its scrolling content. `Subheading` names prose or form content within it. |
 | Inset content inside a page                                        | `PageContent` owns one inset and the gaps between its children.                                                 |
-| An inset report followed by a finite breakdown                     | `PageSection` scrolls with the page and leaves its breakdown full width.                                        |
+| An inset report followed by a finite breakdown                     | `PageSection` keeps its heading over the scrolling summary and leaves its breakdown full width.                 |
 | One primary searchable or virtualized collection                   | `CollectionLayout` keeps its header above a viewport filling the available height.                              |
 | One record's identity, content and properties                      | `RecordPage` supplies the toolbar, header, content and optional aside.                                          |
 | A centered form or reading column                                  | `DetailPage` supplies the content measure.                                                                      |
@@ -140,6 +140,11 @@ Page chrome names the destination and exposes its actions. A subtitle that resta
 belongs beside the decision it informs. Record-supplied descriptions, empty-state explanations, and access errors remain
 meaningful content.
 
+The page toolbar and any navigation passed to `PageLayout.navigation` sit above the body scroll region. Use sibling
+`PageSection` components for section headings that replace each other as the reader scrolls. Their headers retain their
+own actions. A body shorter than 260px lets those headings scroll normally to preserve reading space. Supply lower rail
+links and account controls through the shell's `railFooter` prop so the shell owns their spacing.
+
 Each shared edge has one separator. Each scrolling region has one owner. A pinned footer has an opaque surface and a
 visible divider, with enough height for its actual content. Adjacent navigation targets meet without dead gaps. Parent
 Row and Stack compositions own spacing; individual children do not accumulate corrective margins. FormActions owns
@@ -162,15 +167,10 @@ Related forms, finite breakdowns and selected-record details can stay together. 
 within their sections. PageNavigation links destinations. ContentTabs mounts the selected content. ViewStack retains
 mounted views when drafts or reading positions need to survive a switch.
 
-Base UI owns control semantics and composition.[^base-composition] Sonner owns toast stacking, timers, and dismissal;
-Elements owns its appearance.[^sonner] A missing initial result needs a local error with a way to retry. A failed
-refresh keeps the last usable content and reports once. A mutation reports at its operation owner. Two renderers for one
-error make the interface look less reliable and make recovery harder to understand.
-
-Sonner's published module injects its structural CSS without a nonce. The Elements release build extracts that exact
-versioned stylesheet into the package's existing CSS asset and bundles the notification runtime. This keeps the
-consumer's normal stylesheet and CSP setup sufficient. The build refuses a changed injection format for review; the
-archive retains Sonner's MIT notice. A production-browser check must include notifications and CSP events.
+UI SDK owns control semantics, overlay behavior and the toast lifecycle. Elements supplies StyleX recipes and its
+plain-text notification API. A missing initial result needs a local error with a way to retry. A failed refresh keeps
+the last usable content and reports once. A mutation reports at its operation owner. Each error has one visible recovery
+path. See the [feedback guide](ui-feedback.md).
 
 ## Loading without movement
 
@@ -223,10 +223,6 @@ Sources above were read November 5, 2026. They support the design choices; they 
 [^carbon-type]: [Carbon typography](https://www.carbondesignsystem.com/building-blocks/foundations/typography/overview).
 
 [^linear-redesign]: [Linear UI redesign](https://linear.app/now/how-we-redesigned-the-linear-ui).
-
-[^sonner]: [Sonner](https://sonner.emilkowal.ski).
-
-[^base-composition]: [Base UI composition](https://base-ui.com/react/handbook/composition).
 
 [^radix-button]: [Radix Button](https://www.radix-ui.com/themes/docs/components/button).
 

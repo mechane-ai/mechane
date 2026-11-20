@@ -53,7 +53,10 @@ export const tabStyles = stylex.create({
       height: 2,
       backgroundColor: 'transparent',
     },
-    ':is([data-active], [aria-current="page"])': { 'color': colors.ink, '::after': { backgroundColor: colors.ink } },
+    ':is([aria-selected="true"], [aria-current="page"])': {
+      'color': colors.ink,
+      '::after': { backgroundColor: colors.ink },
+    },
     ':is([data-orientation="vertical"])': {
       'textAlign': 'start',
       'whiteSpace': 'normal',

@@ -21,7 +21,7 @@ export function initialReads(
     const agent = readRequests.agent(location.agent);
 
     if (location.session === undefined) {
-      return [agent, readRequests.sessions(location.agent, location.page ?? null)];
+      return [agent, readRequests.sessions(location.agent, location.page ?? null, location)];
     }
 
     const session = readRequests.session(location.agent, location.session);
@@ -47,7 +47,7 @@ export function initialReads(
   const mechId = location.mech;
 
   if (mechId === undefined) {
-    return location.view === 'definition' ? [] : [readRequests.agents(location.page ?? null)];
+    return location.view === 'definition' ? [] : [readRequests.agents(location.page ?? null, location)];
   }
 
   if (role !== 'owner') {
@@ -101,5 +101,5 @@ export function initialReads(
     return [heading, readRequests.events(mechId, pages?.activity?.at(-1) ?? null)];
   }
 
-  return [heading, readRequests.turns(mechId, pages?.turns?.at(-1) ?? null)];
+  return [heading, readRequests.turns(mechId, pages?.turns?.at(-1) ?? null, location)];
 }

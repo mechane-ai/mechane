@@ -16,6 +16,20 @@ charts. Its manifest and named entry-point exports define the API. Colocated sto
 component registry. Mechane compiles those same sources into its application release, independently of the Elements
 version.
 
+UI SDK is the interaction layer for Elements. Build with public Elements components first. Inside Elements, choose the
+matching UI SDK primitive or compose an existing SDK-backed component. A specialized interaction such as inspecting a
+chart or querying a collection can define its own UI SDK primitive. Native document structure and passive text need no
+agent action. Table computation, chart geometry, Markdown, source highlighting and streaming scroll each retain their
+specialized renderer or algorithm. Base UI remains behind narrow utilities such as CSP-provider compatibility; apps
+consume Elements entry points. See the
+[UI presentation contract](../.contracts/065-ui-presentation-boundaries/CONTRACT.md) for the maintained import boundary.
+
+Applications can explicitly connect to the SDK runtime through `createAgent` from `@mechane-ai/elements/agent`. Supply
+an `allow` policy for the actions the host intends to offer. The connection can inspect available actions and invoke
+them through the same controls that report intent to the application. Keep authorization at the operation owner. The
+[collection agent example](../packages/browser/elements/packages/collections/src/agent.stories.tsx) shows a scoped
+connection to a real query.
+
 The [package guide](../packages/browser/elements/README.md) covers installing the npm package and its compiled CSS.
 
 The [visual system](visual-system.md) explains shared geometry and visual roles. Single-line controls default to
@@ -30,9 +44,9 @@ controls; page frames and shared dividers stay square.
 1. Choose an existing family and neighboring composition. Reuse its control behavior, tokens, and named variants. Add a
    token only for a reusable visual decision that existing roles cannot express.
 2. Choose the [task's composition](visual-system.md#composition-decisions). Let its parent own spacing and scrolling.
-   Use DataTable for comparable records and keep explanatory copy beside the decision it informs.
+   Use DataTable for comparable records and declare its search and filter ownership.
 3. Keep pointer hover, press, keyboard focus, pending, unavailable, and selection states distinct. Repeated navigation
-   stays immediate. Use the adopted behavior library for focus and dismissal instead of writing another state machine.
+   stays immediate. Delegate focus and dismissal to the matching SDK-backed component.
 4. Add useful synthetic catalog examples. Inspect long text, narrow layouts, both themes, empty and failed content, and
    the changed keyboard interaction. Compare pending and loaded geometry in the same composition.
 5. Review the final source against the scoped contracts and run the package checks. Inspect the built catalog and an
@@ -51,11 +65,11 @@ fixed region an explicit divider; content must not scroll behind an unseparated 
 
 | Need                                     | Owner and guide                                                                                                                                                                  |
 | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Actions, form fields, and choices        | [Core controls](ui-controls.md): native forms, Base UI composition, and controlled values.                                                                                       |
+| Actions, form fields, and choices        | [Core controls](ui-controls.md): native forms, UI SDK interactions, and controlled values.                                                                                       |
 | Decisions, disclosure, and feedback      | [Feedback](ui-feedback.md): overlays, loading, status, and generic Trace activity.                                                                                               |
 | Application shell and split panes        | [Layout stories](../packages/browser/elements/packages/layout/src/app-shell.stories.tsx) and [resizing](../packages/browser/elements/packages/layout/src/resizable.stories.tsx). |
 | Comparable records, dates, and commands  | [Collections](ui-collections.md): prepared rows, stable selection, and application-owned operations.                                                                             |
-| Source, changes, and recorded output     | [Content](ui-content.md): Pierre views, safe Markdown, and bounded inspection.                                                                                                   |
+| Source, changes, and recorded output     | [Content](ui-content.md): UI SDK file navigation, code and diff views, and bounded inspection.                                                                                   |
 | Conversations and agent workflows        | [AI](ui-ai.md): prompt composition, live-edge scrolling, citations, approvals, and recipes.                                                                                      |
 | Trends, distributions, and relationships | [Charts](ui-charts.md): explicit measurements, values, and linked inspection.                                                                                                    |
 | Shared visual roles                      | [Token foundations](../packages/browser/elements/packages/foundations/src/tokens.stories.tsx).                                                                                   |
@@ -68,8 +82,8 @@ The [composition decision table](visual-system.md#composition-decisions) disting
 bounded collection viewports, record pages and self-contained reports. Start there before adding a wrapper.
 
 Compound APIs such as Field and Dialog are documented through their family compositions and exported types. Inferred
-Storybook prop tables are partial with the pinned compiler. Read the owning source types for inherited native and Base
-UI props; the tables are not an exhaustive API reference.
+Storybook prop tables are partial with the pinned compiler. Read the owning source types for inherited native and UI SDK
+props; the tables are not an exhaustive API reference.
 
 Import variables from `@mechane-ai/elements/tokens.stylex` and compile-time constants from
 `@mechane-ai/elements/constants.stylex`. StyleX needs their direct definitions; the consumer compiles constants
@@ -91,13 +105,13 @@ Where hover and press have different colors, exclude `:active` from the hover se
 can otherwise outrank unconditional pressed styles. Verify the computed pressed state rather than only its declaration.
 
 Keep buttons, tab selection, tooltips, and refreshes immediate. Dialogs fade and scale slightly; drawers follow their
-edge and the user's swipe. Reduced motion removes transition time. Base UI owns focus, dismissal, and removal after
-transitions. Use the public parts instead of adding timers or a second overlay state machine.
+edge and the user's swipe. Reduced motion removes transition time. UI SDK owns overlay focus, dismissal and presence.
+Use the public parts instead of adding timers or a second overlay state machine.
 
 ## Compose
 
 Button performs an action; TextLink is an anchor. An icon-only action always needs its own accessible label, even when a
-Tooltip is present. Button’s `variant` controls emphasis, `tone` describes intent, and `pending` prevents duplicate
+Tooltip is present. Button’s `variant` controls emphasis, `tone` describes intent, and `isPending` prevents duplicate
 activation. The application owns the asynchronous operation and its recovery.
 
 Place SkipLink before application navigation. Its `href` points to the main content's stable ID. It becomes visible
@@ -115,6 +129,12 @@ inset content in an existing page. Use `PageSection` when inset content leads to
 `CollectionLayout` when one primary collection fills the available height. Table cells own their inset within the
 containing task region. A dialog or inspector can provide that region without taking the width of the application.
 
+Use `PageLayout` for a page toolbar and optional tab-style route navigation. The `navigation` slot stays with the
+toolbar above the scrolling body. Each sibling `PageSection` keeps its own heading and actions at the top of that body
+until the next section replaces them. On short viewports the section heading scrolls with its content. Use the
+`railFooter` prop on `AppShell` to supply utility navigation and the account menu together so they share the rail's
+target sizes and spacing.
+
 Field associates its label, description, and error with the input. Native input events remain available. Choose a
 controlled value with its change callback or an uncontrolled default value. A read-only value remains selectable; a
 disabled control is unavailable. The [form example](../packages/browser/elements/packages/forms/src/forms.stories.tsx)
@@ -123,18 +143,14 @@ the preceding fields. Buttons, inputs, selects, comboboxes, and their grouped fo
 geometry. Named variants express emphasis and intent; there is no consumer size, padding, or radius choice. Multiline
 text entry retains its content height.
 
-Multi-part controls retain Base UI names such as `Root`, `Trigger`, and `Popup`. Use `render` to compose triggers.
-Shared styles apply first, then concrete native classes and style objects are merged for upstream composition. The typed
-`xstyle` input accepts `PlacementStyle`, including width and placement, without replacing control height, padding,
-radius, typography, focus, or disabled styles. Preserve Base UI's DOM and state transport through wrappers.
+Use the public overlay parts. Compose a trigger through `render` and pass placement to `Popup`. The popup owns its
+portal and positioner. An icon-only trigger needs a label even when it has a tooltip. A rendered link keeps its anchor
+semantics. The [Dialog examples](../packages/browser/elements/packages/overlays/src/dialog.stories.tsx) show trigger
+composition.
 
-State callbacks for `className` and `style` work on a directly rendered control or the outermost trigger. The pinned
-Base UI release cannot preserve those callbacks on an inner React element supplied through `render`. Use concrete
-classes and style objects on that element. For state-dependent composition, use a `render` function, spread its supplied
-props, and choose named variants from its state. The
-[Dialog examples](../packages/browser/elements/packages/overlays/src/dialog.stories.tsx) show both patterns with a
-Tooltip. Base UI documents [render functions](https://base-ui.com/react/handbook/composition#render-function) and their
-[explicit prop merging](https://base-ui.com/react/utils/merge-props).
+StyleX owns appearance, density and the focus treatment. A part's `xstyle`, where supported, accepts typed placement
+properties such as width or alignment. Forward the supplied ref, handlers, DOM attributes, class and style when
+composing a part through a render function.
 
 Keep a successful result mounted during refreshes. Show refresh progress or failure beside that result. Use
 `AsyncRegion` for missing initial data and `EmptyState` for a successful empty result. The application decides when

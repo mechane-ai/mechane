@@ -1,6 +1,6 @@
 import { Status } from '@mechane-ai/elements';
 import { DataTable, DataTablePlaceholder, DataTableText } from '@mechane-ai/elements/collections';
-import type { DataTableColumnLayout } from '@mechane-ai/elements/collections';
+import type { DataTableColumnLayout, TableQuery } from '@mechane-ai/elements/collections';
 import { EmptyState } from '@mechane-ai/elements/feedback';
 import { Turn } from '@mechane/protocol';
 import type { TurnPage } from '@mechane/protocol';
@@ -43,6 +43,7 @@ function elapsedLabel(turn: Turn): string {
 }
 
 export function TurnList({
+  query,
   page,
   turnHref,
   onOpen,
@@ -50,6 +51,7 @@ export function TurnList({
   emptyAction,
   emptyDescription,
 }: {
+  readonly query: TableQuery<TurnPage['turns'][number]>;
   readonly page: TurnPage;
   readonly turnHref: (id: Turn['id']) => string;
   readonly onOpen: (id: Turn['id']) => void;
@@ -59,6 +61,7 @@ export function TurnList({
 }): ReactNode {
   return (
     <DataTable
+      query={query}
       caption="Recent runs"
       hideCaption
       rows={page.turns}

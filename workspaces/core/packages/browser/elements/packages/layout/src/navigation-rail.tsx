@@ -1,5 +1,5 @@
-import { mergeProps } from '@base-ui/react/merge-props';
 import * as stylex from '@stylexjs/stylex';
+import { mergeProps } from '@ui-sdk/react/primitive';
 import { createContext, useContext } from 'react';
 import type { ComponentProps, MouseEvent, MouseEventHandler, ReactNode } from 'react';
 import { Button, IconButton, IconLink } from '../../core/src/index.ts';
@@ -22,7 +22,7 @@ export type NavigationRailProps = {
   readonly action?: {
     readonly label: string;
     readonly icon: ReactNode;
-    readonly onClick: MouseEventHandler<HTMLButtonElement>;
+    readonly onClick: MouseEventHandler<HTMLElement>;
   };
 };
 
@@ -38,10 +38,18 @@ const styles = stylex.create({
   action: { alignSelf: 'center' },
   mobileLinks: {
     display: 'grid',
-    gridAutoFlow: 'column',
-    gridAutoColumns: 'minmax(0, 1fr)',
+    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
     gap: spacing.xs,
     padding: spacing.xs,
+  },
+  drawerFooterLinks: { padding: 0, gridTemplateColumns: 'minmax(0, 1fr)' },
+  drawerFooterGroup: { alignItems: 'flex-start', paddingInline: spacing.xs },
+  drawerFooterLink: { flexDirection: 'row', justifyContent: 'flex-start' },
+  placeholderTarget: {
+    display: 'grid',
+    placeItems: 'center',
+    width: { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
+    height: { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
   },
   selected: { ':is([aria-current="location"])': { backgroundColor: colors.canvas } },
   mobileLink: {
@@ -86,7 +94,16 @@ const styles = stylex.create({
   rounded: { borderRadius: radii.sm },
 });
 
-export function NavigationRail({ label, links, action }: NavigationRailProps): ReactNode {
+export function NavigationRail(props: NavigationRailProps): ReactNode {
+  return <RailGroup {...props} />;
+}
+
+export function RailGroup({
+  label,
+  links,
+  action,
+  isFooter = false,
+}: NavigationRailProps & { readonly isFooter?: boolean }): ReactNode {
   const isInDrawer = useContext(NavigationRailContext) === 'drawer';
   const sidebar = useContext(SidebarContext);
 
@@ -103,7 +120,7 @@ export function NavigationRail({ label, links, action }: NavigationRailProps): R
     sidebar?.onNavigate();
   }
 
-  const activateAction: MouseEventHandler<HTMLButtonElement> = (event) => {
+  const activateAction: MouseEventHandler<HTMLElement> = (event) => {
     action?.onClick(event);
 
     if (!event.defaultPrevented) {
@@ -114,7 +131,7 @@ export function NavigationRail({ label, links, action }: NavigationRailProps): R
   if (isInDrawer) {
     return (
       <div {...stylex.props(styles.root)}>
-        <nav aria-label={label} {...stylex.props(styles.mobileLinks)}>
+        <nav aria-label={label} {...stylex.props(styles.mobileLinks, isFooter && styles.drawerFooterLinks)}>
           {links.map(({ label: linkLabel, icon, isCurrent = false, ...link }) => (
             <a
               key={link.href}
@@ -123,6 +140,7 @@ export function NavigationRail({ label, links, action }: NavigationRailProps): R
                   controlStyles.base,
                   controlStyles.button,
                   styles.mobileLink,
+                  isFooter && styles.drawerFooterLink,
                   styles.rounded,
                   styles.selected,
                 ),
@@ -153,50 +171,72 @@ export function NavigationRail({ label, links, action }: NavigationRailProps): R
   }
 
   return (
-    <Tooltip.Provider>
-      <div {...stylex.props(styles.root, styles.desktopRail)}>
-        <nav aria-label={label} {...stylex.props(styles.links)}>
-          {links.map(({ label: linkLabel, icon, isCurrent = false, ...link }) => (
-            <Tooltip.Root key={link.href}>
-              <Tooltip.Trigger
-                render={
-                  <IconLink
-                    {...mergeProps(stylex.props(styles.selected), link)}
-                    aria-label={linkLabel}
-                    aria-current={isCurrent ? 'location' : undefined}
-                    onClick={(event) => activateLink(link.onClick, event)}
-                  />
-                }
-              >
-                {icon}
-              </Tooltip.Trigger>
-              <Tooltip.Portal>
-                <Tooltip.Positioner side="right">
-                  <Tooltip.Popup>{linkLabel}</Tooltip.Popup>
-                </Tooltip.Positioner>
-              </Tooltip.Portal>
-            </Tooltip.Root>
-          ))}
-        </nav>
-        {action !== undefined && (
-          <>
-            <hr {...stylex.props(styles.divider)} />
-            <Tooltip.Root>
-              <Tooltip.Trigger
-                render={<IconButton variant="ghost" aria-label={action.label} xstyle={styles.action} />}
-                onClick={activateAction}
-              >
-                {action.icon}
-              </Tooltip.Trigger>
-              <Tooltip.Portal>
-                <Tooltip.Positioner side="right">
-                  <Tooltip.Popup>{action.label}</Tooltip.Popup>
-                </Tooltip.Positioner>
-              </Tooltip.Portal>
-            </Tooltip.Root>
-          </>
-        )}
-      </div>
-    </Tooltip.Provider>
+    <div {...stylex.props(styles.root, !isFooter && styles.desktopRail)}>
+      <nav aria-label={label} {...stylex.props(styles.links)}>
+        {links.map(({ label: linkLabel, icon, isCurrent = false, ...link }) => (
+          <Tooltip.Root key={link.href}>
+            <Tooltip.Trigger
+              render={
+                <IconLink
+                  {...mergeProps(stylex.props(styles.selected), link)}
+                  aria-label={linkLabel}
+                  aria-current={isCurrent ? 'location' : undefined}
+                  onClick={(event) => activateLink(link.onClick, event)}
+                />
+              }
+            >
+              {icon}
+            </Tooltip.Trigger>
+            <Tooltip.Popup side="right">{linkLabel}</Tooltip.Popup>
+          </Tooltip.Root>
+        ))}
+      </nav>
+      {action !== undefined && (
+        <>
+          <hr {...stylex.props(styles.divider)} />
+          <Tooltip.Root>
+            <Tooltip.Trigger
+              render={<IconButton variant="ghost" aria-label={action.label} xstyle={styles.action} />}
+              onClick={activateAction}
+            >
+              {action.icon}
+            </Tooltip.Trigger>
+            <Tooltip.Popup side="right">{action.label}</Tooltip.Popup>
+          </Tooltip.Root>
+        </>
+      )}
+    </div>
+  );
+}
+
+export function RailFooterGroup({ children }: { readonly children: ReactNode }): ReactNode {
+  const isInDrawer = useContext(NavigationRailContext) === 'drawer';
+
+  return (
+    <div {...stylex.props(styles.links, styles.desktopRail, isInDrawer && styles.drawerFooterGroup)}>{children}</div>
+  );
+}
+
+export function RailPlaceholderItem({ children }: { readonly children: ReactNode }): ReactNode {
+  return (
+    <span aria-hidden {...stylex.props(styles.placeholderTarget)}>
+      {children}
+    </span>
+  );
+}
+
+export function NavigationRailPlaceholder({
+  count,
+  icon,
+}: {
+  readonly count: number;
+  readonly icon: ReactNode;
+}): ReactNode {
+  return (
+    <div aria-hidden {...stylex.props(styles.desktopRail, styles.links)}>
+      {Array.from({ length: count }, (_, index) => (
+        <RailPlaceholderItem key={index}>{icon}</RailPlaceholderItem>
+      ))}
+    </div>
   );
 }

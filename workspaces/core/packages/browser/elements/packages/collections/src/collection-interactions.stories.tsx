@@ -9,6 +9,7 @@ import { CollectionToolbar } from './collection-controls.tsx';
 import { CollectionFilters } from './collection-filters.tsx';
 import { DataTable, DataTablePlaceholder } from './data-table.tsx';
 import type { DataTableColumn } from './data-table.tsx';
+import { TableQueryFrame } from './table-query.tsx';
 import { useCollectionControls } from './use-collection-controls.tsx';
 
 type RecordRow = { readonly id: string; readonly name: string; readonly status: string };
@@ -97,14 +98,17 @@ function CollectionExample({ state = 'ready', hasNavigation = false }: Collectio
             {state === 'failed' ? (
               <Notice hasError>The application supplies its recovery action here.</Notice>
             ) : (
-              <DataTable
-                rows={rows}
-                columns={columns}
-                getRowId={(record) => record.id}
-                caption="Projects"
-                hideCaption
-                empty="No projects match this view."
-              />
+              <TableQueryFrame search filters>
+                <DataTable
+                  query={{ mode: 'frame' }}
+                  rows={rows}
+                  columns={columns}
+                  getRowId={(record) => record.id}
+                  caption="Projects"
+                  hideCaption
+                  empty="No projects match this view."
+                />
+              </TableQueryFrame>
             )}
           </AsyncRegion>
         )}

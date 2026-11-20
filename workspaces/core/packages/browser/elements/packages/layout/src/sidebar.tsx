@@ -1,5 +1,6 @@
-import { Button as BaseButton } from '@base-ui/react/button';
 import * as stylex from '@stylexjs/stylex';
+import { Button as SdkButton } from '@ui-sdk/react/button';
+import type { ButtonState } from '@ui-sdk/react/button';
 import { PanelLeft, X } from 'lucide-react';
 import { createContext, useContext, useId } from 'react';
 import type { ComponentProps, ReactNode, RefObject } from 'react';
@@ -14,7 +15,7 @@ import { frame, frameConditions } from './frame.stylex.ts';
 type SidebarState = {
   readonly isExpanded: boolean;
   readonly sidebarId: string;
-  readonly drawerHandle: ReturnType<typeof Drawer.createHandle>;
+  readonly drawerController: ReturnType<typeof Drawer.createController<unknown, string>>;
   readonly navigationToggleRef: RefObject<HTMLButtonElement | null>;
   readonly mobileNavigationToggleRef: RefObject<HTMLButtonElement | null>;
   readonly onToggle: () => void;
@@ -175,7 +176,8 @@ type SidebarProps = {
 
 type NavigationProps = { readonly children: ReactNode; readonly label?: string };
 
-type NavigationItemProps = ComponentProps<typeof BaseButton> & {
+type NavigationItemProps = Omit<ComponentProps<typeof SdkButton>, 'children'> & {
+  readonly children?: ReactNode;
   readonly icon?: ReactNode;
   readonly isSelected?: boolean;
   readonly shouldCloseOnActivate?: boolean;
@@ -271,9 +273,9 @@ export function NavigationItem({
 
   return (
     <div {...stylex.props(styles.navigationCell, isSelected && styles.selected)}>
-      <BaseButton
+      <SdkButton
         {...props}
-        {...mergeStyles<BaseButton.State>({
+        {...mergeStyles<ButtonState>({
           className,
           style,
           styles: stylex.props(
@@ -286,9 +288,9 @@ export function NavigationItem({
         aria-current={isSelected ? 'page' : undefined}
         aria-labelledby={props['aria-labelledby'] ?? (props['aria-label'] === undefined ? labelId : undefined)}
         title={props.title ?? (typeof children === 'string' ? children : undefined)}
-        onClick={(event) => {
+        onClick={(event, details) => {
           if (onClick !== undefined) {
-            onClick(event);
+            onClick(event, details);
           }
 
           if (!event.defaultPrevented && sidebar !== null && shouldCloseOnActivate) {
@@ -304,7 +306,7 @@ export function NavigationItem({
         <span id={labelId} {...stylex.props(styles.label, isCollapsed && styles.collapsedLabel)}>
           {children}
         </span>
-      </BaseButton>
+      </SdkButton>
     </div>
   );
 }
@@ -422,7 +424,7 @@ export function SidebarToggle(): ReactNode {
       <div {...stylex.props(styles.toggleCell, headerStyles.inlineEnd, styles.mobile)}>
         <Drawer.Trigger
           ref={sidebar.mobileNavigationToggleRef}
-          handle={sidebar.drawerHandle}
+          controller={sidebar.drawerController}
           render={<IconButton variant="ghost" aria-label="Open navigation" />}
         >
           <PanelLeft size={16} aria-hidden />

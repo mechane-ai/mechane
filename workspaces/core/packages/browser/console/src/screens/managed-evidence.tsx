@@ -1,6 +1,6 @@
 import { CopyValue } from '@mechane-ai/elements';
 import { EmptyState } from '@mechane-ai/elements/feedback';
-import { PageLayout, Workbench, WorkbenchScroll } from '@mechane-ai/elements/layout';
+import { Workbench, WorkbenchScroll } from '@mechane-ai/elements/layout';
 import type { ConsoleData, ManagedSession, ReadRequest } from '@mechane/console-data';
 import {
   EvidenceDetailsPlaceholder,
@@ -13,6 +13,7 @@ import { consoleSessionEvidencePath, consoleSessionEvidenceViewerPath } from '@m
 import { useRouter, useRouterState } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
+import { ListPage } from '../list-page.tsx';
 import { managedDestination } from '../managed-navigation.ts';
 import { useManagedPaging } from '../managed-paging.ts';
 import { useSessionArtifact, useSessionEvidence } from '../managed-reads.ts';
@@ -46,7 +47,10 @@ export function ManagedSessionEvidence({ data, read, agentId, sessionId, locatio
   const reader = useReaderPosition(data.scope, request?.id ?? 'missing-evidence');
 
   return (
-    <PageLayout
+    <ListPage
+      kind="sessionEvidence"
+      location={location}
+      showQuery={!isDetail}
       showNavigation={!isDetail}
       title={read.kind === 'ready' ? `Evidence · ${read.value.title ?? read.value.agentName}` : 'Evidence'}
       leading={
@@ -100,7 +104,7 @@ export function ManagedSessionEvidence({ data, read, agentId, sessionId, locatio
           </Workbench>
         )}
       </ResourceView>
-    </PageLayout>
+    </ListPage>
   );
 }
 

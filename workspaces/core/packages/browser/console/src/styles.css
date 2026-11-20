@@ -1,4 +1,6 @@
-@layer reset, priority1, priority2, priority3, priority4, priority5;
+@layer ui-sdk, reset, priority1, priority2, priority3, priority4, priority5;
+@import '@mechane-ai/elements/styles.css';
+
 @layer reset {
   * {
     box-sizing: border-box;

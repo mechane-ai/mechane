@@ -2,7 +2,7 @@ import * as stylex from '@stylexjs/stylex';
 import { scaleLinear } from '@visx/scale';
 import { AreaClosed } from '@visx/shape';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
-import type { KeyboardEvent, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Skeleton, SkeletonText } from '../../../feedback/src/index.ts';
 import { chartToneColors } from '../../../foundations/src/chart-tones.ts';
 import { colors, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
@@ -12,6 +12,7 @@ import { ChartFrame } from '../chart-frame.tsx';
 import type { ChartSeriesReport } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds } from '../chart-input.tsx';
 import { ChartInspection, ChartInspectionTitle } from '../chart-inspection.tsx';
+import { ChartSvgSurface } from '../chart-surface.tsx';
 import { chartStyles } from '../chart-theme.ts';
 import { usePlotWidth } from '../plot-width.ts';
 import {
@@ -358,6 +359,12 @@ function TimeChart({
   const { ref, width, element } = usePlotWidth();
   const rootRef = useRef<HTMLDivElement>(null);
   const [keyboardTimestamp, setKeyboardTimestamp] = useState<number>();
+
+  const inspectionItems = useMemo(
+    () => points.map(({ timestamp }) => ({ id: String(timestamp), label: formatTimestamp(timestamp) })),
+    [points, formatTimestamp],
+  );
+
   const cursor = points.find((point) => point.timestamp === keyboardTimestamp) ?? points[0];
   const [inspection, setInspection] = useState<Inspection | undefined>();
   const signature = timeSeriesSignature({ series, markers, timestampUnit, isStacked });
@@ -458,47 +465,6 @@ function TimeChart({
     setInspection(value);
   }
 
-  function inspectKey(event: KeyboardEvent<SVGSVGElement>): void {
-    if (event.altKey || event.ctrlKey || event.metaKey) {
-      return;
-    }
-
-    const currentIndex = points.findIndex((point) => point.timestamp === cursor?.timestamp);
-
-    const navigation = {
-      ArrowRight: Math.min(points.length - 1, currentIndex + 1),
-      ArrowLeft: Math.max(0, currentIndex - 1),
-      Home: 0,
-      End: points.length - 1,
-    };
-
-    switch (event.key) {
-      case 'Escape':
-        event.preventDefault();
-        event.stopPropagation();
-        updateInspection(undefined);
-
-        break;
-      case 'ArrowRight':
-      case 'ArrowLeft':
-      case 'Home':
-      case 'End': {
-        event.preventDefault();
-
-        const point = points[navigation[event.key]];
-
-        if (point !== undefined) {
-          setKeyboardTimestamp(point.timestamp);
-          updateInspection({ signature, timestamp: point.timestamp, source: 'keyboard' });
-        }
-
-        break;
-      }
-      default:
-        break;
-    }
-  }
-
   return (
     <div ref={rootRef} {...stylex.props(styles.frame)}>
       <ChartFrame
@@ -557,14 +523,25 @@ function TimeChart({
             hasSeriesSummary={hasSeriesSummary}
           />
           <div ref={ref} {...stylex.props(chartStyles.plot)}>
-            <svg
+            <ChartSvgSurface
               role="img"
               aria-label={`${title}. Use arrow keys to inspect observations.`}
               aria-describedby={inspectionId}
               tabIndex={0}
               viewBox={`0 0 ${width} ${svgHeight}`}
               height={svgHeight}
-              onKeyDown={inspectKey}
+              controls={{
+                items: inspectionItems,
+                cursor: cursor === undefined ? undefined : String(cursor.timestamp),
+                inspected: active === undefined ? undefined : String(active.timestamp),
+                onInspect: (id) => {
+                  const timestamp = Number(id);
+
+                  setKeyboardTimestamp(timestamp);
+                  updateInspection({ signature, timestamp, source: 'keyboard' });
+                },
+                onDismiss: () => updateInspection(undefined),
+              }}
               onFocus={(event) => {
                 if (event.currentTarget.matches(':focus-visible')) {
                   const timestamp = active?.timestamp ?? first;
@@ -664,7 +641,7 @@ function TimeChart({
                   width={Math.min(16, (right - left) / 2)}
                 />
               )}
-            </svg>
+            </ChartSvgSurface>
             {showTimeAxis && (
               <div
                 aria-hidden

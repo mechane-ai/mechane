@@ -6,13 +6,11 @@ import type { ControlDensity } from '../../core/src/index.ts';
 import { Combobox } from './combobox.tsx';
 import { Field } from './forms.tsx';
 
-type Choice = { readonly id: string; readonly label: string };
-
-const choices: ReadonlyArray<Choice> = [
-  { id: 'compact', label: 'Compact model' },
-  { id: 'balanced', label: 'Balanced model' },
-  { id: 'large', label: 'Large model' },
-  { id: 'specialist', label: 'Specialist model with a longer descriptive name' },
+const choices = [
+  { value: 'compact', label: 'Compact model' },
+  { value: 'balanced', label: 'Balanced model' },
+  { value: 'large', label: 'Large model' },
+  { value: 'specialist', label: 'Specialist model with a longer descriptive name' },
 ];
 
 const meta = {
@@ -24,7 +22,6 @@ const meta = {
     Input: Combobox.Input,
     Trigger: Combobox.Trigger,
     Clear: Combobox.Clear,
-    Positioner: Combobox.Positioner,
     Popup: Combobox.Popup,
     List: Combobox.List,
     Item: Combobox.Item,
@@ -37,13 +34,12 @@ const meta = {
     Chip: Combobox.Chip,
     ChipRemove: Combobox.ChipRemove,
     Value: Combobox.Value,
-    Collection: Combobox.Collection,
   },
   parameters: {
     docs: {
       description: {
         component:
-          'Supported. Combobox selects from a searchable option domain, with one or multiple selected values. Use Select when the options fit without search. Set density on Root so its input, trigger, clear button, and chips agree. Compact fits a local report control; standard is the default, including popup options and unrelated nested controls. Supply stable identifiers and label/value conversion for object records. Base UI owns intrinsic matching and keyboard movement. For server search, the application owns query results and passes filteredItems, inputValue, and onInputValueChange; never treat a bounded server page as the entire option domain. Pending and failed reads belong to the application, and Status can present their messages.',
+          'Supported. Combobox selects from a searchable option domain, with one or multiple selected values. Use Select when the options fit without search. Set density on Root so its input, trigger, clear button, and chips agree. Compact fits a local report control; standard is the default, including popup options and unrelated nested controls. Supply stable identifiers and label/value conversion for object records. UI SDK handles matching and keyboard movement. For server search, the application owns query results and renders its results as Item children with filter={false}, query and onQueryChange; never treat a bounded server page as the entire option domain. Pending and failed reads belong to the application, and Status can present their messages.',
       },
     },
   },
@@ -52,55 +48,31 @@ const meta = {
 export default meta;
 type Story = StoryObj;
 
-function choiceLabel(choice: Choice): string {
-  return choice.label;
-}
-
-function choiceValue(choice: Choice): string {
-  return choice.id;
-}
-
-function sameChoice(choice: Choice, value: Choice): boolean {
-  return choice.id === value.id;
-}
-
-function ChoiceList(): ReactNode {
+function ChoiceList({ choices: options = choices }: { readonly choices?: typeof choices }): ReactNode {
   return (
-    <Combobox.Portal>
-      <Combobox.Positioner>
-        <Combobox.Popup>
-          <Combobox.Empty>No matching models.</Combobox.Empty>
-          <Combobox.List<Choice>>
-            {(choice) => (
-              <Combobox.Item key={choice.id} value={choice}>
-                <Combobox.ItemIndicator />
-                {choice.label}
-              </Combobox.Item>
-            )}
-          </Combobox.List>
-        </Combobox.Popup>
-      </Combobox.Positioner>
-    </Combobox.Portal>
+    <Combobox.Popup>
+      <Combobox.Empty>No matching models.</Combobox.Empty>
+      <Combobox.List>
+        {options.map((choice) => (
+          <Combobox.Item key={choice.value} value={choice.value} label={choice.label}>
+            <Combobox.ItemIndicator />
+            {choice.label}
+          </Combobox.Item>
+        ))}
+      </Combobox.List>
+    </Combobox.Popup>
   );
 }
 
 type ChoiceExampleProps = { readonly density?: ControlDensity };
 
 function SingleChoice({ density = 'standard' }: ChoiceExampleProps): ReactNode {
-  const [selected, setSelected] = useState<Choice | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
 
   return (
     <Field.Root name="model">
       <Field.Label>Model</Field.Label>
-      <Combobox.Root
-        density={density}
-        items={choices}
-        value={selected}
-        onValueChange={setSelected}
-        itemToStringLabel={choiceLabel}
-        itemToStringValue={choiceValue}
-        isItemEqualToValue={sameChoice}
-      >
+      <Combobox.Root density={density} value={selected} onValueChange={setSelected}>
         <Combobox.InputGroup>
           <Combobox.Input placeholder="Search models" />
           <Combobox.Clear />
@@ -114,29 +86,22 @@ function SingleChoice({ density = 'standard' }: ChoiceExampleProps): ReactNode {
 }
 
 function MultipleChoices({ density = 'standard' }: ChoiceExampleProps): ReactNode {
-  const [selected, setSelected] = useState<Array<Choice>>([]);
+  const [selected, setSelected] = useState<Array<string>>([]);
 
   return (
     <Field.Root name="comparison-models">
       <Field.Label>Compare models</Field.Label>
-      <Combobox.Root
-        multiple
-        density={density}
-        items={choices}
-        value={selected}
-        onValueChange={setSelected}
-        itemToStringLabel={choiceLabel}
-        itemToStringValue={choiceValue}
-        isItemEqualToValue={sameChoice}
-      >
+      <Combobox.Root multiple density={density} value={selected} onValueChange={setSelected}>
         <Combobox.InputGroup>
           <Combobox.Chips>
-            {selected.map((choice) => (
-              <Combobox.Chip key={choice.id}>
-                {choice.label}
-                <Combobox.ChipRemove aria-label={`Remove ${choice.label}`} />
-              </Combobox.Chip>
-            ))}
+            {choices
+              .filter((choice) => selected.includes(choice.value))
+              .map((choice) => (
+                <Combobox.Chip key={choice.value} value={choice.value}>
+                  {choice.label}
+                  <Combobox.ChipRemove aria-label={`Remove ${choice.label}`} />
+                </Combobox.Chip>
+              ))}
             <Combobox.Input placeholder="Add a model" />
           </Combobox.Chips>
           <Combobox.Trigger />
@@ -165,7 +130,7 @@ export const DisabledAndEmpty: Story = {
     <Stack>
       <Field.Root disabled>
         <Field.Label>Unavailable model selection</Field.Label>
-        <Combobox.Root items={choices} disabled>
+        <Combobox.Root disabled>
           <Combobox.InputGroup>
             <Combobox.Input placeholder="No permission to change models" />
             <Combobox.Trigger />
@@ -175,12 +140,12 @@ export const DisabledAndEmpty: Story = {
       </Field.Root>
       <Field.Root>
         <Field.Label>Empty option domain</Field.Label>
-        <Combobox.Root<Choice> items={[]} itemToStringLabel={choiceLabel}>
+        <Combobox.Root<string>>
           <Combobox.InputGroup>
             <Combobox.Input placeholder="Search models" />
             <Combobox.Trigger />
           </Combobox.InputGroup>
-          <ChoiceList />
+          <ChoiceList choices={[]} />
         </Combobox.Root>
         <Field.Description>No models have been configured.</Field.Description>
       </Field.Root>

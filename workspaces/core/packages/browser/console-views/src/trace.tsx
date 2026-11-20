@@ -180,7 +180,14 @@ export function TurnTrace({
       {evidence.notices.map((message) => (
         <Notice key={message}>{message}</Notice>
       ))}
-      <Tabs.Root value={tab} onValueChange={onTab}>
+      <Tabs.Root<TraceTab>
+        value={tab}
+        onValueChange={(value) => {
+          if (value !== null) {
+            onTab(value);
+          }
+        }}
+      >
         <Tabs.List aria-label="Run details">
           {traceTabs.map((value) => (
             <Tabs.Tab key={value} value={value}>

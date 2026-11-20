@@ -9,6 +9,10 @@ Applications own queries, aggregation, ranking, sampling, normalization, and sci
 geometry, inspection, and presentation. A formatter must declare its locale, time zone, precision, and units. Titles and
 descriptions explain what was measured and which period or sample is shown.
 
+Interactive plots expose inspection through the shared UI SDK chart primitive. Its `setValue` action inspects an item,
+`clear` dismisses the readout, and a chart with an application-owned selection can expose `selectItem`. The chart
+retains ownership of its geometry and the application decides what a committed selection does.
+
 ## Families
 
 | Family         | Components                                      | Use                                                                                     |
@@ -85,9 +89,9 @@ Other families accept an optional `selection` containing `selectedId` and `onSel
 The component reports an identifier; the application owns the linked inspector, URL, or other view. Exact values remain
 available through labelled rows or View data. Selection works with keyboard and touch as well as a pointer.
 
-ScatterPlot additionally accepts a controlled range selection. A mouse rectangle and two Base UI sliders report the same
-x/y bounds. Touch gestures on the plot preserve page scrolling. A range describes supplied coordinates; it does not
-calculate a new embedding or select a dataset outside the supplied window.
+ScatterPlot additionally accepts a controlled range selection. An SDK drag selection and two shared range controls
+report the same x/y bounds. Touch gestures on the plot preserve page scrolling. A range describes supplied coordinates;
+it does not calculate a new embedding or select a dataset outside the supplied window.
 
 ## Evidence
 

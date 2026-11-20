@@ -1,6 +1,6 @@
 # Form controls
 
-The supported controls use Base UI for selection, number entry, and focus behavior. The application supplies values,
+The supported controls compose UI SDK fields, selection, number, and slider primitives. The application supplies values,
 labels, validation, permissions, and save operations. Import these families from `@mechane-ai/elements/forms`. Calendar
 controls use `/forms/dates`.
 
@@ -11,9 +11,9 @@ Checkbox, Switch, RadioGroup, and NumberField also support an explicit controlle
 
 Use `SelectControl` for one choice from labeled string values. Supply `items` once, the controlled `value`, and
 `onValueChange`. Its `label` names the trigger without adding a visible label row. An enclosing `Field` still supplies
-visible labels, descriptions and validation. `name`, `form`, `required` and `inputRef` connect the hidden form input;
-`ref`, native events and accessibility references belong to the trigger. `readOnly` can omit the change callback.
-Opening, focusing or replacing the choices never selects a different supplied value.
+visible labels, descriptions and validation. `name`, `form`, and `required` connect the form value. `ref`, native events
+and accessibility references belong to the trigger. `readOnly` can omit the change callback. Opening, focusing or
+replacing the choices never selects a different supplied value.
 
 ```tsx
 <SelectControl label="Dataset" items={datasets} value={dataset} onValueChange={setDataset} />
@@ -25,10 +25,9 @@ content, rich option layouts, object values or multiple selection. Both composit
 implementation and control geometry. Density changes the trigger; popup options retain standard targets.
 
 `Combobox` adds search to a finite option domain. Its single and multiple modes keep the selected record type in
-callbacks. Object values need stable identity and label/value conversion. Its `List` render callback can declare the
-record type explicitly. For remote search, pass the application’s query and `filteredItems`; the component must not
-mistake one returned page for all possible options. Display pending and failed searches through `Status`, while
-preserving the selected values.
+callbacks. Object values need stable identity and label/value conversion. Render options as named `Combobox.Item`
+children of `Combobox.List`. For remote search, pass `query`, `onQueryChange`, and `filter={false}`, and render the
+returned options. Display pending and failed searches through `Status`, while preserving the selected values.
 
 `Fieldset` names a group of related fields. `InputGroup` places prefixes, suffixes, or actions beside its `Input`. Keep
 editable content in the input, and make noneditable prefixes clear in the associated description. `NumberField` supports
@@ -37,6 +36,10 @@ bound. Both require a locale so formatting matches between server and browser.
 
 `FilePicker` preserves the native file input and change event. It does not upload or read files. The application owns
 accepted content, validation, storage, and progress. Use `Field.Description` for supported formats and limits.
+
+`Input` and `Textarea` expose `onValueChange` for controlled updates from either the user or an SDK action. Use
+`isSensitive` for credentials or private drafts. These controls keep native editing and omit the private field from SDK
+inspection. Password inputs use this behavior automatically.
 
 The [selection stories](../packages/browser/elements/packages/forms/src/selection.stories.tsx),
 [searchable selection stories](../packages/browser/elements/packages/forms/src/combobox.stories.tsx), and

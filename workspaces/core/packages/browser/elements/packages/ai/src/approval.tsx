@@ -70,6 +70,7 @@ export function Approval(props: ApprovalProps): ReactNode {
         <Row>
           <Button
             variant="solid"
+            data-agent-confirm={`Approve ${props.title}?`}
             onClick={props.onApprove}
             disabled={props.isDisabled === true || props.busy !== undefined}
             isPending={props.busy === 'approve'}
@@ -78,6 +79,7 @@ export function Approval(props: ApprovalProps): ReactNode {
             {props.approveLabel ?? 'Approve'}
           </Button>
           <Button
+            data-agent-confirm={`Deny ${props.title}?`}
             onClick={props.onDeny}
             disabled={props.isDisabled === true || props.busy !== undefined}
             isPending={props.busy === 'deny'}

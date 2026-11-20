@@ -1,10 +1,12 @@
-import { Checkbox as BaseCheckbox } from '@base-ui/react/checkbox';
-import { Radio as BaseRadio } from '@base-ui/react/radio';
-import { RadioGroup as BaseRadioGroup } from '@base-ui/react/radio-group';
-import { Switch as BaseSwitch } from '@base-ui/react/switch';
-import { Toggle as BaseToggle } from '@base-ui/react/toggle';
-import { ToggleGroup as BaseToggleGroup } from '@base-ui/react/toggle-group';
 import * as stylex from '@stylexjs/stylex';
+import { Checkbox as SdkCheckbox, CheckboxIndicator as SdkCheckboxIndicator } from '@ui-sdk/react/checkbox';
+import {
+  Radio as SdkRadio,
+  RadioGroup as SdkRadioGroup,
+  RadioIndicator as SdkRadioIndicator,
+} from '@ui-sdk/react/radio';
+import { Switch as SdkSwitch, SwitchThumb as SdkSwitchThumb } from '@ui-sdk/react/switch';
+import { Toggle as SdkToggle, ToggleGroup as SdkToggleGroup } from '@ui-sdk/react/toggle';
 import type { ComponentProps, ReactNode } from 'react';
 import { conditions } from '../../foundations/src/constants.stylex.ts';
 import type {
@@ -197,144 +199,160 @@ const styles = stylex.create({
   },
 });
 
+type CheckboxChange = NonNullable<ComponentProps<typeof SdkCheckbox>['onCheckedChange']>;
+type RadioChange<Value extends string> = NonNullable<ComponentProps<typeof SdkRadioGroup<Value>>['onValueChange']>;
+type RadioSelection<Value extends string> = (value: Value, details: Parameters<RadioChange<Value>>[1]) => void;
+
 type CheckboxRootProps = Omit<
-  ComponentProps<typeof BaseCheckbox.Root>,
+  ComponentProps<typeof SdkCheckbox>,
   'checked' | 'defaultChecked' | 'onCheckedChange' | 'readOnly'
 > &
-  CheckedStateProperties<NonNullable<BaseCheckbox.Root.Props['onCheckedChange']>> & {
+  CheckedStateProperties<(isChecked: boolean, details: Parameters<CheckboxChange>[1]) => void> & {
+    readonly indeterminate?: boolean;
     readonly xstyle?: PlacementStyle;
   };
 
-type CheckboxIndicatorProps = ComponentProps<typeof BaseCheckbox.Indicator>;
+type CheckboxIndicatorProps = ComponentProps<typeof SdkCheckboxIndicator>;
 
-type RadioGroupRootProps<Value> = Omit<BaseRadioGroup.Props<Value>, 'value' | 'defaultValue' | 'onValueChange'> &
-  (
-    | ValueStateProperties<Value, NonNullable<BaseRadioGroup.Props<Value>['onValueChange']>>
-    | ReadOnlyValueProperties<Value, NonNullable<BaseRadioGroup.Props<Value>['onValueChange']>>
-  ) & { readonly xstyle?: PlacementStyle };
-
-type RadioItemProps<Value> = BaseRadio.Root.Props<Value> & { readonly xstyle?: PlacementStyle };
-type RadioIndicatorProps = ComponentProps<typeof BaseRadio.Indicator>;
-
-type SwitchRootProps = Omit<
-  ComponentProps<typeof BaseSwitch.Root>,
-  'checked' | 'defaultChecked' | 'onCheckedChange' | 'readOnly'
-> &
-  CheckedStateProperties<NonNullable<BaseSwitch.Root.Props['onCheckedChange']>> & { readonly xstyle?: PlacementStyle };
-
-type SwitchThumbProps = ComponentProps<typeof BaseSwitch.Thumb>;
-
-type ToggleGroupRootProps<Value extends string> = Omit<
-  BaseToggleGroup.Props<Value>,
+type RadioGroupRootProps<Value extends string> = Omit<
+  ComponentProps<typeof SdkRadioGroup<Value>>,
   'value' | 'defaultValue' | 'onValueChange'
 > &
-  ValueStateProperties<ReadonlyArray<Value>, NonNullable<BaseToggleGroup.Props<Value>['onValueChange']>> & {
+  (ValueStateProperties<Value, RadioSelection<Value>> | ReadOnlyValueProperties<Value, RadioSelection<Value>>) & {
     readonly xstyle?: PlacementStyle;
   };
 
+type RadioItemProps = ComponentProps<typeof SdkRadio> & { readonly xstyle?: PlacementStyle };
+type RadioIndicatorProps = ComponentProps<typeof SdkRadioIndicator>;
+
+type SwitchRootProps = Omit<
+  ComponentProps<typeof SdkSwitch>,
+  'checked' | 'defaultChecked' | 'onCheckedChange' | 'readOnly'
+> &
+  CheckedStateProperties<NonNullable<ComponentProps<typeof SdkSwitch>['onCheckedChange']>> & {
+    readonly xstyle?: PlacementStyle;
+  };
+
+type SwitchThumbProps = ComponentProps<typeof SdkSwitchThumb>;
+
+type ToggleGroupRootProps<Value extends string> = Omit<
+  ComponentProps<typeof SdkToggleGroup<Value>>,
+  'value' | 'defaultValue' | 'onValueChange'
+> &
+  ValueStateProperties<
+    ReadonlyArray<Value>,
+    NonNullable<ComponentProps<typeof SdkToggleGroup<Value>>['onValueChange']>
+  > & { readonly xstyle?: PlacementStyle };
+
 type ToggleItemProps<Value extends string> = Omit<
-  BaseToggle.Props<Value>,
+  ComponentProps<typeof SdkToggle>,
   'value' | 'pressed' | 'defaultPressed' | 'onPressedChange'
 > & { readonly value: Value };
 
-function CheckboxRoot({ className, style, xstyle, ...props }: CheckboxRootProps): ReactNode {
+function CheckboxRoot({
+  className,
+  style,
+  xstyle,
+  indeterminate = false,
+  checked,
+  defaultChecked,
+  onCheckedChange,
+  ...props
+}: CheckboxRootProps): ReactNode {
+  const checkedState = indeterminate ? 'indeterminate' : checked;
+
   return (
-    <BaseCheckbox.Root
+    <SdkCheckbox
       {...props}
-      {...mergeStyles<BaseCheckbox.Root.State>({ className, style, styles: stylex.props(styles.choice, xstyle) })}
+      {...(checkedState !== undefined && { checked: checkedState })}
+      {...(checkedState === undefined && defaultChecked !== undefined && { defaultChecked })}
+      onCheckedChange={(value, details) => onCheckedChange?.(value === true, details)}
+      {...mergeStyles({ className, style, styles: stylex.props(styles.choice, xstyle) })}
     />
   );
 }
 
 function CheckboxIndicator({ children, className, style, ...props }: CheckboxIndicatorProps): ReactNode {
   return (
-    <BaseCheckbox.Indicator
+    <SdkCheckboxIndicator
       {...props}
-      {...mergeStyles<BaseCheckbox.Indicator.State>({
+      {...mergeStyles({
         className,
         style,
         styles: stylex.props(styles.indicator, children === undefined && styles.checkGlyph),
       })}
     >
       {children}
-    </BaseCheckbox.Indicator>
+    </SdkCheckboxIndicator>
   );
 }
 
-function RadioGroupRoot<Value>({ className, style, xstyle, ...props }: RadioGroupRootProps<Value>): ReactNode {
+function RadioGroupRoot<Value extends string>({
+  className,
+  style,
+  xstyle,
+  onValueChange,
+  ...props
+}: RadioGroupRootProps<Value>): ReactNode {
   return (
-    <BaseRadioGroup<Value>
+    <SdkRadioGroup<Value>
       {...props}
-      {...mergeStyles<BaseRadioGroup.State>({ className, style, styles: stylex.props(styles.group, xstyle) })}
+      onValueChange={(value, details) => {
+        if (value !== null) {
+          onValueChange?.(value, details);
+        }
+      }}
+      {...mergeStyles({ className, style, styles: stylex.props(styles.group, xstyle) })}
     />
   );
 }
 
-function RadioItem<Value>({ className, style, xstyle, ...props }: RadioItemProps<Value>): ReactNode {
+function RadioItem({ className, style, xstyle, ...props }: RadioItemProps): ReactNode {
   return (
-    <BaseRadio.Root<Value>
+    <SdkRadio
       {...props}
-      {...mergeStyles<BaseRadio.Root.State>({
-        className,
-        style,
-        styles: stylex.props(styles.choice, styles.radio, xstyle),
-      })}
+      {...mergeStyles({ className, style, styles: stylex.props(styles.choice, styles.radio, xstyle) })}
     />
   );
 }
 
 function RadioIndicator({ className, style, ...props }: RadioIndicatorProps): ReactNode {
   return (
-    <BaseRadio.Indicator
+    <SdkRadioIndicator
       {...props}
-      {...mergeStyles<BaseRadio.Indicator.State>({
-        className,
-        style,
-        styles: stylex.props(styles.indicator, styles.radioIndicator),
-      })}
+      {...mergeStyles({ className, style, styles: stylex.props(styles.indicator, styles.radioIndicator) })}
     />
   );
 }
 
 function SwitchRoot({ className, style, xstyle, ...props }: SwitchRootProps): ReactNode {
-  return (
-    <BaseSwitch.Root
-      {...props}
-      {...mergeStyles<BaseSwitch.Root.State>({ className, style, styles: stylex.props(styles.switch, xstyle) })}
-    />
-  );
+  return <SdkSwitch {...props} {...mergeStyles({ className, style, styles: stylex.props(styles.switch, xstyle) })} />;
 }
 
 function SwitchThumb({ className, style, ...props }: SwitchThumbProps): ReactNode {
-  return (
-    <BaseSwitch.Thumb
-      {...props}
-      {...mergeStyles<BaseSwitch.Thumb.State>({ className, style, styles: stylex.props(styles.thumb) })}
-    />
-  );
+  return <SdkSwitchThumb {...props} {...mergeStyles({ className, style, styles: stylex.props(styles.thumb) })} />;
 }
 
 function ToggleGroupRoot<Value extends string>({
   className,
   style,
   xstyle,
+  value,
+  defaultValue,
   ...props
 }: ToggleGroupRootProps<Value>): ReactNode {
   return (
-    <BaseToggleGroup<Value>
+    <SdkToggleGroup<Value>
       {...props}
-      {...mergeStyles<BaseToggleGroup.State>({ className, style, styles: stylex.props(styles.toggles, xstyle) })}
+      {...(value !== undefined && { value: [...value] })}
+      {...(defaultValue !== undefined && { defaultValue: [...defaultValue] })}
+      {...mergeStyles({ className, style, styles: stylex.props(styles.toggles, xstyle) })}
     />
   );
 }
 
 function ToggleItem<Value extends string>({ className, style, ...props }: ToggleItemProps<Value>): ReactNode {
-  return (
-    <BaseToggle<Value>
-      {...props}
-      {...mergeStyles<BaseToggle.State>({ className, style, styles: stylex.props(styles.toggle) })}
-    />
-  );
+  return <SdkToggle {...props} {...mergeStyles({ className, style, styles: stylex.props(styles.toggle) })} />;
 }
 
 export const Checkbox = { Root: CheckboxRoot, Indicator: CheckboxIndicator };

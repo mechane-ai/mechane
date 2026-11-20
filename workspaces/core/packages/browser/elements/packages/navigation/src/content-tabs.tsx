@@ -29,7 +29,11 @@ export function ContentTabs(props: ContentTabsProps): ReactNode {
   const selected = props.items.find((item) => item.id === localId) ?? props.items[0];
 
   return (
-    <Tabs.Root value={selected?.id} onValueChange={(value) => setLocalId(String(value))} {...stylex.props(styles.root)}>
+    <Tabs.Root
+      value={selected?.id ?? null}
+      onValueChange={(value) => setLocalId(value ?? undefined)}
+      {...stylex.props(styles.root)}
+    >
       <Tabs.List aria-label={props.label}>
         {props.items.map((item) => (
           <Tabs.Tab key={item.id} value={item.id}>

@@ -1,5 +1,5 @@
 import { BYTES_PER_MEBIBYTE, HttpStatusCode } from '@mechane/records';
-import type { ActorRecordPageInput, ActorRecordReader } from '../../actor/record-store.ts';
+import type { ActorRecordReader } from '../../actor/record-store.ts';
 import { failManagedRequest } from '../failure.ts';
 import type { ManagedEvent, ManagedEventPage, ManagedEventPageInput } from '../protocol.ts';
 import { indexedEvents, visibleEvent } from './collections.ts';
@@ -107,22 +107,6 @@ function eventPage(events: ReadonlyArray<ManagedEvent>, hasMore: boolean): Manag
   return { data: events, has_more: hasMore, first_id: events.at(0)?.id ?? null, last_id: events.at(-1)?.id ?? null };
 }
 
-async function* indexedEventIds(
-  reader: ActorRecordReader,
-  index: ReturnType<typeof viewIndex>,
-  options: ActorRecordPageInput,
-) {
-  let page = await index.page(reader, options);
-
-  yield* page.items;
-
-  while (page.hasMore) {
-    page = await index.page(reader, { ...options, after: undefined, offset: page.nextOffset });
-
-    yield* page.items;
-  }
-}
-
 async function* historicalIds(reader: ActorRecordReader, input: ManagedEventPageInput) {
   const start = await cursorPhase(reader, input, input.afterId);
 
@@ -146,7 +130,7 @@ async function* historicalIds(reader: ActorRecordReader, input: ManagedEventPage
       after = undefined;
     }
 
-    yield* indexedEventIds(reader, viewIndex(input, phase), { after, maxRows: INDEX_BATCH_ROWS, isReversed });
+    yield* viewIndex(input, phase).scan(reader, { after, maxRows: INDEX_BATCH_ROWS, isReversed });
   }
 }
 

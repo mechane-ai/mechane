@@ -36,7 +36,7 @@ const models = [
 
 function ComposerExample(): ReactNode {
   const [draft, setDraft] = useState('');
-  const [model, setModel] = useState(models[0] ?? null);
+  const [model, setModel] = useState<string | null>(models[0]?.id ?? null);
   const [hasAttachment, setAttachment] = useState(false);
   const [error, setError] = useState<string>();
 
@@ -69,37 +69,26 @@ function ComposerExample(): ReactNode {
         }
         controls={
           <>
-            <Combobox.Root
-              items={models}
-              value={model}
-              onValueChange={setModel}
-              itemToStringLabel={(item) => item.name}
-              itemToStringValue={(item) => item.id}
-              isItemEqualToValue={(item, selected) => item.id === selected.id}
-            >
+            <Combobox.Root value={model} onValueChange={setModel}>
               <Combobox.InputGroup>
                 <Combobox.Input aria-label="Model" placeholder="Choose model" />
                 <Combobox.Trigger aria-label="Show models">
                   <ChevronDown size={16} />
                 </Combobox.Trigger>
               </Combobox.InputGroup>
-              <Combobox.Portal>
-                <Combobox.Positioner>
-                  <Combobox.Popup>
-                    <Combobox.Empty>No matching models.</Combobox.Empty>
-                    <Combobox.List>
-                      {(item: (typeof models)[number]) => (
-                        <Combobox.Item key={item.id} value={item}>
-                          <Combobox.ItemIndicator>
-                            <Check size={14} />
-                          </Combobox.ItemIndicator>
-                          {item.name}
-                        </Combobox.Item>
-                      )}
-                    </Combobox.List>
-                  </Combobox.Popup>
-                </Combobox.Positioner>
-              </Combobox.Portal>
+              <Combobox.Popup>
+                <Combobox.Empty>No matching models.</Combobox.Empty>
+                <Combobox.List>
+                  {models.map((item) => (
+                    <Combobox.Item key={item.id} value={item.id} label={item.name}>
+                      <Combobox.ItemIndicator>
+                        <Check size={14} />
+                      </Combobox.ItemIndicator>
+                      {item.name}
+                    </Combobox.Item>
+                  ))}
+                </Combobox.List>
+              </Combobox.Popup>
             </Combobox.Root>
             <Button type="button" onClick={() => setAttachment(true)} disabled={hasAttachment}>
               <Paperclip size={16} aria-hidden />
@@ -107,22 +96,18 @@ function ComposerExample(): ReactNode {
             </Button>
             <Popover.Root>
               <Popover.Trigger render={<Button type="button" />}>Context</Popover.Trigger>
-              <Popover.Portal>
-                <Popover.Positioner>
-                  <Popover.Popup>
-                    <Stack>
-                      <Popover.Title>Context capacity</Popover.Title>
-                      <Meter
-                        label="Current conversation"
-                        value={24_000}
-                        max={128_000}
-                        valueLabel="24,000 of 128,000 tokens"
-                      />
-                      <Text>Capacity and token counts are supplied by the application.</Text>
-                    </Stack>
-                  </Popover.Popup>
-                </Popover.Positioner>
-              </Popover.Portal>
+              <Popover.Popup>
+                <Stack>
+                  <Popover.Title>Context capacity</Popover.Title>
+                  <Meter
+                    label="Current conversation"
+                    value={24_000}
+                    max={128_000}
+                    valueLabel="24,000 of 128,000 tokens"
+                  />
+                  <Text>Capacity and token counts are supplied by the application.</Text>
+                </Stack>
+              </Popover.Popup>
             </Popover.Root>
           </>
         }

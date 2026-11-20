@@ -10,9 +10,8 @@ Import tokens through their declared `.stylex` definition export, which resolves
 Configure the application and Storybook compilers to resolve that package path. Keep StyleX variable references out of
 numeric chart geometry.
 
-Preserve composed refs, accessible attributes, event callbacks, classes, and inline styles when wrapping Base UI.
-Merge the component's StyleX output with incoming composition props using Base UI's composition helpers or an equivalent
-documented policy. Keep the component's visual states authoritative while preserving injected positioning and callbacks.
+Preserve composed refs, accessible attributes, event callbacks, classes, and inline styles when wrapping a primitive.
+Merge the component's StyleX output with incoming composition props using the shared foundations composition helpers. Keep the component's visual states authoritative while preserving injected positioning and callbacks.
 Use the same path when a control is rendered directly or supplied through another control's `render` prop.
 
 Use supported StyleX longhands for borders, outlines, backgrounds, and fonts. Confirm those styles survive the production

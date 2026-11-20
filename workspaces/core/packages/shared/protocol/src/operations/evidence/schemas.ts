@@ -14,10 +14,10 @@ import {
   wireStruct,
   WorkspaceId,
 } from '@mechane/records';
-import { ExecutionId } from '@mechane/sandbox-wire';
+import { EvidenceStatus, ExecutionId } from '@mechane/sandbox-wire';
 import { Schema } from 'effect';
 import { WireTime } from '../../schemas.ts';
-import { EVIDENCE_ARTIFACT_MAX_BYTES, EVIDENCE_TEXT_MAX_BYTES, EvidenceKind, EvidenceStatus } from './constants.ts';
+import { EVIDENCE_ARTIFACT_MAX_BYTES, EVIDENCE_TEXT_MAX_BYTES, EvidenceKind } from './constants.ts';
 
 const EvidenceText = boundedText({ maxBytes: EVIDENCE_TEXT_MAX_BYTES });
 /** The digest identifies exact stored bytes and detects changed upload replays. */
@@ -78,18 +78,6 @@ export const EvidencePath = wireStruct({
 });
 
 export type EvidencePath = typeof EvidencePath.Type;
-
-/** The cursor advances through immutable receipts and may restrict results to one turn. */
-export const EvidenceQuery = wireStruct({
-  fields: {
-    /** Absent on the first page. */
-    after: Schema.OptionFromOptionalKey(EvidenceArtifactId),
-    /** Absent when listing captures from every turn. */
-    turnId: Schema.OptionFromOptionalKey(TurnId),
-  },
-});
-
-export type EvidenceQuery = typeof EvidenceQuery.Type;
 
 /** The cursor continues after the last listed artifact when more receipts remain. */
 export const EvidencePage = wireStruct({

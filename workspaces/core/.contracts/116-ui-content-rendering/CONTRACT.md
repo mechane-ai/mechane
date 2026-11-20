@@ -24,9 +24,9 @@ Preserve source whitespace and copy the supplied text rather than rendered marku
 the supplied file identity, source, or explicit revision changes. Line coordinates are one-based; diff annotations
 distinguish old and new sides. Report file, line, and frame selection through callbacks or application-supplied destinations.
 
-Keep Pierre model state under one adapter. Apply later paths, statuses, selection, and composition updates to the
-persistent tree model instead of treating initial options as live props. Clean up subscriptions and obsolete async
-renderer work when its owning input changes or unmounts.
+Use UI SDK Tree for hierarchy, keyboard navigation, and selection requests. Identify rows by full path and render a
+bounded window that follows keyboard focus. Reflect later paths, statuses, and application-controlled selection.
+Restore folder expansion after a search. Clean up obsolete renderer work when its owning input changes or unmounts.
 
 Bound nested or large output with visible truncation or a declared render window. Preserve the full supplied copy
 value where copying is supported. A collapsed, truncated, missing, or empty value must have its own truthful state.

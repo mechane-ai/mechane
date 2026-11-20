@@ -11,7 +11,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Sources preserves supplied source order and identity. InlineCitation opens the same supplied record in a Base UI popover by keyboard, pointer or touch. ContentLink shares Markdown’s destination policy; unsafe URL schemes render as text. Choose Sources for a reference list, InlineCitation for a reference within prose, and ContentLink for an ordinary destination without citation metadata. The application supplies provenance and decides which records are visible.',
+          'Sources preserves supplied source order and identity. InlineCitation opens the same supplied record in the shared popover by keyboard, pointer or touch. ContentLink shares Markdown’s destination policy; unsafe URL schemes render as text. Choose Sources for a reference list, InlineCitation for a reference within prose, and ContentLink for an ordinary destination without citation metadata. The application supplies provenance and decides which records are visible.',
       },
     },
   },

@@ -38,11 +38,7 @@ export function Timestamp({ dateTime, label, title }: TimestampProps): ReactNode
       >
         {label}
       </Tooltip.Trigger>
-      <Tooltip.Portal>
-        <Tooltip.Positioner>
-          <Tooltip.Popup>{title}</Tooltip.Popup>
-        </Tooltip.Positioner>
-      </Tooltip.Portal>
+      <Tooltip.Popup>{title}</Tooltip.Popup>
     </Tooltip.Root>
   );
 }

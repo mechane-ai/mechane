@@ -1,5 +1,5 @@
-import { mergeProps } from '@base-ui/react/merge-props';
 import * as stylex from '@stylexjs/stylex';
+import { mergeProps } from '@ui-sdk/react/primitive';
 import { useLayoutEffect, useRef } from 'react';
 import type { ComponentProps, ReactNode, RefObject } from 'react';
 import { Button } from '../../core/src/index.ts';

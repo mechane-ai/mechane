@@ -1,9 +1,8 @@
 import * as stylex from '@stylexjs/stylex';
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import type { ReactNode } from 'react';
-import { CopyValue } from '../../core/src/index.ts';
-import { conditions } from '../../foundations/src/constants.stylex.ts';
-import { colors, controls, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { Collapsible, CopyValue } from '../../core/src/index.ts';
+import { colors, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import { useScrollTabIndex } from '../../foundations/src/use-scroll-tab-index.ts';
 import { viewerStyles } from './viewer-styles.ts';
 
@@ -37,6 +36,7 @@ const styles = stylex.create({
     fontFamily: typography.monoFamily,
     fontSize: typography.captionSize,
   },
+  code: { fontFamily: typography.monoFamily, fontSize: typography.captionSize },
   entry: { minWidth: 0, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' },
   children: {
     paddingInlineStart: spacing.lg,
@@ -44,23 +44,6 @@ const styles = stylex.create({
     borderInlineStartStyle: 'solid',
     borderInlineStartColor: colors.line,
     marginInlineStart: spacing.xs,
-  },
-  summary: {
-    'boxSizing': 'border-box',
-    'cursor': 'pointer',
-    'minHeight': { default: typography.bodyLineHeight, [conditions.coarsePointer]: controls.coarseTarget },
-    'paddingBlock': { default: 0, [conditions.coarsePointer]: spacing.md },
-    'backgroundColor': {
-      'default': 'transparent',
-      ':hover': { default: null, [conditions.hoverPointer]: colors.canvas },
-      ':active': colors.canvas,
-    },
-    ':focus-visible': {
-      outlineColor: colors.focus,
-      outlineWidth: controls.focusWidth,
-      outlineStyle: 'solid',
-      outlineOffset: -2,
-    },
   },
   key: { color: colors.muted },
   string: { color: colors.accent },
@@ -71,8 +54,6 @@ const styles = stylex.create({
 const STRING_PREVIEW_CHARACTERS = 500;
 
 function JsonEntry({ value, name, path, depth, maxDepth, maxEntries }: JsonEntryProps): ReactNode {
-  const [isExpanded, setExpanded] = useState(depth === 0);
-
   if (value === null || typeof value !== 'object') {
     const text = JSON.stringify(value);
     const isTruncated = text.length > STRING_PREVIEW_CHARACTERS;
@@ -101,17 +82,15 @@ function JsonEntry({ value, name, path, depth, maxDepth, maxEntries }: JsonEntry
   }
 
   return (
-    <details
-      open={isExpanded}
-      onToggle={(event) => setExpanded(event.currentTarget.open)}
-      {...stylex.props(styles.entry)}
-    >
-      <summary {...stylex.props(styles.summary)}>
-        <span {...stylex.props(styles.key)}>{name}: </span>
-        {Array.isArray(value) ? '[]' : '{}'} <span {...stylex.props(styles.truncated)}>{summary}</span>
-      </summary>
-      {isExpanded && (
-        <div {...stylex.props(styles.children)}>
+    <Collapsible.Root defaultOpen={depth === 0} {...stylex.props(styles.entry)}>
+      <Collapsible.Trigger variant="inline">
+        <span {...stylex.props(styles.code)}>
+          <span {...stylex.props(styles.key)}>{name}: </span>
+          {Array.isArray(value) ? '[]' : '{}'} <span {...stylex.props(styles.truncated)}>{summary}</span>
+        </span>
+      </Collapsible.Trigger>
+      <Collapsible.Panel>
+        <div {...stylex.props(styles.children, styles.code)}>
           {entries.slice(0, maxEntries).map(([key, entry]) => {
             const entryPath = `${path}/${key.replaceAll('~', '~0').replaceAll('/', '~1')}`;
 
@@ -133,8 +112,8 @@ function JsonEntry({ value, name, path, depth, maxDepth, maxEntries }: JsonEntry
             </div>
           )}
         </div>
-      )}
-    </details>
+      </Collapsible.Panel>
+    </Collapsible.Root>
   );
 }
 

@@ -1,10 +1,11 @@
-import { DayButton, DayPicker, TZDate } from '@daypicker/react';
-import type { PropsBase } from '@daypicker/react';
 import * as stylex from '@stylexjs/stylex';
-import type { ComponentProps, ReactNode } from 'react';
+import * as Sdk from '@ui-sdk/react/calendar';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useLayoutEffect, useRef } from 'react';
+import type { ReactNode } from 'react';
 import { conditions } from '../../../foundations/src/constants.stylex.ts';
 import { colors, controls, radii, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
-import { isDate } from './civil.ts';
+import { isDate, parseCalendarDate, serializeCalendarDate, serializeCalendarMonth } from './civil.ts';
 import type { CalendarDate } from './civil.ts';
 
 export type { CalendarDate } from './civil.ts';
@@ -22,7 +23,7 @@ const styles = stylex.create({
     maxWidth: '100%',
     overflowX: 'auto',
   },
-  months: { display: 'flex', flexWrap: 'wrap', position: 'relative', gap: spacing.xl },
+  month: { position: 'relative' },
   caption: {
     display: 'flex',
     alignItems: 'center',
@@ -30,7 +31,7 @@ const styles = stylex.create({
     height: { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
     marginBottom: spacing.sm,
   },
-  captionLabel: { fontSize: typography.bodySize, fontWeight: typography.mediumWeight },
+  captionLabel: { margin: 0, fontSize: typography.bodySize, fontWeight: typography.mediumWeight },
   navigation: {
     position: 'absolute',
     insetInline: 0,
@@ -65,7 +66,7 @@ const styles = stylex.create({
       outlineOffset: -2,
     },
   },
-  chevron: { width: controls.iconSize, height: controls.iconSize, fill: 'currentColor' },
+  chevron: { width: controls.iconSize, height: controls.iconSize },
   grid: { borderCollapse: 'collapse', borderSpacing: 0 },
   weekday: {
     color: colors.muted,
@@ -74,7 +75,6 @@ const styles = stylex.create({
     height: controls.height,
     textAlign: 'center',
   },
-  day: { padding: 0, textAlign: 'center' },
   dayButton: {
     'boxSizing': 'border-box',
     'width': { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
@@ -91,33 +91,33 @@ const styles = stylex.create({
     'fontSize': typography.bodySize,
     'lineHeight': typography.bodyLineHeight,
     'fontVariantNumeric': 'tabular-nums',
+    'textAlign': 'center',
     'cursor': 'pointer',
-    ':hover:not(:active, :disabled)': { backgroundColor: { [conditions.hoverPointer]: colors.canvas } },
-    ':active:not(:disabled)': { backgroundColor: colors.line },
+    ':hover:not(:active, [aria-disabled="true"])': { backgroundColor: { [conditions.hoverPointer]: colors.canvas } },
+    ':active:not([aria-disabled="true"])': { backgroundColor: colors.line },
     ':focus-visible': {
       outlineWidth: controls.focusWidth,
       outlineStyle: 'solid',
       outlineColor: colors.focus,
       outlineOffset: -2,
     },
-    ':disabled': { opacity: controls.disabledOpacity, cursor: 'default' },
   },
   outside: { color: colors.muted },
   today: { borderColor: colors.line },
   selected: {
     'color': colors.inverse,
     'backgroundColor': colors.ink,
-    ':hover:not(:disabled)': { backgroundColor: { [conditions.hoverPointer]: colors.inkHover } },
-    ':active:not(:disabled)': { backgroundColor: colors.inkHover },
+    ':hover:not([aria-disabled="true"])': { backgroundColor: { [conditions.hoverPointer]: colors.inkHover } },
+    ':active:not([aria-disabled="true"])': { backgroundColor: colors.inkHover },
   },
   rangeMiddle: {
     'borderRadius': 0,
     'color': colors.ink,
     'backgroundColor': colors.canvas,
-    ':hover:not(:active, :disabled)': { backgroundColor: { [conditions.hoverPointer]: colors.canvas } },
-    ':active:not(:disabled)': { backgroundColor: colors.line },
+    ':hover:not(:active, [aria-disabled="true"])': { backgroundColor: { [conditions.hoverPointer]: colors.canvas } },
+    ':active:not([aria-disabled="true"])': { backgroundColor: colors.line },
   },
-  hidden: { visibility: 'hidden' },
+  disabledDay: { opacity: controls.disabledOpacity, cursor: 'default' },
 });
 
 export type CalendarRange = { readonly from: CalendarDate; readonly to?: CalendarDate | undefined };
@@ -145,126 +145,126 @@ export type CalendarProps = CalendarEnvironment & { readonly label: string; read
       }
   );
 
-function zonedDate(value: CalendarDate, timeZone: string): Date {
-  // Noon avoids zones whose civil day starts with a daylight-saving transition.
-  const date = new TZDate(0, timeZone);
-
-  date.setFullYear(value.year, value.month - 1, value.day);
-  date.setHours(12, 0, 0, 0);
-
-  return date;
-}
-
-function calendarDate(value: Date): CalendarDate {
-  return { year: value.getFullYear(), month: value.getMonth() + 1, day: value.getDate() };
-}
-
-function CalendarDayButton({ className, modifiers, ...props }: ComponentProps<typeof DayButton>) {
-  const appearance = stylex.props(
-    styles.dayButton,
-    modifiers['outside'] === true && styles.outside,
-    modifiers['today'] === true && styles.today,
-    modifiers['selected'] === true && styles.selected,
-    modifiers['range_middle'] === true && styles.rangeMiddle,
-  );
-
-  return (
-    <DayButton
-      {...props}
-      modifiers={modifiers}
-      className={[className, appearance.className].filter(Boolean).join(' ')}
-    />
-  );
+function isoDate(value: CalendarDate | undefined): string | undefined {
+  return value !== undefined && isDate(value) ? serializeCalendarDate(value) : undefined;
 }
 
 export function Calendar(props: CalendarProps): ReactNode {
-  const { locale, timeZone, weekStartsOn = 1, label } = props;
-  const today = isDate(props.today) ? props.today : { year: 2000, month: 1, day: 1 };
-  const initialMonth = isDate(props.initialMonth) ? props.initialMonth : today;
-  const minimum = props.minimum !== undefined && isDate(props.minimum) ? props.minimum : undefined;
-  const maximum = props.maximum !== undefined && isDate(props.maximum) ? props.maximum : undefined;
-  const disabled = [];
+  const grid = useRef<HTMLTableElement>(null);
 
-  if (minimum !== undefined) {
-    disabled.push({ before: zonedDate(minimum, timeZone) });
-  }
+  useLayoutEffect(() => {
+    if (props.autoFocus === true) {
+      grid.current?.querySelector<HTMLElement>('[tabindex="0"]')?.focus();
+    }
+  }, [props.autoFocus, props.timeZone]);
 
-  if (maximum !== undefined) {
-    disabled.push({ after: zonedDate(maximum, timeZone) });
-  }
-
-  const shared: PropsBase = {
-    'aria-label': label,
-    timeZone,
-    'noonSafe': true,
-    'autoFocus': props.autoFocus ?? false,
-    weekStartsOn,
-    'today': zonedDate(today, timeZone),
-    'defaultMonth': zonedDate(initialMonth, timeZone),
-    'startMonth': minimum === undefined ? undefined : zonedDate(minimum, timeZone),
-    disabled,
-    'showOutsideDays': true,
-    'components': { DayButton: CalendarDayButton },
-    'classNames': {
-      root: stylex.props(styles.calendar).className ?? '',
-      months: stylex.props(styles.months).className ?? '',
-      month_caption: stylex.props(styles.caption).className ?? '',
-      caption_label: stylex.props(styles.captionLabel).className ?? '',
-      nav: stylex.props(styles.navigation).className ?? '',
-      button_previous: stylex.props(styles.navigationButton).className ?? '',
-      button_next: stylex.props(styles.navigationButton).className ?? '',
-      chevron: stylex.props(styles.chevron).className ?? '',
-      month_grid: stylex.props(styles.grid).className ?? '',
-      weekday: stylex.props(styles.weekday).className ?? '',
-      day: stylex.props(styles.day).className ?? '',
-      hidden: stylex.props(styles.hidden).className ?? '',
-    },
-    'formatters': {
-      formatCaption: (date: Date) =>
-        new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric', timeZone }).format(date),
-      formatDay: (date: Date) => new Intl.DateTimeFormat(locale, { day: 'numeric', timeZone }).format(date),
-      formatWeekdayName: (date: Date) => new Intl.DateTimeFormat(locale, { weekday: 'short', timeZone }).format(date),
-    },
-  };
-
-  if (maximum !== undefined) {
-    shared.endMonth = zonedDate(maximum, timeZone);
-  }
-
-  if (props.mode === 'single') {
-    return (
-      <DayPicker
-        key={timeZone}
-        {...shared}
-        mode="single"
-        selected={props.value !== undefined && isDate(props.value) ? zonedDate(props.value, timeZone) : undefined}
-        onSelect={(date) => props.onValueChange(date === undefined ? undefined : calendarDate(date))}
-      />
-    );
-  }
-
-  const selected =
-    props.value === undefined || !isDate(props.value.from)
-      ? undefined
-      : {
-          from: zonedDate(props.value.from, timeZone),
-          to: props.value.to !== undefined && isDate(props.value.to) ? zonedDate(props.value.to, timeZone) : undefined,
-        };
+  const today = isoDate(props.today) ?? '2000-01-01';
+  const initialMonth = isDate(props.initialMonth) ? serializeCalendarMonth(props.initialMonth) : today.slice(0, 7);
+  const minimum = isoDate(props.minimum);
+  const maximum = isoDate(props.maximum);
+  const from = props.mode === 'range' ? isoDate(props.value?.from) : undefined;
+  const to = props.mode === 'range' ? isoDate(props.value?.to) : undefined;
+  const range: [string, string] | null = from !== undefined && to !== undefined ? [from, to] : null;
 
   return (
-    <DayPicker
-      key={timeZone}
-      {...shared}
-      mode="range"
-      resetOnSelect
-      selected={selected}
-      onSelect={(range) =>
-        props.onValueChange(
-          range?.from === undefined
-            ? undefined
-            : { from: calendarDate(range.from), to: range.to === undefined ? undefined : calendarDate(range.to) },
-        )
-      }
-    />
+    <Sdk.Calendar
+      key={props.timeZone}
+      {...stylex.props(styles.calendar)}
+      aria-label={props.label}
+      mode={props.mode}
+      locale={props.locale}
+      timeZone={props.timeZone}
+      weekStartsOn={props.weekStartsOn ?? 1}
+      today={today}
+      defaultMonth={initialMonth}
+      {...(minimum !== undefined && { min: minimum })}
+      {...(maximum !== undefined && { max: maximum })}
+      showOutsideDays
+      deselectable
+      value={props.mode === 'single' ? (isoDate(props.value) ?? null) : range}
+      onAnchorChange={(anchor, details) => {
+        if (props.mode !== 'range') {
+          return;
+        }
+
+        if (anchor === null) {
+          if (details.reason === 'escape-key') {
+            props.onValueChange(undefined);
+          }
+
+          return;
+        }
+
+        const date = parseCalendarDate(anchor);
+
+        if (date === undefined) {
+          return;
+        }
+
+        if (props.value !== undefined && from !== undefined && to === undefined) {
+          details.cancel();
+          props.onValueChange(
+            anchor < from ? { from: date, to: props.value.from } : { from: props.value.from, to: date },
+          );
+        } else {
+          props.onValueChange({ from: date });
+        }
+      }}
+      onValueChange={(next) => {
+        if (props.mode === 'single') {
+          props.onValueChange(typeof next === 'string' ? parseCalendarDate(next) : undefined);
+        } else if (Array.isArray(next)) {
+          const start = parseCalendarDate(next[0]);
+          const end = parseCalendarDate(next[1]);
+
+          if (start !== undefined && end !== undefined) {
+            props.onValueChange({ from: start, to: end });
+          }
+        }
+      }}
+    >
+      <div {...stylex.props(styles.month)}>
+        <div {...stylex.props(styles.caption)}>
+          <Sdk.CalendarHeading {...stylex.props(styles.captionLabel)} />
+        </div>
+        <div {...stylex.props(styles.navigation)}>
+          <Sdk.CalendarPrevious {...stylex.props(styles.navigationButton)}>
+            <ChevronLeft aria-hidden="true" {...stylex.props(styles.chevron)} />
+          </Sdk.CalendarPrevious>
+          <Sdk.CalendarNext {...stylex.props(styles.navigationButton)}>
+            <ChevronRight aria-hidden="true" {...stylex.props(styles.chevron)} />
+          </Sdk.CalendarNext>
+        </div>
+        <Sdk.CalendarGrid ref={grid} {...stylex.props(styles.grid)}>
+          <Sdk.CalendarWeekdays>
+            {(index) => <Sdk.CalendarWeekday index={index} {...stylex.props(styles.weekday)} />}
+          </Sdk.CalendarWeekdays>
+          <Sdk.CalendarWeeks>
+            {(cell) => (
+              <Sdk.CalendarDay
+                value={cell.date}
+                className={(day) => {
+                  const isEndpoint = day.rangeStart || day.rangeEnd;
+                  const isDraftStart = day.date === from && to === undefined;
+                  const isSelected = day.selected || isEndpoint || isDraftStart;
+                  const isRangeMiddle = day.inRange && !isEndpoint;
+
+                  return (
+                    stylex.props(
+                      styles.dayButton,
+                      day.outside && styles.outside,
+                      day.today && styles.today,
+                      isSelected && styles.selected,
+                      isRangeMiddle && styles.rangeMiddle,
+                      day.disabled && styles.disabledDay,
+                    ).className ?? ''
+                  );
+                }}
+              />
+            )}
+          </Sdk.CalendarWeeks>
+        </Sdk.CalendarGrid>
+      </div>
+    </Sdk.Calendar>
   );
 }

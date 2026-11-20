@@ -27,6 +27,7 @@ export function ArchivedMechList({
 }): ReactNode {
   return (
     <DataTable
+      query={{ mode: 'frame' }}
       caption="Mech archive"
       hideCaption
       rows={mechs}

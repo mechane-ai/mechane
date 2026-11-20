@@ -1,10 +1,15 @@
 import { HttpStatusCode } from '@mechane/records';
 import { managedModelSettings, resolveManagedToolsets, validateManagedMcpServers } from '@mechane/runtime';
 import type { RuntimeConfiguration } from '@mechane/runtime';
-import { Predicate, Record } from 'effect';
+import { Predicate, Record, Schema } from 'effect';
 import { ManagedHttpError } from './http-error.ts';
 import { managedPageQuery } from './page-query.ts';
 import type { ManagedRequest } from './types.ts';
+
+const AgentListFilters = Schema.Struct({
+  search: Schema.optionalKey(Schema.String),
+  filter: Schema.optionalKey(Schema.Literals(['active', 'archived'])),
+});
 
 const METADATA_KEY_MAX_CHARACTERS = 64;
 const METADATA_VALUE_MAX_CHARACTERS = 512;
@@ -127,7 +132,7 @@ export async function handleAgents({
   }
 
   if (operation === 'BetaListAgents') {
-    const page = managedPageQuery(query);
+    const page = { ...managedPageQuery(query), ...Schema.decodeUnknownSync(AgentListFilters)(query) };
 
     return await agents.list({ scope, query: page });
   }

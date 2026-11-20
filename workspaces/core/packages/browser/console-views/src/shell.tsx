@@ -33,7 +33,7 @@ function WorkspaceSwitcher({ workspaces, workspaceId, onWorkspace }: WorkspaceSw
     <Select.Root<string>
       value={workspaceId}
       items={options}
-      onValueChange={(value) => {
+      onValueChange={(value: string | null) => {
         if (value !== null) {
           onWorkspace(value);
         }
@@ -53,23 +53,19 @@ function WorkspaceSwitcher({ workspaces, workspaceId, onWorkspace }: WorkspaceSw
           </Select.Icon>
         </SidebarLabel>
       </Select.Trigger>
-      <Select.Portal>
-        <Select.Positioner align="start" xstyle={styles.workspacePositioner}>
-          <Select.Popup>
-            <Select.List>
-              {options.map((option) => (
-                <Select.Item key={option.value} value={option.value}>
-                  <Select.ItemText>{option.label}</Select.ItemText>
-                  <Muted>{option.description}</Muted>
-                  <Select.ItemIndicator>
-                    <Check size={16} aria-hidden />
-                  </Select.ItemIndicator>
-                </Select.Item>
-              ))}
-            </Select.List>
-          </Select.Popup>
-        </Select.Positioner>
-      </Select.Portal>
+      <Select.Popup align="start" xstyle={styles.workspacePositioner}>
+        <Select.List>
+          {options.map((option) => (
+            <Select.Item key={option.value} value={option.value}>
+              <Select.ItemText>{option.label}</Select.ItemText>
+              <Muted>{option.description}</Muted>
+              <Select.ItemIndicator>
+                <Check size={16} aria-hidden />
+              </Select.ItemIndicator>
+            </Select.Item>
+          ))}
+        </Select.List>
+      </Select.Popup>
     </Select.Root>
   );
 }

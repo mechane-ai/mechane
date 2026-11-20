@@ -33,5 +33,24 @@ export async function archiveConsoleTargets({
   await archived.waitFor(ready);
   await page.getByRole('button', { name: 'Back to agents', exact: true }).click();
   await page.getByRole('button', { name: 'New agent', exact: true }).waitFor(ready);
-  await page.getByRole('link', { name: `Open ${agentName}`, exact: true }).waitFor({ ...ready, state: 'hidden' });
+
+  const agentLink = page.getByRole('link', { name: `Open ${agentName}`, exact: true });
+
+  await agentLink.waitFor({ ...ready, state: 'hidden' });
+  await page.getByRole('button', { name: 'Filter by status' }).click(ready);
+  await page.getByRole('menuitem', { name: /Status/u }).click(ready);
+  await page.getByRole('menuitemradio', { name: 'Archived', exact: true }).click(ready);
+  await agentLink.waitFor(ready);
+
+  await page.getByRole('button', { name: 'Find in view' }).click(ready);
+
+  const search = page.getByRole('searchbox', { name: 'Search agents' });
+
+  await search.fill(`missing-${agentName}`);
+  await page.getByText('No matching records.', { exact: true }).waitFor(ready);
+  await search.fill(agentName);
+  await agentLink.waitFor(ready);
+  await page.reload();
+  await agentLink.waitFor(ready);
+  await search.waitFor(ready);
 }

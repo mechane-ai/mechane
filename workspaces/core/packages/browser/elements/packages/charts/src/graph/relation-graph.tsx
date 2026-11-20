@@ -1,4 +1,5 @@
 import * as stylex from '@stylexjs/stylex';
+import { Button as ChartButton } from '@ui-sdk/react/button';
 import { useId } from 'react';
 import type { ReactNode } from 'react';
 import { chartToneColors } from '../../../foundations/src/chart-tones.ts';
@@ -10,6 +11,7 @@ import { ChartFrame, ChartReadout } from '../chart-frame.tsx';
 import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds } from '../chart-input.tsx';
 import { useChartNavigation } from '../chart-navigation.tsx';
+import { ChartSurface } from '../chart-surface.tsx';
 
 export type RelationNode = {
   readonly id: string;
@@ -192,7 +194,7 @@ export function RelationGraph({
       footer={<ChartReadout id={navigation.id}>{navigation.label ?? '\u00A0'}</ChartReadout>}
     >
       {hasNodes ? (
-        <div {...navigation.props} {...stylex.props(styles.viewport)}>
+        <ChartSurface {...navigation.props} {...stylex.props(styles.viewport)}>
           <div {...stylex.props(styles.canvas(width, height))}>
             <svg width={width} height={height} aria-hidden {...stylex.props(styles.svg)}>
               <defs>
@@ -289,7 +291,7 @@ export function RelationGraph({
                   {content}
                 </div>
               ) : (
-                <button
+                <ChartButton
                   key={node.id}
                   type="button"
                   tabIndex={-1}
@@ -301,11 +303,11 @@ export function RelationGraph({
                   {...appearance}
                 >
                   {content}
-                </button>
+                </ChartButton>
               );
             })}
           </div>
-        </div>
+        </ChartSurface>
       ) : (
         <p {...stylex.props(styles.empty)}>{emptyLabel}</p>
       )}

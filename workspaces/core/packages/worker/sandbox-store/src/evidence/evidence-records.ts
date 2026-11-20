@@ -73,18 +73,24 @@ export function evidenceRecords({ sql }: RecordsInput) {
     sql.exec('UPDATE evidence_artifacts SET record = ? WHERE id = ?', record, artifact.artifactId);
   }
 
-  function evidenceArtifacts({ after, turnId }: EvidenceQuery): EvidencePage {
+  function evidenceArtifacts({ after, turnId, search, filter }: EvidenceQuery): EvidencePage {
     const selectedRun = Option.getOrNull(turnId);
     const cursorId = Option.getOrNull(after);
+    const status = Option.fromUndefinedOr(filter).pipe(Option.getOrNull);
+    const term = Option.fromUndefinedOr(search).pipe(Option.getOrNull);
 
     const cursor = sql.exec(
-      'SELECT record FROM evidence_artifacts WHERE (? IS NULL OR run_id = ?) AND (? IS NULL OR rowid > (SELECT rowid FROM evidence_artifacts WHERE id = ? AND (? IS NULL OR run_id = ?))) ORDER BY rowid LIMIT ?',
-      selectedRun,
+      `SELECT record FROM evidence_artifacts
+       WHERE (?1 IS NULL OR run_id = ?1) AND (?2 IS NULL OR rowid > (
+         SELECT rowid FROM evidence_artifacts WHERE id = ?2 AND (?1 IS NULL OR run_id = ?1)))
+         AND (?3 IS NULL OR json_extract(record, '$.status') = ?3)
+         AND (?4 IS NULL OR instr(lower(id || ' ' || json_extract(record, '$.kind') || ' ' ||
+           coalesce(json_extract(record, '$.descriptor.url'), '')),lower(?4)) > 0)
+       ORDER BY rowid LIMIT ?5`,
       selectedRun,
       cursorId,
-      cursorId,
-      selectedRun,
-      selectedRun,
+      status,
+      term,
       EVIDENCE_PAGE_ARTIFACTS + 1,
     );
 

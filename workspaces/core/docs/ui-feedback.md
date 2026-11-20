@@ -12,14 +12,17 @@ Use `Popover` for an anchored panel with explicit activation. `Preview` adds sup
 hover or focus. Essential information remains in the destination; use a popover when touch users need to inspect it
 before acting. `AlertDialog` names a consequential action and affected record. Keep the safe action first and retain the
 dialog with an inline error until the application acknowledges success. These controls compose their triggers through
-`render` and delegate positioning, dismissal and focus to Base UI.
+`render`. Pass placement to the popup itself. UI SDK and the shared overlay parts own positioning, dismissal, focus and
+portal placement.
 
 Mount one `Toaster` from `/feedback` at the application root and call the supported Elements `toast` API for outcomes.
-Elements owns plain-text payloads, one optional action and compact visual defaults; Sonner owns queueing, dismissal,
-pause behavior, and keyboard access. Use a stable notification ID for a resource's refresh failure and offer Retry.
-Retain usable content and drafts, and dismiss owned notifications on recovery or navigation. A failed first read uses a
-local `Notice` and Retry instead of an empty result. Field validation stays beside its field. Give each failure one
-presentation owner rather than showing it as both a banner and a toast.
+Elements owns plain-text payloads, one optional action and compact visual defaults. UI SDK owns queueing, timers, swipe
+dismissal, live announcements and keyboard access. The toaster accepts `side` and `align` for placement. Press Alt+T to
+focus the notification region. Send a notification to an isolated `Toaster` by passing its `id` as the notification's
+`toasterId`. Use a stable notification ID for a resource's refresh failure and offer Retry. Retain usable content and
+drafts, and dismiss owned notifications on recovery or navigation. A failed first read uses a local `Notice` and Retry
+instead of an empty result. Field validation stays beside its field. Give each failure one presentation owner rather
+than showing it as both a banner and a toast.
 
 `Accordion` groups related disclosures; `Collapsible` owns a single optional region. Their controlled and default values
 are mutually exclusive. They contain supplied content and do not fetch on opening. `Breadcrumb` describes location using
@@ -38,7 +41,7 @@ label. These parts add no continuous motion. Keep usable content mounted in the 
 
 `Progress` describes task completion. `Meter` describes capacity or another bounded measurement. Both require a maximum,
 a value and caller-formatted text. Null remains unavailable or indeterminate; zero remains zero. Unknown capacity has no
-measurement geometry. Base UI owns measurement semantics, and the supplied text owns visible and accessible formatting.
+measurement geometry. UI SDK owns measurement semantics, and the supplied text owns visible and accessible formatting.
 
 `Avatar` receives its accessible label, fallback and optional image. `SettingsRow` associates its label with the
 supplied `controlId`; the application owns drafts and saving. `Timestamp` renders an ISO datetime and a supplied display
@@ -57,5 +60,7 @@ synthetic inputs without application providers or live services.
 
 Use `toast.error({ title: 'Could not save', id: 'save-record', action: { label: 'Retry', onClick: retry } })` for an
 actionable outcome. The same object form applies to success, info and warning. Loading requires a stable ID; dismiss
-with `toast.dismiss({ id })`. Actionable and loading notifications persist, and `shouldPersist: true` keeps another
-required notice available. Applications own updates and cleanup. There is no custom-markup or request-lifecycle API.
+with `toast.dismiss({ id })`. Ordinary notices dismiss after four seconds. Actionable and loading notifications persist,
+and `shouldPersist: true` keeps another required notice available. Set `action.shouldDismiss` to false for a Retry
+action that should stay visible until the resource recovers. Use `isExpanded` and `showCloseButton` on `Toaster` for the
+region's presentation. Applications own updates and cleanup. There is no custom-markup or request-lifecycle API.

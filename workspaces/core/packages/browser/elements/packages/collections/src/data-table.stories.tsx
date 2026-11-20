@@ -3,16 +3,15 @@ import * as stylex from '@stylexjs/stylex';
 import { FileCheck } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Badge, Button, Stack, Text } from '../../core/src/index.ts';
-import { Input } from '../../forms/src/index.ts';
 import { CollectionPagination, CollectionToolbar, DisplayOptions, FilterChips } from './collection-controls.tsx';
 import { DataTable, DataTablePlaceholder, DataTableText, DataTableTextPlaceholder } from './data-table.tsx';
 import type { DataTableColumn, DataTableSort } from './data-table.tsx';
 import { ListFooter } from './list-footer.tsx';
+import { TableQueryFrame, useLocalTableQuery } from './table-query.tsx';
+import type { LocalTableQuery } from './table-query.tsx';
+import { useCollectionControls } from './use-collection-controls.tsx';
 
-const styles = stylex.create({
-  search: { width: 280, maxWidth: '100%' },
-  fillFrame: { display: 'flex', flexDirection: 'column', height: 360, minWidth: 0 },
-});
+const styles = stylex.create({ fillFrame: { display: 'flex', flexDirection: 'column', height: 360, minWidth: 0 } });
 
 interface Run {
   readonly id: string;
@@ -20,6 +19,12 @@ interface Run {
   readonly status: 'Complete' | 'Running';
   readonly tokens: number;
 }
+
+const runQuery = {
+  mode: 'local',
+  search: (run: { name: string; id: string }) => `${run.name} ${run.id}`,
+  filters: [{ id: 'status', label: 'Status', value: (run: { status: string }) => run.status }],
+} satisfies LocalTableQuery<Run>;
 
 const runs: ReadonlyArray<Run> = [
   { id: 'training-a', name: 'Training / instruction tuning', status: 'Complete', tokens: 24_356 },
@@ -43,65 +48,60 @@ const emptyColumns = [
 ] satisfies ReadonlyArray<DataTableColumn<Run>>;
 
 function PreparedRows() {
-  const [query, setQuery] = useState('');
+  const query = useLocalTableQuery(runs, runQuery);
   const [sort, setSort] = useState<DataTableSort>();
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const [visible, setVisible] = useState<ReadonlySet<string>>(new Set(columns.map((column) => column.id)));
 
   const rows = useMemo(() => {
-    const filtered = runs.filter((run) => run.name.toLowerCase().includes(query.toLowerCase()));
-
     if (sort === undefined) {
-      return filtered;
+      return query.rows;
     }
 
-    return filtered.toSorted((first, second) => {
+    return query.rows.toSorted((first, second) => {
       const comparison =
         sort.columnId === 'tokens' ? first.tokens - second.tokens : first.name.localeCompare(second.name, 'en-US');
 
       return sort.direction === 'ascending' ? comparison : -comparison;
     });
-  }, [query, sort]);
+  }, [query.rows, sort]);
+
+  const controls = useCollectionControls({
+    isReady: true,
+    label: 'Run controls',
+    search: query.search,
+    filters: query.filters,
+    display: (
+      <DisplayOptions
+        options={columns.map((column) => ({
+          id: column.id,
+          label: column.label,
+          isChecked: visible.has(column.id),
+          isRequired: column.id === 'name',
+        }))}
+        onChange={(id, shown) => {
+          const next = new Set(visible);
+
+          if (shown) {
+            next.add(id);
+          } else {
+            next.delete(id);
+          }
+
+          setVisible(next);
+        }}
+        onReset={() => setVisible(new Set(columns.map((column) => column.id)))}
+      />
+    ),
+  });
 
   return (
-    <>
-      <CollectionToolbar
-        label="Run controls"
-        actions={
-          <DisplayOptions
-            options={columns.map((column) => ({
-              id: column.id,
-              label: column.label,
-              isChecked: visible.has(column.id),
-              isRequired: column.id === 'name',
-            }))}
-            onChange={(id, shown) => {
-              const next = new Set(visible);
-
-              if (shown) {
-                next.add(id);
-              } else {
-                next.delete(id);
-              }
-
-              setVisible(next);
-            }}
-            onReset={() => setVisible(new Set(columns.map((column) => column.id)))}
-          />
-        }
-      >
-        <Input
-          aria-label="Search runs"
-          value={query}
-          onValueChange={setQuery}
-          placeholder="Search runs…"
-          xstyle={styles.search}
-        />
-        {query !== '' && (
-          <FilterChips filters={[{ id: 'search', label: `Name: ${query}` }]} onRemove={() => setQuery('')} />
-        )}
+    <TableQueryFrame search filters isFiltered={query.isFiltered}>
+      <CollectionToolbar label="Run controls" actions={controls.actions}>
+        {controls.chips}
       </CollectionToolbar>
       <DataTable
+        query={{ mode: 'frame' }}
         rows={rows}
         columns={columns.filter((column) => visible.has(column.id))}
         getRowId={(run) => run.id}
@@ -121,7 +121,7 @@ function PreparedRows() {
           />
         }
       />
-    </>
+    </TableQueryFrame>
   );
 }
 
@@ -142,7 +142,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Prepared records and stable IDs. The application owns filtering, sorting, pagination and selection. Every column declares a role: primary, text and status align at the start; number, timestamp and actions align at the end. Primary columns absorb remaining width. Numeric identifiers use text. Use width only for a concrete content need. Ordinary rows stay 48px high with primary and text strings truncated; use rowSizing="content" for multiline details or larger controls. DataTableText truncates primary and secondary strings beside an optional leading icon. Its trailing slot keeps a badge next to the primary label while the text truncates. DataTablePlaceholder reuses the supplied column roles, metadata and row sizing. DataTableTextPlaceholder shares the text cell geometry. Both are noninteractive decoration; AsyncRegion owns their visibility. Arbitrary composed cells own their text layout. rowAction stretches the first visible primary cell’s native link or button across noninteractive cells and adds arrow-key navigation; supply a complete label for its tooltip. Links retain native modifier and middle clicks. Button row actions accept disabled for unavailable operations. onRowHighlightChange reports pointer or keyboard inspection by stable row ID, independently of activeRowId and selection. Keyboard focus takes over from an earlier hover; leaving the table restores its focused row. Use focusRowId to return to the shared primary action after inspection. Embedded controls and selection stay independent. The table renders supplied order and reports sort intent. CollectionToolbar owns its 16px inset and separator, and omits an empty bar. DisplayOptions reports supplied choices through one icon menu, disables required choices, and invokes the application’s reset callback. Apply the choices to the rendered columns; the control does not transform records. CollectionPagination supplies previous and next buttons. Use ListFooter for a result summary with application-defined cursor actions. A cursor does not imply a page count. Inspect narrow tables through their named horizontal scroll region.',
+          'Each table declares a query owner. Supply searchable values and filter dimensions for complete local data, controlled callbacks for remote queries, or a frame with matching controls. Static summaries explicitly describe their exception. Sorting, pagination and selection remain controlled. Every column declares a role: primary, text and status align at the start; number, timestamp and actions align at the end. Primary columns absorb remaining width. Numeric identifiers use text. Use width only for a concrete content need. Ordinary rows stay 48px high with primary and text strings truncated; use rowSizing="content" for multiline details or larger controls. DataTableText truncates primary and secondary strings beside an optional leading icon. Its trailing slot keeps a badge next to the primary label while the text truncates. DataTablePlaceholder reuses the supplied column roles, metadata and row sizing. DataTableTextPlaceholder shares the text cell geometry. Both are noninteractive decoration; AsyncRegion owns their visibility. Arbitrary composed cells own their text layout. rowAction stretches the first visible primary cell’s native link or button across noninteractive cells and adds arrow-key navigation; supply a complete label for its tooltip. Links retain native modifier and middle clicks. Button row actions accept disabled for unavailable operations. onRowHighlightChange reports pointer or keyboard inspection by stable row ID, independently of activeRowId and selection. Keyboard focus takes over from an earlier hover; leaving the table restores its focused row. Use focusRowId to return to the shared primary action after inspection. Embedded controls and selection stay independent. The table renders supplied order and reports sort intent. CollectionToolbar owns its 16px inset and separator, and omits an empty bar. DisplayOptions reports supplied choices through one icon menu, disables required choices, and invokes the application’s reset callback. Apply the choices to the rendered columns; the control does not transform records. CollectionPagination supplies previous and next buttons. Use ListFooter for a result summary with application-defined cursor actions. A cursor does not imply a page count. Inspect narrow tables through their named horizontal scroll region.',
       },
     },
   },
@@ -178,6 +178,7 @@ function LinkedInspection() {
         </Button>
       )}
       <DataTable
+        query={runQuery}
         rows={runs}
         columns={displayColumns}
         getRowId={(run) => run.id}
@@ -204,6 +205,7 @@ export const RowInspection: Story = { render: () => <LinkedInspection /> };
 export const ColumnRoles: Story = {
   render: () => (
     <DataTable
+      query={runQuery}
       rows={[
         {
           id: '1042',
@@ -247,6 +249,7 @@ export const Empty: Story = {
   },
   render: () => (
     <DataTable
+      query={runQuery}
       rows={[]}
       columns={emptyColumns}
       getRowId={(run) => run.id}
@@ -260,6 +263,7 @@ export const EmptyFill: Story = {
   render: () => (
     <div {...stylex.props(styles.fillFrame)}>
       <DataTable
+        query={runQuery}
         rows={[]}
         columns={emptyColumns}
         getRowId={(run) => run.id}
@@ -279,6 +283,7 @@ export const EmptyFill: Story = {
 export const Windowed: Story = {
   render: () => (
     <DataTable
+      query={runQuery}
       rows={Array.from({ length: 1000 }, (_, index) => ({
         id: `sample-${index}`,
         name: `Evaluation sample ${index + 1}`,
@@ -298,6 +303,7 @@ export const Windowed: Story = {
 export const LongLabels: Story = {
   render: () => (
     <DataTable
+      query={runQuery}
       rows={[
         {
           id: 'restore',
@@ -343,6 +349,11 @@ export const Narrow: Story = { ...LongLabels, globals: { viewport: { value: 'nar
 export const OperationalDetails: Story = {
   render: () => (
     <DataTable
+      query={{
+        mode: 'local',
+        search: (row) => `${row.name} ${row.detail}`,
+        filters: [{ id: 'status', label: 'Status', value: (row) => (row.complete ? 'Complete' : 'Incomplete') }],
+      }}
       rowSizing="content"
       rows={[
         { id: 'complete', name: 'Release notes', detail: 'All records are available.', complete: true },

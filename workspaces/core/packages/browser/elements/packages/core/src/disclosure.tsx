@@ -1,6 +1,6 @@
-import { Accordion as BaseAccordion } from '@base-ui/react/accordion';
-import { Collapsible as BaseCollapsible } from '@base-ui/react/collapsible';
 import * as stylex from '@stylexjs/stylex';
+import * as SdkAccordion from '@ui-sdk/react/accordion';
+import * as SdkCollapsible from '@ui-sdk/react/collapsible';
 import { ChevronDown } from 'lucide-react';
 import type { ComponentProps, ReactNode } from 'react';
 import { conditions } from '../../foundations/src/constants.stylex.ts';
@@ -73,7 +73,7 @@ const styles = stylex.create({
     width: controls.iconSize,
     height: controls.iconSize,
     color: colors.muted,
-    transform: { default: 'rotate(-90deg)', [stylex.when.ancestor('[data-panel-open]')]: 'rotate(0deg)' },
+    transform: { default: 'rotate(-90deg)', [stylex.when.ancestor('[aria-expanded="true"]')]: 'rotate(0deg)' },
   },
   panel: { paddingBottom: spacing.md, overflowWrap: 'anywhere' },
 });
@@ -81,81 +81,89 @@ const styles = stylex.create({
 const triggerStyles = { default: null, inline: styles.inline };
 const iconStyles = { default: null, inline: styles.inlineIcon };
 
-type AccordionRootProps<Value> = Omit<BaseAccordion.Root.Props<Value>, 'value' | 'defaultValue' | 'onValueChange'> &
-  ValueStateProperties<Array<Value>, NonNullable<BaseAccordion.Root.Props<Value>['onValueChange']>>;
+type AccordionRootProps<Value extends string> = Omit<
+  ComponentProps<typeof SdkAccordion.Accordion<Value>>,
+  'value' | 'defaultValue' | 'onValueChange'
+> &
+  ValueStateProperties<
+    Array<Value>,
+    NonNullable<ComponentProps<typeof SdkAccordion.Accordion<Value>>['onValueChange']>
+  >;
 
-type AccordionItemProps = ComponentProps<typeof BaseAccordion.Item>;
-type AccordionHeaderProps = ComponentProps<typeof BaseAccordion.Header>;
-type AccordionTriggerProps = ComponentProps<typeof BaseAccordion.Trigger>;
-type AccordionPanelProps = ComponentProps<typeof BaseAccordion.Panel>;
+type AccordionItemProps = ComponentProps<typeof SdkAccordion.AccordionItem<string>>;
+type AccordionHeaderProps = ComponentProps<typeof SdkAccordion.AccordionHeader>;
 
-type CollapsibleRootProps = Omit<BaseCollapsible.Root.Props, 'open' | 'defaultOpen' | 'onOpenChange'> &
-  OpenStateProperties<NonNullable<BaseCollapsible.Root.Props['onOpenChange']>>;
+type AccordionTriggerProps = Omit<ComponentProps<typeof SdkAccordion.AccordionTrigger>, 'children'> & {
+  readonly children?: ReactNode;
+};
 
-type CollapsibleTriggerProps = ComponentProps<typeof BaseCollapsible.Trigger> & {
+type AccordionPanelProps = ComponentProps<typeof SdkAccordion.AccordionPanel>;
+
+type CollapsibleRootProps = Omit<
+  ComponentProps<typeof SdkCollapsible.Collapsible>,
+  'open' | 'defaultOpen' | 'onOpenChange'
+> &
+  OpenStateProperties<NonNullable<ComponentProps<typeof SdkCollapsible.Collapsible>['onOpenChange']>>;
+
+type CollapsibleTriggerProps = Omit<ComponentProps<typeof SdkCollapsible.CollapsibleTrigger>, 'children'> & {
+  readonly children?: ReactNode;
   readonly variant?: 'default' | 'inline';
 };
 
-type CollapsiblePanelProps = ComponentProps<typeof BaseCollapsible.Panel>;
+type CollapsiblePanelProps = ComponentProps<typeof SdkCollapsible.CollapsiblePanel>;
 
-function AccordionRoot<Value = string>({ className, style, ...props }: AccordionRootProps<Value>): ReactNode {
+function AccordionRoot<Value extends string = string>({
+  className,
+  style,
+  ...props
+}: AccordionRootProps<Value>): ReactNode {
   return (
-    <BaseAccordion.Root<Value>
+    <SdkAccordion.Accordion<Value>
       {...props}
-      {...mergeStyles<BaseAccordion.Root.State<Value>>({ className, style, styles: stylex.props(styles.root) })}
+      {...mergeStyles({ className, style, styles: stylex.props(styles.root) })}
     />
   );
 }
 
 function AccordionItem({ className, style, ...props }: AccordionItemProps): ReactNode {
   return (
-    <BaseAccordion.Item
-      {...props}
-      {...mergeStyles<BaseAccordion.Item.State>({ className, style, styles: stylex.props(styles.item) })}
-    />
+    <SdkAccordion.AccordionItem {...props} {...mergeStyles({ className, style, styles: stylex.props(styles.item) })} />
   );
 }
 
 function AccordionHeader({ className, style, ...props }: AccordionHeaderProps): ReactNode {
   return (
-    <BaseAccordion.Header
+    <SdkAccordion.AccordionHeader
       {...props}
-      {...mergeStyles<BaseAccordion.Header.State>({ className, style, styles: stylex.props(styles.header) })}
+      {...mergeStyles({ className, style, styles: stylex.props(styles.header) })}
     />
   );
 }
 
 function AccordionTrigger({ className, style, children, ...props }: AccordionTriggerProps): ReactNode {
   return (
-    <BaseAccordion.Trigger
+    <SdkAccordion.AccordionTrigger
       {...props}
-      {...mergeStyles<BaseAccordion.Trigger.State>({
-        className,
-        style,
-        styles: stylex.props(styles.trigger, stylex.defaultMarker()),
-      })}
+      {...mergeStyles({ className, style, styles: stylex.props(styles.trigger, stylex.defaultMarker()) })}
     >
       {children}
       <ChevronDown aria-hidden {...stylex.props(styles.icon)} />
-    </BaseAccordion.Trigger>
+    </SdkAccordion.AccordionTrigger>
   );
 }
 
 function AccordionPanel({ className, style, ...props }: AccordionPanelProps): ReactNode {
   return (
-    <BaseAccordion.Panel
+    <SdkAccordion.AccordionPanel
       {...props}
-      {...mergeStyles<BaseAccordion.Panel.State>({ className, style, styles: stylex.props(styles.panel) })}
+      {...mergeStyles({ className, style, styles: stylex.props(styles.panel) })}
     />
   );
 }
 
 function CollapsibleRoot({ className, style, ...props }: CollapsibleRootProps): ReactNode {
   return (
-    <BaseCollapsible.Root
-      {...props}
-      {...mergeStyles<BaseCollapsible.Root.State>({ className, style, styles: stylex.props(styles.root) })}
-    />
+    <SdkCollapsible.Collapsible {...props} {...mergeStyles({ className, style, styles: stylex.props(styles.root) })} />
   );
 }
 
@@ -167,9 +175,9 @@ function CollapsibleTrigger({
   ...props
 }: CollapsibleTriggerProps): ReactNode {
   return (
-    <BaseCollapsible.Trigger
+    <SdkCollapsible.CollapsibleTrigger
       {...props}
-      {...mergeStyles<BaseCollapsible.Trigger.State>({
+      {...mergeStyles({
         className,
         style,
         styles: stylex.props(styles.trigger, triggerStyles[variant], stylex.defaultMarker()),
@@ -177,15 +185,15 @@ function CollapsibleTrigger({
     >
       {children}
       <ChevronDown aria-hidden {...stylex.props(styles.icon, iconStyles[variant])} />
-    </BaseCollapsible.Trigger>
+    </SdkCollapsible.CollapsibleTrigger>
   );
 }
 
 function CollapsiblePanel({ className, style, ...props }: CollapsiblePanelProps): ReactNode {
   return (
-    <BaseCollapsible.Panel
+    <SdkCollapsible.CollapsiblePanel
       {...props}
-      {...mergeStyles<BaseCollapsible.Panel.State>({ className, style, styles: stylex.props(styles.panel) })}
+      {...mergeStyles({ className, style, styles: stylex.props(styles.panel) })}
     />
   );
 }

@@ -60,10 +60,9 @@ the package; there is no external grammar or asset CDN. Production builds must r
 ## Files
 
 [FileTree](../packages/browser/elements/packages/content/src/tree/file-tree-types.ts) accepts paths, optional Git
-statuses, and controlled selected paths. Pierre Trees owns expansion, search, keyboard navigation, and virtualization. A
-shared Input sits outside the tree's semantic boundary and reads the model-owned search state; Tab moves into matching
-rows, and Escape clears the query. The adapter updates its persistent model when paths, statuses, or selection change.
-It reports selection requests to the application and reconciles the model to the application's accepted selection.
+statuses, and controlled selected paths. UI SDK Tree owns keyboard navigation and interprets selection. The shared
+search input matches full paths and reveals their ancestor folders. Press Escape in the input to restore the previous
+folder expansion. Selection requests go to the application, which owns the accepted selection.
 
 ```tsx
 import { FileTree } from '@mechane-ai/elements/content/tree';
@@ -76,9 +75,9 @@ import { FileTree } from '@mechane-ai/elements/content/tree';
 />;
 ```
 
-Paths remain the stable identity across reordering. The tree accepts unsorted input and lets Pierre build its directory
-ordering. It has no rename, drag/drop, or file transport. Before the renderer loads, a bounded list of selectable paths
-remains available. Compose the selected path with CodeBlock or DiffViewer in the application.
+Paths identify rows across reordering. UI SDK builds the directory hierarchy from unsorted paths. The tree renders
+nearby rows on the server and client, and brings keyboard-selected rows into view. Compose the selected path with
+CodeBlock or DiffViewer in the application.
 
 ## Recorded values
 

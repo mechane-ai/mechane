@@ -1,25 +1,21 @@
-import { AlertDialog as BaseAlertDialog } from '@base-ui/react/alert-dialog';
+import * as SDK from '@ui-sdk/react/alert-dialog';
 import type { ReactNode } from 'react';
-import type { OpenStateProperties } from '../../foundations/src/control-state.ts';
-import { Dialog } from './dialog.tsx';
+import { styledDialogParts } from './dialog.tsx';
+import { withOverlayPortal } from './overlay-root.tsx';
+import type { OpenProps } from './overlay-root.tsx';
 
-type AlertDialogRootProps<Payload> = Omit<
-  BaseAlertDialog.Root.Props<Payload>,
-  'open' | 'defaultOpen' | 'onOpenChange'
-> &
-  OpenStateProperties<NonNullable<BaseAlertDialog.Root.Props<Payload>['onOpenChange']>>;
-
-function AlertDialogRoot<Payload = unknown>(props: AlertDialogRootProps<Payload>): ReactNode {
-  return <BaseAlertDialog.Root<Payload> {...props} />;
+function Root(props: OpenProps<SDK.AlertDialogProps>): ReactNode {
+  return <SDK.AlertDialog {...props} />;
 }
 
 export const AlertDialog = {
-  Root: AlertDialogRoot,
-  Trigger: BaseAlertDialog.Trigger,
-  Portal: Dialog.Portal,
-  Backdrop: Dialog.Backdrop,
-  Popup: Dialog.Popup,
-  Title: Dialog.Title,
-  Description: Dialog.Description,
-  Close: Dialog.Close,
+  Root: withOverlayPortal(Root),
+  Trigger: SDK.AlertDialogTrigger,
+  Close: SDK.AlertDialogClose,
+  ...styledDialogParts({
+    Backdrop: SDK.AlertDialogBackdrop,
+    Content: SDK.AlertDialogContent,
+    Title: SDK.AlertDialogTitle,
+    Description: SDK.AlertDialogDescription,
+  }),
 };

@@ -1,11 +1,17 @@
 import { RecordId } from '@mechane/records';
-import { Option, Predicate, Schema } from 'effect';
+import { Option, Predicate, Record, Result, Schema } from 'effect';
+import { EvidenceQuery } from './evidence-query.ts';
 
 type ComputerQuery = { readonly resource: string; readonly query: URLSearchParams };
 
-const CURSOR_FIELDS: ReadonlyMap<string, ReadonlyArray<string>> = new Map([
-  ['completions', ['after']],
-  ['evidence', ['after', 'turn_id']],
+const completionQuery = Schema.Struct({ after: Schema.optionalKey(RecordId) });
+const decodeCompletions = Schema.decodeUnknownResult(completionQuery, { onExcessProperty: 'error' });
+const decodeEvidence = Schema.decodeUnknownResult(EvidenceQuery, { onExcessProperty: 'error' });
+type QueryDecoder = typeof decodeCompletions | typeof decodeEvidence;
+
+const queryDecoders: ReadonlyMap<string, QueryDecoder> = new Map<string, QueryDecoder>([
+  ['completions', decodeCompletions],
+  ['evidence', decodeEvidence],
 ]);
 
 export function installedComputerQuery({ resource, query }: ComputerQuery): Option.Option<string> {
@@ -13,19 +19,17 @@ export function installedComputerQuery({ resource, query }: ComputerQuery): Opti
     return Option.some('');
   }
 
-  const fields = CURSOR_FIELDS.get(resource);
+  const decode = queryDecoders.get(resource);
+  const entries = [...query];
+  const fields = Record.fromEntries(entries);
 
-  if (Predicate.isUndefined(fields) || query.size > fields.length) {
+  if (Predicate.isUndefined(decode) || Record.size(fields) !== query.size) {
     return Option.none();
   }
 
-  const entries = [...query];
+  const decoded: Result.Result<unknown, unknown> = decode(fields);
 
-  const valid = entries.every(
-    ([name, value]) => fields.includes(name) && query.getAll(name).length === 1 && Schema.is(RecordId)(value),
-  );
-
-  if (!valid) {
+  if (Result.isFailure(decoded)) {
     return Option.none();
   }
 

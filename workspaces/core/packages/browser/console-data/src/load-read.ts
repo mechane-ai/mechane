@@ -15,6 +15,7 @@ import { Option, Result, Schema } from 'effect';
 import type { ConsoleApi, Input, Output } from './api.ts';
 import { upsertRows } from './collections.ts';
 import type { CanonicalTables, CanonicalWriter } from './collections.ts';
+import { listQuery } from './list-query.ts';
 import type { ManagedKind } from './managed-reads.ts';
 import { MechDefinition, recordKey, TraceEvidence, turnVersion } from './records.ts';
 import type { MechDefinitionRow, MechSummaryRow, TurnRow } from './records.ts';
@@ -64,7 +65,11 @@ export async function fetchRead({ api, workspaceId, request, signal }: FetchRead
       return {
         kind: request.kind,
         request,
-        output: await api('listMechs', { workspaceId, after: Option.fromNullishOr(request.after) }, signal),
+        output: await api(
+          'listMechs',
+          { workspaceId, ...listQuery('mechs', request), after: Option.fromNullishOr(request.after) },
+          signal,
+        ),
       };
     case 'mech':
       return {
@@ -78,7 +83,12 @@ export async function fetchRead({ api, workspaceId, request, signal }: FetchRead
         request,
         output: await api(
           'listTurns',
-          { workspaceId, mechId: request.mechId, after: Option.fromNullishOr(request.after) },
+          {
+            workspaceId,
+            ...listQuery('turns', request),
+            mechId: request.mechId,
+            after: Option.fromNullishOr(request.after),
+          },
           signal,
         ),
       };

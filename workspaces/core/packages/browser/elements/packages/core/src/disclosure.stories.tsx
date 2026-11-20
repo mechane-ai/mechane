@@ -19,7 +19,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Supported. Accordion groups related disclosures; Collapsible owns one optional region. Use Tabs for parallel views when only one should remain visible. Base UI owns open state, accessibility attributes and hidden content. Supply value and onValueChange together for a controlled Accordion, or defaultValue for local state. Collapsible follows the same open/defaultOpen rule. Content is already available; disclosure does not imply a resource read.',
+          'Supported. Accordion groups related disclosures; Collapsible owns one optional region. Use Tabs for parallel views when only one should remain visible. UI SDK owns open state, accessibility attributes and hidden content. Supply value and onValueChange together for a controlled Accordion, or defaultValue for local state. Collapsible follows the same open/defaultOpen rule. Content is already available; disclosure does not imply a resource read.',
       },
     },
   },

@@ -1,5 +1,9 @@
 # Elements by Mechane capability proposal
 
+> Historical design record, November 2026. The UI SDK migration supersedes the interaction-library choices, table APIs
+> and ownership guidance below. Use the [Elements component guide](components.md), its family guides, and the
+> [package exports](../packages/browser/elements/package.json) for current implementation guidance.
+
 Status: accepted November 3, 2026. Scott requested the full expansion with one published package and internal modules.
 The [component guide](components.md), family guides, and package exports describe the implemented API. This document
 records the capability choices and their ownership, not a second API registry.

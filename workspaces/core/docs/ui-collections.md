@@ -19,9 +19,42 @@ when that task needs separate search, paging or recovery. Related forms, finite 
 can share a view.
 
 [`DataTable`](../packages/browser/elements/packages/collections/src/data-table.tsx) compares records across named
-columns. Supply the already filtered, ordered page, a stable row ID, a caption and an empty-state message. Column IDs
-remain stable when labels or visibility change. Each cell receives the caller's record type and can render ordinary
-links and controls.
+columns. Supply a stable row ID, caption, empty state, and a `query` describing search and filter behavior. Local and
+controlled queries render the shared controls. Choose ownership according to where the complete result is available.
+
+| Query mode   | Use                                                                                                                                                                      |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `local`      | Supply the complete rows, a searchable string accessor and filter dimensions. Elements derives choices, filters rows and then applies windowing.                         |
+| `controlled` | Supply current search and filter controls with change callbacks. The application queries the entire result and resets paging when criteria change.                       |
+| `frame`      | A surrounding `TableQueryFrame` declares the search and filters provided by a shared page header. Pass its filtered state so the table can show a filtered empty result. |
+| `static`     | Give a concrete `reason` for a fixed display, such as a short argument reference embedded in prose.                                                                      |
+
+For example, a local project collection can declare its query alongside the columns:
+
+```tsx
+<DataTable
+  caption="Projects"
+  columns={columns}
+  rows={projects}
+  getRowId={(project) => project.id}
+  empty="No projects."
+  query={{
+    mode: 'local',
+    search: (project) => project.name,
+    filters: [{ id: 'status', label: 'Status', value: (project) => project.status }],
+  }}
+/>
+```
+
+To omit only search or only filtering, replace that capability with `{ reason: '…' }` and explain the specific reason.
+If several views share controls, mount them in their existing header and use `TableQueryFrame` to declare their scope.
+`useLocalTableQuery` exposes filtered rows and the matching controls for a complete local dataset. Local pagination
+slices those filtered rows; server pagination sends criteria to the source and uses `controlled` or a controlled frame.
+A nested independent collection starts its own query. `filteredEmpty` can offer a way to clear criteria when rows exist
+but none match. UI SDK exposes the collection's query and filter choices through its `collection-query` primitive.
+
+Column IDs remain stable when labels or visibility change. Each cell receives the caller's record type and can render
+ordinary links and controls.
 
 Columns keep a readable minimum width and scroll within the table on narrow screens. A column's optional `width` sets
 its minimum in pixels for both the header and cells. Use it when the content needs a wider measure or a compact numeric
@@ -31,7 +64,8 @@ Sortable columns require the controlled `sort` and `onSortChange` pair. Clicking
 descending and no sort. Until the application supplies another sort value and row page, the displayed values remain
 unchanged. Sort the entire query result before paging, with a unique row key as the final ordering field.
 
-For a plain table, use `satisfies` to check columns while preserving that none declares `canSort: true`:
+For a table with unsortable columns, use `satisfies` to check columns while preserving that none declares
+`canSort: true`:
 
 ```tsx
 import type { DataTableColumn } from '@mechane-ai/elements/collections';
@@ -87,20 +121,14 @@ selection, application-side sorting, an empty page and a windowed collection.
 
 Import date controls from `@mechane-ai/elements/forms/dates`.
 
-[`Calendar`](../packages/browser/elements/packages/forms/src/dates/calendar.tsx) wraps DayPicker's selection and
-keyboard navigation. It accepts valid civil dates as `{ year, month, day }`, with one-based months. Supply the locale,
-time zone, today and initial month explicitly so server rendering and the browser start from the same inputs.
+[`Calendar`](../packages/browser/elements/packages/forms/src/dates/calendar.tsx) uses UI SDK Calendar for selection and
+keyboard navigation. It accepts civil dates as `{ year, month, day }` with one-based months. Supply the locale, time
+zone, today and initial month explicitly. A range with `from` and no `to` is an unfinished selection. The application
+converts inclusive dates to its API's timestamp boundaries.
 
-The calendar converts civil dates to noon in the supplied time zone for DayPicker's date arithmetic. A selection returns
-civil dates, not a guessed UTC interval. The application decides how an inclusive date range maps to its API's timestamp
-boundaries. A range with `from` and no `to` is an unfinished selection, not a one-day interval.
-
-[`DateRangePicker`](../packages/browser/elements/packages/forms/src/dates/date-range-picker.tsx) adds a Base UI popover,
-application-supplied range presets and a clear action. `formatValue` owns the trigger's text. The current time zone
-remains visible in the popup. Supply new presets when relative ranges change; the component has no clock.
-
-The initial month starts the calendar's ephemeral navigation state. Use a React key when changing the calendar's
-identity should reset that navigation. Changing the time zone resets it automatically.
+[`DateRangePicker`](../packages/browser/elements/packages/forms/src/dates/date-range-picker.tsx) composes the shared
+popover, calendar and application-supplied range presets. See
+[date controls](ui-controls.md#dates-and-reporting-periods) for the draft, commit and formatting rules.
 
 ## Commands
 
@@ -108,7 +136,7 @@ Import command controls and scoped bindings from `@mechane-ai/elements/navigatio
 
 [`CommandPalette`, `ShortcutHint` and `useCommandShortcuts`](../packages/browser/elements/packages/navigation/src/commands/command.tsx)
 use the same application-owned action records. A command supplies its ID, label, eligibility and callback. The palette
-uses Base UI's dialog and autocomplete navigation. It does not register keyboard shortcuts by mounting.
+composes the shared dialog and UI SDK Command. It does not register keyboard shortcuts by mounting.
 
 Register shortcuts beside their action owner with `useCommandShortcuts`. Supply the smallest element or ref that
 contains the action and an explicit `isEnabled` value. Disable the view's commands while an unrelated modal is open.
@@ -116,9 +144,9 @@ Bindings ignore text fields, consumed events and key repeats. Events from a nest
 inside that modal. Disabled commands and unmounted owners leave no active registrations.
 
 Define a shortcut once with its logical `key` and modifier flags. `mod` means Command on macOS and Control elsewhere.
-`ShortcutHint` derives its platform label from that definition through TanStack Hotkeys. Its server snapshot matches
-hydration before the client resolves the actual platform. The palette uses the same hint. Duplicate bindings within a
-scope fail instead of running multiple actions; a handled event cannot activate an ancestor's action as well.
+`ShortcutHint` derives its platform label from that definition through UI SDK shortcuts. Its server snapshot matches
+hydration before the client resolves the actual platform. The palette uses the same hint. Give each shortcut one
+eligible owner in its scope. A handled event stops before an ancestor can act on it.
 
 Choose bindings that preserve browser and assistive-technology commands. Native typing, list navigation and overlay
 dismissal remain owned by the controls. The
@@ -128,8 +156,8 @@ palette opener and an unavailable action.
 ## Resizing
 
 [`Resizable.Root`, `Resizable.Pane` and `Resizable.Handle`](../packages/browser/elements/packages/layout/src/resizable.tsx)
-wrap Resizable Panels' pointer and keyboard mechanics. Give panes stable IDs and explicit percentage limits. The handle
-requires an accessible label describing the regions it separates.
+wrap UI SDK Resizable for pointer and keyboard resizing. Give panes stable IDs and explicit percentage limits. The
+handle requires an accessible label describing the regions it separates.
 
 `initialSizes` and `initialSizePercent` initialize the interaction. `onSizesChange` reports user-driven changes for
 application-owned persistence. The component writes no browser storage. To restore a different saved layout, change the
