@@ -28,7 +28,8 @@ export const packageModule = Effect.fn('packageModule')(function* ({
   manifest,
   providerSetup,
 }: PackageInput): Effect.fn.Return<ReadonlyArray<Artifact>, DistributionFailed, Scope.Scope> {
-  const folder = yield* acquireStagingFolder({ prefix: 'mechane-module-stage-' });
+  const root = yield* acquireStagingFolder({ prefix: 'mechane-module-stage-' });
+  const folder = join(root, 'module');
   const files = yield* stageModule({ folder, manifest });
   const name = assetName({ kind: 'cloudflare' });
   const path = join(settings.folder, name);
