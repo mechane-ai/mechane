@@ -249,7 +249,7 @@ async function readLimits(context: StoreContext, input: ProviderAttemptScope): P
        'active'::text AS mech_status,COALESCE((workspace.policy->>'isSuspended')::boolean,false) AS is_suspended,
        to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD') AS accounting_date
      FROM mechane.workspaces workspace JOIN mechane.managed_agents agent ON agent.workspace_id=workspace.id
-     WHERE workspace.id=$1 AND agent.runtime_id=$2 FOR UPDATE OF agent`,
+     WHERE workspace.id=$1 AND agent.runtime_id=$2 FOR SHARE OF agent`,
     [input.workspaceId, input.mechId],
   );
 

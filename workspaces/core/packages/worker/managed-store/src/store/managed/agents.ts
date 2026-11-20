@@ -95,7 +95,7 @@ async function updateAgent(context: StoreContext, input: UpdateAgent): Promise<M
 
   await lockWorkspace({ client: context.client, workspaceId: scope.workspaceId });
 
-  const current = await loadAgent(context, { scope, id }, true);
+  const current = await loadAgent(context, { scope, id }, 'update');
 
   if (current.archived_at !== null) {
     throw new ManagedStoreError(HttpStatusCode.Conflict, 'Archived agents are read-only');
@@ -128,7 +128,7 @@ async function updateAgent(context: StoreContext, input: UpdateAgent): Promise<M
 async function archiveAgent(context: StoreContext, input: ResourceReference): Promise<ManagedDocument> {
   await lockWorkspace({ client: context.client, workspaceId: input.scope.workspaceId });
 
-  const current = await loadAgent(context, input, true);
+  const current = await loadAgent(context, input, 'update');
 
   if (current.archived_at === null) {
     await context.client.query('UPDATE mechane.managed_agents SET archived_at=now() WHERE id=$1', [input.id]);

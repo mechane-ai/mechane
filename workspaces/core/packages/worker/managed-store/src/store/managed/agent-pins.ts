@@ -81,7 +81,7 @@ export async function pinManagedAgent({
   version,
   overrides = {},
 }: PinManagedAgentInput): Promise<PinnedAgent> {
-  const row = await loadAgent(context, { scope, id, version }, true);
+  const row = await loadAgent(context, { scope, id, version }, 'share');
 
   if (row.archived_at !== null) {
     throw new ManagedStoreError(HttpStatusCode.BadRequest, 'Cannot start a session with an archived agent');

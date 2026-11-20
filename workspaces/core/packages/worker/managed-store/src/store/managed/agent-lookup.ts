@@ -20,14 +20,21 @@ export type AgentRow = {
   readonly updated_at: string;
 };
 
+type AgentLockMode = 'none' | 'share' | 'update';
+
 export async function loadAgent(
   context: StoreContext,
   { scope, id, version }: AgentLookup,
-  shouldLock = false,
+  lockMode: AgentLockMode = 'none',
 ): Promise<AgentRow> {
-  if (shouldLock) {
+  if (lockMode === 'update') {
     await context.client.query(
       'SELECT id FROM mechane.managed_agents WHERE workspace_id=$1 AND (creator_id=$2 OR $3) AND id=$4 FOR UPDATE',
+      [scope.workspaceId, scope.principalId, scope.isAdmin, id],
+    );
+  } else if (lockMode === 'share') {
+    await context.client.query(
+      'SELECT id FROM mechane.managed_agents WHERE workspace_id=$1 AND (creator_id=$2 OR $3) AND id=$4 FOR SHARE',
       [scope.workspaceId, scope.principalId, scope.isAdmin, id],
     );
   }
