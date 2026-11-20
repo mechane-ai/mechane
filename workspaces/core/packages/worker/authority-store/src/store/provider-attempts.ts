@@ -262,15 +262,11 @@ async function readLimits(context: StoreContext, input: ProviderAttemptScope): P
 
 async function readTotals(context: StoreContext, input: ProviderAttemptScope): Promise<Totals> {
   const counted = await context.client.query(
-    `SELECT COALESCE(sum(charged_micros),0)::bigint AS workspace_used,
-       COALESCE(sum(charged_micros) FILTER(WHERE mech_id=$2),0)::bigint AS mech_used FROM (
-         SELECT mech_id,COALESCE(settled_micros,reserved_micros) AS charged_micros
-         FROM mechane.spend_reservations WHERE workspace_id=$1 AND state<>'refused'
-           AND created_at>=date_trunc('day',now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
-         UNION ALL SELECT mech_id,COALESCE(actual_micros,reserved_micros) AS charged_micros
-         FROM mechane.provider_attempts WHERE workspace_id=$1 AND state NOT IN ('refused','released')
-           AND accounting_date=(now() AT TIME ZONE 'UTC')::date
-       ) charges`,
+    `SELECT COALESCE(sum(COALESCE(actual_micros,reserved_micros)),0)::bigint AS workspace_used,
+       COALESCE(sum(COALESCE(actual_micros,reserved_micros)) FILTER(WHERE mech_id=$2),0)::bigint AS mech_used
+     FROM mechane.provider_attempts
+     WHERE workspace_id=$1 AND state NOT IN ('refused','released')
+       AND accounting_date=(now() AT TIME ZONE 'UTC')::date`,
     [input.workspaceId, input.mechId],
   );
 
@@ -537,10 +533,7 @@ export function createProviderAttemptStore(context: StoreContext): BudgetStore {
          FROM mechane.workspaces workspace LEFT JOIN mechane.managed_agents agent
            ON agent.workspace_id=workspace.id AND agent.runtime_id=$2
          LEFT JOIN (
-           SELECT workspace_id,mech_id,settled_micros AS spent,
-             CASE WHEN state='reserved' THEN reserved_micros ELSE 0 END AS reserved,(created_at AT TIME ZONE 'UTC')::date AS accounting_date
-           FROM mechane.spend_reservations WHERE state<>'refused'
-           UNION ALL SELECT workspace_id,mech_id,actual_micros AS spent,
+           SELECT workspace_id,mech_id,actual_micros AS spent,
              CASE WHEN state IN ('reserved','dispatched') THEN reserved_micros ELSE 0 END AS reserved,accounting_date
            FROM mechane.provider_attempts WHERE state NOT IN ('refused','released')
          ) charges ON charges.workspace_id=workspace.id AND ($2::uuid IS NULL OR charges.mech_id=$2)

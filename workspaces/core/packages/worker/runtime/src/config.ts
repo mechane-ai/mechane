@@ -51,7 +51,7 @@ const KeyringSchema = Schema.Struct({
 });
 
 const OffersSchema = Schema.NonEmptyArray(ModelOfferSchema);
-const DEFAULT_MAX_CONNECTIONS = 4;
+const DEFAULT_MAX_CONNECTIONS = 8;
 const DEFAULT_DAILY_CAP_MICROS = 50_000_000;
 const DEFAULT_MAX_MACHINES = 10;
 const DEFAULT_SANDBOX_IMAGE = 'ghcr.io/mechane-ai/worker-agent:latest';

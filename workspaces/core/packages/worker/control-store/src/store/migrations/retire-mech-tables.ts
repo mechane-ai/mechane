@@ -1,0 +1,24 @@
+export const retireMechTablesMigrationSql = `
+DROP TABLE IF EXISTS mechane.activation_checkpoints CASCADE;
+DROP TABLE IF EXISTS mechane.activity CASCADE;
+DROP TABLE IF EXISTS mechane.console_messages CASCADE;
+DROP TABLE IF EXISTS mechane.control_changes CASCADE;
+DROP TABLE IF EXISTS mechane.execution_receipts CASCADE;
+DROP TABLE IF EXISTS mechane.inputs CASCADE;
+DROP TABLE IF EXISTS mechane.mcp_grants CASCADE;
+DROP TABLE IF EXISTS mechane.mech_mailboxes CASCADE;
+DROP TABLE IF EXISTS mechane.mech_revisions CASCADE;
+DROP TABLE IF EXISTS mechane.memories CASCADE;
+DROP TABLE IF EXISTS mechane.messages CASCADE;
+DROP TABLE IF EXISTS mechane.notifications CASCADE;
+DROP TABLE IF EXISTS mechane.request_events CASCADE;
+DROP TABLE IF EXISTS mechane.request_waits CASCADE;
+DROP TABLE IF EXISTS mechane.runs CASCADE;
+DROP TABLE IF EXISTS mechane.session_contexts CASCADE;
+DROP TABLE IF EXISTS mechane.sessions CASCADE;
+DROP TABLE IF EXISTS mechane.slack_bindings CASCADE;
+DROP TABLE IF EXISTS mechane.slack_deliveries CASCADE;
+DROP TABLE IF EXISTS mechane.slack_inbound_events CASCADE;
+DROP TABLE IF EXISTS mechane.tool_dispatches CASCADE;
+DROP TABLE IF EXISTS mechane.work_items CASCADE;
+`;

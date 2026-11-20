@@ -148,14 +148,8 @@ export function createCredentialStore(context: StoreContext, keyring: Credential
         const used = await client.query(
           `
           SELECT EXISTS(
-            SELECT 1 FROM mechane.execution_access WHERE workspace_id=$1 AND (
-              access->'github'->>'secretReference'=$2 OR access->'requestService'->>'secretReference'=$2 OR
-              $2 IN (SELECT jsonb_each_text.value FROM jsonb_each_text(access->'secrets')))
-            UNION ALL SELECT 1 FROM mechane.managed_command_grants WHERE workspace_id=$1
+            SELECT 1 FROM mechane.managed_command_grants WHERE workspace_id=$1
               AND $2 IN (SELECT jsonb_each_text.value FROM jsonb_each_text(access->'secrets'))
-            UNION ALL SELECT 1 FROM mechane.mcp_connections WHERE workspace_id=$1 AND secret_reference=$2
-            UNION ALL SELECT 1 FROM mechane.slack_installations WHERE workspace_id=$1 AND deleted_at IS NULL AND
-              (bot_token_reference=$2 OR signing_secret_reference=$2 OR history_token_reference=$2)
           ) AS is_used`,
           [workspaceId, reference],
         );

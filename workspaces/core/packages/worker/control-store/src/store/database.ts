@@ -16,7 +16,7 @@ import { readMigrationHistory, requireSchemaRevision, validateAppliedMigrations 
 import type { MigrationRow } from './schema-revision.ts';
 import { DOMAIN_MIGRATIONS } from './schema.ts';
 
-const DEFAULT_MAX_CONNECTIONS = 4;
+const DEFAULT_MAX_CONNECTIONS = 8;
 const MIGRATION_LOCK = 1_823_944_617;
 
 export type OpenControlStoreInput = DatabaseInput & {

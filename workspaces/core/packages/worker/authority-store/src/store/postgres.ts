@@ -1,7 +1,7 @@
 import { Pool, types } from 'pg';
 
 const POSTGRES_PROTOCOLS: ReadonlySet<string> = new Set(['postgres:', 'postgresql:']);
-const DEFAULT_MAX_CONNECTIONS = 4;
+const DEFAULT_MAX_CONNECTIONS = 8;
 const CONNECTION_TIMEOUT_MILLISECONDS = 10_000;
 const IDLE_TIMEOUT_MILLISECONDS = 30_000;
 
