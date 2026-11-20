@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
+import { Details, Inspector } from '../../../collections/src/index.ts';
 import { Button, Stack, Text } from '../../../core/src/index.ts';
 import { FileTree } from './file-tree.tsx';
 
@@ -19,7 +20,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'FileTree presents a supplied path hierarchy with controlled file selection and optional change status. Choose DataTable for comparable records without a directory hierarchy. Applications supply paths, selected paths and changes, then decide what opening a file means. The tree owns expansion and keyboard navigation; updating supplied paths preserves its model and surviving expansion. It does not load a filesystem, mutate files or infer repository status.',
+          'FileTree presents a supplied path hierarchy with controlled file selection and optional change status. Choose DataTable for comparable records without a directory hierarchy. Applications supply paths, selected paths and changes, then decide what opening a file means. Search by path, query tree items by filename, then select by the full path to distinguish identical filenames. Compose FileTree with Inspector and Details to read the selected file’s supplied fields. The tree owns expansion and keyboard navigation; updating supplied paths preserves its model and surviving expansion. It does not load a filesystem, mutate files or infer repository status.',
       },
     },
   },
@@ -38,6 +39,26 @@ export const Narrow: Story = {
   globals: { viewport: { value: 'narrow', isRotated: false } },
   render: () => <TreeExample />,
 };
+
+export const InspectSelectedFile: Story = { render: () => <FileInspector /> };
+
+function FileInspector() {
+  const [selected, setSelected] = useState<ReadonlyArray<string>>([]);
+  const files = ['docs/setup.md', 'packages/chart/docs/setup.md'];
+  const path = selected.at(-1);
+
+  return (
+    <Inspector
+      masterLabel="Documents"
+      label="Selected document"
+      revealKey={path}
+      master={<FileTree label="Documents" paths={files} selectedPaths={selected} onSelectedPathsChange={setSelected} />}
+      detail={
+        path === undefined ? <Text>Select a document.</Text> : <Details items={[{ label: 'Path', value: path }]} />
+      }
+    />
+  );
+}
 
 function TreeExample() {
   const [selectedPaths, setSelectedPaths] = useState<ReadonlyArray<string>>(['src/main.ts']);

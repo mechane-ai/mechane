@@ -33,6 +33,8 @@ export function useChartNavigation({ title, items, selection }: ChartNavigationI
       items,
       cursor: active?.id,
       inspected: isInspecting ? active?.id : undefined,
+      readout: isInspecting ? active?.label : undefined,
+      selected: items.find((item) => item.id === selection?.selectedId)?.id,
       allowVerticalNavigation: true,
       onInspect: inspect,
       onDismiss: () => setInspecting(false),

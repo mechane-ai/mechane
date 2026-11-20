@@ -188,9 +188,9 @@ dir = "{{config_root}}/packages/browser/console"
 run = "node node_modules/vite/bin/vite.js build"
 
 [tasks."build:elements"]
-description = "Build Elements by Mechane as portable JavaScript, declarations, and CSS"
+description = "Build the Elements package and authoring catalog"
 dir = "{{config_root}}/packages/browser/elements"
-run = "node node_modules/vite/bin/vite.js build"
+run = "pnpm run build"
 
 [tasks."build:guest"]
 description = "Bundle the sandbox guest and installed CLI as portable Node modules in the image's build folder"

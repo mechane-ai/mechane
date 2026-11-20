@@ -5,8 +5,10 @@ import { Heading, Muted } from '../../core/src/index.ts';
 import { conditions } from '../../foundations/src/constants.stylex.ts';
 import { colors, controls, pageGeometry, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import type { PageNavigationProps } from '../../navigation/src/index.ts';
+import { RouteLink } from '../../navigation/src/index.ts';
 import { DetailPage } from './detail-page.tsx';
 import { frame } from './frame.stylex.ts';
+import { PageTitle } from './page-context.tsx';
 import { PageLayout } from './page-layout.tsx';
 
 const styles = stylex.create({
@@ -84,7 +86,7 @@ export type RecordPageAsideProps = { readonly children: ReactNode; readonly labe
 
 function RecordBackLink({ backLabel, backHref, onBack }: RecordBackProps): ReactNode {
   return (
-    <a
+    <RouteLink
       href={backHref}
       {...stylex.props(styles.back)}
       onClick={(event) => {
@@ -105,7 +107,7 @@ function RecordBackLink({ backLabel, backHref, onBack }: RecordBackProps): React
     >
       <ArrowLeft size={16} aria-hidden {...stylex.props(styles.backIcon)} />
       <span {...stylex.props(styles.backLabel)}>{backLabel}</span>
-    </a>
+    </RouteLink>
   );
 }
 
@@ -153,9 +155,9 @@ function RecordPageHeader({ title, description, icon, titleRef }: RecordPageHead
             {icon}
           </span>
         )}
-        <Heading ref={titleRef} tabIndex={-1} {...stylex.props(styles.title)}>
+        <PageTitle render={<Heading />} ref={titleRef} tabIndex={-1} {...stylex.props(styles.title)}>
           {title}
-        </Heading>
+        </PageTitle>
       </div>
       {description !== undefined && description !== null && <Muted>{description}</Muted>}
     </header>

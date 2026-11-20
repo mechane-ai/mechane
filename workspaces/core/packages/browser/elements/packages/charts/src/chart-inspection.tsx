@@ -136,6 +136,21 @@ export function ChartInspectionTitle({
   );
 }
 
+export function inspectionReadout({
+  label,
+  summary,
+  rows,
+  notes = [],
+}: Pick<ChartInspectionProps, 'label' | 'summary' | 'rows' | 'notes'>): string | undefined {
+  if (label === undefined) {
+    return undefined;
+  }
+
+  return [label, summary, ...rows.map((row) => `${row.label}: ${row.value}`), ...notes]
+    .filter((value) => value !== undefined)
+    .join(' · ');
+}
+
 export function ChartInspection({
   id,
   label,
@@ -153,13 +168,6 @@ export function ChartInspection({
   const inspectorWidth = Math.min(260, width);
   const preferredLeft = x > width / 2 ? x - inspectorWidth - offset : x + offset;
   const left = Math.max(0, Math.min(width - inspectorWidth, preferredLeft));
-
-  const text =
-    label === undefined
-      ? []
-      : [label, summary, ...rows.map((row) => `${row.label}: ${row.value}`), ...notes].filter(
-          (value) => value !== undefined,
-        );
 
   return (
     <div {...stylex.props(styles.frame)}>
@@ -194,7 +202,7 @@ export function ChartInspection({
         </div>
       )}
       <span id={id} aria-live={source === 'keyboard' ? 'polite' : 'off'} {...stylex.props(styles.accessible)}>
-        {text.join(' · ')}
+        {inspectionReadout({ label, summary, rows, notes })}
       </span>
       {label !== undefined && (
         <div aria-hidden {...stylex.props(styles.anchor)}>

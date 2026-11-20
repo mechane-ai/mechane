@@ -34,6 +34,7 @@ export type { TimelineProps, TimelineItemProps } from './timeline.tsx';
 
 export { useCollectionControls } from './use-collection-controls.tsx';
 export type { CollectionSearch } from './query-controls.tsx';
+export type { TableResultStatus } from './table-results.tsx';
 export type { CollectionControlsProps } from './use-collection-controls.tsx';
 export { CollectionFilters } from './collection-filters.tsx';
 export type { CollectionFilter, FilterOption } from './collection-filters.tsx';

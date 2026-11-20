@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import * as stylex from '@stylexjs/stylex';
 import { ExternalLink, Plus, RefreshCw } from 'lucide-react';
 import { SkipLink } from '../../navigation/src/index.ts';
-import { Button, IconButton, IconLink, TextButton, TextLink } from './actions.tsx';
+import { Button, ConfirmButton, IconButton, IconLink, TextButton, TextLink } from './actions.tsx';
 import { CopyValue } from './copy-value.tsx';
 import { Row, Stack } from './surfaces.tsx';
 import { Muted } from './text.tsx';
@@ -12,12 +12,12 @@ const styles = stylex.create({ narrow: { width: 180, maxWidth: '100%' } });
 const meta = {
   title: 'Controls/Actions',
   component: Button,
-  subcomponents: { IconButton, IconLink, TextButton, TextLink, SkipLink, CopyValue },
+  subcomponents: { ConfirmButton, IconButton, IconLink, TextButton, TextLink, SkipLink, CopyValue },
   parameters: {
     docs: {
       description: {
         component:
-          'Supported. Button performs an action; variant sets emphasis and tone sets destructive intent. Button, IconButton, IconLink, and TextButton default to standard density. Choose compact explicitly for a report action; 32px standard and 28px compact controls both use 44px coarse-pointer targets. Density preserves 13px labels, 20px line height, and 16px icons. Wrapped labels can grow either control. IconButton and IconLink require accessible labels. IconLink preserves anchor behavior and accepts render composition with a router link. TextButton fits an inline action, while TextLink is an anchor for navigation. SkipLink precedes navigation and moves keyboard focus to a main region with a stable ID and tabIndex={-1}; use TextLink for ordinary navigation. The application supplies handlers, destinations, permissions, and pending state. Use render to compose UI SDK triggers; keep refs, events, classes, and styles intact. Tab through these examples to inspect keyboard focus. Pending actions prevent duplicate activation and keep their label space.',
+          'Supported. ConfirmButton asks the agent host to approve the named consequence before invoking the same click a person uses. Button performs an action; variant sets emphasis and tone sets destructive intent. Button, IconButton, IconLink, and TextButton default to standard density. Choose compact explicitly for a report action; 32px standard and 28px compact controls both use 44px coarse-pointer targets. Density preserves 13px labels, 20px line height, and 16px icons. Wrapped labels can grow either control. IconButton and IconLink require accessible labels. IconLink preserves anchor behavior and accepts render composition with a router link. TextButton fits an inline action, while TextLink is an anchor for navigation. SkipLink precedes navigation and moves keyboard focus to a main region with a stable ID and tabIndex={-1}; use TextLink for ordinary navigation. The application supplies handlers, destinations, permissions, and pending state. Use render to compose UI SDK triggers; keep refs, events, classes, and styles intact. Tab through these examples to inspect keyboard focus. Pending actions prevent duplicate activation and keep their label space.',
       },
     },
   },

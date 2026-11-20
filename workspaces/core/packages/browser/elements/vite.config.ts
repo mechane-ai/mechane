@@ -5,7 +5,7 @@ import manifest from './package.json' with { type: 'json' };
 
 const entries = Object.fromEntries(
   Object.entries(manifest.exports)
-    .filter(([name]) => name !== './styles.css' && !name.endsWith('.stylex'))
+    .filter(([name, source]) => /\.tsx?$/.test(source) && !name.endsWith('.stylex'))
     .map(([name, source]) => [name === '.' ? 'index' : name.replace(/^[.]\//, ''), source]),
 );
 

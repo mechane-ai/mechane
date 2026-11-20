@@ -1,9 +1,3 @@
----
-name: elements-workspace
-description:
-  Compose or review an Elements application shell, full-width workspaces, task navigation, and aligned toolbars.
----
-
 # Workspace layout
 
 Mount one `AppShell` around the authenticated router outlet. Keep its rail, secondary pane, collapse state and toolbar

@@ -11,7 +11,7 @@ import { ChartData } from '../chart-data.tsx';
 import { ChartFrame } from '../chart-frame.tsx';
 import type { ChartSeriesReport } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds } from '../chart-input.tsx';
-import { ChartInspection, ChartInspectionTitle } from '../chart-inspection.tsx';
+import { ChartInspection, ChartInspectionTitle, inspectionReadout } from '../chart-inspection.tsx';
 import { ChartSvgSurface } from '../chart-surface.tsx';
 import { chartStyles } from '../chart-theme.ts';
 import { usePlotWidth } from '../plot-width.ts';
@@ -415,6 +415,21 @@ function TimeChart({
     );
   }
 
+  const reading = {
+    label: inspected === undefined ? undefined : formatTimestamp(inspected.timestamp),
+    rows: prepared.map((item) => {
+      const point = item.points.find((value) => value.timestamp === inspected?.timestamp);
+
+      return {
+        id: item.id,
+        label: item.label,
+        tone: item.tone,
+        value: point?.value === null || point === undefined ? 'Unavailable' : formatValue(point.value),
+      };
+    }),
+    notes: markers.filter((marker) => marker.timestamp === inspected?.timestamp).map((marker) => marker.label),
+  };
+
   const top = 12;
   const bottom = height - 28;
   const svgHeight = bottom + 12;
@@ -504,22 +519,13 @@ function TimeChart({
         <div {...stylex.props(styles.body)}>
           <ChartInspection
             id={inspectionId}
-            label={inspected === undefined ? undefined : formatTimestamp(inspected.timestamp)}
+            label={reading.label}
             legend={prepared.map(({ id, label, tone }) => ({ id, label, tone }))}
-            rows={prepared.map((item) => {
-              const point = item.points.find((value) => value.timestamp === inspected?.timestamp);
-
-              return {
-                id: item.id,
-                label: item.label,
-                tone: item.tone,
-                value: point?.value === null || point === undefined ? 'Unavailable' : formatValue(point.value),
-              };
-            })}
+            rows={reading.rows}
             x={x(active?.timestamp ?? first)}
             width={width}
             source={inspected?.source}
-            notes={markers.filter((marker) => marker.timestamp === inspected?.timestamp).map((marker) => marker.label)}
+            notes={reading.notes}
             hasSeriesSummary={hasSeriesSummary}
           />
           <div ref={ref} {...stylex.props(chartStyles.plot)}>
@@ -533,7 +539,8 @@ function TimeChart({
               controls={{
                 items: inspectionItems,
                 cursor: cursor === undefined ? undefined : String(cursor.timestamp),
-                inspected: active === undefined ? undefined : String(active.timestamp),
+                inspected: inspected === undefined ? undefined : String(inspected.timestamp),
+                readout: inspectionReadout(reading),
                 onInspect: (id) => {
                   const timestamp = Number(id);
 

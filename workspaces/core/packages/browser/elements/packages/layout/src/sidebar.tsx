@@ -9,6 +9,7 @@ import { conditions } from '../../foundations/src/constants.stylex.ts';
 import { headerStyles } from '../../foundations/src/header-styles.ts';
 import { mergeStyles } from '../../foundations/src/style-composition.ts';
 import { colors, controls, pageGeometry, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { RouteLink } from '../../navigation/src/index.ts';
 import { Drawer } from '../../overlays/src/index.ts';
 import { frame, frameConditions } from './frame.stylex.ts';
 
@@ -332,7 +333,7 @@ export function NavigationLink({
   );
 
   return (
-    <a
+    <RouteLink
       {...props}
       aria-current={isSelected ? 'page' : undefined}
       aria-labelledby={props['aria-labelledby'] ?? (props['aria-label'] === undefined ? labelId : undefined)}
@@ -367,7 +368,7 @@ export function NavigationLink({
       <span id={labelId} {...stylex.props(styles.label, isCollapsed && styles.collapsedLabel)}>
         {children}
       </span>
-    </a>
+    </RouteLink>
   );
 }
 

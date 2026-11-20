@@ -11,7 +11,7 @@ const VALUES = {
   },
   sourceFolders: ['src', 'scripts', '.storybook', 'vite.config.ts'],
   memberSourceFolders: {
-    '@mechane-ai/elements': ['packages', '.storybook', 'vite.config.ts'],
+    '@mechane-ai/elements': ['packages', 'recipes', 'src', 'bin', 'scripts', '.storybook', 'vite.config.ts'],
     '@mechane/console': ['src', 'scripts', '.storybook', 'vite.config.ts', 'worker-licenses.ts'],
     '@mechane/distribution': ['src', 'testing'],
     '@mechane/sandbox': ['src', 'testing'],
@@ -58,6 +58,7 @@ const VALUES = {
       './tokens': './packages/foundations/src/tokens.ts',
       './constants.stylex': './packages/foundations/src/constants.stylex.ts',
       './tokens.stylex': './packages/foundations/src/tokens.stylex.ts',
+      './catalog.json': './dist/catalog.json',
       './styles.css': './packages/foundations/src/styles.css',
     },
   },

@@ -1,9 +1,3 @@
----
-name: elements-presentation
-description:
-  Coordinate Elements route loading, chart feedback, and keyboard or pointer inspection in analytical workspaces.
----
-
 # Loading and inspecting reports
 
 Give the route a `LoadingScope` from `/feedback` with a navigation identity. Keep the shell mounted. Wrap the entering

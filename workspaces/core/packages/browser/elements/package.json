@@ -1,6 +1,6 @@
 {
   "name": "@mechane-ai/elements",
-  "version": "0.41.0",
+  "version": "0.42.0",
   "description": "Elements by Mechane — React components for applications, AI interfaces, and analytical graphics",
   "license": "Apache-2.0",
   "repository": {
@@ -8,8 +8,14 @@
     "url": "https://github.com/mechane-ai/mechane.git",
     "directory": "workspaces/core/packages/browser/elements"
   },
+  "bin": {
+    "mechane-elements-catalog": "./dist/mechane-elements-catalog.mjs"
+  },
   "files": [
     "dist",
+    "bin/*.mjs",
+    "bin/*.d.mts",
+    "recipes",
     "skills",
     "packages/foundations/src/constants.stylex.ts",
     "packages/foundations/src/tokens.stylex.ts",
@@ -51,13 +57,14 @@
     "./tokens": "./packages/foundations/src/tokens.ts",
     "./constants.stylex": "./packages/foundations/src/constants.stylex.ts",
     "./tokens.stylex": "./packages/foundations/src/tokens.stylex.ts",
-    "./styles.css": "./packages/foundations/src/styles.css"
+    "./styles.css": "./packages/foundations/src/styles.css",
+    "./catalog.json": "./dist/catalog.json"
   },
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
-    "build": "vite build && tsc -p tsconfig.build.json",
+    "build": "vite build && tsc -p tsconfig.build.json && node scripts/build-catalog.mts",
     "build-storybook": "storybook build",
     "storybook": "storybook dev -p 6006 --no-open"
   },
@@ -82,11 +89,13 @@
     "@mechane/catalog": "workspace:*",
     "@storybook/addon-a11y": "10.6.5",
     "@storybook/addon-docs": "10.6.5",
+    "@storybook/addon-mcp": "10.6.5",
     "@storybook/addon-themes": "10.6.5",
     "@storybook/react-vite": "10.6.5",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.2.1",
+    "oxc-parser": "0.156.0",
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "storybook": "10.6.5",

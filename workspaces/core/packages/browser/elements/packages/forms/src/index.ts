@@ -4,6 +4,8 @@ export { AgentAvatarPicker } from './agent-avatar-picker.tsx';
 export { FilePicker, Fieldset, InputGroup, NumberField, Slider } from './form-controls.tsx';
 export type { FormActionsProps } from './form-actions.tsx';
 export { FormActions } from './form-actions.tsx';
+export { FormStatus } from './form-status.tsx';
+export type { FormStatusProps } from './form-status.tsx';
 export { Field, Input, Textarea } from './forms.tsx';
 export { Select } from './select.tsx';
 export type { SelectControlProps, SelectOption } from './select-control.tsx';

@@ -95,8 +95,14 @@ function memberWorkspace({ member }: MemberWorkspaceInput): MemberWorkspace {
     return {
       includeEntryExports: false,
       vite: false,
-      entry: [VITE_CONFIGURATION, '.storybook/*.{ts,tsx}', 'packages/**/*.stories.tsx'],
-      project: ['packages/**/*.{ts,tsx,mdx}!'],
+      entry: [
+        VITE_CONFIGURATION,
+        '.storybook/*.{ts,tsx}',
+        'packages/**/*.stories.tsx',
+        'src/stories/**/*.stories.tsx',
+        'bin/mechane-elements-catalog.mjs!',
+      ],
+      project: ['packages/**/*.{ts,tsx,mdx}!', 'recipes/*.tsx', 'src/stories/**/*.tsx', 'scripts/*.mts'],
     };
   }
 

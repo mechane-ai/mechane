@@ -11,6 +11,8 @@ export type ChartControls = {
   readonly items: ReadonlyArray<ChartItem>;
   readonly cursor: string | undefined;
   readonly inspected: string | undefined;
+  readonly readout: string | undefined;
+  readonly selected?: string | undefined;
   readonly allowVerticalNavigation?: boolean;
   readonly onInspect: (id: string) => void;
   readonly onDismiss: () => void;
@@ -18,7 +20,7 @@ export type ChartControls = {
 };
 
 function chartState({ controls }: { controls: ChartControls }) {
-  return { value: controls.inspected ?? null };
+  return { value: controls.inspected ?? null, readout: controls.readout ?? null, selected: controls.selected ?? null };
 }
 
 const chartInspection = definePrimitive({
@@ -26,6 +28,7 @@ const chartInspection = definePrimitive({
   options: { controls: 'value' },
   state: chartState,
   sync: chartState,
+  controlled: ['value', 'readout', 'selected'],
   api: ({ options }) => {
     function inspect(id: string): boolean {
       const { items, onInspect } = options().controls;

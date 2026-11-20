@@ -3,6 +3,7 @@ import { Children } from 'react';
 import type { ReactNode } from 'react';
 import { headerStyles } from '../../foundations/src/header-styles.ts';
 import { colors, spacing } from '../../foundations/src/tokens.stylex.ts';
+import { RouteLink } from './route-link.tsx';
 import { tabStyles } from './tab-styles.ts';
 
 const styles = stylex.create({
@@ -74,7 +75,7 @@ export function PageNavigation<ItemId extends string>({
     <div {...stylex.props(styles.row)}>
       <nav aria-label={label} {...stylex.props(tabStyles.list, styles.navigation)}>
         {items.map((item) => (
-          <a
+          <RouteLink
             key={item.id}
             href={item.href}
             aria-current={item.id === selectedId ? 'page' : undefined}
@@ -96,7 +97,7 @@ export function PageNavigation<ItemId extends string>({
             }}
           >
             {item.label}
-          </a>
+          </RouteLink>
         ))}
       </nav>
       {Children.toArray(actions).length > 0 && <div {...stylex.props(headerStyles.row, styles.actions)}>{actions}</div>}

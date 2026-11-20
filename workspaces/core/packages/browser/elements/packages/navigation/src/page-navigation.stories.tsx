@@ -1,17 +1,18 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button, Stack } from '../../core/src/index.ts';
 import { PageNavigation, PageNavigationPlaceholder } from './page-navigation.tsx';
+import { RouteLink } from './route-link.tsx';
 import { Tabs } from './tabs.tsx';
 
 const meta = {
   title: 'Navigation/Page navigation',
   component: PageNavigation,
-  subcomponents: { PageNavigationPlaceholder },
+  subcomponents: { PageNavigationPlaceholder, RouteLink },
   parameters: {
     docs: {
       description: {
         component:
-          'PageNavigation presents application-supplied destinations and the current view. PageNavigationPlaceholder retains the same known labels and measurements without creating links. Use the actions slot for adjacent view controls. PageNavigation and Tabs share one tab geometry; links navigate and tabs switch local panels. Do not place page navigation inside a padded collection toolbar. Use the placeholder inside AsyncRegion while the destination is pending; it does not fetch, announce loading, or choose a delay.',
+          'PageNavigation presents application-supplied destinations and the current view. For individual destinations, RouteLink exposes the native anchor and aria-current to an agent. PageNavigationPlaceholder retains the same known labels and measurements without creating links. Use the actions slot for adjacent view controls. PageNavigation and Tabs share one tab geometry; links navigate and tabs switch local panels. Do not place page navigation inside a padded collection toolbar. Use the placeholder inside AsyncRegion while the destination is pending; it does not fetch, announce loading, or choose a delay.',
       },
     },
   },

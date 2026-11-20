@@ -13,7 +13,8 @@ import type { ChartDataProps } from '../chart-data.tsx';
 import { ChartFrame } from '../chart-frame.tsx';
 import type { ChartSelection, ChartSeriesReport } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds, isFiniteDomain } from '../chart-input.tsx';
-import { ChartInspection, ChartInspectionTitle, ChartLegendLoading } from '../chart-inspection.tsx';
+import { ChartInspection, ChartInspectionTitle, ChartLegendLoading, inspectionReadout } from '../chart-inspection.tsx';
+import type { ChartInspectionRow } from '../chart-inspection.tsx';
 import { ChartSvgSurface } from '../chart-surface.tsx';
 import { chartStyles } from '../chart-theme.ts';
 import { usePlotWidth } from '../plot-width.ts';
@@ -64,9 +65,7 @@ type BarChartFrameProps = Pick<BarChartProps, 'title' | 'description' | 'report'
   readonly label?: string | undefined;
   readonly detail?: string | undefined;
   readonly summary?: string | undefined;
-  readonly rows?: ReadonlyArray<BarSeries> | undefined;
-  readonly index?: number | undefined;
-  readonly formatValue?: ((value: number) => string) | undefined;
+  readonly rows?: ReadonlyArray<ChartInspectionRow> | undefined;
   readonly x?: number | undefined;
   readonly width?: number | undefined;
   readonly offset?: number | undefined;
@@ -88,8 +87,6 @@ function BarChartFrame({
   detail,
   summary,
   rows = [],
-  index = -1,
-  formatValue = String,
   x = 0,
   width = 0,
   offset,
@@ -129,15 +126,7 @@ function BarChartFrame({
           legend={legend}
           hasSeriesSummary={report?.seriesValues !== undefined}
           layoutLegend={layoutLegend}
-          rows={rows.map((item, seriesIndex) => ({
-            id: item.id,
-            label: item.label,
-            tone: colorTone(item.tone, seriesIndex),
-            value:
-              item.values[index] === null || item.values[index] === undefined
-                ? 'Unavailable'
-                : formatValue(item.values[index]),
-          }))}
+          rows={rows}
           x={x}
           width={width}
           offset={offset}
@@ -326,6 +315,17 @@ export function BarChart({
     return <ChartInputError title={title} description={description} report={report} message={issue} />;
   }
 
+  const rows = inspectedSeries.map((item, seriesIndex) => {
+    const value = item.values[readoutIndex];
+
+    return {
+      id: item.id,
+      label: item.label,
+      tone: colorTone(item.tone, seriesIndex),
+      value: value === null || value === undefined ? 'Unavailable' : formatValue(value),
+    };
+  });
+
   const bottom = height - 28;
   const y = scaleLinear({ domain: [...domain], range: [bottom, 12] });
   const left = Math.max(44, ...y.ticks(3).map((tick) => formatTick(tick).length * 7 + 12));
@@ -370,9 +370,7 @@ export function BarChart({
         readout === undefined ? undefined : [readout.axisLabel ?? readout.label, summary].filter(Boolean).join(' · ')
       }
       summary={summary}
-      rows={inspectedSeries}
-      index={readoutIndex}
-      formatValue={formatValue}
+      rows={rows}
       x={(x(readout?.id ?? '') ?? left) + x.bandwidth() / 2}
       width={width}
       offset={x.bandwidth() / 2 + 8}
@@ -404,6 +402,8 @@ export function BarChart({
               items: categories,
               cursor: cursor?.id,
               inspected: active?.id,
+              selected: selected?.id,
+              readout: inspectionReadout({ label: active?.label, summary, rows }),
               onInspect: (id) => {
                 setKeyboardId(id);
                 setInspection({ id, source: 'keyboard' });

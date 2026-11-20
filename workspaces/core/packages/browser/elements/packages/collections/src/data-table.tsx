@@ -13,7 +13,8 @@ import { conditions, layers, tableGeometry } from '../../foundations/src/constan
 import { colors, controls, pageGeometry, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import { useScrollTabIndex } from '../../foundations/src/use-scroll-tab-index.ts';
 import { Tooltip } from '../../overlays/src/index.ts';
-import { CollectionToolbar } from './collection-controls.tsx';
+import { CollectionPagination, CollectionToolbar } from './collection-controls.tsx';
+import type { CollectionPaginationProps } from './collection-controls.tsx';
 import type { CollectionFilter } from './collection-filters.tsx';
 import type { CollectionSearch } from './query-controls.tsx';
 import {
@@ -24,10 +25,13 @@ import {
   useLocalTableQuery,
 } from './table-query.tsx';
 import type { LocalTableQuery, TableQuery } from './table-query.tsx';
+import { RecordButton, RecordLink, TableResultCaption } from './table-results.tsx';
+import type { DataTableSort, TableResultStatus } from './table-results.tsx';
 import { useCollectionControls } from './use-collection-controls.tsx';
 import { useEndReached } from './use-end-reached.ts';
 
 const features = tableFeatures({});
+const recordTextTypes: ReadonlySet<string> = new Set(['string', 'number']);
 const selectionColumnWidth = 76;
 const compactTableQuery = conditions.compactTable.slice('@media '.length);
 
@@ -392,6 +396,7 @@ export function DataTablePlaceholder({
       <TableRows
         {...props}
         hideCaption={hideCaption}
+        isPlaceholder
         rows={positions}
         getRowId={(position) => position.id}
         columns={placeholders}
@@ -439,7 +444,7 @@ export function DataTableText({ children, secondary, leading, trailing }: DataTa
   return (
     <TextCellLayout leading={leading}>
       <span {...stylex.props(styles.primaryRow)}>
-        <span title={children} {...stylex.props(styles.text, styles.primaryText, styles.truncated)}>
+        <span data-record-text title={children} {...stylex.props(styles.text, styles.primaryText, styles.truncated)}>
           {children}
         </span>
         {hasTrailing && <span {...stylex.props(styles.adornment)}>{trailing}</span>}
@@ -468,7 +473,7 @@ export function DataTableTextPlaceholder({ leading, isSecondary = false }: DataT
   );
 }
 
-export type DataTableSort = { readonly columnId: string; readonly direction: 'ascending' | 'descending' };
+export type { DataTableSort } from './table-results.tsx';
 
 export type DataTableWindow = { readonly height: number | 'fill'; readonly estimatedRowHeight?: number };
 
@@ -519,14 +524,20 @@ type TableRowsProps<Row> = SortProperties<Row> &
     readonly endContent?: ReactNode;
     readonly onEndReached?: () => void;
     readonly footer?: ReactNode;
+    readonly pagination?: CollectionPaginationProps;
+    readonly resultStatus?: TableResultStatus;
   };
 
-export type DataTableProps<Row> = TableRowsProps<Row> & { readonly query: TableQuery<Row> };
+export type DataTableProps<Row> = TableRowsProps<Row> &
+  (
+    | { readonly query: TableQuery<Row>; readonly onEndReached?: never; readonly pagination?: never }
+    | { readonly query: Exclude<TableQuery<Row>, LocalTableQuery<Row>> }
+  );
 
 export function DataTable<Row extends object>({ query, ...table }: DataTableProps<Row>): ReactNode {
   switch (query.mode) {
     case 'local':
-      if (table.onEndReached !== undefined) {
+      if (table.onEndReached !== undefined || table.pagination !== undefined) {
         throw new Error('Local table queries require all rows. Use a controlled or frame query for a paged source.');
       }
 
@@ -666,7 +677,10 @@ function TableRows<Row extends object>({
   endContent,
   onEndReached,
   footer,
-}: TableRowsProps<Row>): ReactNode {
+  pagination,
+  resultStatus = 'ready',
+  isPlaceholder = false,
+}: TableRowsProps<Row> & { isPlaceholder?: boolean }): ReactNode {
   const columns = useMemo(() => prepareColumns(suppliedColumns), [suppliedColumns]);
   const isCompact = useSyncExternalStore(subscribeToCompactTable, isCompactTable, () => false);
 
@@ -914,6 +928,7 @@ function TableRows<Row extends object>({
   const columnCount = visibleColumnCount + (selectedIds === undefined ? 0 : 1);
   const selectionWidth = selectedIds === undefined ? 0 : selectionColumnWidth;
   const showFooter = footer !== undefined && footer !== null && typeof footer !== 'boolean';
+  const hasFooter = showFooter || pagination !== undefined;
   const { minimumWidth, compactWidth } = tableWidths(columns, selectionWidth);
 
   const trailingSpace =
@@ -934,12 +949,22 @@ function TableRows<Row extends object>({
         )}
       >
         <table
+          aria-busy={resultStatus === 'pending' || undefined}
           aria-rowcount={window === undefined ? undefined : Math.max(1, rows.length) + 1}
           {...stylex.props(styles.table, styles.fixed, styles.minimumWidth(minimumWidth, compactWidth))}
         >
-          <caption ref={captionElement} {...stylex.props(styles.caption, hideCaption && accessibility.hidden)}>
+          <TableResultCaption
+            ref={captionElement}
+            captionElement={captionElement}
+            aria-label={caption}
+            status={resultStatus}
+            sort={sort}
+            pagination={pagination}
+            isPlaceholder={isPlaceholder}
+            {...stylex.props(styles.caption, hideCaption && accessibility.hidden)}
+          >
             {caption}
-          </caption>
+          </TableResultCaption>
           <ColumnGroup columns={columns} canSelect={selectedIds !== undefined} />
           <thead ref={headerElement} {...stylex.props(hideHeaders && accessibility.hidden)}>
             <tr>
@@ -967,6 +992,7 @@ function TableRows<Row extends object>({
                     {column.canSort === true && onSortChange !== undefined ? (
                       <ButtonPrimitive
                         type="button"
+                        aria-label={`Sort ${caption} by ${column.label}`}
                         {...stylex.props(styles.sort)}
                         onClick={() => {
                           if (direction === 'ascending') {
@@ -1068,6 +1094,7 @@ function TableRows<Row extends object>({
                   {columns.map((column, columnIndex) => (
                     <td
                       key={column.id}
+                      data-record-label={columnIndex === actionColumnIndex || undefined}
                       {...stylex.props(
                         styles.cell,
                         cellSizingStyles[rowSizing],
@@ -1078,6 +1105,8 @@ function TableRows<Row extends object>({
                     >
                       {rowAction !== undefined && columnIndex === actionColumnIndex ? (
                         <RowTrigger
+                          recordId={row.id}
+                          collection={caption}
                           row={row.original}
                           action={rowAction}
                           isActive={activeRowId === row.id}
@@ -1123,7 +1152,12 @@ function TableRows<Row extends object>({
           {endContent}
         </div>
       </div>
-      {showFooter && <div {...stylex.props(styles.footer)}>{footer}</div>}
+      {hasFooter && (
+        <div {...stylex.props(styles.footer)}>
+          {footer}
+          {pagination !== undefined && <CollectionPagination {...pagination} label={caption} />}
+        </div>
+      )}
     </div>
   );
 }
@@ -1146,6 +1180,7 @@ function TableCellContent({
   return (
     <span {...stylex.props(styles.cellViewport, !isFixed && styles.contentViewport)}>
       <span
+        data-record-text={recordTextTypes.has(typeof children) || undefined}
         title={typeof children === 'string' ? children : undefined}
         {...stylex.props(
           styles.cellContent,
@@ -1176,6 +1211,8 @@ function isPlainActivation(event: MouseEvent<HTMLElement>): boolean {
 }
 
 type RowTriggerProps<Row> = {
+  readonly collection: string;
+  readonly recordId: string;
   readonly row: Row;
   readonly action: DataTableRowAction<Row>;
   readonly isActive: boolean;
@@ -1183,12 +1220,22 @@ type RowTriggerProps<Row> = {
   readonly onKeyDown: (event: KeyboardEvent<HTMLElement>) => void;
 };
 
-function RowTrigger<Row>({ row, action, isActive, children, onKeyDown }: RowTriggerProps<Row>): ReactNode {
+function RowTrigger<Row>({
+  collection,
+  recordId,
+  row,
+  action,
+  isActive,
+  children,
+  onKeyDown,
+}: RowTriggerProps<Row>): ReactNode {
   const label = action.label?.(row);
 
   const trigger =
     action.href === undefined ? (
-      <ButtonPrimitive
+      <RecordButton
+        collection={collection}
+        recordId={recordId}
         type="button"
         disabled={action.disabled === true}
         aria-label={label}
@@ -1203,9 +1250,11 @@ function RowTrigger<Row>({ row, action, isActive, children, onKeyDown }: RowTrig
         {...stylex.props(styles.trigger)}
       >
         {children}
-      </ButtonPrimitive>
+      </RecordButton>
     ) : (
-      <a
+      <RecordLink
+        collection={collection}
+        recordId={recordId}
         href={action.href(row)}
         aria-label={label}
         data-row-action
@@ -1219,7 +1268,7 @@ function RowTrigger<Row>({ row, action, isActive, children, onKeyDown }: RowTrig
         {...stylex.props(styles.trigger)}
       >
         {children}
-      </a>
+      </RecordLink>
     );
 
   if (label === undefined) {

@@ -1,8 +1,9 @@
 import { ADOPTED, CRUISER_DEFAULTS } from '@mechane/rule-shapes';
 import type { ContractEnforcement } from '@mechane/rule-shapes';
+import { ELEMENTS_CATALOG_TOOLS } from '../../file-roles.ts';
 
 /** These files build and describe the catalog; production browser modules must not depend on them. */
-const CATALOG_PATH = '^packages/browser/(?:catalog/|.*[.]stories[.]tsx$|[^/]+/[.]storybook/|[^/]+/vite[.]config[.]ts$)';
+const CATALOG_PATH = `(?:${ELEMENTS_CATALOG_TOOLS}|^packages/browser/(?:catalog/|elements/recipes/|.*[.]stories[.]tsx$|[^/]+/[.]storybook/|[^/]+/vite[.]config[.]ts$))`;
 
 /** The dependency graph keeps synthetic catalog inputs and development configuration out of runtime imports. */
 export const uiStorybookComponentChecks = {

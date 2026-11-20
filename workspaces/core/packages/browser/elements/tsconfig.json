@@ -1,1 +1,4 @@
-{ "extends": "../../../tsconfig.browser.json", "include": ["packages", ".storybook", "vite.config.ts"] }
+{
+  "extends": "../../../tsconfig.browser.json",
+  "include": ["packages", "recipes", "src", "bin", "scripts", ".storybook", "vite.config.ts"]
+}

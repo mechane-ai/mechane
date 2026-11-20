@@ -1,4 +1,5 @@
 import { Lane } from '@mechane/rule-shapes';
+import { ELEMENTS_CATALOG_TOOLS } from '../file-roles.ts';
 import type { WorkspaceMember } from '../types.ts';
 import { rootsPattern } from './roots-pattern.ts';
 import type { FamilyRule } from './types.ts';
@@ -16,7 +17,10 @@ export function laneRules({ members }: LaneRulesInput): ReadonlyArray<FamilyRule
   return [
     {
       subject: Lane.Shared,
-      from: { path: rootsPattern({ members: members.filter(({ entry }) => BROWSER_LANES.has(entry.lane)) }) },
+      from: {
+        path: rootsPattern({ members: members.filter(({ entry }) => BROWSER_LANES.has(entry.lane)) }),
+        pathNot: ELEMENTS_CATALOG_TOOLS,
+      },
       to: RUNTIME_MODULES.node,
     },
     {

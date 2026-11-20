@@ -1,20 +1,29 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
+import { expect } from 'storybook/test';
 import { Button, Stack } from '../../core/src/index.ts';
-import { Notice } from '../../feedback/src/index.ts';
+import { createAgent } from '../../foundations/src/agent/index.ts';
 import { FormActions } from './form-actions.tsx';
+import { FormStatus } from './form-status.tsx';
 import { Field, Input, Textarea } from './forms.tsx';
 
 const meta = {
   title: 'Forms/Field',
   component: Field.Root,
-  subcomponents: { Label: Field.Label, Description: Field.Description, Error: Field.Error, Input, Textarea },
+  subcomponents: {
+    Label: Field.Label,
+    Description: Field.Description,
+    Error: Field.Error,
+    Input,
+    Textarea,
+    FormStatus,
+  },
   parameters: {
     docs: {
       description: {
         component:
-          'Supported. Field.Root associates a control with Field.Label, optional Field.Description, and Field.Error. Input defaults to standard density with a 32px outer height; explicit compact density uses 28px. Both grow to 44px on coarse pointers. Density keeps native input events, date/month pickers, and readable typography. Choose compact for a local report control and standard for ordinary forms. Textarea is for longer plain text and keeps its own content sizing. Its plain appearance is reserved for a framed composition such as PromptInput, which owns the visible focus indicator. FormActions owns action alignment, gap, and wrapping; the form owns spacing between sections. The application owns drafts, submission, permissions, and server errors. Choose defaultValue for an uncontrolled field, or value with its change callback for a controlled field. Use readOnly for a value that stays selectable; disabled means the control is unavailable. Ordinary form labels remain visible when a placeholder is present. Pass isSensitive on Input or Textarea when the value is private, including a revealed credential. Password inputs and password, one-time code, and card autocomplete fields automatically keep their values and actions out of the UI SDK agent interface.',
+          'Supported. Field.Root associates a control with Field.Label, optional Field.Description, and Field.Error. Input defaults to standard density with a 32px outer height; explicit compact density uses 28px. Both grow to 44px on coarse pointers. Density keeps native input events, date/month pickers, and readable typography. Choose compact for a local report control and standard for ordinary forms. Textarea is for longer plain text and keeps its own content sizing. Its plain appearance is reserved for a framed composition such as PromptInput, which owns the visible focus indicator. FormActions owns action alignment, gap, and wrapping; the form owns spacing between sections. The application owns drafts, submission, permissions, and server errors. FormStatus shows the same public pending, success, or error message to people and the agent. Choose defaultValue for an uncontrolled field, or value with its change callback for a controlled field. Use readOnly for a value that stays selectable; disabled means the control is unavailable. Ordinary form labels remain visible when a placeholder is present. Pass isSensitive on Input or Textarea when the value is private, including a revealed credential. Mark Field.Root isSensitive when its help or validation text could contain private data. Password inputs and password, one-time code, and card autocomplete fields automatically keep their values and actions out of the UI SDK agent interface.',
       },
     },
   },
@@ -59,7 +68,7 @@ function EditableForm(): ReactNode {
             Save changes
           </Button>
         </FormActions>
-        {isSaved && <Notice>Example saved locally.</Notice>}
+        {isSaved && <FormStatus status="success" message="Example saved locally." />}
       </Stack>
     </form>
   );
@@ -109,4 +118,32 @@ export const LongDescription: Story = {
       </Field.Description>
     </Field.Root>
   ),
+};
+
+export const PrivateValidation: Story = {
+  tags: ['interaction'],
+  render: () => (
+    <Stack>
+      <Field.Root name="title" invalid>
+        <Field.Label>Title</Field.Label>
+        <Input required defaultValue="" />
+        <Field.Error match>Enter a title.</Field.Error>
+      </Field.Root>
+      <Field.Root name="phrase" invalid isSensitive>
+        <Field.Label>Recovery phrase</Field.Label>
+        <Input defaultValue="synthetic-private-phrase" />
+        <Field.Error match>synthetic-private-phrase is too short.</Field.Error>
+      </Field.Root>
+    </Stack>
+  ),
+  play: async ({ canvas }) => {
+    await expect(canvas.getByText('synthetic-private-phrase is too short.')).toBeVisible();
+
+    const snapshot = createAgent().snapshot();
+
+    await expect(snapshot.find((entry) => entry.component === 'field' && entry.label === 'Title')?.text).toContain(
+      'Enter a title.',
+    );
+    await expect(JSON.stringify(snapshot)).not.toContain('synthetic-private-phrase');
+  },
 };

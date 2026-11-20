@@ -1,5 +1,5 @@
 export type { ControlDensity } from '../../foundations/src/control-density.ts';
-export { Button, IconButton, IconLink, TextButton, TextLink } from './actions.tsx';
+export { Button, ConfirmButton, IconButton, IconLink, TextButton, TextLink } from './actions.tsx';
 export type { AvatarProps } from './avatar.tsx';
 export { Avatar } from './avatar.tsx';
 export type { AgentAvatarShape } from './agent-avatar-glyphs.tsx';

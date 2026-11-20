@@ -1,6 +1,7 @@
 import * as stylex from '@stylexjs/stylex';
-import { mergeProps } from '@ui-sdk/react/primitive';
-import { useLayoutEffect, useRef } from 'react';
+import { definePrimitive } from '@ui-sdk/core';
+import { createParts, mergeProps } from '@ui-sdk/react/primitive';
+import { createContext, useContext, useId, useLayoutEffect, useRef } from 'react';
 import type { ComponentProps, ReactNode, RefObject } from 'react';
 import { Button } from '../../core/src/index.ts';
 import { colors, controls, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
@@ -75,6 +76,23 @@ export type InspectorProps = ComponentProps<'div'> & {
 type DetailItem = { readonly label: string; readonly value: ReactNode };
 type DetailsProps = ComponentProps<'dl'> & { readonly items: ReadonlyArray<DetailItem> };
 
+const DetailLabel = createContext<string | undefined>(undefined);
+
+function fieldState({ reading }: { reading: string }) {
+  return { value: reading };
+}
+
+const detailField = definePrimitive({
+  name: 'detail-field',
+  options: { reading: 'string' },
+  state: fieldState,
+  sync: fieldState,
+  api: () => ({}),
+  slots: (slot) => ({ root: slot({}) }),
+});
+
+const FieldValue = createParts(detailField, { root: 'dd' }).Root;
+
 export function Inspector({
   master,
   detail,
@@ -84,6 +102,7 @@ export function Inspector({
   returnFocusRef,
   ...props
 }: InspectorProps): ReactNode {
+  const detailId = useId();
   const split = useRef<HTMLDivElement>(null);
   const collection = useRef<HTMLDivElement>(null);
   const selected = useRef<HTMLElement>(null);
@@ -109,29 +128,53 @@ export function Inspector({
   return (
     <div {...mergeProps(stylex.props(styles.frame), props)}>
       <div ref={split} {...stylex.props(styles.split)}>
-        <div ref={collection} role="group" aria-label={masterLabel} tabIndex={-1} {...stylex.props(styles.master)}>
+        <div
+          ref={collection}
+          role="group"
+          aria-label={masterLabel}
+          aria-details={detailId}
+          tabIndex={-1}
+          {...stylex.props(styles.master)}
+        >
           {master}
         </div>
-        <aside ref={selected} aria-label={label} tabIndex={-1} {...stylex.props(styles.detail)}>
+        <aside ref={selected} id={detailId} aria-label={label} tabIndex={-1} {...stylex.props(styles.detail)}>
           <div {...stylex.props(styles.return)}>
             <Button variant="ghost" onClick={returnToMaster}>
               Back to {masterLabel.toLowerCase()}
             </Button>
           </div>
-          {detail}
+          <DetailLabel.Provider value={label}>{detail}</DetailLabel.Provider>
         </aside>
       </div>
     </div>
   );
 }
 
+function DetailValue({ value, label }: DetailItem): ReactNode {
+  const reading = typeof value === 'number' ? String(value) : value;
+
+  if (typeof reading === 'string') {
+    return (
+      <FieldValue aria-label={label} reading={reading} {...stylex.props(styles.value)}>
+        {reading}
+      </FieldValue>
+    );
+  }
+
+  return <dd {...stylex.props(styles.value)}>{value}</dd>;
+}
+
 export function Details({ items, ...props }: DetailsProps): ReactNode {
+  const inspector = useContext(DetailLabel);
+  const group = props['aria-label'] ?? inspector;
+
   return (
     <dl {...mergeProps(stylex.props(styles.list), props)}>
       {items.map(({ label, value }) => (
         <div key={label} {...stylex.props(styles.item)}>
           <dt {...stylex.props(styles.label)}>{label}</dt>
-          <dd {...stylex.props(styles.value)}>{value}</dd>
+          <DetailValue value={value} label={group === undefined ? label : `${group} · ${label}`} />
         </div>
       ))}
     </dl>

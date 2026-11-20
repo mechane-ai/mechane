@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Stack, Text, TextLink } from '../../core/src/index.ts';
+import { Stack, Text } from '../../core/src/index.ts';
 import { Breadcrumb, Kbd } from './navigation.tsx';
+import { RouteLink } from './route-link.tsx';
 
 const meta = {
   title: 'Navigation/Breadcrumb',
@@ -31,11 +32,11 @@ export const Location: Story = {
       <Breadcrumb.Root aria-label="Breadcrumb">
         <Breadcrumb.List>
           <Breadcrumb.Item>
-            <TextLink href="#projects">Projects</TextLink>
+            <RouteLink href="#projects">Projects</RouteLink>
           </Breadcrumb.Item>
           <Breadcrumb.Separator />
           <Breadcrumb.Item>
-            <TextLink href="#sample">Sample project</TextLink>
+            <RouteLink href="#sample">Sample project</RouteLink>
           </Breadcrumb.Item>
           <Breadcrumb.Separator />
           <Breadcrumb.Item>

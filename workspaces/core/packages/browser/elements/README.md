@@ -9,18 +9,49 @@ Applications import the Elements family that owns the interaction. When adding a
 and its Storybook example. Keep focus, value changes, and dismissal with one primitive. Native links retain browser
 navigation and modifier-key behavior.
 
-Hosts that expose component actions can import `createAgent` from `@mechane-ai/elements/agent`. Mounting Elements alone
-does not grant an external agent access. Keep credentials out of observable values and retain human approval for
-privileged actions.
+## Build with an agent
 
-## Workspace implementation guides
+Use the [use-elements skill](skills/use-elements/SKILL.md) when building an app and the
+[extend-elements skill](skills/extend-elements/SKILL.md) when changing the library. Both ship with the package.
 
-- [Workspace layout](skills/elements-workspace/SKILL.md) covers shell lifetime, full-width reports, task navigation and
-  toolbar geometry.
-- [Loading and chart interaction](skills/elements-presentation/SKILL.md) covers coordinated route transitions, delayed
-  skeletons and pointer and keyboard inspection.
+Find a recipe by task from a project with Elements installed:
 
-The guides are included under `skills/` in the package.
+```sh
+pnpm exec mechane-elements-catalog "searchable table with filters"
+```
+
+The catalog connects a task to the example's TSX, public imports, and rendered Storybook story. Read the same index
+programmatically at `@mechane-ai/elements/catalog.json`. When running the local Elements Storybook, connect an MCP
+client to `http://localhost:6006/mcp` to explore the examples while developing.
+
+## Enable an agent in an app
+
+Create the bridge at browser startup. A host integrating its own model can use the tool definitions in `agentTools`. To
+expose tools to the browser through WebMCP, call `registerTools` explicitly and keep its cleanup function:
+
+```ts
+import { createAgent, registerTools } from '@mechane-ai/elements/agent';
+import type { AgentAction } from '@mechane-ai/elements/agent';
+
+const allow = (step: AgentAction) =>
+  step.confirm === undefined && step.component === 'collection-query' && step.action === 'setQuery';
+
+const agent = createAgent({ allow });
+const unregister = registerTools(agent, { allow });
+// Call unregister() when the host ends this integration.
+```
+
+This example permits changing a collection search. A host can query or snapshot mounted components to discover their
+available actions. After requesting a change, read the resulting state, including pending or error feedback from the
+data owner. Keep credentials and private values out of observable labels, descriptions, and results. The application
+authorizes data reads and mutations on the server.
+
+| What the agent needs    | What to look for in the mounted UI                                                                                                                                                                                                                                               |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Find and open a record  | Use the named `collection-query`, then re-read `collection-results` until its `status` is `ready`. A pending or failed read can retain the previous rows. Match the chosen item to a mounted `collection-record` by `collection` and `recordId`, then use its advertised action. |
+| Know where the user is  | Read the `page-title`, current `navigation-link` or tab, and the `page-section` at the reading position. Scrolling updates the section an agent can query.                                                                                                                       |
+| Inspect a chart or file | Query chart or tree items for the visible label and identifier. Read the chart's formatted `readout` after inspection. After selection, query the inspector's labeled `detail-field` entries.                                                                                    |
+| Complete a form         | Use visible field validation and `form-status` for pending, error, or success. Use `Field.Root isSensitive` to hide sensitive labels, values, and validation from the bridge. Put `ConfirmButton` on the action that performs a consequential mutation.                          |
 
 ## Install
 

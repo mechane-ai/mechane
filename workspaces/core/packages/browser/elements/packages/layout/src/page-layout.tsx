@@ -9,6 +9,7 @@ import { useScrollTabIndex } from '../../foundations/src/use-scroll-tab-index.ts
 import { PageNavigation, PageNavigationPlaceholder } from '../../navigation/src/index.ts';
 import type { PageNavigationPlaceholderProps, PageNavigationProps } from '../../navigation/src/index.ts';
 import { PageContent } from './page-content.tsx';
+import { ReadingSection } from './page-context.tsx';
 import { PageToolbar } from './page-toolbar.tsx';
 import type { PageToolbarProps } from './page-toolbar.tsx';
 
@@ -75,6 +76,7 @@ export function PageLayout<Item extends string>({
       <div
         ref={scroll.ref}
         tabIndex={scroll.tabIndex}
+        data-page-viewport=""
         data-scroll-restoration-id={scrollRestorationId}
         {...stylex.props(styles.body)}
       >
@@ -97,7 +99,7 @@ export function PageSection({ children, summary, breakdown, ...heading }: PageSe
   const id = heading.id ?? generatedId;
 
   return (
-    <section aria-labelledby={id} {...stylex.props(styles.section)}>
+    <ReadingSection aria-labelledby={id} {...stylex.props(styles.section)}>
       <div {...stylex.props(styles.sectionHeader)}>
         <SectionHeading {...heading} id={id} />
       </div>
@@ -106,6 +108,6 @@ export function PageSection({ children, summary, breakdown, ...heading }: PageSe
         {breakdown}
         {children}
       </div>
-    </section>
+    </ReadingSection>
   );
 }

@@ -43,8 +43,14 @@
     "packages/browser/elements": {
       "includeEntryExports": false,
       "vite": false,
-      "entry": ["vite.config.ts", ".storybook/*.{ts,tsx}", "packages/**/*.stories.tsx"],
-      "project": ["packages/**/*.{ts,tsx,mdx}!"],
+      "entry": [
+        "vite.config.ts",
+        ".storybook/*.{ts,tsx}",
+        "packages/**/*.stories.tsx",
+        "src/stories/**/*.stories.tsx",
+        "bin/mechane-elements-catalog.mjs!",
+      ],
+      "project": ["packages/**/*.{ts,tsx,mdx}!", "recipes/*.tsx", "src/stories/**/*.tsx", "scripts/*.mts"],
     },
     "packages/node/boundaries": { "project": ["src/**/*.{ts,tsx}!"] },
     "packages/node/browser": { "project": ["src/**/*.{ts,tsx}!"] },

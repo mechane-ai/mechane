@@ -6,6 +6,7 @@ import { layers } from '../../foundations/src/constants.stylex.ts';
 import { headerStyles } from '../../foundations/src/header-styles.ts';
 import { colors, pageGeometry, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import { frameConditions } from './frame.stylex.ts';
+import { PageTitle } from './page-context.tsx';
 import { SidebarToggle } from './sidebar.tsx';
 
 const styles = stylex.create({
@@ -89,7 +90,7 @@ export function PageToolbar({
     return null;
   }
 
-  const Title = showBreadcrumb ? 'nav' : 'h1';
+  const Title = showBreadcrumb ? 'nav' : PageTitle;
   const Label = showBreadcrumb ? 'div' : 'span';
 
   return (

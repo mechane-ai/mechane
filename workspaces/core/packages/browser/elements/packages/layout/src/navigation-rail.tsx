@@ -6,6 +6,7 @@ import { Button, IconButton, IconLink } from '../../core/src/index.ts';
 import { conditions } from '../../foundations/src/constants.stylex.ts';
 import { controlStyles } from '../../foundations/src/control-styles.ts';
 import { colors, controls, pageGeometry, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { RouteLink } from '../../navigation/src/index.ts';
 import { Tooltip } from '../../overlays/src/index.ts';
 import { SidebarContext } from './sidebar.tsx';
 
@@ -133,7 +134,7 @@ export function RailGroup({
       <div {...stylex.props(styles.root)}>
         <nav aria-label={label} {...stylex.props(styles.mobileLinks, isFooter && styles.drawerFooterLinks)}>
           {links.map(({ label: linkLabel, icon, isCurrent = false, ...link }) => (
-            <a
+            <RouteLink
               key={link.href}
               {...mergeProps(
                 stylex.props(
@@ -153,7 +154,7 @@ export function RailGroup({
                 {icon}
               </span>
               <span {...stylex.props(styles.label)}>{linkLabel}</span>
-            </a>
+            </RouteLink>
           ))}
         </nav>
         {action !== undefined && (
@@ -178,9 +179,10 @@ export function RailGroup({
             <Tooltip.Trigger
               render={
                 <IconLink
+                  render={<RouteLink />}
                   {...mergeProps(stylex.props(styles.selected), link)}
-                  aria-label={linkLabel}
                   aria-current={isCurrent ? 'location' : undefined}
+                  aria-label={linkLabel}
                   onClick={(event) => activateLink(link.onClick, event)}
                 />
               }

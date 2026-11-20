@@ -1,5 +1,8 @@
 import { FileRole } from '@mechane/rule-shapes';
 
+/** These Elements catalog modules run in Node during authoring and packaging. */
+export const ELEMENTS_CATALOG_TOOLS = '^packages/browser/elements/(?:bin|scripts|[.]storybook)/';
+
 /** Node runs these Console build files; application modules cannot import them. */
 const BROWSER_BUILD_CONFIGURATION = [
   'packages/browser/console/vite.config.ts',
@@ -83,6 +86,7 @@ export const FILE_ROLES = {
     'packages/node/rule-generator/src/load-generate-settings.ts',
   ],
   [FileRole.Output]: [
+    'packages/browser/elements/bin/mechane-elements-catalog.mjs',
     'packages/worker/server/src/import/output.ts',
     'packages/worker/runtime/src/output/write-actor-diagnostic.ts',
     'packages/node/cli/scripts/reference/main.ts',

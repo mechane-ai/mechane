@@ -22,11 +22,16 @@ const columns = [
 
 function ProjectSearch(): ReactNode {
   const [error, setError] = useState('');
+  const [opened, setOpened] = useState('');
 
   async function findProjects(): Promise<void> {
     const agent = createAgent({
-      allow: (step) =>
-        step.confirm === undefined && step.component === 'collection-query' && queryActions.has(step.action),
+      allow: (step) => {
+        const canQuery = step.component === 'collection-query' && queryActions.has(step.action);
+        const canOpen = step.component === 'collection-record' && step.action === 'press';
+
+        return step.confirm === undefined && (canQuery || canOpen);
+      },
     });
 
     const matches = await agent.query({ kind: 'collection-query', text: 'Archived' });
@@ -53,21 +58,55 @@ function ProjectSearch(): ReactNode {
       ],
     });
 
-    setError(result.error?.message ?? '');
+    if (!result.ok) {
+      setError(result.error?.message ?? 'The project query failed.');
+
+      return;
+    }
+
+    const results = await agent.query({ kind: 'collection-results', text: 'Projects' });
+    const page = Array.isArray(results) ? results.find((item) => item.offPage !== true) : undefined;
+    const record = page?.items?.[0];
+
+    if (page?.['status'] !== 'ready' || record === undefined || page.items?.length !== 1) {
+      setError('Expected one matching project.');
+
+      return;
+    }
+
+    const records = await agent.query({ kind: 'collection-record', text: record.label });
+
+    const link = Array.isArray(records)
+      ? records.find(
+          (item) => item.offPage !== true && item['recordId'] === record.value && item['collection'] === 'Projects',
+        )
+      : undefined;
+
+    if (link === undefined) {
+      setError('The matching project is unavailable.');
+
+      return;
+    }
+
+    const response = await agent.act({ steps: [{ ref: link.ref, action: 'press' }] });
+
+    setError(response.error?.message ?? '');
   }
 
   return (
     <Stack>
       <Row>
-        <Button onClick={findProjects}>Find archived design projects</Button>
+        <Button onClick={findProjects}>Open archived design project</Button>
       </Row>
       {error.length > 0 && <Notice hasError>{error}</Notice>}
+      {opened.length > 0 && <Notice>Opened {opened}</Notice>}
       <DataTable
         caption="Projects"
         columns={columns}
         rows={projects}
         getRowId={(project) => project.name}
         empty="No projects."
+        rowAction={{ label: (project) => `Open ${project.name}`, onActivate: (project) => setOpened(project.name) }}
         query={{
           mode: 'local',
           search: (project) => project.name,
@@ -85,7 +124,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'The host creates an agent when you run the example and permits the two table query actions. The agent discovers the available status filter and applies it alongside a search. Use the table controls to change either value.',
+          'The host permits search, filter and record activation. The agent discovers an available status filter, reads the matching result and activates its record by stable ID. The same table controls remain available to the reader.',
       },
     },
   },

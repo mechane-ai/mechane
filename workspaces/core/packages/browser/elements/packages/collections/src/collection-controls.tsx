@@ -186,21 +186,32 @@ export function DisplayOptions({
 }
 
 export type CollectionPaginationProps = {
+  readonly label?: string;
   readonly description: string;
   readonly previous: { readonly disabled: boolean; readonly onClick: () => void };
   readonly next: { readonly disabled: boolean; readonly onClick: () => void };
 };
 
-export function CollectionPagination({ description, previous, next }: CollectionPaginationProps): ReactNode {
+export function CollectionPagination({ label, description, previous, next }: CollectionPaginationProps): ReactNode {
   return (
-    <nav aria-label="Pagination" {...stylex.props(styles.pagination)}>
+    <nav aria-label={label === undefined ? 'Pagination' : `${label} pagination`} {...stylex.props(styles.pagination)}>
       <Text>{description}</Text>
       <div {...stylex.props(styles.actions)}>
-        <Button variant="outline" disabled={previous.disabled} onClick={previous.onClick}>
+        <Button
+          variant="outline"
+          aria-label={label === undefined ? undefined : `Previous page of ${label}`}
+          disabled={previous.disabled}
+          onClick={previous.onClick}
+        >
           <ChevronLeft size={16} aria-hidden="true" />
           Previous
         </Button>
-        <Button variant="outline" disabled={next.disabled} onClick={next.onClick}>
+        <Button
+          variant="outline"
+          aria-label={label === undefined ? undefined : `Next page of ${label}`}
+          disabled={next.disabled}
+          onClick={next.onClick}
+        >
           Next
           <ChevronRight size={16} aria-hidden="true" />
         </Button>

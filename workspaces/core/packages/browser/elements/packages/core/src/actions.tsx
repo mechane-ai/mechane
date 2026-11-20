@@ -353,3 +353,15 @@ export function IconLink({ children, density = 'standard', xstyle, render, ref, 
     render,
   );
 }
+
+type ConfirmProps = Pick<ButtonProps, 'disabled' | 'isPending' | 'pendingLabel' | 'tone'> & {
+  readonly children: string;
+  readonly confirmation: string;
+  readonly onClick: NonNullable<ButtonProps['onClick']>;
+};
+
+export function ConfirmButton({ confirmation, onClick, tone = 'neutral', ...props }: ConfirmProps): ReactNode {
+  return (
+    <Button {...props} type="button" variant="solid" tone={tone} data-agent-confirm={confirmation} onClick={onClick} />
+  );
+}

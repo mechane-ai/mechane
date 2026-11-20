@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { expect } from 'storybook/test';
+import { Details } from '../../../collections/src/index.ts';
 import { Panel, Stack, Text } from '../../../core/src/index.ts';
 import { createAgent } from '../../../foundations/src/agent/index.ts';
 import { ScatterPlot } from './scatter-plot.tsx';
@@ -14,7 +15,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'ScatterPlot displays supplied coordinates without computing an embedding or interpreting distance. Applications declare axis meanings, units, domains, and formatters. Point selection and range selection are controlled independently. Drag an empty area with a mouse to select a rectangle; the two range sliders provide the same coordinate selection with keyboard and touch. Touch gestures on the plot scroll the page. The data disclosure preserves every supplied label and coordinate. Supply no more than 1,000 points. Invalid or out-of-domain coordinates produce an explicit error rather than a clamped mark. Windowing or sampling belongs to the application and must be described beside the plot.',
+          'ScatterPlot displays supplied coordinates without computing an embedding or interpreting distance. Applications declare axis meanings, units, domains, and formatters. Inspecting a point exposes its formatted axis readout while selected tracks the selection accepted by the application. Use selectItem when the plot supplies selection. Point selection and range selection are controlled independently. Drag an empty area with a mouse to select a rectangle; the two range sliders provide the same coordinate selection with keyboard and touch. Touch gestures on the plot scroll the page. The data disclosure preserves every supplied label and coordinate. Supply no more than 1,000 points. Invalid or out-of-domain coordinates produce an explicit error rather than a clamped mark. Windowing or sampling belongs to the application and must be described beside the plot.',
       },
     },
   },
@@ -48,6 +49,8 @@ function Embedding(): ReactNode {
   const [selectedId, setSelectedId] = useState<string>();
   const [range, setRange] = useState<ScatterRange | null>(null);
 
+  const selectedPoint = points.find((point) => point.id === selectedId);
+
   const selectedCount =
     range === null
       ? 0
@@ -75,6 +78,9 @@ function Embedding(): ReactNode {
           rangeSelection={{ value: range, onChange: setRange, xStep: 0.1, yStep: 0.1, locale: 'en-US' }}
           emptyLabel="No projected points were supplied."
         />
+        {selectedPoint !== undefined && (
+          <Details aria-label="Selected point" items={[{ label: 'Passage', value: selectedPoint.label }]} />
+        )}
         <Text tone="muted">
           {range === null
             ? 'No range is selected.'
@@ -100,10 +106,22 @@ export const SelectPointsAndRanges: Story = {
       throw new Error('The agent could not discover the rendered scatter plot.');
     }
 
-    const inspected = await agent.act({ steps: [{ ref: chart.ref, action: 'setValue', args: ['sample-road'] }] });
+    const matches = await agent.query({ within: chart.ref, text: 'Road passage' });
+    const point = 'error' in matches ? undefined : matches[0]?.items?.[0];
+
+    if (point === undefined) {
+      throw new Error('The rendered road passage could not be discovered.');
+    }
+
+    const inspected = await agent.act({ steps: [{ ref: chart.ref, action: 'setValue', args: [point.value] }] });
 
     await expect(inspected.ok).toBe(true);
+    await expect(agent.snapshot().find((entry) => entry.ref === chart.ref)?.['readout']).toBe(point.label);
     await userEvent.keyboard('{Enter}');
+
+    const detail = agent.snapshot().find((entry) => entry.label === 'Selected point · Passage');
+
+    await expect(detail?.['value']).toBe('Road passage');
     await expect(canvas.getByRole('button', { name: /^Road passage,/ })).toHaveAttribute('aria-pressed', 'true');
   },
 };

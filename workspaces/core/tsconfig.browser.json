@@ -18,6 +18,10 @@
     "packages/browser/console-data/src",
     "packages/browser/console-views/src",
     "packages/browser/elements/packages",
+    "packages/browser/elements/recipes",
+    "packages/browser/elements/src",
+    "packages/browser/elements/bin",
+    "packages/browser/elements/scripts",
     "packages/browser/elements/.storybook",
     "packages/browser/elements/vite.config.ts"
   ]

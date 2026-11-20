@@ -21,7 +21,12 @@ import type { PlacementStyle } from '../../foundations/src/style-composition.ts'
 import { fieldStyles as styles, textareaAppearanceStyles } from './field-styles.ts';
 import type { TextareaAppearance } from './field-styles.ts';
 
-type FieldRootProps = ComponentProps<typeof SdkField> & { readonly xstyle?: PlacementStyle };
+type FieldRootProps = ComponentProps<typeof SdkField> & {
+  /** Hide this whole field, including its label, description and validation messages, from the agent. */
+  readonly isSensitive?: boolean;
+  readonly xstyle?: PlacementStyle;
+};
+
 type FieldLabelProps = ComponentProps<typeof SdkFieldLabel>;
 type FieldDescriptionProps = ComponentProps<typeof SdkFieldDescription>;
 type FieldErrorProps = ComponentProps<typeof SdkFieldError>;
@@ -44,10 +49,11 @@ type TextareaProps = TextControlProps<'textarea'> & {
   readonly appearance?: TextareaAppearance;
 };
 
-function FieldRoot({ className, style, xstyle, ...props }: FieldRootProps): ReactNode {
+function FieldRoot({ className, style, xstyle, isSensitive = false, ...props }: FieldRootProps): ReactNode {
   return (
     <SdkField
       {...props}
+      {...(isSensitive && { 'data-agent-hidden': '', 'data-agent-secret': '' })}
       {...mergeStyles({ className, style, styles: stylex.props(controlStyles.fieldRoot, xstyle) })}
     />
   );
