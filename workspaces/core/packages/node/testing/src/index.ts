@@ -28,6 +28,5 @@ export { setMachineLimit, setWorkspacePolicy } from './compute/set-machine-limit
 export { requireFixtures } from './fixtures.ts';
 export { startMcpFixture } from './fixtures/mcp.ts';
 export { startCommandGate } from './fixtures/command-gate.ts';
-export { readConsoleMessages, readEvents } from './historical-records.ts';
 export type { Scenario, ScenarioInput } from './types.ts';
 export { waitFor } from './wait-for.ts';

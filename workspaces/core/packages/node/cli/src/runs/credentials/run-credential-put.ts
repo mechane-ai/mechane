@@ -2,7 +2,7 @@ import type { CommandResult, RunFailure, RunInput } from '@mechane/cli-kernel';
 import type { WorkspaceAccess } from '@mechane/eval';
 import { WorkspaceId } from '@mechane/records';
 import { Effect } from 'effect';
-import { withWorkspace } from '../mechs/with-workspace.ts';
+import { withWorkspace } from '../with-workspace.ts';
 import { readCredentialFile } from './read-credential-file.ts';
 
 /** Sends file contents to the selected workspace while returning only credential metadata to command output. */

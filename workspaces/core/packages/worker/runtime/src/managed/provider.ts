@@ -209,6 +209,17 @@ function safeFailureReason(refusal: string | undefined, error: AssistantMessage,
   return 'The model provider rejected the request';
 }
 
+const TRANSIENT_RUNTIME_ERROR_PATTERN =
+  /NodeFenced|output gate refused|temporarily unavailable|fetch failed|reset|ECONNREFUSED|no db for/iu;
+
+function isTransientRuntimeError(error: unknown): boolean {
+  if (error instanceof Error) {
+    return TRANSIENT_RUNTIME_ERROR_PATTERN.test(error.message);
+  }
+
+  return TRANSIENT_RUNTIME_ERROR_PATTERN.test(String(error));
+}
+
 export function createManagedModels(owner: ManagedProviderOwner) {
   const { configuration } = owner;
 
@@ -237,6 +248,8 @@ export function createManagedModels(owner: ManagedProviderOwner) {
           reason = 'The pinned model settings are unavailable at the configured gateway';
         } else if (error instanceof UnsupportedManagedImages) {
           reason = 'The selected model does not accept image input';
+        } else if (isTransientRuntimeError(error)) {
+          reason = 'The model provider service is temporarily unavailable';
         }
 
         const message = failure(input.model, reason);

@@ -18,6 +18,7 @@ export const ChecksCommand = {
   Record: 'record',
   Compare: 'compare',
   Changed: 'changed',
+  CiPlan: 'ci-plan',
   Affected: 'affected',
   RunAffected: 'run-affected',
   RunTarget: 'run-target',

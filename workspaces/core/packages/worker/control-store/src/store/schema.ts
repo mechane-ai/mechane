@@ -1,13 +1,17 @@
-import { managedUsageMigration } from './managed-budget-schema.ts';
-import { agentMigrationSql } from './managed/agent-schema.ts';
-import { installedAllocationMigrationSql } from './managed/installed-allocations-schema.ts';
-import { installedEnvironmentMigrationSql } from './managed/installed-environment-schema.ts';
-import { memoryMigrationSql } from './managed/memory-schema.ts';
-import { managedOidcMigrationSql } from './managed/oidc-schema.ts';
-import { sessionMigrationSql } from './managed/session-schema.ts';
-import { skillMigrationSql } from './managed/skill-schema.ts';
-import { vaultMigrationSql } from './managed/vault-migration.ts';
-import { workerMigrationSql } from './managed/work-schema.ts';
+import { managedUsageMigration } from '@mechane/authority-store';
+import {
+  installedAllocationMigrationSql,
+  installedEnvironmentMigrationSql,
+  managedOidcMigrationSql,
+  memoryMigrationSql,
+  pluggableSandboxMigrationSql,
+  skillMigrationSql,
+  vaultMigrationSql,
+  workerMigrationSql,
+} from '@mechane/managed-store';
+import { agentMigrationSql } from './migrations/agent-schema.ts';
+import { decoupleManagedAgentsMigrationSql } from './migrations/decouple-managed-agents-schema.ts';
+import { sessionMigrationSql } from './migrations/session-schema.ts';
 
 export const DOMAIN_MIGRATIONS = [
   {
@@ -498,4 +502,6 @@ RETURNS boolean LANGUAGE sql VOLATILE SECURITY INVOKER AS $policy$
 $policy$;
 `,
   },
+  { version: 15, sql: pluggableSandboxMigrationSql },
+  { version: 16, sql: decoupleManagedAgentsMigrationSql },
 ] as const;

@@ -2,7 +2,7 @@ import type { CommandResult, RunFailure, RunInput } from '@mechane/cli-kernel';
 import type { WorkspaceAccess } from '@mechane/eval';
 import type { ExecutionAccessState } from '@mechane/protocol';
 import { Effect, Option } from 'effect';
-import { withWorkspace } from '../mechs/with-workspace.ts';
+import { withWorkspace } from '../with-workspace.ts';
 
 /** Shows public configuration and references, never resolved credentials. */
 export const runExecutionAccessShow = Effect.fn('runExecutionAccessShow')(function* ({

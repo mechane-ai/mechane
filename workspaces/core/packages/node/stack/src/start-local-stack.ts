@@ -16,8 +16,6 @@ import { localSandboxVariables, serverEnvironment } from './environment.ts';
 import { StackCleanupUnconfirmedError, StackStartupFailedError } from './errors.ts';
 import type { StackCleanupOptions } from './errors.ts';
 import { startFixtures } from './fixtures/start-fixtures.ts';
-import { applyConversationImport } from './fixtures/store/apply-conversation-import.ts';
-import { seedConversationImport } from './fixtures/store/conversation-import.ts';
 import { startGuestGateway } from './guest-gateway.ts';
 import type { GuestGateway } from './guest-gateway.ts';
 import { freeLocalOrigin } from './local-origin.ts';
@@ -32,7 +30,6 @@ import { openStackState } from './state.ts';
 import { registerToolAssets } from './tool-assets.ts';
 import type { ToolAssetRegistration } from './tool-assets.ts';
 import type {
-  ConversationImportScope,
   Environment,
   LocalFixtures,
   LocalProviders,
@@ -331,51 +328,6 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
     }
 
     await state.close({ shouldPreserveFiles: resources.shouldPreserveFiles === true });
-  }
-
-  async function prepareConversationImport(input: ConversationImportScope) {
-    const hasDisposableFixtures = options.mode === 'ephemeral' && resources.fixtures !== undefined;
-
-    if (!hasDisposableFixtures || resources.postgres === undefined || resources.application === undefined) {
-      throw new Error('Historical conversation preparation requires an active disposable fixture stack');
-    }
-
-    const configuredBearer = configuration.environment['MECHANE_SANDBOX_SERVICE_KEY'];
-
-    if (configuredBearer === undefined) {
-      throw new Error('Historical conversation import requires the configured internal service credential');
-    }
-
-    const bearer = configuredBearer;
-
-    const fixture = await seedConversationImport({
-      ...input,
-      container: resources.postgres.container,
-      environment,
-      migrationUrl: resources.postgres.migrationUrl,
-    });
-
-    async function applyMigration(): Promise<void> {
-      await applyConversationImport({
-        ...input,
-        fixture,
-        origin,
-        bearer,
-        directory: state.directory,
-        runProgram: async ({ name, arguments: programArguments, environment: programEnvironment }) => {
-          const file = databaseProgramPath({ isSource, directory: dirname(entry), name });
-
-          return await runCommand({
-            command: nodeExecutable,
-            args: [file, ...programArguments],
-            environment: { ...configuration.environment, ...programEnvironment },
-            timeoutMs: MIGRATION_TIMEOUT_MS,
-          });
-        },
-      });
-    }
-
-    return { runId: fixture.runId, publications: fixture.publications, applyMigration };
   }
 
   async function prepareSandboxTools() {
@@ -687,7 +639,6 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
         return resources.gateway.registerFixturePrefix(answer);
       },
       restart,
-      prepareConversationImport,
       stop,
     };
 

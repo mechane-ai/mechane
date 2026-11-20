@@ -1,13 +1,24 @@
-import type { ActorNamespace, RuntimeEnvironment } from '@mechane/runtime';
+import type { SlotNamespace } from '@mechane/agent-slot';
+import type { RuntimeEnvironment } from '@mechane/runtime';
 import type { SandboxServiceEnvironment } from '@mechane/sandbox';
 
 type AssetBinding = { readonly fetch: (request: Request) => Promise<Response> };
 
 export type WorkerEnvironment = RuntimeEnvironment &
-  SandboxServiceEnvironment & { readonly MECHS: ActorNamespace; readonly ASSETS: AssetBinding };
+  SandboxServiceEnvironment & {
+    readonly AGENT_SLOTS: SlotNamespace;
+    readonly SESSIONS: SlotNamespace;
+    readonly ASSETS: AssetBinding;
+    readonly HYPERDRIVE?: Hyperdrive;
+  };
 
 type WorkerBindingsInput = { readonly environment: WorkerEnvironment };
 
 export function loadWorkerBindings({ environment }: WorkerBindingsInput) {
-  return { actors: environment.MECHS, assets: environment.ASSETS };
+  return {
+    slots: environment.AGENT_SLOTS,
+    sessions: environment.SESSIONS,
+    assets: environment.ASSETS,
+    workspaceFiles: environment.WORKSPACE_FILES,
+  };
 }

@@ -1,5 +1,4 @@
 import { documentRun } from '../document-run.ts';
-import { runWorkspaceImport } from '../workspace-import/run-workspace-import.ts';
 import { runAllowanceShow } from './run-allowance-show.ts';
 import { runWorkspaceCreate } from './run-workspace-create.ts';
 import { runWorkspaceList } from './run-workspace-list.ts';
@@ -11,7 +10,6 @@ import { runWorkspacePolicyShow } from './run-workspace-policy-show.ts';
 
 /** Workspace commands share the document output lifecycle. */
 export const WORKSPACE_RUNS = {
-  'workspace import': documentRun({ run: runWorkspaceImport }),
   'workspace list': documentRun({ run: runWorkspaceList }),
   'workspace create': documentRun({ run: runWorkspaceCreate }),
   'workspace members': documentRun({ run: runWorkspaceMembers }),

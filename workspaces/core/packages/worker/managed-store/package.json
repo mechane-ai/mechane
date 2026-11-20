@@ -1,0 +1,17 @@
+{
+  "name": "@mechane/managed-store",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@mechane/authority-store": "workspace:*",
+    "@mechane/protocol": "workspace:*",
+    "@mechane/records": "workspace:*",
+    "@mechane/sandbox-provider": "workspace:*",
+    "effect": "4.0.7",
+    "fflate": "0.8.3",
+    "yaml": "2.9.1"
+  }
+}

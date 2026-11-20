@@ -18,7 +18,6 @@ export const DEFAULT_ORIGIN = 'https://mechane.ai';
  */
 export const ErrorCode = {
   WorkspaceSelectionRefused: 'WorkspaceSelectionRefused',
-  SandboxMaintenanceFailed: 'SandboxMaintenanceFailed',
   UsageInvalid: 'UsageInvalid',
   OriginUnreachable: 'OriginUnreachable',
   RequestTimedOut: 'RequestTimedOut',

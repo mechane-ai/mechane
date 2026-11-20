@@ -1,6 +1,6 @@
 import { ArtifactDigest, sha256Hex } from '@mechane/program';
-import { Release } from '@mechane/protocol';
 import { GitCommit } from '@mechane/records';
+import { Release } from '@mechane/releases';
 import { Record, Schema } from 'effect';
 import { ASSET_PATTERN, QUALIFICATION_FORMAT_VERSION } from './constants.ts';
 

@@ -1,4 +1,4 @@
-import { CliTarget, RELEASE, ReleaseAsset, releaseBinaryName } from '@mechane/protocol';
+import { CliTarget, RELEASE, ReleaseAsset, releaseBinaryName } from '@mechane/releases';
 import { Effect, Record } from 'effect';
 import { join } from 'node:path';
 import { DistributionStep } from '../constants.ts';

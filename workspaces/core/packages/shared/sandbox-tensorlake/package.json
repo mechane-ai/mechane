@@ -1,0 +1,14 @@
+{
+  "name": "@mechane/sandbox-tensorlake",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@mechane/records": "workspace:*",
+    "@mechane/sandbox-provider": "workspace:*",
+    "@mechane/utilities": "workspace:*",
+    "effect": "4.0.7"
+  }
+}

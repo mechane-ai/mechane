@@ -1,6 +1,6 @@
 import type { CommandResult, RunFailure, RunInput } from '@mechane/cli-kernel';
 import { Effect } from 'effect';
-import { withWorkspace } from '../mechs/with-workspace.ts';
+import { withWorkspace } from '../with-workspace.ts';
 
 /** Removal targets the selected shared workspace while the service preserves its final owner. */
 export const runWorkspaceMemberRemove = Effect.fn('runWorkspaceMemberRemove')(function* ({

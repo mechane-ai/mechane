@@ -10,8 +10,10 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "1.10.0",
+    "@mechane/presentation": "workspace:*",
     "@mechane/protocol": "workspace:*",
     "@mechane/records": "workspace:*",
+    "@mechane/releases": "workspace:*",
     "effect": "4.0.7"
   }
 }

@@ -1,9 +1,17 @@
 import { isWellFormedText, RecordText, wireStruct, WorkspaceId } from '@mechane/records';
 import { Schema } from 'effect';
 import { WireTime } from '../../schemas.ts';
-import { IntegrationSecretReference } from '../connections/schemas.ts';
 
 const CREDENTIAL_MAX_CHARS = 65_536;
+const SECRET_REFERENCE_MAX_CHARS = 128;
+
+/** A reference selects an operator-configured secret within the current workspace. */
+export const IntegrationSecretReference = Schema.NonEmptyString.check(
+  Schema.isMaxLength(SECRET_REFERENCE_MAX_CHARS),
+  Schema.isPattern(/^[a-zA-Z][a-zA-Z0-9_-]*$/u),
+);
+
+export type IntegrationSecretReference = typeof IntegrationSecretReference.Type;
 
 /** Credential input is redacted before handlers receive it and bounded before encryption. */
 export const CredentialValue = Schema.RedactedFromValue(

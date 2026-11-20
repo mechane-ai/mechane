@@ -1,18 +1,15 @@
 import { Button } from '@mechane-ai/elements';
-import { EmptyState, Notice } from '@mechane-ai/elements/feedback';
+import { Notice } from '@mechane-ai/elements/feedback';
 import { createConsoleData, isStorageFailure, problemMessage } from '@mechane/console-data';
 import type { ConsoleData, ConsoleDataOwner, ViewerSession } from '@mechane/console-data';
 import {
-  ArchivedMechListPlaceholder,
   ConsoleShell,
   ConversationPlaceholder,
   EvidencePagePlaceholder,
   ManagedEvidenceListPlaceholder,
   ManagedListPlaceholder,
-  MechPagePlaceholder,
 } from '@mechane/console-views';
 import type { Workspace } from '@mechane/protocol';
-import { useRouterState } from '@tanstack/react-router';
 import {
   Activity,
   useCallback,
@@ -31,10 +28,7 @@ import { MechAppearanceProvider } from './mech-appearance.tsx';
 import { NavigationPreferenceProvider } from './navigation-preferences.tsx';
 import { readReaderPositions, restoreReaderPositions } from './navigation.tsx';
 import { ResourceView } from './resource.tsx';
-import { ArchivedMechsScreen } from './screens/archived-mechs.tsx';
 import { ManagedScreen } from './screens/managed.tsx';
-import { MechScreen } from './screens/mech.tsx';
-import { selectedTraceTab } from './screens/trace.tsx';
 import { WorkspaceSettings } from './screens/workspace-settings.tsx';
 import type { ConsoleLocation, ConsoleNavigation, ReaderPosition } from './types.ts';
 import { useScreenLifetime } from './use-screen-lifetime.ts';
@@ -54,7 +48,6 @@ type WorkspaceRuntimeState =
 
 type WorkspacePosition = {
   readonly href: string;
-  readonly pages: string | undefined;
   readonly focus: HTMLElement | undefined;
   readonly focusSelector: string | undefined;
   readonly readers: ReadonlyArray<ReaderPosition>;
@@ -103,20 +96,6 @@ function workspacePlaceholder(selected: ConsoleLocation): ReactNode {
     return <ManagedEvidenceListPlaceholder />;
   }
 
-  if (selected.mech !== undefined) {
-    return (
-      <MechPagePlaceholder
-        view={selected.view ?? 'runs'}
-        hasFocusedRun={selected.turn !== undefined}
-        traceTab={selectedTraceTab(selected)}
-      />
-    );
-  }
-
-  if (selected.isArchiveIndex === true) {
-    return <ArchivedMechListPlaceholder />;
-  }
-
   if (selected.session !== undefined) {
     return <ConversationPlaceholder />;
   }
@@ -133,7 +112,7 @@ export function WorkspaceScreen(props: WorkspaceScreenProps): ReactNode {
         <WorkspaceDraftProvider
           scope={
             location.agent === undefined
-              ? location.mech
+              ? undefined
               : JSON.stringify([location.agent, location.session, location.thread])
           }
         >
@@ -152,8 +131,6 @@ function WorkspaceRuntime({
   navigate,
   onSessionEnded,
 }: WorkspaceScreenProps): ReactNode {
-  const pages = useRouterState({ select: (state) => state.location.state.consolePages });
-
   const [runtime, setRuntime] = useState<WorkspaceRuntimeState>({ kind: 'pending', data: undefined });
   const [attempt, setAttempt] = useState(0);
   const current = useRef<ConsoleData | undefined>(undefined);
@@ -187,7 +164,7 @@ function WorkspaceRuntime({
       principalId: session.principal.id,
       workspace,
       onSessionEnded,
-      initialRequests: initialReads(location, pages, { role: workspace.role }),
+      initialRequests: initialReads(location),
       signal: controller.signal,
     }).then(
       async (data) => {
@@ -216,7 +193,6 @@ function WorkspaceRuntime({
   const savePosition = useEffectEvent(() => {
     position.current = {
       href: globalThis.location.href,
-      pages: JSON.stringify(pages),
       focus: document.activeElement instanceof HTMLElement ? document.activeElement : undefined,
       focusSelector: focusSelector(document.activeElement),
       readers: readReaderPositions(),
@@ -266,7 +242,7 @@ function WorkspaceRuntime({
       return;
     }
 
-    if (target.href !== globalThis.location.href || target.pages !== JSON.stringify(pages)) {
+    if (target.href !== globalThis.location.href) {
       position.current = undefined;
 
       return;
@@ -275,7 +251,7 @@ function WorkspaceRuntime({
     const controller = new AbortController();
     const frames = new Set<number>();
     const data = runtime.data;
-    const requests = initialReads(location, pages, { role: data.workspace.role, selection: 'primary' });
+    const requests = initialReads(location);
     const restoreTarget = target;
 
     function restore(): void {
@@ -331,7 +307,7 @@ function WorkspaceRuntime({
     }
 
     return stop;
-  }, [location, pages, runtime]);
+  }, [location, runtime]);
 
   function replace(previous: ConsoleData, data: ConsoleData): void {
     if (current.current !== previous) {
@@ -349,14 +325,13 @@ function WorkspaceRuntime({
   const selected = { ...location, workspace: workspace.id };
 
   const placeholder = workspacePlaceholder(selected);
-  const isNativeRun = selected.mech !== undefined && selected.turn !== undefined;
 
   return (
     <ConsoleShell
       workspaces={session.workspaces}
       workspaceId={workspace.id}
       onWorkspace={(id) => navigate({ workspace: id })}
-      shouldFocus={isNativeRun || selected.artifact !== undefined}
+      shouldFocus={selected.artifact !== undefined}
       homeLink={
         runtime.data === undefined ? null : (
           <Activity mode={runtime.kind === 'ready' ? 'visible' : 'hidden'}>
@@ -378,7 +353,6 @@ function WorkspaceRuntime({
             onRecoveryStarted={() => {
               position.current = {
                 href: globalThis.location.href,
-                pages: JSON.stringify(pages),
                 focus: document.activeElement instanceof HTMLElement ? document.activeElement : undefined,
                 focusSelector: focusSelector(document.activeElement),
                 readers: readReaderPositions(),
@@ -418,7 +392,6 @@ function WorkspaceContent({
   const subscribeHealth = useCallback((notify: () => void) => data.subscribeHealth(notify), [data]);
   const readHealth = useCallback(() => data.readHealth(), [data]);
   const health = useSyncExternalStore(subscribeHealth, readHealth, readHealth);
-  const pages = useRouterState({ select: (state) => state.location.state.consolePages });
   const shouldOfferRecovery = health.issue?.kind === 'failed' && !health.isRevoked;
 
   const [savedRecovery, setRecovery] = useState<{
@@ -434,11 +407,11 @@ function WorkspaceContent({
   }
 
   const isActive = useScreenLifetime();
-  const recoveryTarget = useRef({ location, pages });
+  const recoveryTarget = useRef(location);
 
   useLayoutEffect(() => {
-    recoveryTarget.current = { location, pages };
-  }, [location, pages]);
+    recoveryTarget.current = location;
+  }, [location]);
 
   function recover(): void {
     if (recovery.isPending) {
@@ -448,7 +421,7 @@ function WorkspaceContent({
     onRecoveryStarted();
     setRecovery({ data, isPending: true });
 
-    const requests = initialReads(location, pages, { role: data.workspace.role });
+    const requests = initialReads(location);
 
     async function openReplacement(): Promise<ConsoleData> {
       const replacement = await data.recover(requests);
@@ -456,11 +429,7 @@ function WorkspaceContent({
       try {
         while (isActive()) {
           const target = recoveryTarget.current;
-
-          const primary = initialReads(target.location, target.pages, {
-            role: replacement.workspace.role,
-            selection: 'primary',
-          });
+          const primary = initialReads(target);
 
           await Promise.all(primary.map((request) => replacement.ready(request)));
 
@@ -532,23 +501,15 @@ function WorkspaceContent({
           {recovery.problem !== undefined && <> {problemMessage(recovery.problem)}</>}
         </Notice>
       )}
-      {location.mech === undefined ? (
-        location.view === 'definition' ? (
-          <WorkspaceSettings data={data} session={session} workspace={data.workspace} />
-        ) : location.isArchiveIndex === true ? (
-          <ArchivedMechsScreen data={data} location={location} navigate={navigate} />
-        ) : (
-          <ManagedScreen
-            key={JSON.stringify([location.agent, location.session, location.thread])}
-            data={data}
-            location={location}
-            navigate={navigate}
-          />
-        )
-      ) : data.workspace.role === 'owner' ? (
-        <MechScreen key={location.mech} data={data} mechId={location.mech} location={location} navigate={navigate} />
+      {location.view === 'definition' ? (
+        <WorkspaceSettings data={data} session={session} workspace={data.workspace} />
       ) : (
-        <EmptyState title="Workspace owner access required" />
+        <ManagedScreen
+          key={JSON.stringify([location.agent, location.session, location.thread])}
+          data={data}
+          location={location}
+          navigate={navigate}
+        />
       )}
     </>
   );

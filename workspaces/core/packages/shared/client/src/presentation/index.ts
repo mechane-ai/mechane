@@ -9,4 +9,4 @@ export {
   PresentationSpecification,
   createPresentationOutput,
   toPresentationCard,
-} from '@mechane/protocol/presentation';
+} from '@mechane/presentation';

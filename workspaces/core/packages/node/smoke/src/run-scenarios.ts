@@ -1,6 +1,7 @@
 import type { LocalStack } from '@mechane/stack';
 import type { Scenario } from '@mechane/testing';
 import type { ScenarioFamily } from './catalog.ts';
+import type { SmokeShard } from './shards.ts';
 
 type ScenarioSelection = {
   readonly catalog: ReadonlyArray<Scenario>;
@@ -9,6 +10,7 @@ type ScenarioSelection = {
 };
 
 type RunScenariosInput = Pick<ScenarioSelection, 'catalog'> & { readonly stack: LocalStack };
+type ShardSummaryInput = Pick<ScenarioSelection, 'catalog'> & { readonly shard: SmokeShard };
 
 const SCENARIO_DEADLINE_MS = 180_000;
 
@@ -20,6 +22,17 @@ export function writeCatalogSummary({ catalog }: Pick<RunScenariosInput, 'catalo
   };
 
   process.stdout.write(`SMOKE_CATALOG_SUMMARY ${JSON.stringify(summary)}\n`);
+}
+
+export function writeShardSummary({ shard, catalog }: ShardSummaryInput): void {
+  const summary = {
+    shard,
+    count: catalog.length,
+    guarantees: catalog.map(({ guarantee }) => guarantee),
+    families: [...new Set(catalog.map(({ family }) => family))],
+  };
+
+  process.stdout.write(`SMOKE_SHARD_SUMMARY ${JSON.stringify(summary)}\n`);
 }
 
 export function selectScenarios({ catalog, match, family }: ScenarioSelection): ReadonlyArray<Scenario> {

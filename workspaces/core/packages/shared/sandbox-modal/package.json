@@ -1,0 +1,13 @@
+{
+  "name": "@mechane/sandbox-modal",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@mechane/records": "workspace:*",
+    "@mechane/sandbox-provider": "workspace:*",
+    "effect": "4.0.7"
+  }
+}

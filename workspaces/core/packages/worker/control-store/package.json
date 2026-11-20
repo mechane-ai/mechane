@@ -6,14 +6,8 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@mechane/protocol": "workspace:*",
-    "@mechane/records": "workspace:*",
-    "effect": "4.0.7",
-    "fflate": "0.8.3",
-    "pg": "8.23.1",
-    "yaml": "2.9.1"
-  },
-  "devDependencies": {
-    "@types/pg": "8.23.1"
+    "@mechane/authority-store": "workspace:*",
+    "@mechane/managed-store": "workspace:*",
+    "effect": "4.0.7"
   }
 }

@@ -1,22 +1,31 @@
 locals {
-  installation = jsondecode(file("${path.module}/installation.json"))
-  origin       = "https://${var.domain.hostname}"
+  installation             = jsondecode(file("${path.module}/installation.json"))
+  origin                   = "https://${var.domain.hostname}"
+  use_cloudflare_sandboxes = var.sandboxes.provider == "cloudflare"
 
-  variables = merge(local.installation.defaults, var.settings, {
-    MECHANE_ORIGIN                   = local.origin
-    MECHANE_RUNTIME_ORIGIN           = local.origin
-    MECHANE_SANDBOX_ORIGIN           = local.origin
-    MECHANE_INSTALLATION_HOSTS       = jsonencode(setunion(var.domain.aliases, [var.domain.hostname]))
-    MECHANE_WORKER_REVISION          = local.installation.public_commit
+  sandbox_variables = local.use_cloudflare_sandboxes ? {
     MECHANE_SANDBOX_PROVIDER         = "container"
-    MECHANE_CONTAINER_IMAGE          = mechane_cloudflare_container_image.guest.image
+    MECHANE_CONTAINER_IMAGE          = mechane_cloudflare_container_image.guest[0].image
     MECHANE_CONTAINER_INSTANCE_TYPE  = var.sandboxes.instance_type
-    MECHANE_MAX_MACHINES             = tostring(var.sandboxes.max_instances)
     MECHANE_SANDBOX_HOSTS            = jsonencode(var.sandboxes.additional_hosts)
     MECHANE_SANDBOX_TOOLS            = jsonencode(var.sandboxes.additional_tools)
     MECHANE_SANDBOX_WEB_ACCESS       = var.sandboxes.web_access
     MECHANE_BROWSER_SANDBOX_DISABLED = tostring(var.sandboxes.browser_sandbox_disabled)
-  })
+    } : merge(
+    { MECHANE_SANDBOX_PROVIDER = var.sandboxes.provider },
+    var.sandboxes.image != null ? { MECHANE_SANDBOX_IMAGE = var.sandboxes.image } : {},
+    var.sandboxes.modal_bridge_url != null ? { MECHANE_MODAL_BRIDGE_URL = var.sandboxes.modal_bridge_url } : {},
+    var.sandboxes.tensorlake_api_url != null ? { MECHANE_TENSORLAKE_API_URL = var.sandboxes.tensorlake_api_url } : {},
+  )
+
+  variables = merge(local.installation.defaults, var.settings, {
+    MECHANE_ORIGIN             = local.origin
+    MECHANE_RUNTIME_ORIGIN     = local.origin
+    MECHANE_SANDBOX_ORIGIN     = local.origin
+    MECHANE_INSTALLATION_HOSTS = jsonencode(setunion(var.domain.aliases, [var.domain.hostname]))
+    MECHANE_WORKER_REVISION    = local.installation.public_commit
+    MECHANE_MAX_MACHINES       = tostring(var.sandboxes.max_instances)
+  }, local.sandbox_variables)
 }
 
 resource "cloudflare_r2_bucket" "workspace_files" {
@@ -69,6 +78,11 @@ resource "mechane_cloudflare_worker_release" "release" {
       bucket_name  = cloudflare_r2_bucket.workspace_files.name
       jurisdiction = var.storage.jurisdiction == "default" ? null : var.storage.jurisdiction
     }],
+    var.database.hyperdrive_id != null && var.database.hyperdrive_id != "" ? [{
+      name = "HYPERDRIVE"
+      type = "hyperdrive"
+      id   = var.database.hyperdrive_id
+    }] : [],
     [for name, value in local.variables : { name = name, type = "plain_text", text = value }],
     [for name, secret_name in var.secrets.bindings : {
       name        = name
@@ -95,10 +109,28 @@ resource "mechane_cloudflare_worker_release" "release" {
       condition     = !local.installation.is_preview
       error_message = "A local validation preview cannot be deployed. Use a published release archive."
     }
+    precondition {
+      condition     = var.sandboxes.provider == "none" || contains(keys(var.secrets.bindings), "MECHANE_SANDBOX_SERVICE_KEY")
+      error_message = "Supply MECHANE_SANDBOX_SERVICE_KEY in var.secrets.bindings whenever sandboxes.provider is not none."
+    }
+    precondition {
+      condition     = var.sandboxes.provider != "tensorlake" || contains(keys(var.secrets.bindings), "MECHANE_TENSORLAKE_API_KEY")
+      error_message = "Supply MECHANE_TENSORLAKE_API_KEY in var.secrets.bindings when sandboxes.provider is tensorlake."
+    }
+    precondition {
+      condition     = var.sandboxes.provider != "modal" || (var.sandboxes.modal_bridge_url != null && contains(keys(var.secrets.bindings), "MECHANE_MODAL_BRIDGE_TOKEN"))
+      error_message = "Supply sandboxes.modal_bridge_url and MECHANE_MODAL_BRIDGE_TOKEN in var.secrets.bindings when sandboxes.provider is modal."
+    }
   }
 }
 
+moved {
+  from = mechane_cloudflare_container_image.guest
+  to   = mechane_cloudflare_container_image.guest[0]
+}
+
 resource "mechane_cloudflare_container_image" "guest" {
+  count         = local.use_cloudflare_sandboxes ? 1 : 0
   account_id    = var.account_id
   repository    = "${var.name}-guest"
   source_file   = "${dirname(var.qualification.path)}/${basename(local.installation.guest.url)}"
@@ -114,7 +146,13 @@ resource "cloudflare_workers_cron_trigger" "control_delivery" {
   depends_on  = [mechane_cloudflare_worker_release.release]
 }
 
+moved {
+  from = mechane_cloudflare_machine_application.machines
+  to   = mechane_cloudflare_machine_application.machines[0]
+}
+
 resource "mechane_cloudflare_machine_application" "machines" {
+  count                       = local.use_cloudflare_sandboxes ? 1 : 0
   account_id                  = var.account_id
   name                        = coalesce(var.sandboxes.application_name, "${var.name}-machines")
   durable_object_namespace_id = mechane_cloudflare_worker_release.release.durable_object_namespaces["MachineObject"]
@@ -128,5 +166,5 @@ resource "cloudflare_workers_custom_domain" "service" {
   hostname   = each.value
   zone_id    = var.domain.zone_id
   service    = cloudflare_worker.service.name
-  depends_on = [mechane_cloudflare_machine_application.machines]
+  depends_on = [mechane_cloudflare_worker_release.release, mechane_cloudflare_machine_application.machines]
 }

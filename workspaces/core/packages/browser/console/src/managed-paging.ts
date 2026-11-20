@@ -19,14 +19,7 @@ export function useManagedPaging(location: ConsoleLocation, workspaceId: string)
       return { managedPages: pages };
     }
 
-    if (location.isArchiveIndex === true) {
-      void navigate({
-        to: '/workspaces/$workspaceId/archives',
-        params: { workspaceId },
-        search: { ...tableSearch(location), ...(cursor !== null && { page: cursor }) },
-        state,
-      });
-    } else if (location.agent === undefined) {
+    if (location.agent === undefined) {
       void navigate({
         to: '/',
         search: { ...tableSearch(location), workspace: workspaceId, ...(cursor === null ? {} : { page: cursor }) },

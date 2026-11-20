@@ -1,4 +1,4 @@
-import { INSTALL_FOLDER_VARIABLE } from '@mechane/protocol';
+import { INSTALL_FOLDER_VARIABLE } from '@mechane/releases';
 import { GUEST_VARIABLES } from '@mechane/sandbox-wire';
 import { Option, Record } from 'effect';
 import type { ReferenceNames } from './schemas.ts';

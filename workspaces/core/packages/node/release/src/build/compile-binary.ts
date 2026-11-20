@@ -1,7 +1,7 @@
 import { finishedProcess, StepSubject } from '@mechane/program';
 import type { ProcessFailed } from '@mechane/program';
-import { releaseBinaryKey, ReleaseStamp } from '@mechane/protocol';
-import type { CliTarget, Release, ReleaseManifest } from '@mechane/protocol';
+import { releaseBinaryKey, ReleaseStamp } from '@mechane/releases';
+import type { CliTarget, Release, ReleaseManifest } from '@mechane/releases';
 import { Duration, Effect, Schema } from 'effect';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';

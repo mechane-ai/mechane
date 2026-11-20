@@ -9,12 +9,12 @@ import {
 } from '@mechane/console-cache';
 import type { ConsoleStorageHealth } from '@mechane/console-cache';
 import { MembershipRole } from '@mechane/protocol';
-import type { ConsoleMessagePage, Workspace } from '@mechane/protocol';
+import type { Workspace } from '@mechane/protocol';
 import { PrincipalId, WorkspaceId } from '@mechane/records';
 import { DbClient } from '@tanstack/db';
 import { QueryClient, QueryObserver } from '@tanstack/query-core';
 import type { QueryFunctionContext, QueryKey } from '@tanstack/query-core';
-import { Duration, MutableRef, Option, Result, Schema } from 'effect';
+import { Duration, MutableRef, Result, Schema } from 'effect';
 import { createApi, readFailureScope } from './api.ts';
 import {
   createCanonicalCollections,
@@ -23,8 +23,6 @@ import {
   materializeCanonicalCollections,
   upsertRows,
 } from './collections.ts';
-import { createCommands } from './commands.ts';
-import { applyRead, fetchRead } from './load-read.ts';
 import { containsRemovedResource, purgeManagedResource } from './managed-access.ts';
 import { createManagedCommands } from './managed-commands.ts';
 import { ManagedSessionUnavailable } from './managed-errors.ts';
@@ -32,12 +30,10 @@ import type { ManagedAttention, ManagedHistoryPage } from './managed-reads.ts';
 import { loadManagedAttention, loadManagedHistory, loadManagedRead } from './managed-reads.ts';
 import { createReadDiagnostics } from './read-diagnostics.ts';
 import { waitForRead } from './read-ready.ts';
-import { recordKey } from './records.ts';
 import {
   decodeReadRequest,
   isArtifactRead,
   isManagedDetail,
-  isManagedRead,
   isSessionEvidenceRead,
   isTabRead,
   readRequests,
@@ -55,13 +51,10 @@ import type { ViewerSession } from './session.ts';
 const REFRESH_MS = Duration.toMillis('15 seconds');
 const CACHE_MS = Duration.toMillis('1 minute');
 const ACTIVITY_REFRESH_MS = Duration.toMillis('5 seconds');
-const ALLOWANCE_REFRESH_MS = Duration.toMillis('30 seconds');
 // One preceding read can include its HTTP budget and two prepare/accept cache phases.
 const READ_ADMISSION_PHASES = 5;
 const READ_ADMISSION_TIMEOUT_MS = CONSOLE_STORAGE_OPERATION_TIMEOUT_MS * READ_ADMISSION_PHASES;
 const CLEAR_SCOPE_TIMEOUT_MS = Duration.toMillis('3 seconds');
-
-const ACTIVITY_READ_KINDS: ReadonlyArray<ReadKind> = ['events', 'turns', 'mech', 'turnEvents', 'trace'];
 
 class UnsupportedReadDemand extends Schema.TaggedError<UnsupportedReadDemand>()('UnsupportedReadDemand', {}) {}
 class ScopeAdmissionEnded extends Schema.TaggedError<ScopeAdmissionEnded>()('ScopeAdmissionEnded', {}) {}
@@ -112,43 +105,27 @@ export function createConsoleDataOwner() {
 export type ConsoleDataOwner = ReturnType<typeof createConsoleDataOwner>;
 
 function readQueryKey(scope: string, request: ReadRequest): QueryKey {
-  const owner = 'agentId' in request ? request.agentId : 'mechId' in request ? request.mechId : 'workspace';
+  const owner = 'agentId' in request ? request.agentId : 'workspace';
 
   return [scope, 'read', request.kind, owner, request.id];
 }
 
 function readInterval(request: ReadRequest): number | false {
   switch (request.kind) {
-    case 'archive':
     case 'agents':
     case 'managedEnvironments':
-    case 'mechs':
       return false;
     case 'agent':
     case 'sessions':
     case 'session':
     case 'threads':
+    case 'sessionEvidence':
+    case 'sessionArtifact':
       return REFRESH_MS;
     case 'attention':
       return ACTIVITY_REFRESH_MS;
     case 'sessionEvents':
       return request.page === null && request.through === null ? ACTIVITY_REFRESH_MS : false;
-    case 'events':
-      return request.before === null ? ACTIVITY_REFRESH_MS : false;
-    case 'turnEvents':
-      return ACTIVITY_REFRESH_MS;
-    case 'allowance':
-      return ALLOWANCE_REFRESH_MS;
-    case 'mech':
-    case 'turns':
-    case 'trace':
-    case 'evidence':
-    case 'evidenceArtifact':
-    case 'sessionEvidence':
-    case 'sessionArtifact':
-    case 'environment':
-    case 'environmentProcess':
-      return REFRESH_MS;
   }
 }
 
@@ -295,11 +272,7 @@ async function createData(options: CreateConsoleData, workspaceOwner: WorkspaceO
     { readonly resource: ReadRequest<'agent' | 'session'>; readonly error: unknown }
   >();
 
-  const revokedMechs = new Map<string, unknown>();
-  const revokedTurns = new Map<string, unknown>();
   const revokedReads = MutableRef.make(new Map<string, unknown>());
-  const mechLifetimes = createOwnerSignals();
-  const turnLifetimes = createOwnerSignals();
   const readLifetimes = createOwnerSignals();
   const pendingWrites = new Set<Promise<unknown>>();
   const pendingRevocations = MutableRef.make(new Map<string, Promise<void>>());
@@ -467,14 +440,6 @@ async function createData(options: CreateConsoleData, workspaceOwner: WorkspaceO
       }
     }
 
-    if ('mechId' in request) {
-      signals.push(mechLifetimes.signal(request.mechId));
-
-      if ('turnId' in request) {
-        signals.push(turnLifetimes.signal(recordKey(request.mechId, request.turnId)));
-      }
-    }
-
     return AbortSignal.any(signals);
   }
 
@@ -505,17 +470,6 @@ async function createData(options: CreateConsoleData, workspaceOwner: WorkspaceO
 
   async function readTabPage(request: ReadRequest<TabReadKind>, requestSignal: AbortSignal) {
     switch (request.kind) {
-      case 'archive':
-        return await api(
-          'listConsoleMessages',
-          {
-            workspaceId: WorkspaceId.make(workspace.id),
-            mechId: request.mechId,
-            beforeSequence: Option.fromNullishOr(request.before),
-            afterSequence: Option.none(),
-          },
-          requestSignal,
-        );
       case 'attention':
         return await loadManagedAttention(managedClient, request, requestSignal);
       case 'sessionEvents':
@@ -553,58 +507,32 @@ async function createData(options: CreateConsoleData, workspaceOwner: WorkspaceO
     const admission = AbortSignal.any([requestSignal, AbortSignal.timeout(READ_ADMISSION_TIMEOUT_MS)]);
 
     async function loadScoped(scoped: ReadRequest<Exclude<ReadKind, TabReadKind>>): Promise<ReadReceipt> {
-      if (isManagedRead(scoped)) {
-        return await loadManagedRead({
-          client: managedClient,
-          workspaceId: WorkspaceId.make(workspace.id),
-          request: scoped,
-          tables,
-          signal: requestSignal,
-          canList: (candidateId) => {
-            switch (scoped.kind) {
-              case 'agents':
-                return !removedManaged.has(readRequests.agent(candidateId).id);
-              case 'sessions':
-                return !removedManaged.has(readRequests.session(scoped.agentId, candidateId).id);
-              case 'sessionEvidence':
-                return !revokedReads.current.has(
-                  readRequests.sessionArtifact(scoped.agentId, scoped.sessionId, candidateId).id,
-                );
-              case 'agent':
-              case 'managedEnvironments':
-              case 'session':
-              case 'sessionArtifact':
-              case 'threads':
-                return true;
-            }
-          },
-          writeRows: (input) => trackWrite(writeRows(input), input.signal),
-        });
-      }
-
-      const answer = await fetchRead({ api, workspaceId: workspace.id, request: scoped, signal: requestSignal });
-
-      requestSignal.throwIfAborted();
-
-      if ('mechId' in scoped) {
-        revokedMechs.delete(scoped.mechId);
-
-        if ('turnId' in scoped) {
-          revokedTurns.delete(recordKey(scoped.mechId, scoped.turnId));
-        }
-      }
-
-      return await trackWrite(
-        applyRead({
-          writeRows,
-          tables,
-          answer,
-          signal: requestSignal,
-          isMechAllowed: (mechId) => !revokedMechs.has(mechId),
-          isTurnAllowed: (key) => !revokedTurns.has(key),
-        }),
-        requestSignal,
-      );
+      return await loadManagedRead({
+        client: managedClient,
+        workspaceId: WorkspaceId.make(workspace.id),
+        request: scoped,
+        tables,
+        signal: requestSignal,
+        canList: (candidateId) => {
+          switch (scoped.kind) {
+            case 'agents':
+              return !removedManaged.has(readRequests.agent(candidateId).id);
+            case 'sessions':
+              return !removedManaged.has(readRequests.session(scoped.agentId, candidateId).id);
+            case 'sessionEvidence':
+              return !revokedReads.current.has(
+                readRequests.sessionArtifact(scoped.agentId, scoped.sessionId, candidateId).id,
+              );
+            case 'agent':
+            case 'managedEnvironments':
+            case 'session':
+            case 'sessionArtifact':
+            case 'threads':
+              return true;
+          }
+        },
+        writeRows: (input) => trackWrite(writeRows(input), input.signal),
+      });
     }
 
     return await navigator.locks.request(lock, { signal: admission }, async () => {
@@ -626,21 +554,6 @@ async function createData(options: CreateConsoleData, workspaceOwner: WorkspaceO
         );
 
         notifyReads();
-
-        if (request.kind === 'mechs') {
-          for (const key of receipt.keys) {
-            const summary = tables.mechs.get(key);
-            const definition = tables.mechDefinitions.get(key);
-
-            if (
-              summary !== undefined &&
-              definition !== undefined &&
-              summary.value.revision > definition.value.revision
-            ) {
-              void Promise.allSettled([refreshActive(readRequests.mech(key))]);
-            }
-          }
-        }
 
         return Date.now();
       } catch (error) {
@@ -680,58 +593,6 @@ async function createData(options: CreateConsoleData, workspaceOwner: WorkspaceO
       switch (failureScope) {
         case 'scope':
           endSession(error);
-
-          break;
-        case 'mech':
-          if ('mechId' in request) {
-            revokedMechs.set(request.mechId, error);
-            mechLifetimes.abort(request.mechId);
-            forgetTabReads((candidate) => candidate.kind === 'archive' && candidate.mechId === request.mechId);
-            notifyReads();
-
-            if (shouldBroadcast) {
-              broadcastInvalidation({
-                kind: INVALIDATION_KIND.Mech,
-                workspaceId: WorkspaceId.make(workspace.id),
-                mechId: request.mechId,
-              });
-            }
-
-            const revocation = revokeMech(request.mechId);
-
-            pendingRevocations.current.set(request.mechId, revocation);
-            await revocation;
-          }
-
-          break;
-        case 'turn':
-          if ('turnId' in request) {
-            const key = recordKey(request.mechId, request.turnId);
-
-            revokedTurns.set(key, error);
-            turnLifetimes.abort(key);
-            notifyReads();
-
-            if (shouldBroadcast) {
-              broadcastInvalidation({
-                kind: INVALIDATION_KIND.Turn,
-                workspaceId: WorkspaceId.make(workspace.id),
-                mechId: request.mechId,
-                turnId: request.turnId,
-              });
-            }
-
-            const revocation = revokeTurn(request);
-
-            pendingRevocations.current.set(key, revocation);
-            await revocation;
-          }
-
-          break;
-        case 'artifact':
-          if (request.kind === 'evidenceArtifact') {
-            await invalidateArtifact({ request, error, shouldBroadcast });
-          }
 
           break;
         case undefined:
@@ -922,11 +783,7 @@ async function createData(options: CreateConsoleData, workspaceOwner: WorkspaceO
   const runtime = await initialized;
 
   for (const request of options.initialRequests) {
-    const isOperatorRead = 'mechId' in request || request.kind === 'mechs';
-
-    if (!isOperatorRead || runtime.workspace.role === MembershipRole.Owner) {
-      void Promise.allSettled([queryClient.query({ queryKey: readQueryKey(scope, request), queryFn: loadReceipt })]);
-    }
+    void Promise.allSettled([queryClient.query({ queryKey: readQueryKey(scope, request), queryFn: loadReceipt })]);
   }
 
   async function deleteReceipts(keys: ReadonlyArray<string>): Promise<void> {
@@ -941,7 +798,7 @@ async function createData(options: CreateConsoleData, workspaceOwner: WorkspaceO
     shouldBroadcast,
   }: {
     readonly error: unknown;
-    readonly request: ReadRequest<'evidenceArtifact' | 'sessionArtifact' | 'sessionEvidence'>;
+    readonly request: ReadRequest<'sessionArtifact' | 'sessionEvidence'>;
     readonly shouldBroadcast: boolean;
   }): Promise<void> {
     const { receipts } = await initialized;
@@ -969,18 +826,11 @@ async function createData(options: CreateConsoleData, workspaceOwner: WorkspaceO
     notifyReads();
 
     if (shouldBroadcast) {
-      const workspaceId = WorkspaceId.make(workspace.id);
-
-      if (request.kind === 'evidenceArtifact') {
-        broadcastInvalidation({
-          kind: INVALIDATION_KIND.Artifact,
-          workspaceId,
-          mechId: request.mechId,
-          artifactId: request.artifactId,
-        });
-      } else {
-        broadcastInvalidation({ kind: INVALIDATION_KIND.Read, workspaceId, readId: request.id });
-      }
+      broadcastInvalidation({
+        kind: INVALIDATION_KIND.Read,
+        workspaceId: WorkspaceId.make(workspace.id),
+        readId: request.id,
+      });
     }
 
     const revocation = revokeArtifact(request);
@@ -993,127 +843,31 @@ async function createData(options: CreateConsoleData, workspaceOwner: WorkspaceO
     await revocation;
   }
 
-  async function revokeArtifact(
-    request: ReadRequest<'evidenceArtifact' | 'sessionArtifact' | 'sessionEvidence'>,
-  ): Promise<void> {
+  async function revokeArtifact(request: ReadRequest<'sessionArtifact' | 'sessionEvidence'>): Promise<void> {
     try {
       await Promise.allSettled(pendingWrites);
 
       const { writeRows, tables, receipts } = await initialized;
-      const table = request.kind === 'evidenceArtifact' ? tables.evidenceArtifacts : tables.sessionEvidence;
 
       await writeRows({
         signal,
-        collections: [table, receipts],
+        collections: [tables.sessionEvidence, receipts],
         write: () => {
-          if (request.kind === 'evidenceArtifact') {
-            const key = recordKey(request.mechId, request.artifactId);
+          const removed = [...tables.sessionEvidence.values()].filter((row) => {
+            if (row.agentId !== request.agentId || row.sessionId !== request.sessionId) {
+              return false;
+            }
 
-            deleteRows(tables.evidenceArtifacts, [key]);
-          } else {
-            const removed = [...tables.sessionEvidence.values()].filter((row) => {
-              if (row.agentId !== request.agentId || row.sessionId !== request.sessionId) {
-                return false;
-              }
+            return request.kind === 'sessionEvidence' || row.value.artifact_id === request.artifactId;
+          });
 
-              return request.kind === 'sessionEvidence' || row.value.artifact_id === request.artifactId;
-            });
-
-            deleteRows(
-              tables.sessionEvidence,
-              removed.map((row) => row.key),
-            );
-          }
+          deleteRows(
+            tables.sessionEvidence,
+            removed.map((row) => row.key),
+          );
 
           const keys = [...receipts.values()]
             .filter((receipt) => isArtifactRead({ candidate: decodeReadRequest(receipt.id), artifact: request }))
-            .map((receipt) => receipt.id);
-
-          deleteRows(receipts, keys);
-        },
-      });
-    } catch (error) {
-      await discardFailedPurge(error);
-    }
-  }
-
-  async function revokeMech(mechId: string): Promise<void> {
-    try {
-      await Promise.allSettled(pendingWrites);
-
-      const { writeRows, tables, receipts } = await initialized;
-
-      const scoped = [
-        tables.turns,
-        tables.events,
-        tables.traceEvidence,
-        tables.evidenceArtifacts,
-        tables.environments,
-        tables.environmentProcessDetails,
-      ];
-
-      await writeRows({
-        signal,
-        collections: [tables.mechs, tables.mechDefinitions, receipts, ...scoped],
-        write: () => {
-          if (tables.mechs.has(mechId)) {
-            deleteRows(tables.mechs, [mechId]);
-          }
-
-          if (tables.mechDefinitions.has(mechId)) {
-            deleteRows(tables.mechDefinitions, [mechId]);
-          }
-
-          for (const table of scoped) {
-            const keys = [...table.values()].filter((row) => row.mechId === mechId).map((row) => row.key);
-
-            deleteRows(table, keys);
-          }
-
-          const keys = [...receipts.values()]
-            .filter((receipt) => {
-              const request = decodeReadRequest(receipt.id);
-
-              return 'mechId' in request && request.mechId === mechId;
-            })
-            .map((receipt) => receipt.id);
-
-          deleteRows(receipts, keys);
-        },
-      });
-      void Promise.allSettled([
-        queryClient.invalidateQueries({ queryKey: [scope, 'read', 'mechs'], refetchType: 'active' }),
-      ]);
-    } catch (error) {
-      await discardFailedPurge(error);
-    }
-  }
-
-  async function revokeTurn(request: ReadRequest<'trace' | 'turnEvents' | 'evidence'>): Promise<void> {
-    try {
-      await Promise.allSettled(pendingWrites);
-
-      const { writeRows, tables, receipts } = await initialized;
-      const key = recordKey(request.mechId, request.turnId);
-
-      await writeRows({
-        signal,
-        collections: [tables.turns, tables.traceEvidence, receipts],
-        write: () => {
-          if (tables.turns.has(key)) {
-            deleteRows(tables.turns, [key]);
-          }
-
-          if (tables.traceEvidence.has(key)) {
-            deleteRows(tables.traceEvidence, [key]);
-          }
-
-          const keys = [...receipts.values()]
-            .filter((receipt) => {
-              const read = decodeReadRequest(receipt.id);
-
-              return 'turnId' in read && read.mechId === request.mechId && read.turnId === request.turnId;
-            })
             .map((receipt) => receipt.id);
 
           deleteRows(receipts, keys);
@@ -1149,19 +903,12 @@ async function createData(options: CreateConsoleData, workspaceOwner: WorkspaceO
     }
   }
 
-  async function refreshKind(kind: ReadKind, mechId?: string): Promise<void> {
+  async function refreshKind(kind: ReadKind, agentId?: string): Promise<void> {
     if (!signal.aborted) {
-      const queryKey: QueryKey = mechId === undefined ? [scope, 'read', kind] : [scope, 'read', kind, mechId];
+      const queryKey: QueryKey = agentId === undefined ? [scope, 'read', kind] : [scope, 'read', kind, agentId];
 
       await queryClient.invalidateQueries({ queryKey, refetchType: 'active' });
     }
-  }
-
-  async function refreshActivity(mechId: string): Promise<void> {
-    await Promise.allSettled([
-      ...ACTIVITY_READ_KINDS.map((kind) => refreshKind(kind, mechId)),
-      refreshKind('allowance'),
-    ]);
   }
 
   function observeRead(request: ReadRequest): ReadObservation {
@@ -1380,60 +1127,18 @@ async function createData(options: CreateConsoleData, workspaceOwner: WorkspaceO
 
     const failure = new ReadAdmissionEnded({});
 
-    switch (target.kind) {
-      case 'mech':
-        void Promise.allSettled([
-          handleFailure({
-            request: readRequests.mech(target.mechId),
-            error: failure,
-            signal,
-            failureScope: 'mech',
-            shouldBroadcast: false,
-          }),
-        ]);
+    const decodedRequest = Result.try(() => decodeReadRequest(target.readId));
 
-        break;
-      case 'turn':
-        void Promise.allSettled([
-          handleFailure({
-            request: readRequests.trace(target.mechId, target.turnId),
-            error: failure,
-            signal,
-            failureScope: 'turn',
-            shouldBroadcast: false,
-          }),
-        ]);
-
-        break;
-      case 'artifact':
-        void Promise.allSettled([
-          handleFailure({
-            request: readRequests.evidenceArtifact(target.mechId, target.artifactId),
-            error: failure,
-            signal,
-            failureScope: 'artifact',
-            shouldBroadcast: false,
-          }),
-        ]);
-
-        break;
-      case 'read': {
-        const decodedRequest = Result.try(() => decodeReadRequest(target.readId));
-
-        if (Result.isSuccess(decodedRequest)) {
-          void Promise.allSettled([
-            handleFailure({
-              request: decodedRequest.success,
-              error: failure,
-              signal,
-              failureScope: 'request',
-              shouldBroadcast: false,
-            }),
-          ]);
-        }
-
-        break;
-      }
+    if (Result.isSuccess(decodedRequest)) {
+      void Promise.allSettled([
+        handleFailure({
+          request: decodedRequest.success,
+          error: failure,
+          signal,
+          failureScope: 'request',
+          shouldBroadcast: false,
+        }),
+      ]);
     }
   }
 
@@ -1442,65 +1147,11 @@ async function createData(options: CreateConsoleData, workspaceOwner: WorkspaceO
       return state.current.revocation;
     }
 
-    if ('mechId' in request) {
-      const mechFailure = revokedMechs.get(request.mechId);
-
-      if (mechFailure !== undefined) {
-        return mechFailure;
-      }
-
-      if ('turnId' in request) {
-        const failure =
-          revokedTurns.get(recordKey(request.mechId, request.turnId)) ?? revokedReads.current.get(request.id);
-
-        if (failure !== undefined) {
-          return failure;
-        }
-      }
-    }
-
     const receipt = runtime.receipts.get(request.id);
 
     for (const { resource, error } of removedManaged.values()) {
       if (containsRemovedResource(request, resource, receipt)) {
         return error;
-      }
-    }
-
-    if (receipt === undefined) {
-      // A cleaned owner cannot prove that a removed member was absent from its retained list.
-      if (request.kind === 'mechs') {
-        return revokedMechs.values().next().value ?? revokedReads.current.get(request.id);
-      }
-
-      if (request.kind === 'turns') {
-        return revokedTurns.values().next().value ?? revokedReads.current.get(request.id);
-      }
-
-      if (request.kind === 'evidence') {
-        for (const [id, error] of revokedReads.current) {
-          const revoked = decodeReadRequest(id);
-
-          if (revoked.kind === 'evidenceArtifact' && revoked.mechId === request.mechId) {
-            return error;
-          }
-        }
-      }
-    }
-
-    if (receipt !== undefined && request.kind === 'mechs') {
-      const key = receipt.keys.find((value) => revokedMechs.has(value));
-
-      if (key !== undefined) {
-        return revokedMechs.get(key);
-      }
-    }
-
-    if (receipt !== undefined && request.kind === 'turns') {
-      const key = receipt.keys.find((value) => revokedTurns.has(value));
-
-      if (key !== undefined) {
-        return revokedTurns.get(key);
       }
     }
 
@@ -1514,11 +1165,6 @@ async function createData(options: CreateConsoleData, workspaceOwner: WorkspaceO
     workspace: runtime.workspace,
     diagnostics: createReadDiagnostics(queryClient),
     reads: readRequests,
-    archive: (request: ReadRequest<'archive'>) =>
-      !signal.aborted && readRevocation(request) === undefined
-        ? queryClient.getQueryData<ConsoleMessagePage>(readQueryKey(scope, request))
-        : undefined,
-    refreshActivity,
     managed: createManagedCommands({
       client: managedClient,
       signal,
@@ -1535,18 +1181,8 @@ async function createData(options: CreateConsoleData, workspaceOwner: WorkspaceO
       refresh: refreshActive,
       onFailure: (request, error, failureSignal) => handleFailure({ request, error, signal: failureSignal }),
     }),
-    commands: createCommands({
-      api,
-      workspaceId: workspace.id,
-      signalForRead,
-      onFailure: async (request, error, failureSignal) =>
-        await handleFailure({ request, error, signal: failureSignal }),
-      refreshRequest: refreshActive,
-    }),
     readStatus(request: ReadRequest) {
-      return queryClient.getQueryState<number | ManagedHistoryPage | ManagedAttention | ConsoleMessagePage>(
-        readQueryKey(scope, request),
-      );
+      return queryClient.getQueryState<number | ManagedHistoryPage | ManagedAttention>(readQueryKey(scope, request));
     },
     readRevocation,
     isReadRevoked: (request: ReadRequest) => readRevocation(request) !== undefined,
@@ -1586,20 +1222,6 @@ async function createData(options: CreateConsoleData, workspaceOwner: WorkspaceO
 
       await pendingRevocations.current.get(request.id);
       readLifetimes.renew(request.id);
-
-      if ('mechId' in request) {
-        await pendingRevocations.current.get(request.mechId);
-
-        mechLifetimes.renew(request.mechId);
-
-        if ('turnId' in request) {
-          const key = recordKey(request.mechId, request.turnId);
-
-          await pendingRevocations.current.get(key);
-
-          turnLifetimes.renew(key);
-        }
-      }
 
       await queryClient.query({ queryKey: readQueryKey(scope, request), queryFn: loadReceipt, staleTime: 0 });
     },

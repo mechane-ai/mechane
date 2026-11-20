@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: no-prefixed-session-sqlite
+valid:
+  - 'await openDurableObjectSqliteStorage(storage);'
+invalid:
+  - 'await openDurableObjectSqliteStorage(storage, { prefix });'

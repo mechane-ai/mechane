@@ -57,9 +57,9 @@ variable "settings" {
   validation {
     condition = alltrue([
       for name in keys(var.settings) : can(regex("^(MECHANE_[A-Z0-9_]+|CMA_WEB_TOOLS__(ENABLED|ALLOWED_DOMAINS|BLOCKED_DOMAINS|MAX_CONTENT_TOKENS))$", name)) &&
-      !contains(["MECHANE_DATABASE_URL", "MECHANE_MIGRATION_DATABASE_URL", "MECHANE_CREDENTIAL_KEYRING", "MECHANE_MODEL_UPSTREAM_KEY", "MECHANE_MODEL_ASSERTION_BEARER", "MECHANE_GITHUB_CLIENT_SECRET", "MECHANE_SERVER_API_KEY", "MECHANE_AGENT_IDENTITY_PRIVATE_KEY_PEM", "MECHANE_SANDBOX_SERVICE_KEY", "MECHANE_NEXUS_SIGNING_SECRET"], name)
+      !contains(["MECHANE_DATABASE_URL", "MECHANE_MIGRATION_DATABASE_URL", "MECHANE_CREDENTIAL_KEYRING", "MECHANE_MODEL_UPSTREAM_KEY", "MECHANE_MODEL_ASSERTION_BEARER", "MECHANE_GITHUB_CLIENT_SECRET", "MECHANE_SERVER_API_KEY", "MECHANE_AGENT_IDENTITY_PRIVATE_KEY_PEM", "MECHANE_SANDBOX_SERVICE_KEY", "MECHANE_TENSORLAKE_API_KEY", "MECHANE_MODAL_BRIDGE_TOKEN", "MECHANE_NEXUS_SIGNING_SECRET"], name)
     ])
-    error_message = "Supply non-secret MECHANE settings or supported CMA web tool settings. Database, model, OAuth, signing, and encryption credentials require secret references."
+    error_message = "Supply non-secret MECHANE settings or supported CMA web tool settings. Database, model, OAuth, sandbox vendor, signing, and encryption credentials require secret references."
   }
 }
 
@@ -72,15 +72,15 @@ variable "secrets" {
   nullable = false
 
   validation {
-    condition = length(var.secrets.store_id) > 0 && contains(keys(var.secrets.bindings), "MECHANE_SANDBOX_SERVICE_KEY") && alltrue([
+    condition = length(var.secrets.store_id) > 0 && alltrue([
       for name, secret_name in var.secrets.bindings : can(regex("^MECHANE_[A-Z0-9_]+$", name)) && length(secret_name) > 0 && !contains(["MECHANE_MIGRATION_DATABASE_URL", "MECHANE_RUNTIME_TRANSPORT", "MECHANE_SANDBOX_KEY"], name)
     ])
-    error_message = "Supply the shared sandbox service key and application secret references. Migration credentials and retired transport aliases cannot be Worker bindings."
+    error_message = "Supply valid Cloudflare Secrets Store references. Migration credentials and retired transport aliases cannot be Worker bindings."
   }
 }
 
 variable "storage" {
-  description = "The bucket containing sandbox filesystem checkpoints."
+  description = "The bucket containing sandbox filesystem checkpoints and direct session evidence."
   type = object({
     workspace_bucket_name = optional(string)
     jurisdiction          = optional(string, "default")
@@ -90,9 +90,22 @@ variable "storage" {
   nullable = false
 }
 
-variable "sandboxes" {
-  description = "Compute capacity, installed tools, and browser egress. The application owns admission."
+variable "database" {
+  description = "Optional Cloudflare Hyperdrive configuration ID for edge Postgres connection pooling."
   type = object({
+    hyperdrive_id = optional(string)
+  })
+  default  = {}
+  nullable = false
+}
+
+variable "sandboxes" {
+  description = "Pluggable sandbox backend, compute capacity, installed tools, and browser egress."
+  type = object({
+    provider                 = optional(string, "cloudflare")
+    image                    = optional(string)
+    modal_bridge_url         = optional(string)
+    tensorlake_api_url       = optional(string)
     application_name         = optional(string)
     instance_type            = optional(string, "standard-1")
     max_instances            = optional(number, 4)
@@ -112,6 +125,11 @@ variable "sandboxes" {
   })
   default  = {}
   nullable = false
+
+  validation {
+    condition     = contains(["cloudflare", "modal", "tensorlake", "none"], var.sandboxes.provider)
+    error_message = "Sandbox provider must be cloudflare, modal, tensorlake, or none."
+  }
 
   validation {
     condition     = contains(["packages", "public"], var.sandboxes.web_access)

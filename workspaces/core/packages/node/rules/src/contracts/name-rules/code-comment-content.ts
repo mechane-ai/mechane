@@ -10,7 +10,9 @@ const VALUES = {
     'packages/shared/client/src/index.ts',
     'packages/shared/client/src/presentation/index.ts',
     'packages/shared/protocol/src/index.ts',
-    'packages/shared/protocol/src/presentation/index.ts',
+    'packages/shared/presentation/src/index.ts',
+    'packages/shared/releases/src/index.ts',
+    'packages/shared/managed-protocol/src/index.ts',
   ],
   componentFiles: ['packages/browser/**/*.tsx', 'packages/browser/elements/packages/**/*.{ts,tsx}'],
 } as const;

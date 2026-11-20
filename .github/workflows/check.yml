@@ -10,6 +10,56 @@ concurrency:
   group: check-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      has_elements: ${{ steps.classify.outputs.has_elements }}
+      has_infrastructure: ${{ steps.classify.outputs.has_infrastructure }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Classify affected build surfaces
+        id: classify
+        env:
+          BASE_REF: ${{ github.base_ref || 'main' }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            base=$(git merge-base "origin/$BASE_REF" HEAD)
+            changed=$(git diff --name-only "$base" HEAD)
+          elif git rev-parse HEAD~1 >/dev/null 2>&1; then
+            changed=$(git diff --name-only HEAD~1 HEAD)
+          else
+            changed=""
+          fi
+
+          has_elements=false
+          has_infrastructure=false
+          if [[ -z "$changed" ]]; then
+            has_elements=true
+            has_infrastructure=true
+          else
+            while IFS= read -r file; do
+              case "$file" in
+                mise.toml|mise.lock|workspaces/core/mise.toml|workspaces/core/package.json|workspaces/core/pnpm-lock.yaml|workspaces/core/dependencies.json|workspaces/core/tsconfig.base.json)
+                  has_elements=true
+                  has_infrastructure=true
+                  ;;
+                workspaces/core/packages/browser/elements/*|workspaces/core/packages/browser/catalog/*|workspaces/core/tsconfig.browser.json)
+                  has_elements=true
+                  ;;
+                workspaces/core/infrastructure/*)
+                  has_infrastructure=true
+                  ;;
+              esac
+            done <<< "$changed"
+          fi
+
+          printf 'has_elements=%s\nhas_infrastructure=%s\n' "$has_elements" "$has_infrastructure" >> "$GITHUB_OUTPUT"
   check:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -28,3 +78,34 @@ jobs:
       - uses: ./.github/actions/setup
       - name: Check source
         run: mise run check:static
+  elements:
+    needs: plan
+    if: needs.plan.outputs.has_elements == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: Build Elements package
+        run: mise -C workspaces/core run build:elements
+  infrastructure:
+    needs: plan
+    if: needs.plan.outputs.has_infrastructure == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: Test OpenTofu provider and format
+        run: |
+          set -euo pipefail
+          (cd workspaces/core/infrastructure/provider && mise exec -- go test ./...)
+          mise exec -- tofu fmt -check -recursive workspaces/core/infrastructure

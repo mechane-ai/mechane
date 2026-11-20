@@ -1,5 +1,5 @@
 import type { ControlStore, ManagedScope } from '@mechane/control-store';
-import { managedWorkspaceId } from '@mechane/protocol';
+import { managedWorkspaceId } from '@mechane/managed-protocol';
 import { HttpHeader, HttpStatusCode } from '@mechane/records';
 import { ManagedHttpError } from './http-error.ts';
 

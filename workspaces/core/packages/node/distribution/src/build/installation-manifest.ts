@@ -1,4 +1,4 @@
-import { RELEASE_REPOSITORY, releaseAssetUrl } from '@mechane/protocol';
+import { RELEASE_REPOSITORY, releaseAssetUrl } from '@mechane/releases';
 import { Effect, Record } from 'effect';
 import { join } from 'node:path';
 import { FORMAT_VERSION } from '../constants.ts';

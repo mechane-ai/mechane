@@ -29,8 +29,6 @@ const USAGE_MESSAGES: Readonly<UsageMessages> = {
   ApiKeyInvalid: () => `${API_KEY_VARIABLE} holds no Mechane key; set it to a key file's contents`,
 };
 
-const NO_NEXT_STEP = Option.none<string>();
-
 /**
  * The one message table of the CLI: the report of each failure it meets, derived from the failure's fields alone and
  * gathered from the tables of the failures' owners.
@@ -46,8 +44,6 @@ export const FAILURE_MESSAGES: Readonly<FailureMessages<Failure>> = {
       next,
     });
   },
-  SandboxMaintenanceFailed: ({ _tag, reason }) =>
-    ownMessage({ code: _tag, status: ExitStatus.Failed, message: reason, next: NO_NEXT_STEP }),
   ...CLIENT_FAILURE_MESSAGES,
   ...CREDENTIAL_FAILURE_MESSAGES,
   ...EVAL_FAILURE_MESSAGES,

@@ -1,4 +1,4 @@
-import { RELEASE, RELEASE_REPOSITORY } from '@mechane/protocol';
+import { RELEASE, RELEASE_REPOSITORY } from '@mechane/releases';
 import { Effect } from 'effect';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';

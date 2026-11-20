@@ -6,7 +6,6 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@json-render/react": "0.22.0",
     "@mechane-ai/elements": "workspace:*",
     "@mechane/protocol": "workspace:*",
     "@stylexjs/stylex": "0.19.1",
@@ -16,8 +15,5 @@
   },
   "devDependencies": {
     "@types/react": "19.3.0"
-  },
-  "peerDependencies": {
-    "zod": "4.5.4"
   }
 }

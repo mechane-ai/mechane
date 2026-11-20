@@ -1,4 +1,4 @@
-import { CliTarget, RELEASE, releaseBinaryKey, ReleaseManifest } from '@mechane/protocol';
+import { CliTarget, RELEASE, releaseBinaryKey, ReleaseManifest } from '@mechane/releases';
 import { Record, Schema } from 'effect';
 
 const MANIFEST_MAX_BYTES = 16_384;

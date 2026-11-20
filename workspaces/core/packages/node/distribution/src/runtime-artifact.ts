@@ -1,6 +1,6 @@
 import { ArtifactDigest } from '@mechane/program';
-import { Release, RELEASE_REPOSITORY } from '@mechane/protocol';
 import { GitCommit, MediaType } from '@mechane/records';
+import { Release, RELEASE_REPOSITORY } from '@mechane/releases';
 import { Schema } from 'effect';
 import { fileURLToPath } from 'node:url';
 import { ASSET_PATTERN, FORMAT_VERSION } from './constants.ts';
@@ -12,13 +12,11 @@ export const RUNTIME_OUTPUT_FOLDER = fileURLToPath(OUTPUT_URL);
 export const RUNTIME_INVENTORY_FILE = 'runtime.json';
 const MIGRATION_ENTRYPOINT = 'migrate.mjs';
 const GRANT_ENTRYPOINT = 'grant.mjs';
-const IMPORT_ENTRYPOINT = 'import.mjs';
 
 export const RUNTIME_REQUIRED_FILES = [
   'worker.js',
   MIGRATION_ENTRYPOINT,
   GRANT_ENTRYPOINT,
-  IMPORT_ENTRYPOINT,
   'build.json',
   'console/index.html',
   'console/THIRD_PARTY_LICENSES.txt',
@@ -83,11 +81,6 @@ export const RuntimeRelease = Schema.Struct({
     node_version: RuntimeBuild.fields.node_version,
     migrate: OperationCommand,
     grant: OperationCommand,
-    import: Schema.Struct({
-      ...OperationCommand.fields,
-      apply_environment: Schema.Array(Schema.NonEmptyString),
-      apply_required_options: Schema.Array(Schema.NonEmptyString),
-    }),
   }),
 });
 
@@ -103,13 +96,6 @@ export function runtimeCommands({ nodeVersion }: RuntimeCommandsInput): RuntimeR
       entrypoint: GRANT_ENTRYPOINT,
       arguments: [],
       environment: ['MECHANE_MIGRATION_DATABASE_URL', 'MECHANE_RUNTIME_DATABASE_ROLE'],
-    },
-    import: {
-      entrypoint: IMPORT_ENTRYPOINT,
-      arguments: ['--dry-run', '--all'],
-      environment: ['MECHANE_MIGRATION_DATABASE_URL'],
-      apply_environment: ['MECHANE_ORIGIN', 'MECHANE_SANDBOX_SERVICE_KEY'],
-      apply_required_options: ['--expect-digest', '--retirement-receipt', '--retirement-sha256'],
     },
   };
 }

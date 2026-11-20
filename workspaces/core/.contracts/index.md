@@ -136,6 +136,9 @@ from 101 are Mechane's own.
 - [Model caching](123-model-caching/CONTRACT.md): provider cache hints, per-mech context, and conservative spend reservations.
 
 - [Managed Agents compatibility](134-managed-agents-compatibility/CONTRACT.md): session and worker wire behavior under the published self-hosted profile.
+- [Durable Object isolation](135-durable-object-isolation/CONTRACT.md): lightweight per-agent slot arbitration separated from unprefixed per-session Pi Durable Objects.
+- [Single agent domain](136-single-agent-domain/CONTRACT.md): Managed Agents as the sole execution model without new retired mech coupling.
+- [Sandbox vendor boundary](137-sandbox-vendor-boundary/CONTRACT.md): vendor-blind agent orchestration decoupled behind the Managed Agents Worker Protocol.
 - [Durable agent runtime](124-durable-agent-runtime/CONTRACT.md): one Pi execution owner, guarded tools, and metered provider attempts.
 - [Notification and communication boundaries](125-channel-delivery/CONTRACT.md): generic authenticated producers and explicit addressed communication tools.
 - [Structured presentation](126-structured-presentation/CONTRACT.md): explicit public messages with one bounded catalog and an Elements renderer.

@@ -2,7 +2,9 @@ import { Effect } from 'effect';
 import { buildDistribution } from './build/build-distribution.ts';
 import { previewModule } from './build/preview-module.ts';
 import { acceptDistribution } from './candidate/accept-distribution.ts';
+import { acceptShard } from './candidate/accept-shard.ts';
 import { buildCandidate } from './candidate/build-candidate.ts';
+import { mergeQualification } from './candidate/merge-qualification.ts';
 import { DistributionMode } from './constants.ts';
 import type { DistributionFailed } from './errors.ts';
 import { loadDistributionSettings } from './load-distribution-settings.ts';
@@ -24,6 +26,10 @@ export const runDistribution = Effect.fn('runDistribution')(function* (): Effect
       return yield* buildCandidate({ settings });
     case DistributionMode.Accept:
       return yield* acceptDistribution({ settings });
+    case DistributionMode.AcceptShard:
+      return yield* acceptShard({ settings });
+    case DistributionMode.MergeQualification:
+      return yield* mergeQualification({ settings });
     case DistributionMode.Verify:
       return yield* verifyDistribution({ settings });
     case DistributionMode.Preview:

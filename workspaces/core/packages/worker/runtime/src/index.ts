@@ -1,8 +1,5 @@
 export { loadRuntimeConfiguration, resolveRuntimeEnvironment } from './config.ts';
 export type { RuntimeConfiguration, RuntimeEnvironment } from './config.ts';
-export { createMechObject } from './actor/worker.ts';
-export { createMechActorClient } from './actor/client.ts';
-export type { ActorNamespace, MechActorResolver } from './actor/client.ts';
 export {
   BROWSER_SESSION_SECONDS,
   SIGN_IN_SECONDS,
@@ -20,9 +17,9 @@ export {
 export { hashAuthToken, createAuthToken } from './operations/auth/secrets.ts';
 export { createOperationExecutor } from './operations/execute.ts';
 export type { AuthCaller } from './operations/types.ts';
-export { manageSandboxWorkspace } from './tools/sandbox-maintenance.ts';
 export { managedModelSettings } from './models/managed-options.ts';
 export { createManagedAgentRuntime } from './managed/client.ts';
+export { createSessionObject } from './managed/session-object.ts';
 export { ManagedRuntimeError } from './managed/failure.ts';
 export {
   ManagedEventPageInput,

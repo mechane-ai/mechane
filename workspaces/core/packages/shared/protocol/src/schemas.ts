@@ -1,10 +1,4 @@
 import { Schema } from 'effect';
-import { REVISION_PATTERN } from './releases/constants.ts';
-
-/** The revision of the source a release or a server was built from, as `git describe` names it. */
-export const Revision = Schema.String.check(Schema.isPattern(REVISION_PATTERN));
-
-export type Revision = typeof Revision.Type;
 
 /** A time on the wire, an RFC 3339 string. */
 export const WireTime = Schema.DateTimeUtcFromString;

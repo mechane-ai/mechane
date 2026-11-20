@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { capturePromise } from '@mechane/utilities';
+import { decodeWorkSecretToken } from '@mechane/worker-agent';
 import { Result, Schema } from 'effect';
 import { once } from 'node:events';
 import { startComputerRelay } from './computer-relay.ts';
@@ -8,14 +9,12 @@ import { MANAGED_WORK_ACCEPTED, ManagedWorkerProcessInput } from './launch.ts';
 import { leaseTransport } from './lease-transport.ts';
 import { installedSessionTools } from './session-tools.ts';
 
-const WorkCredential = Schema.fromJsonString(Schema.Struct({ sessions_token: Schema.NonEmptyString }));
 type ProcessEntry = { readonly signal: AbortSignal; readonly runCommand: RunInstalledCommand };
 
 export async function runManagedWorker({ signal, runCommand }: ProcessEntry): Promise<void> {
   const received: ReadonlyArray<unknown> = await once(process, 'message', { signal });
   const { claim, shell } = await Schema.decodeUnknownPromise(ManagedWorkerProcessInput)(received[0]);
-  const secret = Buffer.from(claim.workSecret, 'base64url').toString('utf8');
-  const { sessions_token: token } = await Schema.decodeUnknownPromise(WorkCredential)(secret);
+  const token = decodeWorkSecretToken(claim.workSecret);
   const lifetime = new AbortController();
   const sessionSignal = AbortSignal.any([signal, lifetime.signal]);
   const { apiOrigin, environmentId, sessionId, workId, workSecret } = claim;

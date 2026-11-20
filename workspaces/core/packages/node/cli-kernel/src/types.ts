@@ -1,8 +1,8 @@
 import type { ClientFailure, OperationCall } from '@mechane/client';
 import type { CommandInput, CommandName, COMMANDS, ExitStatus, OutputMode } from '@mechane/commands';
 import type { EvalFailure } from '@mechane/eval';
-import type { CliTarget, Release } from '@mechane/protocol';
 import type { WorkspaceId } from '@mechane/records';
+import type { CliTarget, Release } from '@mechane/releases';
 import type { Effect, Option, Redacted } from 'effect';
 import type { CredentialSource, InvocationKind, RunOutcome } from './constants.ts';
 import type {
@@ -11,7 +11,6 @@ import type {
   CredentialsFailed,
   ReleaseStampMissing,
   ReplaceFailed,
-  SandboxMaintenanceFailed,
   SavedLoginMissing,
   SavedLoginRejected,
   TargetUnpublished,
@@ -61,7 +60,6 @@ export type CommandInvocation<N extends CommandName = CommandName> = {
  */
 export type RunFailure =
   | WorkspaceSelectionRefused
-  | SandboxMaintenanceFailed
   | ClientFailure
   | SavedLoginRejected
   | CredentialFailure

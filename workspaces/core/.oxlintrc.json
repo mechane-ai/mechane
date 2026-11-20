@@ -801,12 +801,13 @@
     },
     {
       "files": [
-        "packages/shared/bash/src/**",
+        "packages/shared/{bash,sandbox-provider,sandbox-tensorlake,sandbox-modal}/src/**",
         "packages/node/guest/src/guest-listener.ts",
         "packages/shared/deployment/src/worker-deployment.ts",
-        "packages/node/{stack,distribution,testing,smoke}/src/**",
+        "packages/node/{stack,distribution,testing,smoke,sandbox-docker,worker-agent}/src/**",
         "packages/node/program/src/{start-process,finished-process,types}.ts",
-        "packages/worker/{runtime/src,server/src,control-store/src,sandbox/testing}/**",
+        "packages/worker/{agent-slot/src,authority-store/src,managed-store/src,runtime/src,server/src,control-store/src,sandbox/testing}/**",
+        "packages/worker/server/testing/sandbox-providers.ts",
         "packages/worker/sandbox/src/service/**",
         "packages/worker/sandbox/src/providers/machine-object.ts"
       ],
@@ -820,7 +821,7 @@
       }
     },
     {
-      "files": ["packages/shared/protocol/src/presentation/**"],
+      "files": ["packages/shared/presentation/src/**"],
       "excludeFiles": [],
       "rules": {
         "typescript/explicit-function-return-type": "off",
@@ -854,8 +855,8 @@
     },
     {
       "files": [
-        "packages/worker/server/src/import/settings.ts",
         "packages/node/cli/src/settings/load-invocation.ts",
+        "packages/worker/agent-slot/src/settings.ts",
         "packages/worker/runtime/src/config.ts",
         "packages/worker/server/src/settings/environment.ts",
         "packages/worker/server/src/settings/worker.ts",
@@ -867,6 +868,8 @@
         "packages/worker/sandbox/src/service/machine-settings.ts",
         "packages/worker/sandbox/src/providers/sandbox-settings.ts",
         "packages/node/guest/src/load-guest-settings.ts",
+        "packages/node/worker-agent/src/settings.ts",
+        "packages/node/stack/src/benchmark/settings.ts",
         "packages/node/release/src/load-release-settings.ts",
         "packages/node/distribution/src/load-distribution-settings.ts",
         "packages/node/distribution/testing/shipped-formats.ts",
@@ -880,13 +883,13 @@
     {
       "files": [
         "packages/browser/elements/bin/mechane-elements-catalog.mjs",
-        "packages/worker/server/src/import/output.ts",
         "packages/worker/runtime/src/output/write-actor-diagnostic.ts",
         "packages/node/cli/scripts/reference/main.ts",
         "packages/node/program/src/output/**",
         "packages/worker/server/src/main.ts",
         "packages/worker/server/src/http/failure.ts",
         "packages/node/stack/src/main.ts",
+        "packages/node/stack/src/benchmark/main.ts",
         "packages/node/stack/src/run-stack-program.ts",
         "packages/node/smoke/src/run-scenarios.ts",
         "packages/node/smoke/src/dev/main.ts",
@@ -1307,12 +1310,13 @@
     },
     {
       "files": [
-        "packages/shared/bash/src/**",
+        "packages/shared/{bash,sandbox-provider,sandbox-tensorlake,sandbox-modal}/src/**",
         "packages/node/guest/src/guest-listener.ts",
         "packages/shared/deployment/src/worker-deployment.ts",
-        "packages/node/{stack,distribution,testing,smoke}/src/**",
+        "packages/node/{stack,distribution,testing,smoke,sandbox-docker,worker-agent}/src/**",
         "packages/node/program/src/{start-process,finished-process,types}.ts",
-        "packages/worker/{runtime/src,server/src,control-store/src,sandbox/testing}/**",
+        "packages/worker/{agent-slot/src,authority-store/src,managed-store/src,runtime/src,server/src,control-store/src,sandbox/testing}/**",
+        "packages/worker/server/testing/sandbox-providers.ts",
         "packages/worker/sandbox/src/service/**",
         "packages/worker/sandbox/src/providers/machine-object.ts"
       ],
@@ -1322,16 +1326,18 @@
         "packages/node/smoke/src/settings.ts",
         "packages/node/stack/src/dev/settings.ts",
         "packages/node/testing/src/cli/start-cli.ts",
+        "packages/node/worker-agent/src/settings.ts",
+        "packages/node/stack/src/benchmark/settings.ts",
         "packages/node/distribution/src/load-distribution-settings.ts",
         "packages/node/stack/src/main.ts",
+        "packages/node/stack/src/benchmark/main.ts",
         "packages/node/smoke/src/run-scenarios.ts",
         "packages/node/smoke/src/dev/main.ts",
         "packages/node/stack/src/dev/output.ts",
-        "packages/worker/server/src/import/settings.ts",
+        "packages/worker/agent-slot/src/settings.ts",
         "packages/worker/runtime/src/config.ts",
         "packages/worker/server/src/settings/environment.ts",
         "packages/worker/server/src/settings/worker.ts",
-        "packages/worker/server/src/import/output.ts",
         "packages/worker/runtime/src/output/write-actor-diagnostic.ts",
         "packages/worker/server/src/main.ts",
         "packages/worker/server/src/http/failure.ts",
@@ -1705,7 +1711,7 @@
       }
     },
     {
-      "files": ["packages/shared/protocol/src/presentation/**"],
+      "files": ["packages/shared/presentation/src/**"],
       "excludeFiles": [],
       "rules": {
         "no-restricted-imports": [
@@ -2793,17 +2799,14 @@
     },
     {
       "files": [
-        "packages/worker/server/src/import/settings.ts",
-        "packages/worker/runtime/src/config.ts",
-        "packages/worker/server/src/settings/environment.ts",
-        "packages/worker/server/src/settings/worker.ts",
-        "packages/node/stack/src/settings.ts",
-        "packages/node/smoke/src/settings.ts",
-        "packages/node/stack/src/dev/settings.ts",
-        "packages/node/testing/src/cli/start-cli.ts",
-        "packages/worker/sandbox/src/service/settings.ts",
-        "packages/worker/sandbox/src/service/machine-settings.ts",
-        "packages/node/distribution/src/load-distribution-settings.ts"
+        "packages/node/cli/src/settings/load-invocation.ts",
+        "packages/worker/sandbox/src/providers/sandbox-settings.ts",
+        "packages/node/guest/src/load-guest-settings.ts",
+        "packages/node/release/src/load-release-settings.ts",
+        "packages/node/distribution/testing/shipped-formats.ts",
+        "packages/node/checks/src/load-checks-settings.ts",
+        "packages/node/rename/src/load-rename-settings.ts",
+        "packages/node/rule-generator/src/load-generate-settings.ts"
       ],
       "excludeFiles": [],
       "rules": {
@@ -2811,6 +2814,11 @@
           "error",
           {
             "paths": [
+              {
+                "name": "effect",
+                "importNames": ["Clock"],
+                "message": "Read the clock once and pass it down, such as `const now = DateTime.nowUnsafe()` (EF-17)"
+              },
               {
                 "name": "effect",
                 "importNames": ["Context", "Layer", "LayerMap", "ManagedRuntime"],
@@ -2834,6 +2842,16 @@
         ],
         "no-restricted-properties": [
           "error",
+          {
+            "object": "Date",
+            "property": "now",
+            "message": "Read the clock once and pass it down, such as `const now = DateTime.nowUnsafe()` (EF-17)"
+          },
+          {
+            "object": "DateTime",
+            "property": "now",
+            "message": "Read the clock once and pass it down, such as `const now = DateTime.nowUnsafe()` (EF-17)"
+          },
           {
             "object": "Match",
             "property": "value",
@@ -2893,6 +2911,46 @@
             "object": "Effect",
             "property": "serviceOption",
             "message": "Pass each dependency in the input object, such as `startStack({ settings })` (EF-13)"
+          },
+          {
+            "object": "Effect",
+            "property": "ignore",
+            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+          },
+          {
+            "object": "Effect",
+            "property": "option",
+            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+          },
+          {
+            "object": "Effect",
+            "property": "result",
+            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+          },
+          {
+            "object": "Effect",
+            "property": "either",
+            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+          },
+          {
+            "object": "Effect",
+            "property": "orElse",
+            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+          },
+          {
+            "object": "Effect",
+            "property": "orElseSucceed",
+            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+          },
+          {
+            "object": "Effect",
+            "property": "orElseFail",
+            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+          },
+          {
+            "object": "Effect",
+            "property": "catchCause",
+            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
           },
           {
             "object": "Option",
@@ -3164,14 +3222,19 @@
     },
     {
       "files": [
-        "packages/node/cli/src/settings/load-invocation.ts",
-        "packages/worker/sandbox/src/providers/sandbox-settings.ts",
-        "packages/node/guest/src/load-guest-settings.ts",
-        "packages/node/release/src/load-release-settings.ts",
-        "packages/node/distribution/testing/shipped-formats.ts",
-        "packages/node/checks/src/load-checks-settings.ts",
-        "packages/node/rename/src/load-rename-settings.ts",
-        "packages/node/rule-generator/src/load-generate-settings.ts"
+        "packages/worker/agent-slot/src/settings.ts",
+        "packages/worker/runtime/src/config.ts",
+        "packages/worker/server/src/settings/environment.ts",
+        "packages/worker/server/src/settings/worker.ts",
+        "packages/node/stack/src/settings.ts",
+        "packages/node/smoke/src/settings.ts",
+        "packages/node/stack/src/dev/settings.ts",
+        "packages/node/testing/src/cli/start-cli.ts",
+        "packages/worker/sandbox/src/service/settings.ts",
+        "packages/worker/sandbox/src/service/machine-settings.ts",
+        "packages/node/worker-agent/src/settings.ts",
+        "packages/node/stack/src/benchmark/settings.ts",
+        "packages/node/distribution/src/load-distribution-settings.ts"
       ],
       "excludeFiles": [],
       "rules": {
@@ -3179,11 +3242,6 @@
           "error",
           {
             "paths": [
-              {
-                "name": "effect",
-                "importNames": ["Clock"],
-                "message": "Read the clock once and pass it down, such as `const now = DateTime.nowUnsafe()` (EF-17)"
-              },
               {
                 "name": "effect",
                 "importNames": ["Context", "Layer", "LayerMap", "ManagedRuntime"],
@@ -3207,16 +3265,6 @@
         ],
         "no-restricted-properties": [
           "error",
-          {
-            "object": "Date",
-            "property": "now",
-            "message": "Read the clock once and pass it down, such as `const now = DateTime.nowUnsafe()` (EF-17)"
-          },
-          {
-            "object": "DateTime",
-            "property": "now",
-            "message": "Read the clock once and pass it down, such as `const now = DateTime.nowUnsafe()` (EF-17)"
-          },
           {
             "object": "Match",
             "property": "value",
@@ -3276,46 +3324,6 @@
             "object": "Effect",
             "property": "serviceOption",
             "message": "Pass each dependency in the input object, such as `startStack({ settings })` (EF-13)"
-          },
-          {
-            "object": "Effect",
-            "property": "ignore",
-            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
-          },
-          {
-            "object": "Effect",
-            "property": "option",
-            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
-          },
-          {
-            "object": "Effect",
-            "property": "result",
-            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
-          },
-          {
-            "object": "Effect",
-            "property": "either",
-            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
-          },
-          {
-            "object": "Effect",
-            "property": "orElse",
-            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
-          },
-          {
-            "object": "Effect",
-            "property": "orElseSucceed",
-            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
-          },
-          {
-            "object": "Effect",
-            "property": "orElseFail",
-            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
-          },
-          {
-            "object": "Effect",
-            "property": "catchCause",
-            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
           },
           {
             "object": "Option",
@@ -3961,11 +3969,11 @@
     },
     {
       "files": [
-        "packages/worker/server/src/import/output.ts",
         "packages/worker/runtime/src/output/write-actor-diagnostic.ts",
         "packages/worker/server/src/main.ts",
         "packages/worker/server/src/http/failure.ts",
         "packages/node/stack/src/main.ts",
+        "packages/node/stack/src/benchmark/main.ts",
         "packages/node/smoke/src/run-scenarios.ts",
         "packages/node/smoke/src/dev/main.ts",
         "packages/node/stack/src/dev/output.ts"

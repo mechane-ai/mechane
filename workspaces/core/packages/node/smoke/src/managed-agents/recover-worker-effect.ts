@@ -1,6 +1,7 @@
 import type Anthropic from '@anthropic-ai/sdk';
 import { betaAgentToolset20260401 } from '@anthropic-ai/sdk/tools/agent-toolset/node';
-import { managedWorkspaceId, WorkspaceList } from '@mechane/protocol';
+import { managedWorkspaceId } from '@mechane/managed-protocol';
+import { WorkspaceList } from '@mechane/protocol';
 import { HttpStatusCode } from '@mechane/records';
 import { runCli, setWorkspacePolicy, waitFor } from '@mechane/testing';
 import type { Account, requireFixtures, ScenarioInput } from '@mechane/testing';

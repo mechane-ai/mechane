@@ -1,4 +1,4 @@
-import { RELEASE } from '@mechane/protocol';
+import { RELEASE } from '@mechane/releases';
 
 /** The OCI archive carries this immutable release tag for Docker and the compute service. */
 export function guestImageName(): string {

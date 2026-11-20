@@ -2,7 +2,7 @@ import type { CommandResult, RunFailure, RunInput } from '@mechane/cli-kernel';
 import type { WorkspaceAccess } from '@mechane/eval';
 import type { ExecutionAccessState } from '@mechane/protocol';
 import { Effect, Option } from 'effect';
-import { withWorkspace } from '../mechs/with-workspace.ts';
+import { withWorkspace } from '../with-workspace.ts';
 
 /** Replaces the current owner's grant for future commands. */
 export const runExecutionAccessSet = Effect.fn('runExecutionAccessSet')(function* ({

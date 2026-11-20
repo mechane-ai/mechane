@@ -31,7 +31,7 @@ export function WorkspaceNavigation({
         <WorkspaceLink
           to="/"
           search={{ workspace: data.workspace.id }}
-          isSelected={location.mech === undefined && location.agent === undefined && location.view !== 'definition'}
+          isSelected={location.agent === undefined && location.view !== 'definition'}
           icon={<Grid2X2 size={16} aria-hidden />}
         >
           Agents
@@ -70,7 +70,7 @@ export function WorkspaceAccount({
     <WorkspaceLink
       to="/"
       search={{ workspace: workspaceId, view: 'definition' }}
-      isSelected={location.mech === undefined && location.agent === undefined && location.view === 'definition'}
+      isSelected={location.agent === undefined && location.view === 'definition'}
       icon={<Settings size={16} aria-hidden />}
       aria-label={`Settings for ${name}`}
       title={`${name} · Settings`}

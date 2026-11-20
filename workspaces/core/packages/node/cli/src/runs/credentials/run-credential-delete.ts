@@ -2,7 +2,7 @@ import type { CommandResult, RunFailure, RunInput } from '@mechane/cli-kernel';
 import type { WorkspaceAccess } from '@mechane/eval';
 import { WorkspaceId } from '@mechane/records';
 import { Effect } from 'effect';
-import { withWorkspace } from '../mechs/with-workspace.ts';
+import { withWorkspace } from '../with-workspace.ts';
 
 /** Removes the selected workspace's stored value while leaving integration references for the owner to update. */
 export const runCredentialDelete = Effect.fn('runCredentialDelete')(function* ({

@@ -3,8 +3,8 @@ import type { ReleasedBinary, UpdateFailure, UpdateResult } from '@mechane/cli-k
 import { latestRelease } from '@mechane/client';
 import type { ClientFailure } from '@mechane/client';
 import { UpdateOutcome } from '@mechane/program';
-import { installScriptUrl } from '@mechane/protocol';
-import type { Release } from '@mechane/protocol';
+import { installScriptUrl } from '@mechane/releases';
+import type { Release } from '@mechane/releases';
 import type { Duration } from 'effect';
 import { Effect, Option } from 'effect';
 import { installRelease } from './install-release.ts';

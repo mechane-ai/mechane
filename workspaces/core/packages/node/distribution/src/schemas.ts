@@ -1,6 +1,6 @@
 import { ArtifactDigest, ReleaseDescriptor } from '@mechane/program';
-import { Release, RELEASE_REPOSITORY } from '@mechane/protocol';
 import { GitCommit, SHA256_DIGEST_PATTERN, SHA256_PATTERN } from '@mechane/records';
+import { Release, RELEASE_REPOSITORY } from '@mechane/releases';
 import { WranglerMigrations } from '@mechane/wrangler';
 import { Schema } from 'effect';
 import {

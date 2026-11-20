@@ -6,13 +6,10 @@ import { useNavigate } from '@tanstack/react-router';
 import type { ComponentProps, ReactNode } from 'react';
 import type { ConsoleLocation } from './types.ts';
 
-const listLabels = {
-  agents: 'agents',
-  sessions: 'sessions',
-  sessionEvidence: 'captures',
-  mechs: 'mechs',
-  turns: 'runs',
-} satisfies Record<ListKind, string>;
+const listLabels = { agents: 'agents', sessions: 'sessions', sessionEvidence: 'captures' } satisfies Record<
+  ListKind,
+  string
+>;
 
 type ListPageProps<Item extends string> = ComponentProps<typeof PageLayout<Item>> & {
   readonly kind: ListKind;
@@ -52,11 +49,7 @@ export function ListPage<Item extends string>({
 
         return next;
       },
-      state: (previous) => ({
-        ...previous,
-        managedPages: [],
-        ...(kind === 'turns' && { consolePages: { ...previous.consolePages, turns: [] } }),
-      }),
+      state: (previous) => ({ ...previous, managedPages: [] }),
     });
   }
 
@@ -71,15 +64,12 @@ export function ListPage<Item extends string>({
     filters: [
       {
         id: 'status',
-        label: kind === 'turns' ? 'Outcome' : 'Status',
+        label: 'Status',
         value: filter ?? defaultValue,
         defaultValue,
         options: [
           ...(defaultValue === '' ? [{ value: '', label: 'All' }] : []),
-          ...listFilters[kind].map((value) => ({
-            value,
-            label: kind === 'turns' && value === 'queued' ? 'Ready' : value.charAt(0).toUpperCase() + value.slice(1),
-          })),
+          ...listFilters[kind].map((value) => ({ value, label: value.charAt(0).toUpperCase() + value.slice(1) })),
         ],
         onChange: (value) => update({ filter: value }),
       },

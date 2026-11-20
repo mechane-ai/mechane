@@ -1,6 +1,6 @@
 import type { CommandResult, RunFailure, RunInput } from '@mechane/cli-kernel';
 import { Effect } from 'effect';
-import { withWorkspace } from '../mechs/with-workspace.ts';
+import { withWorkspace } from '../with-workspace.ts';
 
 /** Shows the workspace's daily model allowance and what the current UTC day has committed of it. */
 export const runAllowanceShow = Effect.fn('runAllowanceShow')(function* ({

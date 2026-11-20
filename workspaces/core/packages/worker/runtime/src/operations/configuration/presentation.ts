@@ -1,9 +1,7 @@
 import type {
-  ConnectionRecord,
   CredentialMetadata,
   ExecutionAccess,
   MemberRecord,
-  ToolGrantRecord,
   WorkspacePolicy,
   WorkspaceRecord,
 } from '@mechane/control-store';
@@ -39,23 +37,6 @@ export function credentialWire(credential: CredentialMetadata) {
     created_at: credential.createdAt,
     updated_at: credential.updatedAt,
   };
-}
-
-export function connectionWire(connection: ConnectionRecord) {
-  return {
-    id: connection.id,
-    name: connection.name,
-    url: connection.url,
-    secret_reference: connection.secretReference,
-    allowed_tools: connection.allowedTools,
-    policy: connection.policy,
-    created_at: connection.createdAt,
-    updated_at: connection.updatedAt,
-  };
-}
-
-export function grantWire(grant: ToolGrantRecord) {
-  return { mech_id: grant.mechId, connection_id: grant.connectionId, tools: grant.tools };
 }
 
 export function executionAccessWire(access: ExecutionAccess | null): unknown {

@@ -3,7 +3,10 @@
   "compilerOptions": { "types": ["@cloudflare/workers-types", "node"] },
   "files": ["lint/types/worker/strict-globals.d.ts"],
   "include": [
+    "packages/worker/agent-slot/src",
+    "packages/worker/authority-store/src",
     "packages/worker/control-store/src",
+    "packages/worker/managed-store/src",
     "packages/worker/runtime/src",
     "packages/worker/sandbox/src",
     "packages/worker/sandbox/testing",

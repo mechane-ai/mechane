@@ -1,7 +1,7 @@
+import { StoredChecksum } from '@mechane/authority-store';
+import type { StoreContext } from '@mechane/authority-store';
 import { Schema } from 'effect';
 import { createHash } from 'node:crypto';
-import type { StoreContext } from './context.ts';
-import { StoredChecksum } from './row-values.ts';
 import { DOMAIN_MIGRATIONS } from './schema.ts';
 
 const MigrationRow = Schema.Struct({ version: Schema.Number, checksum: StoredChecksum });

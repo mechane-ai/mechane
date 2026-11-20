@@ -1,6 +1,7 @@
 import type { CredentialKeyring } from '@mechane/control-store';
 import { OriginProtocol, SecureOrigin, ServiceOrigin } from '@mechane/deployment';
 import { SHA256_PATTERN } from '@mechane/records';
+import type { PluggableSandboxProvider } from '@mechane/sandbox-provider';
 import { Predicate, Record, Redacted, Schema } from 'effect';
 import { readManagedGitSettings } from './managed/git/settings.ts';
 import type { ManagedGitSettings } from './managed/git/settings.ts';
@@ -15,6 +16,7 @@ import { ManagedEffort } from './models/model-effort.ts';
 const PositiveInteger = Schema.Int.check(Schema.isGreaterThan(0));
 const NonnegativeInteger = Schema.Int.check(Schema.isGreaterThanOrEqualTo(0));
 const SecretBinding = Schema.Struct({ get: Schema.declare(Predicate.isFunction) });
+const HyperdriveBinding = Schema.Struct({ connectionString: Schema.NonEmptyString });
 
 const TokenRates = Schema.Struct({
   inputMicrosPerMillionTokens: NonnegativeInteger,
@@ -52,8 +54,26 @@ const OffersSchema = Schema.NonEmptyArray(ModelOfferSchema);
 const DEFAULT_MAX_CONNECTIONS = 4;
 const DEFAULT_DAILY_CAP_MICROS = 50_000_000;
 const DEFAULT_MAX_MACHINES = 10;
+const DEFAULT_SANDBOX_IMAGE = 'ghcr.io/mechane-ai/worker-agent:latest';
+const DEFAULT_TENSORLAKE_API_URL = 'https://api.tensorlake.ai';
+const DEFAULT_MODAL_APP_NAME = 'mechane-sandboxes';
+const DISABLED_SANDBOX_ORIGIN = 'https://sandbox.invalid';
+const DISABLED_SANDBOX_BEARER = 'disabled-sandbox-service-key';
 
 export type ModelOffer = typeof ModelOfferSchema.Type;
+
+export type SandboxRuntimeConfiguration = {
+  readonly provider: PluggableSandboxProvider;
+  readonly origin: string;
+  readonly bearer: Redacted.Redacted;
+  readonly image: string;
+  readonly tensorlake: { readonly apiKey: Redacted.Redacted | null; readonly baseUrl: string };
+  readonly modal: {
+    readonly baseUrl: string | null;
+    readonly bearerToken: Redacted.Redacted | null;
+    readonly appName: string;
+  };
+};
 
 export type RuntimeConfiguration = {
   readonly databaseUrl: Redacted.Redacted;
@@ -72,7 +92,7 @@ export type RuntimeConfiguration = {
     readonly credentials: GatewayCredentials;
     readonly offers: ReadonlyArray<ModelOffer>;
   };
-  readonly sandbox: { readonly origin: string; readonly bearer: Redacted.Redacted };
+  readonly sandbox: SandboxRuntimeConfiguration;
 };
 
 export type RuntimeEnvironment = Readonly<Record<string, unknown>>;
@@ -83,6 +103,8 @@ const SECRET_SETTINGS = [
   'MECHANE_MODEL_UPSTREAM_KEY',
   'MECHANE_MODEL_ASSERTION_BEARER',
   'MECHANE_SANDBOX_SERVICE_KEY',
+  'MECHANE_TENSORLAKE_API_KEY',
+  'MECHANE_MODAL_BRIDGE_TOKEN',
   'MECHANE_GITHUB_CLIENT_SECRET',
   'MECHANE_SERVER_API_KEY',
   'MECHANE_AGENT_IDENTITY_PRIVATE_KEY_PEM',
@@ -107,11 +129,31 @@ export async function resolveRuntimeEnvironment({
   return resolved;
 }
 
+function runtimeDatabaseUrl(environment: RuntimeEnvironment): string {
+  const hyperdrive = environment['HYPERDRIVE'];
+
+  if (Schema.is(HyperdriveBinding)(hyperdrive)) {
+    return hyperdrive.connectionString;
+  }
+
+  return requiredEnvironment(environment, 'MECHANE_DATABASE_URL');
+}
+
 function requiredEnvironment(environment: RuntimeEnvironment, name: string): string {
   const value = environment[name];
 
   if (typeof value !== 'string' || value.length === 0) {
     throw new Error(`Missing runtime setting ${name}`);
+  }
+
+  return value;
+}
+
+function optionalString(environment: RuntimeEnvironment, name: string): string | null {
+  const value = environment[name];
+
+  if (typeof value !== 'string' || value.length === 0) {
+    return null;
   }
 
   return value;
@@ -125,6 +167,119 @@ function serviceOrigin(value: unknown, name: string): URL {
   }
 
   return decoded.success;
+}
+
+function resolveSandboxProvider(environment: RuntimeEnvironment): PluggableSandboxProvider {
+  const raw = optionalString(environment, 'MECHANE_SANDBOX_PROVIDER');
+
+  switch (raw) {
+    case null:
+    case 'cloudflare':
+    case 'container':
+    case 'host':
+      return 'cloudflare';
+    case 'docker':
+    case 'modal':
+    case 'tensorlake':
+    case 'none':
+      return raw;
+    default:
+      throw new Error('Invalid runtime setting MECHANE_SANDBOX_PROVIDER');
+  }
+}
+
+function optionalRedacted(value: string | null): Redacted.Redacted | null {
+  if (value === null) {
+    return null;
+  }
+
+  return Redacted.make(value);
+}
+
+function resolveSandboxOrigin(environment: RuntimeEnvironment, provider: PluggableSandboxProvider): string {
+  const rawOrigin = optionalString(environment, 'MECHANE_SANDBOX_ORIGIN');
+
+  if (provider === 'cloudflare' || rawOrigin !== null) {
+    return serviceOrigin(environment['MECHANE_SANDBOX_ORIGIN'], 'MECHANE_SANDBOX_ORIGIN').origin;
+  }
+
+  return DISABLED_SANDBOX_ORIGIN;
+}
+
+function resolveSandboxBearer(environment: RuntimeEnvironment, provider: PluggableSandboxProvider): Redacted.Redacted {
+  if (provider === 'none') {
+    const rawBearer = optionalString(environment, 'MECHANE_SANDBOX_SERVICE_KEY');
+
+    return Redacted.make(rawBearer ?? DISABLED_SANDBOX_BEARER);
+  }
+
+  return Redacted.make(requiredEnvironment(environment, 'MECHANE_SANDBOX_SERVICE_KEY'));
+}
+
+function resolveTensorlakeSettings(environment: RuntimeEnvironment, provider: PluggableSandboxProvider) {
+  const rawUrl = optionalString(environment, 'MECHANE_TENSORLAKE_API_URL');
+
+  const baseUrl: string = (() => {
+    if (rawUrl === null) {
+      return DEFAULT_TENSORLAKE_API_URL;
+    }
+
+    return serviceOrigin(rawUrl, 'MECHANE_TENSORLAKE_API_URL').origin;
+  })();
+
+  const rawKey: string | null = (() => {
+    if (provider === 'tensorlake') {
+      return requiredEnvironment(environment, 'MECHANE_TENSORLAKE_API_KEY');
+    }
+
+    return optionalString(environment, 'MECHANE_TENSORLAKE_API_KEY');
+  })();
+
+  return { apiKey: optionalRedacted(rawKey), baseUrl };
+}
+
+function resolveModalSettings(environment: RuntimeEnvironment, provider: PluggableSandboxProvider) {
+  const rawUrl = optionalString(environment, 'MECHANE_MODAL_BRIDGE_URL');
+
+  const baseUrl: string | null = (() => {
+    if (provider === 'modal' || rawUrl !== null) {
+      return serviceOrigin(environment['MECHANE_MODAL_BRIDGE_URL'], 'MECHANE_MODAL_BRIDGE_URL').origin;
+    }
+
+    return null;
+  })();
+
+  const rawToken: string | null = (() => {
+    if (provider === 'modal') {
+      return requiredEnvironment(environment, 'MECHANE_MODAL_BRIDGE_TOKEN');
+    }
+
+    return optionalString(environment, 'MECHANE_MODAL_BRIDGE_TOKEN');
+  })();
+
+  return {
+    baseUrl,
+    bearerToken: optionalRedacted(rawToken),
+    appName: optionalString(environment, 'MECHANE_MODAL_APP_NAME') ?? DEFAULT_MODAL_APP_NAME,
+  };
+}
+
+function loadSandboxConfiguration(environment: RuntimeEnvironment): SandboxRuntimeConfiguration {
+  const provider = resolveSandboxProvider(environment);
+
+  const image =
+    optionalString(environment, 'MECHANE_SANDBOX_IMAGE') ??
+    optionalString(environment, 'MECHANE_CONTAINER_IMAGE') ??
+    DEFAULT_SANDBOX_IMAGE;
+
+  return {
+    provider,
+    origin: resolveSandboxOrigin(environment, provider),
+    bearer: resolveSandboxBearer(environment, provider),
+    image,
+    tensorlake: resolveTensorlakeSettings(environment, provider),
+    modal: resolveModalSettings(environment, provider),
+  };
 }
 
 function modelEndpoint(environment: RuntimeEnvironment): string {
@@ -194,10 +349,8 @@ export function loadRuntimeConfiguration({
     'MECHANE_GITHUB_API_ORIGIN',
   );
 
-  const sandboxOrigin = serviceOrigin(environment['MECHANE_SANDBOX_ORIGIN'], 'MECHANE_SANDBOX_ORIGIN');
-
   return {
-    databaseUrl: Redacted.make(requiredEnvironment(environment, 'MECHANE_DATABASE_URL')),
+    databaseUrl: Redacted.make(runtimeDatabaseUrl(environment)),
     credentialKeyring: Redacted.make(keyring),
     maxConnections: optionalInteger(environment, 'MECHANE_DATABASE_MAX_CONNECTIONS', DEFAULT_MAX_CONNECTIONS),
     maxDailyAllowanceMicros: optionalInteger(
@@ -213,10 +366,7 @@ export function loadRuntimeConfiguration({
     managedWeb: readManagedWebSettings(environment),
     githubApiOrigin: githubApiOrigin.origin,
     model: { upstreamUrl: modelEndpoint(environment), credentials: gatewayCredentials(environment), offers },
-    sandbox: {
-      origin: sandboxOrigin.origin,
-      bearer: Redacted.make(requiredEnvironment(environment, 'MECHANE_SANDBOX_SERVICE_KEY')),
-    },
+    sandbox: loadSandboxConfiguration(environment),
   };
 }
 

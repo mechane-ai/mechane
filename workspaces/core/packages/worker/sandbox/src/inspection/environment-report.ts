@@ -1,5 +1,5 @@
-import { RELEASE } from '@mechane/protocol';
 import { RemoteSandboxId } from '@mechane/records';
+import { RELEASE } from '@mechane/releases';
 import { FileCheckpointPurpose } from '@mechane/sandbox-store';
 import type { SandboxStore } from '@mechane/sandbox-store';
 import { SandboxPhase } from '@mechane/sandbox-wire';

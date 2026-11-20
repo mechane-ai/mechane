@@ -1,5 +1,6 @@
 import { UpdateOutcome } from '@mechane/program';
-import { ErrorFamily, Release } from '@mechane/protocol';
+import { ErrorFamily } from '@mechane/protocol';
+import { Release } from '@mechane/releases';
 import { Schema } from 'effect';
 
 /** What `mechane update` reports: what it found or did, the release it ran, the latest, and the binary it replaces. */

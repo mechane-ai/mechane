@@ -10,7 +10,6 @@ import {
 } from '@mechane/protocol';
 import { HttpHeader } from '@mechane/records';
 import { DateTime, Schema } from 'effect';
-import { CONFIGURATION_UNCONFIRMED_REASON } from '../control/deliver-changes.ts';
 import { authenticationChallenge } from './authentication-challenge.ts';
 
 type FailureResponseInput = { readonly failure: unknown; readonly request: Request };
@@ -34,10 +33,6 @@ const FAILURE_MESSAGES: Readonly<Partial<Record<ServerFailure['_tag'], string>>>
 };
 
 function failureMessage(failure: ServerFailure): string {
-  if (failure._tag === 'ServiceUnavailable' && failure.reason === CONFIGURATION_UNCONFIRMED_REASON) {
-    return CONFIGURATION_UNCONFIRMED_REASON;
-  }
-
   if (failure._tag === 'KeyExpired') {
     return `The API key expired at ${DateTime.formatIso(failure.expiresAt)}. Run mechane auth login to replace it.`;
   }

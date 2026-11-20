@@ -1,22 +1,17 @@
+import {
+  createAuthStore,
+  createConfigurationRecords,
+  createCredentialStore,
+  createProviderAttemptStore,
+  createSandboxCapacityStore,
+  openPool,
+  poolContext,
+  StoredText,
+} from '@mechane/authority-store';
+import type { CredentialKeyring, DatabaseInput, StoreContext } from '@mechane/authority-store';
+import { createManagedCatalog } from '@mechane/managed-store';
 import { Schema } from 'effect';
 import { createHash } from 'node:crypto';
-import type { ControlChange } from '../control-change.ts';
-import type { CredentialKeyring } from '../domain.ts';
-import { createAuthStore } from './api/auth/auth.ts';
-import { createConfigurationRecords } from './api/configuration/configuration.ts';
-import { createMechStore } from './api/mechs/mechs.ts';
-import { poolContext } from './context.ts';
-import type { StoreContext } from './context.ts';
-import { createControlChangeStore } from './control-changes.ts';
-import { createCredentialStore } from './credentials.ts';
-import { createImportedHistoryStore } from './imported-history/history.ts';
-import { createManagedCatalog } from './managed/catalog.ts';
-import { createMemberAdmissionStore } from './member-admission.ts';
-import { openPool } from './postgres.ts';
-import type { DatabaseInput } from './postgres.ts';
-import { createProviderAttemptStore } from './provider-attempts.ts';
-import { StoredText } from './row-values.ts';
-import { createSandboxCapacityStore } from './sandbox-capacity.ts';
 import { readMigrationHistory, requireSchemaRevision, validateAppliedMigrations } from './schema-revision.ts';
 import type { MigrationRow } from './schema-revision.ts';
 import { DOMAIN_MIGRATIONS } from './schema.ts';
@@ -34,15 +29,11 @@ function createControlRecords(context: StoreContext, keyring: CredentialKeyring)
     managed: createManagedCatalog(context, keyring),
     ...createAuthStore(context),
     ...createConfigurationRecords(context),
-    ...createMechStore(context),
     ...createProviderAttemptStore(context),
-    ...createControlChangeStore(context),
-    ...createImportedHistoryStore(context),
-    ...createMemberAdmissionStore(context),
     ...createCredentialStore(context, keyring),
     ...createSandboxCapacityStore(context),
     checkHealth: async (): Promise<void> => {
-      await context.client.query('SELECT id FROM mechane.mechs LIMIT 1');
+      await context.client.query('SELECT id FROM mechane.workspaces LIMIT 1');
     },
     schemaRevision: async (): Promise<number> =>
       await requireSchemaRevision({ context, minimumVersion: DOMAIN_MIGRATIONS.length }),
@@ -50,19 +41,12 @@ function createControlRecords(context: StoreContext, keyring: CredentialKeyring)
 }
 
 export type ControlStore = ReturnType<typeof createControlRecords>;
-type CapturedControlChanges<Result> = { readonly value: Result; readonly changes: ReadonlyArray<ControlChange> };
-
-export type CaptureControlChanges = <Result>(input: {
-  readonly run: (store: ControlStore) => Promise<Result>;
-}) => Promise<CapturedControlChanges<Result>>;
 
 export async function openControlStore({
   databaseUrl,
   keyring,
   maxConnections,
-}: OpenControlStoreInput): Promise<
-  ControlStore & { readonly close: () => Promise<void>; readonly captureControlChanges: CaptureControlChanges }
-> {
+}: OpenControlStoreInput): Promise<ControlStore & { readonly close: () => Promise<void> }> {
   const pool = openPool({ databaseUrl, maxConnections: maxConnections ?? DEFAULT_MAX_CONNECTIONS });
   const store = createControlRecords(poolContext(pool), keyring);
 
@@ -75,20 +59,7 @@ export async function openControlStore({
     throw error;
   }
 
-  const captureControlChanges: CaptureControlChanges = async ({ run }) => {
-    const changes: Array<ControlChange> = [];
-
-    const context = poolContext(pool, (committed) => {
-      changes.push(...committed);
-    });
-
-    const scoped = createControlRecords(context, keyring);
-    const value = await run(scoped);
-
-    return { value, changes: [...changes] };
-  };
-
-  return { ...store, captureControlChanges, close: async () => await pool.end() };
+  return { ...store, close: async () => await pool.end() };
 }
 
 export async function migrateControlStore({ databaseUrl }: DatabaseInput): Promise<void> {

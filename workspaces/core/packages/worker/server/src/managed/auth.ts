@@ -1,5 +1,5 @@
 import type { ControlStore, ManagedScope } from '@mechane/control-store';
-import { managedWorkspaceId } from '@mechane/protocol';
+import { managedWorkspaceId } from '@mechane/managed-protocol';
 import { HttpHeader, HttpStatusCode, RecordId } from '@mechane/records';
 import { isInstallationAdministrator, limitAuthentication } from '@mechane/runtime';
 import type { AuthenticationConfiguration } from '@mechane/runtime';

@@ -1,13 +1,15 @@
+import type { SlotNamespace } from '@mechane/agent-slot';
 import type { ControlStore } from '@mechane/control-store';
-import type { ActorNamespace, RuntimeConfiguration } from '@mechane/runtime';
+import type { RuntimeConfiguration } from '@mechane/runtime';
 import { reconcileLostWork } from '../managed/work-recovery.ts';
 import { awaitInstalledProgress } from './await-installed-progress.ts';
+import { resolveSandboxBackend } from './provider-dispatch.ts';
 import { resumeInstalledStartup, waitForInstalledRelease } from './reconcile-installed.ts';
 
 type DispatchInstalledInput = {
   readonly store: ControlStore;
   readonly configuration: RuntimeConfiguration;
-  readonly actors: ActorNamespace;
+  readonly sessions: Pick<SlotNamespace, 'getByName'>;
   readonly workspaceId: string;
   readonly environmentId: string;
   readonly sessionId: string;
@@ -16,12 +18,18 @@ type DispatchInstalledInput = {
 export async function dispatchInstalledSession({
   store,
   configuration,
-  actors,
+  sessions,
   workspaceId,
   environmentId,
   sessionId,
 }: DispatchInstalledInput): Promise<{ readonly hasReleasedCapacity: boolean }> {
-  await reconcileLostWork({ store, actors, workspaceId, environmentId, sessionId });
+  const backend = resolveSandboxBackend(configuration);
+
+  if (backend.kind === 'none') {
+    return { hasReleasedCapacity: false };
+  }
+
+  await reconcileLostWork({ store, sessions, workspaceId, environmentId, sessionId });
 
   const hasReleasedCapacity = await waitForInstalledRelease({
     store,

@@ -7,9 +7,9 @@ import {
   ResponseUnreadable,
 } from '@mechane/client';
 import { ConsoleStorageFailed } from '@mechane/console-cache';
-import { catalog, ErrorFamily } from '@mechane/protocol';
-import type { OperationInput, OperationOutput } from '@mechane/protocol';
-import { HttpMethod, HttpStatusCode } from '@mechane/records';
+import { ErrorFamily } from '@mechane/protocol';
+import type { catalog, OperationInput, OperationOutput } from '@mechane/protocol';
+import { HttpStatusCode } from '@mechane/records';
 import { Effect, Option, Result, Schema } from 'effect';
 import type { Duration } from 'effect';
 import {
@@ -18,34 +18,12 @@ import {
   ManagedSessionUnavailable,
   managedStatus,
 } from './managed-errors.ts';
-import {
-  isTransientReadFailure,
-  ReadResponseFailed,
-  ReadTimedOut,
-  recoverRead,
-  REQUEST_TIMEOUT,
-} from './read-recovery.ts';
+import { isTransientReadFailure, ReadResponseFailed, ReadTimedOut, recoverRead } from './read-recovery.ts';
 
 /** The authenticated operations the console currently exposes. */
-export type ConsoleOperation =
-  | 'showPrincipal'
-  | 'listWorkspaces'
-  | 'listConsoleMessages'
-  | 'listMechs'
-  | 'showMech'
-  | 'listTurns'
-  | 'showTurn'
-  | 'listTurnEvents'
-  | 'listRecentEvents'
-  | 'listEvidence'
-  | 'showEvidence'
-  | 'showEnvironment'
-  | 'showEnvironmentProcess'
-  | 'stopEnvironmentProcess'
-  | 'showAllowance';
+export type ConsoleOperation = 'showPrincipal' | 'listWorkspaces';
 
-export type Input<N extends ConsoleOperation> = OperationInput<(typeof catalog)[N]>;
-/** The decoded result of a catalog operation. */
+type Input<N extends ConsoleOperation> = OperationInput<(typeof catalog)[N]>;
 export type Output<N extends ConsoleOperation> = OperationOutput<(typeof catalog)[N]>;
 
 /** A cancelable browser call using the existing session cookie. */
@@ -57,12 +35,7 @@ export type ConsoleApi = <N extends ConsoleOperation>(
 
 const SCOPE_FAILURE_FAMILIES: ReadonlySet<ErrorFamily> = new Set([ErrorFamily.Unauthenticated, ErrorFamily.Forbidden]);
 
-const READ_FAILURE_SCOPES: ReadonlyMap<string, 'scope' | 'mech' | 'turn' | 'artifact'> = new Map([
-  ['WorkspaceNotFound', 'scope'],
-  ['MechNotFound', 'mech'],
-  ['TurnNotFound', 'turn'],
-  ['EvidenceNotFound', 'artifact'],
-]);
+const READ_FAILURE_SCOPES: ReadonlyMap<string, 'scope'> = new Map([['WorkspaceNotFound', 'scope']]);
 
 const SESSION_CHANGES: ReadonlySet<string> = new Set(['IdentityNotAdmitted', 'WorkspaceNotFound']);
 
@@ -106,9 +79,7 @@ export function createApi(origin: URL, lifetime: AbortSignal, onSessionEnded: (f
       return result.success;
     }
 
-    return catalog[name].method === HttpMethod.Get
-      ? await recoverRead({ signal: combined, read: exchange })
-      : await exchange(combined, REQUEST_TIMEOUT);
+    return await recoverRead({ signal: combined, read: exchange });
   };
 }
 
@@ -149,10 +120,6 @@ export function problemMessage(error: unknown): string {
     return 'The conversation could not be loaded. Try again.';
   }
 
-  if (error instanceof OperationFailed && error.failure._tag === 'EvidenceNotFound') {
-    return 'This capture is no longer available.';
-  }
-
   if (error instanceof OperationFailed || Schema.is(ConsoleStorageFailed)(error)) {
     return error.message;
   }
@@ -179,7 +146,7 @@ export function canRetainResult(error: unknown): boolean {
 }
 
 /** The smallest confirmed removal boundary; undefined leaves admitted content available. */
-export function readFailureScope(error: unknown): 'scope' | 'mech' | 'turn' | 'artifact' | 'request' | undefined {
+export function readFailureScope(error: unknown): 'scope' | 'request' | undefined {
   if (
     Schema.is(ManagedResourceMismatch)(error) ||
     Schema.is(ManagedSessionUnavailable)(error) ||

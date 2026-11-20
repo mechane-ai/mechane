@@ -1,6 +1,6 @@
 import '../../../../licenses/semver.js';
-import { Release } from '@mechane/protocol';
 import { GitCommit, SHA256_PATTERN } from '@mechane/records';
+import { Release } from '@mechane/releases';
 import { Effect, Option, Record, Schema } from 'effect';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';

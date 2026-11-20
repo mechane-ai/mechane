@@ -13,7 +13,7 @@ import type { AuthCaller } from '@mechane/runtime';
 import { Option, Record, Schema } from 'effect';
 import { readJsonBody } from './body.ts';
 import { respondFailure } from './failure.ts';
-import type { ProtocolHandlerOptions, ProtocolRequest } from './types.ts';
+import type { ProtocolHandlerOptions } from './types.ts';
 
 const workspaceAccess: ReadonlySet<Operation['access']> = new Set([Access.Member, Access.Owner]);
 
@@ -121,15 +121,7 @@ export function createProtocolHandler({
       }
 
       const input = await decodeInput({ request, url, route, operation });
-      const range = request.headers.get(HttpHeader.Range);
-      const context: ProtocolRequest = { name: route.name, input, caller };
-      const requestContext = withMediaRange({ context, range });
-      const output = await execute(requestContext);
-
-      if ('response' in operation) {
-        return Schema.decodeUnknownSync(operation.output)(output);
-      }
-
+      const output = await execute({ name: route.name, input, caller });
       const decoded = Schema.decodeUnknownSync(operation.output)(output);
       const body = Schema.encodeSync(operation.output)(decoded);
 
@@ -138,14 +130,4 @@ export function createProtocolHandler({
       return respondFailure({ failure, request });
     }
   };
-}
-
-type MediaRequestContext = { readonly context: ProtocolRequest; readonly range: string | null };
-
-function withMediaRange({ context, range }: MediaRequestContext): ProtocolRequest {
-  if (range === null) {
-    return context;
-  }
-
-  return { ...context, mediaRange: range };
 }

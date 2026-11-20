@@ -25,6 +25,11 @@ other sessions and independent resources.
 
 ## Checks
 
+Verify that `packages/shared/protocol/upstream/compatibility-matrix.json` explicitly classifies every Managed Agents and
+adjacent beta operation from the pinned OpenAPI fixture as `implemented` or `excluded_self_hosted`, that every
+`implemented` operation is projected into `requests.generated.json`, and that every `implemented` operation is
+dispatched in `packages/worker/server/src/managed/` via `generate-requests.mjs --check`.
+
 Run unmodified Anthropic SDK clients against the compiled service and inspect their actual request and response shapes.
 Cover create with initial events, ordered histories, session-local tool results, error envelopes, filtering and
 pagination, revocation and stream reconnection. Qualify an unmodified external worker through an actual claim, tool

@@ -1,4 +1,4 @@
-import type { ManagedHttpRoute } from '@mechane/protocol';
+import type { ManagedHttpRoute } from '@mechane/managed-protocol';
 import { HttpHeader, HttpStatusCode, MediaType } from '@mechane/records';
 import { Option } from 'effect';
 import { readJsonBody, readTextBody } from '../http/body.ts';

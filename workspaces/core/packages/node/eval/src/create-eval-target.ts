@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { call } from '@mechane/client';
-import { managedWorkspaceId } from '@mechane/protocol';
+import { managedWorkspaceId } from '@mechane/managed-protocol';
 import { Bytes, BYTES_PER_MEBIBYTE, WorkspaceId } from '@mechane/records';
 import { Duration, Effect, Option, Redacted, Schema } from 'effect';
 import type { EvalTarget } from './application-types.ts';

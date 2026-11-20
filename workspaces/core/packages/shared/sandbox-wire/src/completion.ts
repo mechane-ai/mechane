@@ -2,7 +2,6 @@ import { MachineId } from '@mechane/records';
 import { Schema } from 'effect';
 import { SandboxOwner } from './sandbox-owner.ts';
 import { ExecutionId } from './schemas.ts';
-import { SANDBOX_SERVICE_PREFIX } from './service.ts';
 
 export const SANDBOX_COMPLETION_PATH = '/internal/sandboxes/completions';
 
@@ -38,11 +37,3 @@ export type SandboxCompletion = typeof SandboxCompletion.Type;
 export const SandboxCompletionAccepted = Schema.Struct({ accepted: Schema.Literal(true) });
 
 export const SandboxCompletionIdentity = Schema.Struct({ ...SandboxOwner.fields, executionId: ExecutionId });
-
-export function sandboxCompletionPath({
-  workspaceId,
-  mechId,
-  executionId,
-}: typeof SandboxCompletionIdentity.Type): string {
-  return `${SANDBOX_SERVICE_PREFIX}/${encodeURIComponent(workspaceId)}/${encodeURIComponent(mechId)}/completions/${encodeURIComponent(executionId)}`;
-}

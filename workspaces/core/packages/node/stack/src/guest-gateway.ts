@@ -1,4 +1,4 @@
-import { canForwardManagedWorkerRequest } from '@mechane/protocol';
+import { canForwardManagedWorkerRequest } from '@mechane/managed-protocol';
 import { HttpHeader, HttpMethod, HttpStatusCode } from '@mechane/records';
 import { Record } from 'effect';
 import { randomUUID } from 'node:crypto';

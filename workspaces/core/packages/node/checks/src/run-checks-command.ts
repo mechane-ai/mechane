@@ -12,6 +12,7 @@ import { applyNormalizers } from './fixers/apply-normalizers.ts';
 import { loadChecksSettings } from './load-checks-settings.ts';
 import { measureRules } from './measure/measure-rules.ts';
 import { runChecks } from './run-checks.ts';
+import { ciPlanLines } from './selection/ci-plan.ts';
 import { affectedChecks, runAffectedChecks, runQualifiedTarget } from './selection/qualification.ts';
 import { tightenBaselines } from './tighten-baselines.ts';
 import type { ChecksSettings } from './types.ts';
@@ -50,6 +51,11 @@ const COMMAND_RUNS: Readonly<Record<ChecksCommand, CommandRun>> = {
   [ChecksCommand.Compare]: ({ inherited }) => compareFingerprint({ inherited }),
   [ChecksCommand.Changed]: ({ baseBranch, inherited }) => {
     const lines = changedFiles({ baseBranch, inherited });
+
+    return printed({ lines });
+  },
+  [ChecksCommand.CiPlan]: ({ baseBranch, inherited }) => {
+    const lines = ciPlanLines({ baseBranch, inherited });
 
     return printed({ lines });
   },

@@ -1,4 +1,4 @@
-import { EvidenceStatus, MechSummary, TurnRuntimeSource, TurnStatus } from '@mechane/protocol';
+import { EvidenceStatus } from '@mechane/protocol';
 import { Schema } from 'effect';
 import { ManagedSession } from './managed-records.ts';
 
@@ -6,8 +6,6 @@ export const listFilters = {
   agents: ['active', 'archived'],
   sessions: Object.values(ManagedSession.fields.status.enums),
   sessionEvidence: Object.values(EvidenceStatus),
-  mechs: Object.values(MechSummary.to.fields.status.enums),
-  turns: [...Object.values(TurnStatus), TurnRuntimeSource.Imported],
 } as const;
 
 export type ListKind = keyof typeof listFilters;

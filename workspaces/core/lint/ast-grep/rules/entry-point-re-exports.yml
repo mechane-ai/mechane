@@ -8,7 +8,6 @@ ignores:
   [
     'packages/worker/server/src/main.ts',
     'packages/worker/runtime/src/channels/index.ts',
-    'packages/shared/protocol/src/presentation/index.ts',
     'packages/shared/client/src/presentation/index.ts',
     '**/node_modules/**',
     'packages/**/src/index.ts',

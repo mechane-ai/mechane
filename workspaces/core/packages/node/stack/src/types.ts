@@ -143,20 +143,6 @@ export type RestartOptions = {
 
 export type SandboxRestartOptions = Pick<RestartOptions, 'signal'> & { readonly whileStopped?: () => Promise<void> };
 
-export type ConversationImportScope = { readonly workspaceId: string; readonly mechId: string };
-
-type ImportedPublication = {
-  readonly id: string;
-  readonly text: string;
-  readonly presentation: Readonly<Record<string, unknown>> | null;
-  readonly createdAt: string;
-  readonly shouldRepairId: boolean;
-};
-
-export type ConversationImport = { readonly runId: string; readonly publications: ReadonlyArray<ImportedPublication> };
-
-type PreparedConversationImport = ConversationImport & { readonly applyMigration: () => Promise<void> };
-
 export type SandboxFixtureMachine = { readonly machineId: string; readonly containerId: string };
 export type SandboxFixtureFile = { readonly machineId: string; readonly path: string };
 export type SandboxFixtureWrite = SandboxFixtureFile & { readonly contents: string };
@@ -202,7 +188,6 @@ export type LocalStack = {
   readonly registerGuestFixture: (answer: HttpHandler) => GuestHttpFixture;
   readonly registerGuestFixturePrefix: (answer: HttpHandler) => GuestHttpFixture;
   readonly restart: (input?: RestartOptions) => Promise<void>;
-  readonly prepareConversationImport: (input: ConversationImportScope) => Promise<PreparedConversationImport>;
   readonly stop: () => Promise<void>;
 };
 

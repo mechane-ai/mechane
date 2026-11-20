@@ -2,6 +2,7 @@ import { BACKGROUND_CONTEXT as context } from '@earendil-works/chord/context';
 import type { Context } from '@earendil-works/chord/context';
 import { configure, Harness, ProviderDoc } from '@earendil-works/pi-durable';
 import type { Storage, Tx } from '@earendil-works/pi-durable';
+import type { ManagedIdentitySlot } from '@mechane/agent-slot';
 import { HttpStatusCode } from '@mechane/records';
 import { serialCalls } from '@mechane/utilities';
 import type { InstalledWorkerWake, WithControl } from '../actor/types.ts';
@@ -20,7 +21,6 @@ import { openNativeLifetime } from './engine-lifetime.ts';
 import { managedWakeDeadline } from './engine-wake.ts';
 import { createExecutionGate } from './execution-gate.ts';
 import { failManagedRequest } from './failure.ts';
-import type { ManagedIdentitySlot } from './identity-slot.ts';
 import { transition } from './lifecycle.ts';
 import { managedModelSpans } from './model-spans.ts';
 import { hydrateNativeCompaction } from './native-compaction.ts';
@@ -137,6 +137,10 @@ export async function startManagedSessionEngine(options: StartOptions) {
     forwardMetadata: options.configuration.model.credentials.forwardMetadata,
     validateBudgetModels: (agent) => assertManagedBudgetModels(options.configuration, agent),
     destroyInstalledWorkspace: async (scope) => {
+      if (options.configuration.sandbox.provider !== 'cloudflare') {
+        return;
+      }
+
       const erased = await destroySessionWorkspace({ ...scope, sandbox: options.configuration.sandbox });
 
       if (!erased) {

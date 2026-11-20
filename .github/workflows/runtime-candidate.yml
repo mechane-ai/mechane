@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - workspaces/core/packages/shared/protocol/src/release.ts
+      - workspaces/core/packages/shared/releases/src/release.ts
   workflow_dispatch:
     inputs:
       source_commit:
@@ -148,10 +148,22 @@ jobs:
           path: ${{ runner.temp }}/mechane-build-logs
           if-no-files-found: ignore
           retention-days: 3
-  qualify:
+  qualify-shard:
     needs: build
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        shard:
+          - auth
+          - managed-core
+          - managed-advanced
+          - lifecycle
+          - console
+          - compute-fast
+          - compute-recovery
+          - compute-restore
     env:
       GITHUB_TOKEN: ${{ github.token }}
       MECHANE_BASE_BRANCH: origin/main
@@ -199,12 +211,117 @@ jobs:
           test ! -e "$CANDIDATE_DIRECTORY/qualification.json"
       - uses: ./.github/actions/setup
       - uses: ./.github/actions/candidate-docker
-      - name: Qualify the selected bytes without rebuilding
+      - name: Qualify shard ${{ matrix.shard }} without rebuilding
+        env:
+          ARTIFACTS_SHA256: ${{ needs.build.outputs.artifacts_sha256 }}
+          SHARD: ${{ matrix.shard }}
+        run: |
+          set -euo pipefail
+          mise -C workspaces/core run distribution:accept-shard -- "$CANDIDATE_DIRECTORY" "$ARTIFACTS_SHA256" "$SHARD" \
+            2>&1 | tee "$RUNNER_TEMP/mechane-shard-$SHARD.log"
+          mkdir -p "$RUNNER_TEMP/mechane-shard-output"
+          cp "$CANDIDATE_DIRECTORY/qualification-shard-$SHARD.json" "$CANDIDATE_DIRECTORY/qualification-shard-$SHARD.log" \
+            "$RUNNER_TEMP/mechane-shard-output/"
+      - name: Upload shard receipt
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: mechane-shard-${{ matrix.shard }}-${{ github.sha }}-attempt-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/mechane-shard-output
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 3
+      - name: Collect bounded shard diagnostics
+        if: always()
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: |
+          set -euo pipefail
+          logs="$RUNNER_TEMP/mechane-qualification-logs"
+          mkdir -p "$logs"
+          if [[ -f "$RUNNER_TEMP/mechane-shard-$SHARD.log" ]]; then
+            tail -c 262144 "$RUNNER_TEMP/mechane-shard-$SHARD.log" > "$logs/shard-$SHARD.log"
+          fi
+          shopt -s nullglob
+          {
+            for log in "${TMPDIR:-/tmp}"/mechane-node-stack-*/*.log \
+              "${TMPDIR:-/tmp}"/mechane-node-stack-*/application/.celld/{celld,build}.log \
+              "${TMPDIR:-/tmp}"/mechane-node-stack-*/sandbox/.celld/celld.log \
+              "${TMPDIR:-/tmp}"/mechane-node-failure-*/*.log; do
+              echo "== $log"
+              tail -c 65536 "$log" | tail -n 80
+            done
+          } | tail -c 262144 | tee "$logs/local-services.log"
+      - name: Retain shard diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: mechane-qualification-logs-${{ matrix.shard }}-${{ github.sha }}-attempt-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/mechane-qualification-logs
+          if-no-files-found: ignore
+          retention-days: 3
+  qualify:
+    needs: [build, qualify-shard]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      MECHANE_BASE_BRANCH: origin/main
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Select the candidate directory
+        run: printf 'CANDIDATE_DIRECTORY=%s/mechane-candidate\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
+      - name: Verify the qualification inputs
+        env:
+          EXPECTED_COMMIT: ${{ inputs.source_commit || github.sha }}
+          BUILD_ARTIFACT_ID: ${{ needs.build.outputs.artifact_id }}
+          ARCHIVE_SHA256: ${{ needs.build.outputs.archive_sha256 }}
+          ARTIFACTS_SHA256: ${{ needs.build.outputs.artifacts_sha256 }}
+        run: |
+          set -euo pipefail
+          checkout_commit=$(git rev-parse HEAD)
+          if [[ "$checkout_commit" != "$EXPECTED_COMMIT" ]]; then
+            printf '::error::The qualification checkout differs from the selected source commit.\n'
+            exit 1
+          fi
+          if [[ ! "$BUILD_ARTIFACT_ID" =~ ^[1-9][0-9]*$ || ! "$ARCHIVE_SHA256" =~ ^[0-9a-f]{64}$ ||
+            ! "$ARTIFACTS_SHA256" =~ ^[0-9a-f]{64}$ ]]; then
+            printf '::error::Select the completed build artifact ID and both exact SHA-256 digests.\n'
+            exit 1
+          fi
+      - name: Download the exact unqualified build
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          artifact-ids: ${{ needs.build.outputs.artifact_id }}
+          path: ${{ runner.temp }}/mechane-build-download
+      - name: Download all completed shard receipts
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: mechane-shard-*-${{ github.sha }}-attempt-${{ github.run_attempt }}
+          merge-multiple: true
+          path: ${{ runner.temp }}/mechane-shards
+      - name: Verify and unpack the selected build
+        env:
+          ARCHIVE_SHA256: ${{ needs.build.outputs.archive_sha256 }}
+          ARTIFACTS_SHA256: ${{ needs.build.outputs.artifacts_sha256 }}
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/mechane-build-download/mechane-candidate.tar"
+          printf '%s  %s\n' "$ARCHIVE_SHA256" "$archive" | sha256sum -c
+          mkdir "$CANDIDATE_DIRECTORY"
+          tar -xf "$archive" -C "$CANDIDATE_DIRECTORY"
+          printf '%s  %s\n' "$ARTIFACTS_SHA256" "$CANDIDATE_DIRECTORY/artifacts.json" | sha256sum -c
+          test ! -e "$CANDIDATE_DIRECTORY/qualification.json"
+      - uses: ./.github/actions/setup
+      - name: Seal canonical qualification from all verified shard receipts
         env:
           ARTIFACTS_SHA256: ${{ needs.build.outputs.artifacts_sha256 }}
         run: |
           set -euo pipefail
-          mise -C workspaces/core run distribution:accept -- "$CANDIDATE_DIRECTORY" "$ARTIFACTS_SHA256" \
+          mise -C workspaces/core run distribution:merge-qualification -- \
+            "$CANDIDATE_DIRECTORY" "$ARTIFACTS_SHA256" "$RUNNER_TEMP/mechane-shards" \
             2>&1 | tee "$RUNNER_TEMP/mechane-acceptance.log"
       - name: Retain the qualified candidate for promotion
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -223,16 +340,6 @@ jobs:
           if [[ -f "$RUNNER_TEMP/mechane-acceptance.log" ]]; then
             tail -c 262144 "$RUNNER_TEMP/mechane-acceptance.log" > "$logs/acceptance.log"
           fi
-          shopt -s nullglob
-          {
-            for log in "${TMPDIR:-/tmp}"/mechane-node-stack-*/*.log \
-              "${TMPDIR:-/tmp}"/mechane-node-stack-*/application/.celld/{celld,build}.log \
-              "${TMPDIR:-/tmp}"/mechane-node-stack-*/sandbox/.celld/celld.log \
-              "${TMPDIR:-/tmp}"/mechane-node-failure-*/*.log; do
-              echo "== $log"
-              tail -c 65536 "$log" | tail -n 80
-            done
-          } | tail -c 262144 | tee "$logs/local-services.log"
       - name: Retain qualification diagnostics
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a

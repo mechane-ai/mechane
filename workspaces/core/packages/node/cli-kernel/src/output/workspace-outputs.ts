@@ -1,6 +1,5 @@
 import {
   Allowance,
-  IntegrationSecretReference,
   Workspace,
   WorkspaceList,
   WorkspaceMember,
@@ -8,23 +7,9 @@ import {
   WorkspaceMemberRemoval,
   WorkspacePolicy,
 } from '@mechane/protocol';
-import { wireStruct, WorkspaceId } from '@mechane/records';
-import { Schema } from 'effect';
 
-const WorkspaceImportResult = wireStruct({
-  fields: {
-    workspaceId: WorkspaceId,
-    importedCredentials: Schema.Array(IntegrationSecretReference),
-    retainedCredentials: Schema.Array(IntegrationSecretReference),
-    hasPolicy: Schema.Boolean,
-  },
-});
-
-type WorkspaceImportResult = typeof WorkspaceImportResult.Type;
-
-/** Workspace commands expose runtime metadata, with imports reporting credential references rather than values. */
+/** Workspace commands expose runtime metadata. */
 export const WORKSPACE_OUTPUTS = {
-  'workspace import': WorkspaceImportResult,
   'workspace list': WorkspaceList,
   'workspace create': Workspace,
   'workspace members': WorkspaceMemberList,

@@ -50,38 +50,6 @@ export function createExecutionOperations({ store }: ConfigurationOperationsInpu
         return executionAccessWire(access);
       },
     }),
-    showExecutionAccess: validatedOperation({
-      operation: catalog.showExecutionAccess,
-      run: async ({ input, caller }) => {
-        const actor = requireAuthenticated(caller);
-
-        await store.authorizeConfigurationWorkspace({
-          ...input,
-          principalId: actor.principalId,
-          isOwnerRequired: true,
-        });
-
-        const access = await store.getExecutionAccess(input);
-
-        return executionAccessWire(access);
-      },
-    }),
-    configureExecutionAccess: validatedOperation({
-      operation: catalog.configureExecutionAccess,
-      run: async ({ input, caller }) => {
-        const actor = requireAuthenticated(caller);
-
-        const access = await store.configureExecutionAccess({
-          workspaceId: input.workspaceId,
-          mechId: input.mechId,
-          principalId: actor.principalId,
-          credentialId: actor.keyId,
-          access: executionConfiguration(Option.getOrNull(input.access)),
-        });
-
-        return executionAccessWire(access);
-      },
-    }),
   };
 }
 

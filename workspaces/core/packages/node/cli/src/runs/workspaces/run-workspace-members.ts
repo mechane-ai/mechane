@@ -1,6 +1,6 @@
 import type { CommandResult, RunFailure, RunInput } from '@mechane/cli-kernel';
 import { Effect } from 'effect';
-import { withWorkspace } from '../mechs/with-workspace.ts';
+import { withWorkspace } from '../with-workspace.ts';
 import { workspaceMemberLine } from './workspace-member-line.ts';
 
 /** The owner-visible roster includes principal IDs for subsequent membership commands. */

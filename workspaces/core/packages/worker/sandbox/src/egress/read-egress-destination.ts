@@ -1,5 +1,5 @@
 import { SandboxWebAccess } from '@mechane/deployment';
-import { canForwardManagedWorkerRequest, hasManagedWorkCredential } from '@mechane/protocol';
+import { canForwardManagedWorkerRequest, hasManagedWorkCredential } from '@mechane/managed-protocol';
 import { HttpHeader } from '@mechane/records';
 import { Option, Result, Schema } from 'effect';
 import { ROOT_DOT } from './constants.ts';

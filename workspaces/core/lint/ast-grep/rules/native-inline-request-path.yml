@@ -5,8 +5,7 @@ severity: error
 message: 'Build the path in one named builder that takes its parts as fields, such as `guestExecutionPath({ machineId, executionId })` (SC-10)'
 files:
   [
-    'packages/node/{stack,distribution,testing,smoke}/src/**',
-    'packages/worker/{runtime,server,control-store}/src/**',
+    'packages/worker/{runtime,server,authority-store,managed-store,control-store}/src/**',
     'packages/worker/sandbox/src/service/**',
   ]
 ignores: ['**/node_modules/**', '**/*.d.ts']

@@ -10,8 +10,8 @@ import { download } from '@mechane/client';
 import type { ClientFailure } from '@mechane/client';
 import { replaceFile, sha256Hex } from '@mechane/program';
 import type { FileWriteFailed } from '@mechane/program';
-import type { Release, ReleaseManifest } from '@mechane/protocol';
 import { Bytes } from '@mechane/records';
+import type { Release, ReleaseManifest } from '@mechane/releases';
 import { Duration, Effect, Match, Option, Record } from 'effect';
 import { reportedRelease } from './reported-release.ts';
 

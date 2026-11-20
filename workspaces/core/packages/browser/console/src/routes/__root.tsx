@@ -35,7 +35,7 @@ export const Route = createRootRoute({
 function Root({ children }: { readonly children: ReactNode }): ReactNode {
   const location = useRouterState({ select: (state) => state.location });
   const [restoration, setRestoration] = useState(0);
-  const loadingIdentity = JSON.stringify([location.href, location.state.consolePages, restoration]);
+  const loadingIdentity = JSON.stringify([location.href, restoration]);
 
   useEffect(() => {
     function onPageTransition(event: PageTransitionEvent): void {

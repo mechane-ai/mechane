@@ -1,5 +1,5 @@
 import { JSON_INDENT_CHARS, sha256Hex } from '@mechane/program';
-import { RELEASE } from '@mechane/protocol';
+import { RELEASE } from '@mechane/releases';
 import { Effect } from 'effect';
 import { readdir } from 'node:fs/promises';
 import { join, relative } from 'node:path';

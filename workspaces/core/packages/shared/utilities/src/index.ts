@@ -6,4 +6,4 @@ export { captureBefore } from './promises/capture-before.ts';
 export { safeFailureLocation } from './safe-failure-location.ts';
 export { safeCloudflareRay } from './safe-cloudflare-ray.ts';
 export { escapeHtml } from './escape-html.ts';
-export { observeEvent } from './promises/observe-event.ts';
+export { observeEvent, observeEventWithTimeout, waitForSignal } from './promises/observe-event.ts';

@@ -13,7 +13,7 @@ import { managedWriteOperations } from './operations.ts';
 import { ManagedDelegationPreview } from './preview-coordinates.ts';
 import { ManagedSessionMutation, ManagedSessionOpen, ManagedSessionReference } from './protocol.ts';
 import type { ManagedAgentScope } from './protocol.ts';
-import type { SessionRoute } from './session-pool.ts';
+import type { SessionRoute } from './store/session-meta.ts';
 
 function delegatedOrigin(scope: ManagedAgentScope, method: string, input: unknown) {
   switch (method) {

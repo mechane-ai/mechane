@@ -1,7 +1,7 @@
 import { BinaryMismatched, BinaryUnrunnable, ReleaseMisreported } from '@mechane/cli-kernel';
 import type { BinaryMismatch } from '@mechane/cli-kernel';
 import { PROGRAM, VERSION_COMMAND } from '@mechane/commands';
-import type { Release } from '@mechane/protocol';
+import type { Release } from '@mechane/releases';
 import { Duration, Effect } from 'effect';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';

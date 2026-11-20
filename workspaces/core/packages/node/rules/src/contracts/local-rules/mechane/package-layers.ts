@@ -25,7 +25,7 @@ const VALUES = {
       './managed': './src/managed.ts',
       './presentation': './src/presentation/index.ts',
     },
-    '@mechane/protocol': { '.': './src/index.ts', './presentation': './src/presentation/index.ts' },
+    '@mechane/protocol': { '.': './src/index.ts' },
     '@mechane/runtime': { '.': './src/index.ts' },
     '@mechane/catalog': { '.': './src/index.ts', './preview': './src/preview.ts' },
     '@mechane-ai/elements': {

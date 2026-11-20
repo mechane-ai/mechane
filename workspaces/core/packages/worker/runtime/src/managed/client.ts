@@ -1,6 +1,7 @@
+import { managedSessionName } from '@mechane/agent-slot';
+import type { SlotNamespace } from '@mechane/agent-slot';
 import { HttpHeader, HttpMethod, MediaType } from '@mechane/records';
 import { Schema } from 'effect';
-import type { ActorNamespace } from '../actor/client.ts';
 import type {
   ManagedDelegationBudgetUpdate,
   ManagedDelegationLeaseLoss,
@@ -11,7 +12,7 @@ import type {
 } from './delegation/protocol.ts';
 import { ManagedDelegationPage } from './delegation/protocol.ts';
 import { ManagedRuntimeError, ManagedRuntimeFailureWire } from './failure.ts';
-import { managedActorName, managedActorUrl } from './identity.ts';
+import { managedActorUrl } from './identity.ts';
 import type { ManagedDelegationPreview } from './preview-coordinates.ts';
 import {
   ManagedAgentScope,
@@ -36,16 +37,28 @@ import type {
 
 type DelegationStreamInput = ManagedDelegationPreview & { readonly signal?: AbortSignal | undefined };
 
-const ManagedAttention = Schema.Struct({
-  sessionId: Schema.NullOr(Schema.String),
-  queuedSessionIds: Schema.Array(Schema.String),
-});
+type FetchMethodInput = {
+  readonly targetId: string;
+  readonly method: string;
+  readonly input: unknown;
+  readonly signal?: AbortSignal | undefined;
+};
 
-export function createManagedAgentRuntime(namespace: ActorNamespace, scope: ManagedAgentScope) {
+type CallMethodInput<T> = {
+  readonly targetId: string;
+  readonly method: string;
+  readonly input: unknown;
+  readonly output: Schema.Codec<T, unknown>;
+};
+
+const Acknowledged = Schema.Boolean;
+
+export function createManagedAgentRuntime(sessions: Pick<SlotNamespace, 'getByName'>, scope: ManagedAgentScope) {
   const validated = Schema.decodeUnknownSync(ManagedAgentScope)(scope);
-  const stub = namespace.getByName(managedActorName(validated));
 
-  async function fetchMethod(method: string, input: unknown, signal?: AbortSignal): Promise<Response> {
+  async function fetchMethod({ targetId, method, input, signal }: FetchMethodInput): Promise<Response> {
+    const stub = sessions.getByName(managedSessionName({ workspaceId: validated.workspaceId, id: targetId }));
+
     const request = new Request(managedActorUrl, {
       method: HttpMethod.Post,
       headers: { [HttpHeader.ContentType]: MediaType.Json },
@@ -68,35 +81,55 @@ export function createManagedAgentRuntime(namespace: ActorNamespace, scope: Mana
     return response;
   }
 
-  async function call<T>(method: string, input: unknown, output: Schema.Codec<T, unknown>): Promise<T> {
-    const response = await fetchMethod(method, input);
+  async function call<T>({ targetId, method, input, output }: CallMethodInput<T>): Promise<T> {
+    const response = await fetchMethod({ targetId, method, input });
 
     return Schema.decodeUnknownSync(output)(await response.json());
   }
 
   return {
-    attention: () => call('attention', {}, ManagedAttention),
     loseWorkerLease: async (input: ManagedWorkerLease): Promise<void> => {
-      await call('loseWorkerLease', input, Schema.Null);
+      await call({ targetId: input.sessionId, method: 'loseWorkerLease', input, output: Schema.Null });
     },
-    delegateDelete: (input: ManagedDelegationOrigin) => call('delegateDelete', input, Schema.Boolean),
-    delegateStop: (input: ManagedDelegationOrigin) => call('delegateStop', input, Schema.Boolean),
+    delegateDelete: (input: ManagedDelegationOrigin) =>
+      call({ targetId: input.threadId, method: 'delegateDelete', input, output: Acknowledged }),
+    delegateStop: (input: ManagedDelegationOrigin) =>
+      call({ targetId: input.threadId, method: 'delegateStop', input, output: Acknowledged }),
     delegateLoseWorkerLease: (input: ManagedDelegationLeaseLoss) =>
-      call('delegateLoseWorkerLease', input, Schema.Int.check(Schema.isGreaterThanOrEqualTo(0))),
-    delegatePreviews: ({ signal, ...input }: DelegationStreamInput) => fetchMethod('delegatePreviews', input, signal),
-    delegateOpen: (input: ManagedDelegationOpen) => call('delegateOpen', input, ManagedSessionState),
-    delegateUpdateBudget: (input: ManagedDelegationBudgetUpdate) => call('delegateUpdateBudget', input, Schema.Null),
-    delegateRead: (input: ManagedDelegationRead) => call('delegateRead', input, ManagedDelegationPage),
-    delegateSend: (input: ManagedDelegationSend) => call('delegateSend', input, Schema.Array(ManagedEvent)),
-    open: (input: ManagedSessionOpen) => call('open', input, ManagedSessionState),
-    send: (input: ManagedSessionSend) => call('send', input, Schema.Array(ManagedEvent)),
-    read: (input: ManagedSessionReference) => call('read', input, ManagedSessionState),
-    events: (input: ManagedEventPageInput) => call('events', input, ManagedEventPage),
-    threads: (input: ManagedThreadPageInput) => call('threads', input, ManagedThreadPage),
-    thread: (input: ManagedSessionThreadReference) => call('thread', input, ManagedSessionThread),
-    archiveThread: (input: ManagedSessionThreadReference) => call('archiveThread', input, ManagedSessionThread),
-    mutateSession: (input: ManagedSessionMutation) => call('mutateSession', input, Schema.NullOr(ManagedWireObject)),
-    stream: ({ signal, ...input }: ManagedStreamInput) => fetchMethod('stream', input, signal),
+      call({
+        targetId: input.origin.threadId,
+        method: 'delegateLoseWorkerLease',
+        input,
+        output: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
+      }),
+    delegatePreviews: ({ signal, ...input }: DelegationStreamInput) =>
+      fetchMethod({ targetId: input.origin.threadId, method: 'delegatePreviews', input, signal }),
+    delegateOpen: (input: ManagedDelegationOpen) =>
+      call({ targetId: input.origin.threadId, method: 'delegateOpen', input, output: ManagedSessionState }),
+    delegateUpdateBudget: (input: ManagedDelegationBudgetUpdate) =>
+      call({ targetId: input.origin.threadId, method: 'delegateUpdateBudget', input, output: Schema.Null }),
+    delegateRead: (input: ManagedDelegationRead) =>
+      call({ targetId: input.origin.threadId, method: 'delegateRead', input, output: ManagedDelegationPage }),
+    delegateSend: (input: ManagedDelegationSend) =>
+      call({ targetId: input.origin.threadId, method: 'delegateSend', input, output: Schema.Array(ManagedEvent) }),
+    open: (input: ManagedSessionOpen) =>
+      call({ targetId: input.sessionId, method: 'open', input, output: ManagedSessionState }),
+    send: (input: ManagedSessionSend) =>
+      call({ targetId: input.sessionId, method: 'send', input, output: Schema.Array(ManagedEvent) }),
+    read: (input: ManagedSessionReference) =>
+      call({ targetId: input.sessionId, method: 'read', input, output: ManagedSessionState }),
+    events: (input: ManagedEventPageInput) =>
+      call({ targetId: input.sessionId, method: 'events', input, output: ManagedEventPage }),
+    threads: (input: ManagedThreadPageInput) =>
+      call({ targetId: input.sessionId, method: 'threads', input, output: ManagedThreadPage }),
+    thread: (input: ManagedSessionThreadReference) =>
+      call({ targetId: input.sessionId, method: 'thread', input, output: ManagedSessionThread }),
+    archiveThread: (input: ManagedSessionThreadReference) =>
+      call({ targetId: input.sessionId, method: 'archiveThread', input, output: ManagedSessionThread }),
+    mutateSession: (input: ManagedSessionMutation) =>
+      call({ targetId: input.sessionId, method: 'mutateSession', input, output: Schema.NullOr(ManagedWireObject) }),
+    stream: ({ signal, ...input }: ManagedStreamInput) =>
+      fetchMethod({ targetId: input.sessionId, method: 'stream', input, signal }),
   };
 }
 

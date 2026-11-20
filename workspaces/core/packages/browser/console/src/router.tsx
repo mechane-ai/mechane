@@ -1,6 +1,6 @@
 import { createRouter } from '@tanstack/react-router';
 import { routeTree } from './routeTree.gen.ts';
-import type { ConsoleLocation, PageCursors, ReaderPosition } from './types.ts';
+import type { ConsoleLocation } from './types.ts';
 
 export function getRouter() {
   return createRouter({ routeTree, basepath: '/console', scrollRestoration: true, defaultPreload: false });
@@ -12,11 +12,6 @@ declare module '@tanstack/react-router' {
     readonly sessionEvidenceReturn?: string;
     readonly sessionGalleryOrigin?: ConsoleLocation;
     readonly managedPages?: ReadonlyArray<string | null>;
-    readonly consolePages?: Partial<PageCursors>;
-    readonly consoleReturn?: { readonly row: string; readonly positions: ReadonlyArray<ReaderPosition> };
-    readonly consoleRunOrigin?: ConsoleLocation;
-    readonly consoleEvidenceOrigin?: ConsoleLocation;
-    readonly consoleEvidenceReturn?: { readonly artifact: string; readonly positions: ReadonlyArray<ReaderPosition> };
   }
 
   interface Register {

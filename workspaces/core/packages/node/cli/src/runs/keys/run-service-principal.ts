@@ -2,7 +2,7 @@ import type { CommandResult, RunFailure, RunInput } from '@mechane/cli-kernel';
 import { prepareKeyFile } from '@mechane/cli-login';
 import type { WorkspaceServicePrincipal } from '@mechane/protocol';
 import { DateTime, Effect, Option } from 'effect';
-import { withWorkspace } from '../mechs/with-workspace.ts';
+import { withWorkspace } from '../with-workspace.ts';
 
 type ServiceLinesInput = { readonly principal: WorkspaceServicePrincipal };
 

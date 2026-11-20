@@ -2,7 +2,7 @@ import { OperationFailed, OriginUnreachable, RequestTimedOut, ResponseUnreadable
 import { HttpStatusCode } from '@mechane/records';
 import { DateTime, Duration, Option, Schema } from 'effect';
 
-export const REQUEST_TIMEOUT = Duration.seconds(40);
+const REQUEST_TIMEOUT = Duration.seconds(40);
 const RETRY_DELAYS_MS = [Duration.toMillis('1 second'), Duration.toMillis('3 seconds')] as const;
 const GATEWAY_TIMEOUT_STATUS = 504;
 

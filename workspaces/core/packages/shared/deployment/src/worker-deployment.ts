@@ -61,19 +61,30 @@ export type WorkerDeployment = {
   readonly triggers?: { readonly crons: ReadonlyArray<string> };
 };
 
-/** The production lineage retains the existing Sandbox namespace before adding the agent owner. */
+/** The production lineage retains the existing Sandbox and Mech namespaces before adding split managed owners. */
 export const APPLICATION_WORKER_MIGRATIONS: ReadonlyArray<WorkerMigration> = [
   { tag: 'v1', new_sqlite_classes: ['SandboxObject'] },
   { tag: 'v2', new_sqlite_classes: ['MechObject'] },
   { tag: 'v3', new_sqlite_classes: ['MachineObject'] },
+  { tag: 'v4', new_sqlite_classes: ['AgentSlotObject', 'SessionObject'] },
 ];
 
 /** Preserves the environment namespace when the application joins an existing installation. */
 export function applicationWorkerDeployment(input: ApplicationWorkerDeploymentInput): WorkerDeployment {
   const sandbox = input.sandbox;
   let embedded: Pick<WorkerDeployment, 'r2_buckets' | 'containers'> = {};
-  let migrations: ReadonlyArray<WorkerMigration> = [{ tag: 'v1', new_sqlite_classes: ['MechObject'] }];
-  const bindings: ReadonlyArray<WorkerObjectBinding> = [{ name: 'MECHS', class_name: 'MechObject' }];
+
+  let migrations: ReadonlyArray<WorkerMigration> = [
+    { tag: 'v1', new_sqlite_classes: ['MechObject'] },
+    { tag: 'v2', new_sqlite_classes: ['AgentSlotObject', 'SessionObject'] },
+  ];
+
+  const bindings: ReadonlyArray<WorkerObjectBinding> = [
+    { name: 'MECHS', class_name: 'MechObject' },
+    { name: 'AGENT_SLOTS', class_name: 'AgentSlotObject' },
+    { name: 'SESSIONS', class_name: 'SessionObject' },
+  ];
+
   let environmentBindings: ReadonlyArray<WorkerObjectBinding> = [];
 
   if (sandbox !== undefined) {

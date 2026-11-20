@@ -99,6 +99,63 @@ run "migration_credential_binding" {
   }
   expect_failures = [var.secrets]
 }
+
+run "tensorlake_sandbox_provider" {
+  command = plan
+  variables {
+    sandboxes = {
+      provider = "tensorlake"
+      image    = "ghcr.io/mechane-ai/worker-agent:latest"
+    }
+    secrets = {
+      store_id = "example-store"
+      bindings = {
+        MECHANE_SANDBOX_SERVICE_KEY = "example-sandbox"
+        MECHANE_TENSORLAKE_API_KEY  = "example-tensorlake"
+      }
+    }
+  }
+}
+
+run "modal_sandbox_provider" {
+  command = plan
+  variables {
+    sandboxes = {
+      provider         = "modal"
+      modal_bridge_url = "https://modal-bridge.example.com"
+    }
+    secrets = {
+      store_id = "example-store"
+      bindings = {
+        MECHANE_SANDBOX_SERVICE_KEY = "example-sandbox"
+        MECHANE_MODAL_BRIDGE_TOKEN  = "example-modal"
+      }
+    }
+  }
+}
+
+run "external_only_sandbox_provider" {
+  command = plan
+  variables {
+    sandboxes = {
+      provider = "none"
+    }
+    secrets = {
+      store_id = "example-store"
+      bindings = {}
+    }
+  }
+}
+
+run "invalid_sandbox_provider" {
+  command = plan
+  variables {
+    sandboxes = {
+      provider = "unknown"
+    }
+  }
+  expect_failures = [var.sandboxes]
+}
 EOF
 tofu -chdir="$infrastructure_check/configuration" init -backend=false -input=false
 tofu -chdir="$infrastructure_check/configuration" test -no-color

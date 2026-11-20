@@ -10,6 +10,7 @@
     "@anthropic-ai/sdk": "1.10.0",
     "@mechane/client": "workspace:*",
     "@mechane/deployment": "workspace:*",
+    "@mechane/managed-protocol": "workspace:*",
     "@mechane/program": "workspace:*",
     "@mechane/protocol": "workspace:*",
     "@mechane/records": "workspace:*",

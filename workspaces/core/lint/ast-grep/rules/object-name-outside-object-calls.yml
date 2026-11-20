@@ -5,7 +5,12 @@ severity: error
 message: 'Resolve Durable Object IDs at their authenticated owners, such as `ownsActorAddress` in the runtime (044)'
 files: [packages/**/*.ts]
 ignores:
-  ['**/node_modules/**', packages/worker/sandbox/src/service/settings.ts, packages/worker/runtime/src/actor/identity.ts]
+  [
+    '**/node_modules/**',
+    packages/worker/sandbox/src/service/settings.ts,
+    packages/worker/runtime/src/actor/identity.ts,
+    packages/worker/agent-slot/src/identity.ts,
+  ]
 rule:
   kind: property_identifier
   regex: ^(idFromName|idFromString|newUniqueId)$

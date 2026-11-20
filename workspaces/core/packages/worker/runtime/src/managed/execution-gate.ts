@@ -1,5 +1,5 @@
+import type { ManagedIdentitySlot } from '@mechane/agent-slot';
 import { serialCalls } from '@mechane/utilities';
-import type { ManagedIdentitySlot } from './identity-slot.ts';
 import type { ManagedExecution } from './provider-types.ts';
 
 export type ExclusiveEffect = <T>(signal: AbortSignal | undefined, effect: () => Promise<T>) => Promise<T>;

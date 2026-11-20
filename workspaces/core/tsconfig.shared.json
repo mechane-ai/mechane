@@ -6,8 +6,14 @@
     "packages/shared/bash/src",
     "packages/shared/client/src",
     "packages/shared/deployment/src",
+    "packages/shared/managed-protocol/src",
+    "packages/shared/presentation/src",
     "packages/shared/protocol/src",
     "packages/shared/records/src",
+    "packages/shared/releases/src",
+    "packages/shared/sandbox-modal/src",
+    "packages/shared/sandbox-provider/src",
+    "packages/shared/sandbox-tensorlake/src",
     "packages/shared/sandbox-wire/src",
     "packages/shared/utilities/src"
   ]

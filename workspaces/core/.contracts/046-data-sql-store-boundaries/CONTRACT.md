@@ -76,7 +76,7 @@ well as Sandbox SQLite statements.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-- dependency-cruiser `postgres-store-owner` (DO-06): enforced: Keep PostgreSQL clients in the store owner, such as `runtime/src/store/database.ts`
+- dependency-cruiser `postgres-store-owner` (DO-06): enforced: Keep PostgreSQL clients in the store owner, such as `authority-store/src/store/postgres.ts`
 - dependency-cruiser `postgres-context-private` (DO-06): enforced: Keep transaction clients private to the store, such as `runInTransaction` for its callers
 - ast-grep `sql-client-outside-store` (DO-06): enforced
 - ast-grep `sql-statement-not-literal` (DO-06): enforced

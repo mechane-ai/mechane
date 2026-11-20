@@ -1,14 +1,20 @@
+import { Record } from 'effect';
 import { isAbsolute } from 'node:path';
 import { parseArgs } from 'node:util';
 import { CATALOG } from './catalog.ts';
 import type { ScenarioFamily } from './catalog.ts';
+import { parseSmokeShard } from './shards.ts';
+import type { SmokeShard } from './shards.ts';
 
 type ArtifactSettings = { readonly directory: string; readonly guestImage: string; readonly cliExecutable: string };
 
 type SmokeSettings = {
   readonly match: string | undefined;
   readonly family: ScenarioFamily | undefined;
+  readonly shard: SmokeShard | undefined;
+  readonly isCatalogSummaryOnly: boolean;
   readonly nodeExecutable: string;
+  readonly inherited: Readonly<Record<string, string>>;
   readonly artifacts: ArtifactSettings | undefined;
   readonly reuseGuest: string | undefined;
 };
@@ -25,6 +31,8 @@ export function smokeSettings(): SmokeSettings {
   const { values, positionals } = parseArgs({
     options: {
       'family': { type: 'string' },
+      'shard': { type: 'string' },
+      'catalog-summary': { type: 'boolean', default: false },
       'artifact-directory': { type: 'string' },
       'guest-image': { type: 'string' },
       'cli-executable': { type: 'string' },
@@ -38,6 +46,11 @@ export function smokeSettings(): SmokeSettings {
   }
 
   const family = scenarioFamily(values.family);
+  const shard = smokeShard(values.shard);
+
+  if (shard !== undefined && (family !== undefined || positionals[0] !== undefined)) {
+    throw new Error('The smoke shard cannot be combined with --family or a scenario filter');
+  }
 
   const artifacts = artifactSettings({
     directory: values['artifact-directory'],
@@ -51,13 +64,26 @@ export function smokeSettings(): SmokeSettings {
     throw new Error('--reuse-guest selects an absolute guest-inputs.json path for a source replay');
   }
 
+  const inherited = Record.filter(process.env, (value) => typeof value === 'string');
+
   return {
     match: positionals[0],
     family,
+    shard,
+    isCatalogSummaryOnly: values['catalog-summary'],
     nodeExecutable: process.env['MECHANE_NODE_EXECUTABLE'] ?? process.execPath,
+    inherited,
     artifacts,
     reuseGuest,
   };
+}
+
+function smokeShard(value: string | undefined): SmokeShard | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  return parseSmokeShard(value);
 }
 
 function scenarioFamily(value: string | undefined): ScenarioFamily | undefined {

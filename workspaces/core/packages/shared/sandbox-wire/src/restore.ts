@@ -1,7 +1,5 @@
 import { MachineId, RecordId, RecordText, SandboxOperationId, wireStruct } from '@mechane/records';
 import { Schema } from 'effect';
-import { sandboxWorkspacePath } from './service.ts';
-import type { SandboxServiceIdentity } from './service.ts';
 
 /** Restoring older saved files requires the caller's exact observed loss and committed source. */
 export const SandboxRestoreRequest = wireStruct({
@@ -35,9 +33,3 @@ export const SandboxRestoreResult = Schema.TaggedUnion({
 });
 
 export type SandboxRestoreResult = typeof SandboxRestoreResult.Type;
-
-export function sandboxRestorePath({ workspaceId, mechId }: SandboxServiceIdentity): string {
-  const path = sandboxWorkspacePath({ workspaceId, mechId });
-
-  return `${path}/restore`;
-}

@@ -1,4 +1,4 @@
-import { releaseAssetUrl } from '@mechane/protocol';
+import { releaseAssetUrl } from '@mechane/releases';
 import { Effect, Option } from 'effect';
 import { join } from 'node:path';
 import { DistributionStep } from '../constants.ts';

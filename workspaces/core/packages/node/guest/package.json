@@ -10,6 +10,7 @@
     "@mechane/records": "workspace:*",
     "@mechane/sandbox-wire": "workspace:*",
     "@mechane/utilities": "workspace:*",
+    "@mechane/worker-agent": "workspace:*",
     "effect": "4.0.7"
   },
   "devDependencies": {

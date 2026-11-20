@@ -1,0 +1,9 @@
+id: managed-no-mech-table-sql
+language: TypeScript
+severity: error
+message: 'Store managed agent records in managed tables without mech table links, such as `mechane.managed_agents` (136)'
+files: ['packages/worker/managed-store/src/store/managed/**']
+ignores: ['**/node_modules/**']
+rule:
+  kind: string_fragment
+  regex: 'mechane\.mechs\b'

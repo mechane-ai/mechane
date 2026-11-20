@@ -1,5 +1,4 @@
-import { ProcessHandle } from '@mechane/protocol';
-import { EvidenceArtifactId, MechId, Sequence, TurnId } from '@mechane/records';
+import { EvidenceArtifactId } from '@mechane/records';
 import { Result, Schema } from 'effect';
 import { listQuery, listQueryFields } from './list-query.ts';
 import type { ListQuery } from './list-query.ts';
@@ -17,18 +16,6 @@ const READ_KIND = {
   SessionEvents: 'sessionEvents',
   SessionEvidence: 'sessionEvidence',
   SessionArtifact: 'sessionArtifact',
-  Archive: 'archive',
-  Mechs: 'mechs',
-  Mech: 'mech',
-  Turns: 'turns',
-  Trace: 'trace',
-  Evidence: 'evidence',
-  EvidenceArtifact: 'evidenceArtifact',
-  Environment: 'environment',
-  EnvironmentProcess: 'environmentProcess',
-  TurnEvents: 'turnEvents',
-  Events: 'events',
-  Allowance: 'allowance',
 } as const;
 
 /** Stable identity for one declared endpoint and cursor. */
@@ -77,32 +64,6 @@ const ReadTarget = Schema.Union([
     sessionId: ManagedId,
     artifactId: EvidenceArtifactId,
   }),
-  Schema.Struct({ kind: Schema.Literal(READ_KIND.Archive), mechId: MechId, before: Schema.NullOr(Sequence) }),
-  Schema.Struct({
-    kind: Schema.Literal(READ_KIND.Mechs),
-    ...listQueryFields('mechs'),
-    after: Schema.NullOr(Schema.String),
-  }),
-  Schema.Struct({ kind: Schema.Literal(READ_KIND.Mech), mechId: MechId }),
-  Schema.Struct({
-    kind: Schema.Literal(READ_KIND.Turns),
-    ...listQueryFields('turns'),
-    mechId: MechId,
-    after: Schema.NullOr(TurnId),
-  }),
-  Schema.Struct({ kind: Schema.Literal(READ_KIND.Trace), mechId: MechId, turnId: TurnId }),
-  Schema.Struct({
-    kind: Schema.Literal(READ_KIND.Evidence),
-    mechId: MechId,
-    turnId: TurnId,
-    after: Schema.NullOr(EvidenceArtifactId),
-  }),
-  Schema.Struct({ kind: Schema.Literal(READ_KIND.EvidenceArtifact), mechId: MechId, artifactId: EvidenceArtifactId }),
-  Schema.Struct({ kind: Schema.Literal(READ_KIND.Environment), mechId: MechId }),
-  Schema.Struct({ kind: Schema.Literal(READ_KIND.EnvironmentProcess), mechId: MechId, handle: ProcessHandle.to }),
-  Schema.Struct({ kind: Schema.Literal(READ_KIND.TurnEvents), mechId: MechId, turnId: TurnId, after: Schema.Number }),
-  Schema.Struct({ kind: Schema.Literal(READ_KIND.Events), mechId: MechId, before: Schema.NullOr(Schema.Number) }),
-  Schema.Struct({ kind: Schema.Literal(READ_KIND.Allowance) }),
 ]);
 
 type ReadTarget = typeof ReadTarget.Type;
@@ -117,10 +78,10 @@ export type ReadRequest<Kind extends ReadKind = ReadKind> = Extract<ReadTarget, 
   readonly id: ReadId;
 };
 
-export type TabReadKind = 'sessionEvents' | 'attention' | 'archive';
+export type TabReadKind = 'sessionEvents' | 'attention';
 
 export const isTabRead = Schema.is(
-  Schema.Struct({ kind: Schema.Literals([READ_KIND.Attention, READ_KIND.SessionEvents, READ_KIND.Archive]) }),
+  Schema.Struct({ kind: Schema.Literals([READ_KIND.Attention, READ_KIND.SessionEvents]) }),
 );
 
 export const isManagedDetail = Schema.is(
@@ -129,21 +90,6 @@ export const isManagedDetail = Schema.is(
 
 export const isSessionEvidenceRead = Schema.is(
   Schema.Struct({ kind: Schema.Literals([READ_KIND.SessionEvidence, READ_KIND.SessionArtifact]) }),
-);
-
-export const isManagedRead = Schema.is(
-  Schema.Struct({
-    kind: Schema.Literals([
-      READ_KIND.Agent,
-      READ_KIND.Agents,
-      READ_KIND.ManagedEnvironments,
-      READ_KIND.Sessions,
-      READ_KIND.Session,
-      READ_KIND.Threads,
-      READ_KIND.SessionEvidence,
-      READ_KIND.SessionArtifact,
-    ]),
-  }),
 );
 
 /** Ordered membership for one successful API read, including successful empty results. */
@@ -221,39 +167,6 @@ export const readRequests = {
       through: null,
       isStatusOnly: true,
     }),
-  archive: (mechId: string, before: number | null = null) =>
-    request({
-      kind: READ_KIND.Archive,
-      mechId: MechId.make(mechId),
-      before: before === null ? null : Sequence.make(before),
-    }),
-  mechs: (after: string | null, query?: ListQuery) =>
-    request({ kind: READ_KIND.Mechs, after, ...listQuery('mechs', query) }),
-  mech: (mechId: string) => request({ kind: READ_KIND.Mech, mechId: MechId.make(mechId) }),
-  turns: (mechId: string, after: TurnId | null, query?: ListQuery) =>
-    request({ kind: READ_KIND.Turns, mechId: MechId.make(mechId), after, ...listQuery('turns', query) }),
-  trace: (mechId: string, turnId: TurnId) => request({ kind: READ_KIND.Trace, mechId: MechId.make(mechId), turnId }),
-  evidence: (mechId: string, turnId: TurnId, after: string | null) =>
-    request({
-      kind: READ_KIND.Evidence,
-      mechId: MechId.make(mechId),
-      turnId,
-      after: after === null ? null : EvidenceArtifactId.make(after),
-    }),
-  evidenceArtifact: (mechId: string, artifactId: string) =>
-    request({
-      kind: READ_KIND.EvidenceArtifact,
-      mechId: MechId.make(mechId),
-      artifactId: EvidenceArtifactId.make(artifactId),
-    }),
-  environment: (mechId: string) => request({ kind: READ_KIND.Environment, mechId: MechId.make(mechId) }),
-  environmentProcess: (mechId: string, handle: ProcessHandle) =>
-    request({ kind: READ_KIND.EnvironmentProcess, mechId: MechId.make(mechId), handle }),
-  turnEvents: (mechId: string, turnId: TurnId, after: number) =>
-    request({ kind: READ_KIND.TurnEvents, mechId: MechId.make(mechId), turnId, after }),
-  events: (mechId: string, before: number | null) =>
-    request({ kind: READ_KIND.Events, mechId: MechId.make(mechId), before }),
-  allowance: () => request({ kind: READ_KIND.Allowance }),
 } as const;
 
 /** Rejects stored identities that do not name one of the declared endpoint demands. */
@@ -263,29 +176,21 @@ export function decodeReadRequest(id: string): ReadRequest {
   return { ...target, id: ReadId.make(id) };
 }
 
-/** Every capture page for the mech may hold this artifact, including a response still in flight. */
+/** Every capture page for the session may hold this artifact, including a response still in flight. */
 export function isArtifactRead({
   candidate,
   artifact,
 }: {
   readonly candidate: ReadRequest;
-  readonly artifact: ReadRequest<'evidenceArtifact' | 'sessionArtifact' | 'sessionEvidence'>;
+  readonly artifact: ReadRequest<'sessionArtifact' | 'sessionEvidence'>;
 }): boolean {
-  if (artifact.kind !== 'evidenceArtifact') {
-    if (!isSessionEvidenceRead(candidate)) {
-      return false;
-    }
-
-    if (candidate.agentId !== artifact.agentId || candidate.sessionId !== artifact.sessionId) {
-      return false;
-    }
-
-    return artifact.kind === 'sessionEvidence' || candidate.kind === 'sessionEvidence' || candidate.id === artifact.id;
+  if (!isSessionEvidenceRead(candidate)) {
+    return false;
   }
 
-  if (candidate.kind === 'evidence') {
-    return candidate.mechId === artifact.mechId;
+  if (candidate.agentId !== artifact.agentId || candidate.sessionId !== artifact.sessionId) {
+    return false;
   }
 
-  return candidate.kind === 'evidenceArtifact' && candidate.id === artifact.id;
+  return artifact.kind === 'sessionEvidence' || candidate.kind === 'sessionEvidence' || candidate.id === artifact.id;
 }

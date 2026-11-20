@@ -1,5 +1,5 @@
-import { Release } from '@mechane/protocol';
 import { GitCommit, SHA256_PATTERN } from '@mechane/records';
+import { Release } from '@mechane/releases';
 import { GuestImageRecord } from '@mechane/stack';
 import { Schema } from 'effect';
 

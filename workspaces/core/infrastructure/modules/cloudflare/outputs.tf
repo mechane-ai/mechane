@@ -18,14 +18,16 @@ output "console_url" {
 output "resources" {
   description = "Cloudflare resource identities for inventory and support."
   value = {
-    worker_id              = cloudflare_worker.service.id
-    worker_name            = cloudflare_worker.service.name
-    worker_version_id      = mechane_cloudflare_worker_release.release.version_id
-    workspace_bucket       = cloudflare_r2_bucket.workspace_files.name
-    machine_application_id = mechane_cloudflare_machine_application.machines.id
-    machine_namespace_id   = mechane_cloudflare_worker_release.release.durable_object_namespaces["MachineObject"]
-    sandbox_namespace_id   = mechane_cloudflare_worker_release.release.durable_object_namespaces["SandboxObject"]
-    mech_namespace_id      = mechane_cloudflare_worker_release.release.durable_object_namespaces["MechObject"]
-    guest_image            = mechane_cloudflare_container_image.guest.image
+    worker_id               = cloudflare_worker.service.id
+    worker_name             = cloudflare_worker.service.name
+    worker_version_id       = mechane_cloudflare_worker_release.release.version_id
+    workspace_bucket        = cloudflare_r2_bucket.workspace_files.name
+    machine_application_id  = try(mechane_cloudflare_machine_application.machines[0].id, null)
+    machine_namespace_id    = mechane_cloudflare_worker_release.release.durable_object_namespaces["MachineObject"]
+    sandbox_namespace_id    = mechane_cloudflare_worker_release.release.durable_object_namespaces["SandboxObject"]
+    mech_namespace_id       = mechane_cloudflare_worker_release.release.durable_object_namespaces["MechObject"]
+    agent_slot_namespace_id = mechane_cloudflare_worker_release.release.durable_object_namespaces["AgentSlotObject"]
+    session_namespace_id    = mechane_cloudflare_worker_release.release.durable_object_namespaces["SessionObject"]
+    guest_image             = try(mechane_cloudflare_container_image.guest[0].image, var.sandboxes.image)
   }
 }

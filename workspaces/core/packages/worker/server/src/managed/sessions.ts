@@ -175,6 +175,10 @@ export async function handleSessions(input: ManagedRequest): Promise<unknown> {
         kind: lifecycleMutations[operation],
       });
 
+      if (operation === 'BetaDeleteSession') {
+        await input.destroyInstalledSession({ workspaceId: scope.workspaceId, environmentId, sessionId: id });
+      }
+
       input.wakeInstalledSession({ workspaceId: scope.workspaceId, environmentId, sessionId: id });
 
       return result;

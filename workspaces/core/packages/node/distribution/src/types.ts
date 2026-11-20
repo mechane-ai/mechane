@@ -1,4 +1,5 @@
 import type { Option } from 'effect';
+import type { ShardReceipt } from './candidate/shard-schema.ts';
 import type { DistributionMode } from './constants.ts';
 import type { ArtifactQualification } from './qualification.ts';
 import type { Artifact, ArtifactReceipt } from './schemas.ts';
@@ -12,6 +13,7 @@ export type DistributionSettings = {
   readonly inherited: Readonly<Record<string, string>>;
   readonly nodeExecutable: string;
   readonly argument?: string | undefined;
+  readonly shardTarget?: string | undefined;
   readonly reuseGuest: Option.Option<GuestReuseSelection>;
 };
 
@@ -24,4 +26,4 @@ export type FileDigest = Omit<Artifact, 'name'>;
 /** An offline module staging result that cannot be published as a release. */
 export type PreviewResult = { readonly folder: string; readonly is_preview: true };
 /** The result printed by a release command or an offline module preview. */
-export type DistributionResult = ArtifactReceipt | PreviewResult | ArtifactQualification;
+export type DistributionResult = ArtifactReceipt | PreviewResult | ArtifactQualification | ShardReceipt;

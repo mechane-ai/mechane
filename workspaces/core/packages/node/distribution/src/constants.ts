@@ -26,11 +26,30 @@ export const DURABLE_EXPORT = { type: 'durable-object', storage: 'sqlite', state
 /** Plain filenames accepted by both the artifact receipt and GitHub uploads. */
 export const ASSET_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]+$/;
 
+/** The ordered shard names partitioning the smoke scenario catalog for parallel candidate qualification. */
+export const QUALIFICATION_SHARDS = [
+  'auth',
+  'managed-core',
+  'managed-advanced',
+  'lifecycle',
+  'console',
+  'compute-fast',
+  'compute-recovery',
+  'compute-restore',
+] as const;
+
+export type QualificationShard = (typeof QUALIFICATION_SHARDS)[number];
+
+/** The shard that exercises browser Console flows and requires Playwright Chromium installation. */
+export const CONSOLE_SHARD: QualificationShard = 'console';
+
 /** The artifact operations available to a publisher or an offline check. */
 export const DistributionMode = {
   Build: 'build',
   Candidate: 'candidate',
   Accept: 'accept',
+  AcceptShard: 'accept-shard',
+  MergeQualification: 'merge-qualification',
   Verify: 'verify',
   Preview: 'preview-module',
   VerifyQualified: 'verify-qualified',

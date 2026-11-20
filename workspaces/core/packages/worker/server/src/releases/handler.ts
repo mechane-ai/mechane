@@ -1,3 +1,4 @@
+import { HttpHeader, HttpMethod, HttpStatusCode, MediaType } from '@mechane/records';
 import {
   CliTarget,
   INSTALL_SCRIPT_PATH,
@@ -8,8 +9,7 @@ import {
   releaseBinaryName,
   ReleaseKey,
   releaseManifestKey,
-} from '@mechane/protocol';
-import { HttpHeader, HttpMethod, HttpStatusCode, MediaType } from '@mechane/records';
+} from '@mechane/releases';
 import { Record } from 'effect';
 import type { RequestHandler } from '../application.ts';
 import { READ_METHODS } from '../http/methods.ts';

@@ -1,5 +1,5 @@
-import { managedRequestDefinitions } from '@mechane/protocol';
-import type { ManagedHttpRoute } from '@mechane/protocol';
+import { managedRequestDefinitions } from '@mechane/managed-protocol';
+import type { ManagedHttpRoute } from '@mechane/managed-protocol';
 import { HttpStatusCode } from '@mechane/records';
 import { Function, Option, Predicate, Record } from 'effect';
 import { z } from 'zod';

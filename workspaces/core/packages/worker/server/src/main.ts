@@ -1,18 +1,17 @@
-import { catalog, RELEASE, SERVICE } from '@mechane/protocol';
-import { HttpHeader, HttpMethod } from '@mechane/records';
+import { catalog, SERVICE } from '@mechane/protocol';
+import { HttpHeader, HttpMethod, HttpStatusCode } from '@mechane/records';
+import { RELEASE } from '@mechane/releases';
 import {
-  createMechActorClient,
-  createMechObject,
+  createSessionObject,
   loadRuntimeConfiguration,
   managedIdentityDiscovery,
   resolveRuntimeEnvironment,
 } from '@mechane/runtime';
-import type { ActorNamespace, MechActorResolver } from '@mechane/runtime';
 import { serveSandbox } from '@mechane/sandbox';
 import { SANDBOX_COMPLETION_PATH, SANDBOX_SERVICE_PREFIX } from '@mechane/sandbox-wire';
+import { DurableObject } from 'cloudflare:workers';
 import { expireSignOutCookies } from './auth/sign-out.ts';
 import { createConsoleHandler } from './console/handler.ts';
-import { deliverControlChanges } from './control/deliver-changes.ts';
 import { finishRecovery } from './control/finish-recovery.ts';
 import {
   installedCapacityWake,
@@ -31,11 +30,28 @@ import { loadWorkerBindings } from './settings/worker.ts';
 import type { WorkerEnvironment } from './settings/worker.ts';
 
 /**
- * Cloudflare loads the agent class by its deployment binding name.
+ * Inert Durable Object stub retained to preserve Cloudflare namespace compatibility on upgrades.
  *
  * @public
  */
-export const MechObject = createMechObject(installedSessionWake);
+export class MechObject extends DurableObject {
+  override fetch(): Response {
+    return new Response(`Retired mech namespace ${this.ctx.id.toString()}`, { status: HttpStatusCode.NotFound });
+  }
+}
+
+/**
+ * Cloudflare loads the per-agent execution slot class by its deployment binding name.
+ *
+ * @public
+ */
+export { AgentSlotObject } from '@mechane/agent-slot';
+/**
+ * Cloudflare loads the per-session runtime class by its deployment binding name.
+ *
+ * @public
+ */
+export const SessionObject = createSessionObject(installedSessionWake);
 /**
  * Cloudflare loads the environment and egress classes by their deployment binding names.
  *
@@ -44,17 +60,12 @@ export const MechObject = createMechObject(installedSessionWake);
 export { SandboxObject, MachineObject, EgressGateway } from '@mechane/sandbox';
 
 const SCHEDULED_DELIVERY_MAX_ROWS = 50;
-const SCHEDULED_DELIVERY_MAX_MILLISECONDS = 20_000;
 
 declare global {
   // oxlint-disable-next-line typescript/consistent-type-definitions -- ImportMeta requires runtime interface merging.
   interface ImportMeta {
     readonly mechaneRevision: string | undefined;
   }
-}
-
-function actorResolver(namespace: ActorNamespace): MechActorResolver {
-  return (scope) => createMechActorClient({ namespace, ...scope });
 }
 
 function requestFailure(request: Request, url: URL, failure: unknown): Response {
@@ -112,12 +123,12 @@ const worker: Readonly<ExportedHandler<WorkerEnvironment>> = {
         try {
           const serve = createServer({
             store,
-            captureControlChanges: store.captureControlChanges,
-            actors: actorResolver(bindings.actors),
-            actorNamespace: bindings.actors,
-            wakeInstalledCapacity: installedCapacityWake({ configuration, actors: bindings.actors, execution }),
-            wakeInstalledSession: installedSessionWake({ configuration, actors: bindings.actors, execution }),
-            scheduleSessionOpen: sessionOpenScheduler({ configuration, actors: bindings.actors, execution }),
+            sessions: bindings.sessions,
+            slots: bindings.slots,
+            wakeInstalledCapacity: installedCapacityWake({ configuration, sessions: bindings.sessions, execution }),
+            wakeInstalledSession: installedSessionWake({ configuration, sessions: bindings.sessions, execution }),
+            scheduleSessionOpen: sessionOpenScheduler({ configuration, sessions: bindings.sessions, execution }),
+            workspaceFiles: bindings.workspaceFiles,
             configuration,
             settings,
             runtimeRevision: import.meta.mechaneRevision ?? 'source',
@@ -145,27 +156,18 @@ const worker: Readonly<ExportedHandler<WorkerEnvironment>> = {
     try {
       await finishRecovery([
         {
-          step: 'control-changes',
-          work: deliverControlChanges({
-            store,
-            actors: actorResolver(bindings.actors),
-            maxRows: SCHEDULED_DELIVERY_MAX_ROWS,
-            maxMs: SCHEDULED_DELIVERY_MAX_MILLISECONDS,
-          }),
-        },
-        {
           step: 'pending-sessions',
           work: resumePendingSessions({
             store,
-            actors: bindings.actors,
+            sessions: bindings.sessions,
             configuration,
             maxRows: SCHEDULED_DELIVERY_MAX_ROWS,
-            wakeInstalledSession: installedSessionWake({ configuration, actors: bindings.actors, execution }),
+            wakeInstalledSession: installedSessionWake({ configuration, sessions: bindings.sessions, execution }),
           }),
         },
         {
           step: 'installed-workers',
-          work: recoverInstalledSessions({ store, configuration, actors: bindings.actors }),
+          work: recoverInstalledSessions({ store, configuration, sessions: bindings.sessions }),
         },
         { step: 'memory-retention', work: store.managed.memory.pruneVersions() },
       ]);

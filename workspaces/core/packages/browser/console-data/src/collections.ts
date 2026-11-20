@@ -10,19 +10,7 @@ import { persistedCollectionOptions } from '@tanstack/db-sqlite-persistence-core
 import type { PersistedCollectionPersistence, PersistedCollectionUtils } from '@tanstack/db-sqlite-persistence-core';
 import { MutableRef, Schema } from 'effect';
 import { ManagedAgent, ManagedEnvironment, ManagedSession, ManagedThread } from './managed-records.ts';
-import {
-  AllowanceRow,
-  EnvironmentProcessDetailsRow,
-  EnvironmentReportRow,
-  EventRow,
-  EvidenceArtifactRow,
-  MechDefinitionRow,
-  MechSummaryRow,
-  restoreRecord,
-  SessionEvidenceRow,
-  TraceEvidenceRow,
-  TurnRow,
-} from './records.ts';
+import { restoreRecord, SessionEvidenceRow } from './records.ts';
 import { ReadReceipt } from './requests.ts';
 
 type KeyedRow = { readonly key: string };
@@ -124,40 +112,6 @@ export function createCanonicalCollections(scope: string, persistence: Persisted
       persistence,
       key: rowKey,
     }),
-    mechs: table({ name: collectionId(scope, 'mechs'), row: MechSummaryRow, persistence, key: rowKey }),
-    mechDefinitions: table({
-      name: collectionId(scope, 'mech-definitions'),
-      row: MechDefinitionRow,
-      persistence,
-      key: rowKey,
-    }),
-    turns: table({ name: collectionId(scope, 'turns'), row: TurnRow, persistence, key: rowKey }),
-    events: table({ name: collectionId(scope, 'events'), row: EventRow, persistence, key: rowKey }),
-    traceEvidence: table({
-      name: collectionId(scope, 'trace-evidence'),
-      row: TraceEvidenceRow,
-      persistence,
-      key: rowKey,
-    }),
-    evidenceArtifacts: table({
-      name: collectionId(scope, 'evidence-artifacts'),
-      row: EvidenceArtifactRow,
-      persistence,
-      key: rowKey,
-    }),
-    environments: table({
-      name: collectionId(scope, 'environments'),
-      row: EnvironmentReportRow,
-      persistence,
-      key: rowKey,
-    }),
-    environmentProcessDetails: table({
-      name: collectionId(scope, 'environment-process-details'),
-      row: EnvironmentProcessDetailsRow,
-      persistence,
-      key: rowKey,
-    }),
-    allowance: table({ name: collectionId(scope, 'allowance'), row: AllowanceRow, persistence, key: rowKey }),
     reads: table({ name: collectionId(scope, 'reads'), row: ReadReceipt, persistence, key: (receipt) => receipt.id }),
   };
 }
@@ -172,15 +126,6 @@ export function materializeCanonicalCollections(db: DbClient, collections: Canon
     managedSessions: db.collection(collections.managedSessions),
     managedThreads: db.collection(collections.managedThreads),
     sessionEvidence: db.collection(collections.sessionEvidence),
-    mechs: db.collection(collections.mechs),
-    mechDefinitions: db.collection(collections.mechDefinitions),
-    turns: db.collection(collections.turns),
-    events: db.collection(collections.events),
-    traceEvidence: db.collection(collections.traceEvidence),
-    evidenceArtifacts: db.collection(collections.evidenceArtifacts),
-    environments: db.collection(collections.environments),
-    environmentProcessDetails: db.collection(collections.environmentProcessDetails),
-    allowance: db.collection(collections.allowance),
     reads: db.collection(collections.reads),
   };
 }

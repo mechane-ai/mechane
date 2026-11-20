@@ -1,6 +1,6 @@
 import type { ProgramSettings } from '@mechane/cli-kernel';
 import { PROGRAM } from '@mechane/commands';
-import { RELEASE, ReleaseStamp } from '@mechane/protocol';
+import { RELEASE, ReleaseStamp } from '@mechane/releases';
 import { Option, Schema } from 'effect';
 
 /** What the runtime says of the running program: the stamp a release compiled into it, and its executable's path. */

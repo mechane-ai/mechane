@@ -13,7 +13,7 @@ type WaitForRead = {
 };
 
 type ReadSource = {
-  readonly status: CanonicalTables['mechs']['status'];
+  readonly status: CanonicalTables['reads']['status'];
   readonly preload: () => Promise<unknown>;
   readonly subscribeChanges: (listener: () => void) => { readonly unsubscribe: () => void };
   readonly on: (type: 'health:change', listener: () => void) => () => void;
@@ -31,19 +31,7 @@ const readDefinitions = {
   sessionEvidence: { tables: ['sessionEvidence'], cardinality: 'many' },
   sessionArtifact: { tables: ['sessionEvidence'], cardinality: 'one' },
   sessionEvents: { tables: [], cardinality: 'many' },
-  archive: { tables: [], cardinality: 'many' },
   attention: { tables: [], cardinality: 'one' },
-  mechs: { tables: ['mechs'], cardinality: 'many' },
-  mech: { tables: ['mechs', 'mechDefinitions'], cardinality: 'one' },
-  turns: { tables: ['turns'], cardinality: 'many' },
-  trace: { tables: ['turns', 'traceEvidence'], cardinality: 'one' },
-  events: { tables: ['events'], cardinality: 'many' },
-  turnEvents: { tables: ['events'], cardinality: 'many' },
-  evidence: { tables: ['evidenceArtifacts'], cardinality: 'many' },
-  evidenceArtifact: { tables: ['evidenceArtifacts'], cardinality: 'one' },
-  environment: { tables: ['environments'], cardinality: 'one' },
-  environmentProcess: { tables: ['environmentProcessDetails'], cardinality: 'one' },
-  allowance: { tables: ['allowance'], cardinality: 'one' },
 } as const satisfies Readonly<Record<ReadKind, ReadDefinition>>;
 
 function hasReadRows(tables: CanonicalTables, receipt: ReadReceipt): boolean {
@@ -53,24 +41,7 @@ function hasReadRows(tables: CanonicalTables, receipt: ReadReceipt): boolean {
     return false;
   }
 
-  if (!definition.tables.every((name) => receipt.keys.every((key) => tables[name].has(key)))) {
-    return false;
-  }
-
-  if (receipt.kind === 'mech') {
-    return receipt.keys.every((key) => {
-      const summary = tables.mechs.get(key);
-      const mechDefinition = tables.mechDefinitions.get(key);
-
-      return (
-        summary !== undefined &&
-        mechDefinition !== undefined &&
-        summary.value.revision === mechDefinition.value.revision
-      );
-    });
-  }
-
-  return true;
+  return definition.tables.every((name) => receipt.keys.every((key) => tables[name].has(key)));
 }
 
 /** Cached coverage can satisfy readiness while its tab-owned network read refreshes. */

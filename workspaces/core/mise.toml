@@ -133,6 +133,27 @@ run = [
   "tsc -p tsconfig.browser.json --checkers 2 --incremental --tsBuildInfoFile node_modules/.cache/tsc/browser.tsbuildinfo",
 ]
 
+[tasks."typecheck:shared"]
+description = "Type-check only the shared lane"
+run = "tsc -p tsconfig.shared.json --checkers 2"
+
+[tasks."typecheck:worker"]
+description = "Type-check only the worker lane"
+run = "tsc -p tsconfig.worker.json --checkers 2"
+
+[tasks."typecheck:node"]
+description = "Type-check only the node lane"
+run = "tsc -p tsconfig.node.json --checkers 2"
+
+[tasks."typecheck:browser"]
+description = "Type-check only the browser lane"
+depends = ["routes:generate"]
+run = "tsc -p tsconfig.browser.json --checkers 2"
+
+[tasks."ci:plan"]
+description = "Print the affected CI lanes and build surfaces for the current branch"
+run = "node packages/node/checks/src/main.ts ci-plan"
+
 
 # One oxlint run with type information and one ast-grep run: an enforced rule fails on any finding, and a ratchet fails
 # on a file above or below its count in lint/baseline.
@@ -166,8 +187,8 @@ description = "Run the repository's own checks: layout, blank lines, patterns, o
 depends = ["routes:generate"]
 wait_for = ["build:server", "build:cli", "build:guest"]
 run = [
-  "tsc -p packages/shared/protocol/upstream/tsconfig.json",
-  "node packages/shared/protocol/upstream/generate-requests.mjs --check",
+  "tsc -p packages/shared/managed-protocol/upstream/tsconfig.json",
+  "node packages/shared/managed-protocol/upstream/generate-requests.mjs --check",
   "node packages/node/checks/src/main.ts check",
 ]
 
@@ -236,6 +257,14 @@ run = "node packages/node/distribution/src/main.ts candidate"
 [tasks."distribution:accept"]
 description = "Qualify an existing candidate by its selected artifact inventory digest"
 run = "node packages/node/distribution/src/main.ts accept"
+
+[tasks."distribution:accept-shard"]
+description = "Qualify one smoke shard of an existing candidate by its selected artifact inventory digest"
+run = "node packages/node/distribution/src/main.ts accept-shard"
+
+[tasks."distribution:merge-qualification"]
+description = "Seal one canonical qualification.json from completed parallel shard receipts"
+run = "node packages/node/distribution/src/main.ts merge-qualification"
 
 [tasks."distribution:verify-qualified"]
 description = "Verify candidate bytes and their explicit qualification digest"
@@ -326,6 +355,10 @@ run = "node packages/node/smoke/src/dev/main.ts"
 description = "Start the retained local Worker installation"
 run = "node packages/node/stack/src/main.ts start"
 
+[tasks."sandbox:benchmark"]
+description = "Benchmark cold boot, filesystem snapshot, stop, warm resume, and destroy on docker, modal, or tensorlake"
+run = "node packages/node/stack/src/benchmark/main.ts"
+
 [tasks."local:reset"]
 description = "Reset an inactive local installation only with --confirm"
 run = "node packages/node/stack/src/main.ts reset"
@@ -345,7 +378,7 @@ run = [
   "node packages/node/checks/src/main.ts normalize",
   "node packages/node/checks/src/main.ts fix",
   "mise run reference",
-  "node packages/shared/protocol/upstream/generate-requests.mjs",
+  "node packages/shared/managed-protocol/upstream/generate-requests.mjs",
   "oxfmt .",
   "tofu fmt -recursive infrastructure",
   "gofmt -w infrastructure/provider",

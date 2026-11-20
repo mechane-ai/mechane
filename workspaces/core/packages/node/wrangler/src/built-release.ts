@@ -8,7 +8,7 @@ import {
   replaceFile,
   StepSubjects,
 } from '@mechane/program';
-import { RELEASE } from '@mechane/protocol';
+import { RELEASE } from '@mechane/releases';
 import { Duration, Effect, Option, Schema } from 'effect';
 import type { Scope } from 'effect';
 import { fileURLToPath } from 'node:url';

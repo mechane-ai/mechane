@@ -1,8 +1,8 @@
 import { OperationFailed } from '@mechane/client';
 import { OutputMode } from '@mechane/commands';
 import { FileStep } from '@mechane/program';
-import { CliTarget, Release } from '@mechane/protocol';
 import { Bytes, WorkspaceId } from '@mechane/records';
+import { CliTarget, Release } from '@mechane/releases';
 import { Schema } from 'effect';
 import { CredentialsStep } from './constants.ts';
 
@@ -152,9 +152,3 @@ export class CredentialsFailed extends Schema.TaggedError<CredentialsFailed>()('
   path: Schema.String,
   reason: Schema.String,
 }) {}
-
-/** A sandbox operation failed without discarding its durable server journal. */
-export class SandboxMaintenanceFailed extends Schema.TaggedError<SandboxMaintenanceFailed>()(
-  'SandboxMaintenanceFailed',
-  { reason: Schema.String },
-) {}

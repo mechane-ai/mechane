@@ -3,7 +3,7 @@ import type { WorkspaceAccess } from '@mechane/eval';
 import type { CredentialMetadata } from '@mechane/protocol';
 import { WorkspaceId } from '@mechane/records';
 import { Effect } from 'effect';
-import { withWorkspace } from '../mechs/with-workspace.ts';
+import { withWorkspace } from '../with-workspace.ts';
 
 /** Lists references and key versions in the selected workspace without reading any credential values. */
 export const runCredentialList = Effect.fn('runCredentialList')(function* ({

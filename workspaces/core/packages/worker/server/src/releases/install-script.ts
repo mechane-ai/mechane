@@ -1,4 +1,4 @@
-import { INSTALL_FOLDER_VARIABLE, ReleaseKey } from '@mechane/protocol';
+import { INSTALL_FOLDER_VARIABLE, ReleaseKey } from '@mechane/releases';
 
 type InstallScriptInput = { readonly origin: string };
 

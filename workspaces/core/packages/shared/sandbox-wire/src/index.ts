@@ -78,12 +78,7 @@ export {
   SandboxReport,
   SANDBOX_ARCHIVE_PART_BYTES,
 } from './internal-maintenance.ts';
-export {
-  SandboxRestoreRequest,
-  SandboxRestoreResult,
-  SandboxRestoreRefusalReason,
-  sandboxRestorePath,
-} from './restore.ts';
+export { SandboxRestoreRequest, SandboxRestoreResult, SandboxRestoreRefusalReason } from './restore.ts';
 
 export {
   BrowserRequestId,
@@ -147,14 +142,11 @@ export {
   ProcessPending,
   SandboxProcessSubmission,
   SandboxProcessAnswer,
-  SandboxProcessIdentity,
   SandboxBrowserSubmission,
   SandboxBrowserAbandonResult,
   BrowserProgress,
   SandboxBrowserArtifactAnswer,
 } from './interactive-service.ts';
-export { sandboxProcessReadPath } from './sandbox-process-read-path.ts';
-export { sandboxProcessStopPath } from './sandbox-process-stop-path.ts';
 export {
   SandboxCheckpointIdentity,
   SandboxCheckpointResult,
@@ -176,7 +168,6 @@ export {
   SandboxCompletion,
   SandboxCompletionAccepted,
   SandboxCompletionIdentity,
-  sandboxCompletionPath,
 } from './completion.ts';
 
 export {

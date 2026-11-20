@@ -1,6 +1,6 @@
-import { CliTarget, RELEASE, ReleaseAsset, releaseBinaryName } from '@mechane/protocol';
-import type { ReleaseManifest } from '@mechane/protocol';
 import { buildRelease } from '@mechane/release';
+import { CliTarget, RELEASE, ReleaseAsset, releaseBinaryName } from '@mechane/releases';
+import type { ReleaseManifest } from '@mechane/releases';
 import { Effect, Option, Record } from 'effect';
 import { copyFile } from 'node:fs/promises';
 import { join } from 'node:path';

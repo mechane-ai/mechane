@@ -1,0 +1,854 @@
+{
+  "spec": "anthropic-v2.10.0.openapi.json.gz",
+  "sha256": "e7aaa98d0ca7e53c2d097adc345a3468ad4f98bf73ea76a22fed88ba8bdb31f6",
+  "operations": [
+    {
+      "method": "POST",
+      "path": "/v1/sessions/{session_id}/resources",
+      "beta": true,
+      "operation": "BetaAddResource",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/agents/{agent_id}/archive",
+      "beta": true,
+      "operation": "BetaArchiveAgent",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/vaults/{vault_id}/credentials/{credential_id}/archive",
+      "beta": true,
+      "operation": "BetaArchiveCredential",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/deployments/{deployment_id}/archive",
+      "beta": true,
+      "operation": "BetaArchiveDeployment",
+      "status": "excluded_self_hosted",
+      "reason": "Scheduled deployments are excluded from Anthropic self-hosted Managed Agents; installations own recurring triggers."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/dreams/{dream_id}/archive",
+      "beta": true,
+      "operation": "BetaArchiveDream",
+      "status": "excluded_self_hosted",
+      "reason": "Dreams are excluded from Anthropic self-hosted Managed Agents."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/memory_stores/{memory_store_id}/archive",
+      "beta": true,
+      "operation": "BetaArchiveMemoryStore",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/sessions/{session_id}/archive",
+      "beta": true,
+      "operation": "BetaArchiveSession",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/sessions/{session_id}/threads/{thread_id}/archive",
+      "beta": true,
+      "operation": "BetaArchiveSessionThread",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/vaults/{vault_id}/archive",
+      "beta": true,
+      "operation": "BetaArchiveVault",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/dreams/{dream_id}/cancel",
+      "beta": true,
+      "operation": "BetaCancelDream",
+      "status": "excluded_self_hosted",
+      "reason": "Dreams are excluded from Anthropic self-hosted Managed Agents."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/agents",
+      "beta": true,
+      "operation": "BetaCreateAgent",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/vaults/{vault_id}/credentials",
+      "beta": true,
+      "operation": "BetaCreateCredential",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/deployments",
+      "beta": true,
+      "operation": "BetaCreateDeployment",
+      "status": "excluded_self_hosted",
+      "reason": "Scheduled deployments are excluded from Anthropic self-hosted Managed Agents; installations own recurring triggers."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/dreams",
+      "beta": true,
+      "operation": "BetaCreateDream",
+      "status": "excluded_self_hosted",
+      "reason": "Dreams are excluded from Anthropic self-hosted Managed Agents."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/memory_stores/{memory_store_id}/memories",
+      "beta": true,
+      "operation": "BetaCreateMemory",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/memory_stores",
+      "beta": true,
+      "operation": "BetaCreateMemoryStore",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/sessions",
+      "beta": true,
+      "operation": "BetaCreateSession",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/vaults",
+      "beta": true,
+      "operation": "BetaCreateVault",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/vaults/{vault_id}/credentials/{credential_id}",
+      "beta": true,
+      "operation": "BetaDeleteCredential",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/memory_stores/{memory_store_id}/memories/{memory_id}",
+      "beta": true,
+      "operation": "BetaDeleteMemory",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/memory_stores/{memory_store_id}",
+      "beta": true,
+      "operation": "BetaDeleteMemoryStore",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/sessions/{session_id}/resources/{resource_id}",
+      "beta": true,
+      "operation": "BetaDeleteResource",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/sessions/{session_id}",
+      "beta": true,
+      "operation": "BetaDeleteSession",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/vaults/{vault_id}",
+      "beta": true,
+      "operation": "BetaDeleteVault",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/agents/{agent_id}",
+      "beta": true,
+      "operation": "BetaGetAgent",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/vaults/{vault_id}/credentials/{credential_id}",
+      "beta": true,
+      "operation": "BetaGetCredential",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/deployments/{deployment_id}",
+      "beta": true,
+      "operation": "BetaGetDeployment",
+      "status": "excluded_self_hosted",
+      "reason": "Scheduled deployments are excluded from Anthropic self-hosted Managed Agents; installations own recurring triggers."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/dreams/{dream_id}",
+      "beta": true,
+      "operation": "BetaGetDream",
+      "status": "excluded_self_hosted",
+      "reason": "Dreams are excluded from Anthropic self-hosted Managed Agents."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/memory_stores/{memory_store_id}/memories/{memory_id}",
+      "beta": true,
+      "operation": "BetaGetMemory",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/memory_stores/{memory_store_id}",
+      "beta": true,
+      "operation": "BetaGetMemoryStore",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/memory_stores/{memory_store_id}/memory_versions/{memory_version_id}",
+      "beta": true,
+      "operation": "BetaGetMemoryVersion",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sessions/{session_id}/resources/{resource_id}",
+      "beta": true,
+      "operation": "BetaGetResource",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sessions/{session_id}",
+      "beta": true,
+      "operation": "BetaGetSession",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sessions/{session_id}/threads/{thread_id}",
+      "beta": true,
+      "operation": "BetaGetSessionThread",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/vaults/{vault_id}",
+      "beta": true,
+      "operation": "BetaGetVault",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/agents/{agent_id}/versions",
+      "beta": true,
+      "operation": "BetaListAgentVersions",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/agents",
+      "beta": true,
+      "operation": "BetaListAgents",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/vaults/{vault_id}/credentials",
+      "beta": true,
+      "operation": "BetaListCredentials",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/deployments",
+      "beta": true,
+      "operation": "BetaListDeployments",
+      "status": "excluded_self_hosted",
+      "reason": "Scheduled deployments are excluded from Anthropic self-hosted Managed Agents; installations own recurring triggers."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/dreams",
+      "beta": true,
+      "operation": "BetaListDreams",
+      "status": "excluded_self_hosted",
+      "reason": "Dreams are excluded from Anthropic self-hosted Managed Agents."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sessions/{session_id}/events",
+      "beta": true,
+      "operation": "BetaListEvents",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/memory_stores/{memory_store_id}/memories",
+      "beta": true,
+      "operation": "BetaListMemories",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/memory_stores",
+      "beta": true,
+      "operation": "BetaListMemoryStores",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/memory_stores/{memory_store_id}/memory_versions",
+      "beta": true,
+      "operation": "BetaListMemoryVersions",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sessions/{session_id}/resources",
+      "beta": true,
+      "operation": "BetaListResources",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sessions/{session_id}/threads/{thread_id}/events",
+      "beta": true,
+      "operation": "BetaListSessionThreadEvents",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sessions/{session_id}/threads",
+      "beta": true,
+      "operation": "BetaListSessionThreads",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sessions",
+      "beta": true,
+      "operation": "BetaListSessions",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/vaults",
+      "beta": true,
+      "operation": "BetaListVaults",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/deployments/{deployment_id}/pause",
+      "beta": true,
+      "operation": "BetaPauseDeployment",
+      "status": "excluded_self_hosted",
+      "reason": "Scheduled deployments are excluded from Anthropic self-hosted Managed Agents; installations own recurring triggers."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/memory_stores/{memory_store_id}/memory_versions/{memory_version_id}/redact",
+      "beta": true,
+      "operation": "BetaRedactMemoryVersion",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/deployments/{deployment_id}/run",
+      "beta": true,
+      "operation": "BetaRunDeploymentNow",
+      "status": "excluded_self_hosted",
+      "reason": "Scheduled deployments are excluded from Anthropic self-hosted Managed Agents; installations own recurring triggers."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/sessions/{session_id}/events",
+      "beta": true,
+      "operation": "BetaSendEvents",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sessions/{session_id}/events/stream",
+      "beta": true,
+      "operation": "BetaStreamSessionEvents",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sessions/{session_id}/threads/{thread_id}/stream",
+      "beta": true,
+      "operation": "BetaStreamSessionThreadEvents",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/deployments/{deployment_id}/unpause",
+      "beta": true,
+      "operation": "BetaUnpauseDeployment",
+      "status": "excluded_self_hosted",
+      "reason": "Scheduled deployments are excluded from Anthropic self-hosted Managed Agents; installations own recurring triggers."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/agents/{agent_id}",
+      "beta": true,
+      "operation": "BetaUpdateAgent",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/vaults/{vault_id}/credentials/{credential_id}",
+      "beta": true,
+      "operation": "BetaUpdateCredential",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/deployments/{deployment_id}",
+      "beta": true,
+      "operation": "BetaUpdateDeployment",
+      "status": "excluded_self_hosted",
+      "reason": "Scheduled deployments are excluded from Anthropic self-hosted Managed Agents; installations own recurring triggers."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/memory_stores/{memory_store_id}/memories/{memory_id}",
+      "beta": true,
+      "operation": "BetaUpdateMemory",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/memory_stores/{memory_store_id}",
+      "beta": true,
+      "operation": "BetaUpdateMemoryStore",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/sessions/{session_id}/resources/{resource_id}",
+      "beta": true,
+      "operation": "BetaUpdateResource",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/sessions/{session_id}",
+      "beta": true,
+      "operation": "BetaUpdateSession",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/vaults/{vault_id}",
+      "beta": true,
+      "operation": "BetaUpdateVault",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/vaults/{vault_id}/credentials/{credential_id}/mcp_oauth_validate",
+      "beta": true,
+      "operation": "BetaValidateCredential",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/environments/{environment_id}/work/{work_id}/ack",
+      "beta": true,
+      "operation": "beta_acknowledge_work_v1_environments__environment_id__work__work_id__ack_post",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/environments/{environment_id}/archive",
+      "beta": true,
+      "operation": "beta_archive_environment_v1_environments__environment_id__archive_post",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/environments",
+      "beta": true,
+      "operation": "beta_create_environment_v1_environments_post",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/skills",
+      "beta": true,
+      "operation": "beta_create_skill_v1_skills_post",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/skills/{skill_id}/versions",
+      "beta": true,
+      "operation": "beta_create_skill_version_v1_skills__skill_id__versions_post",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/environments/{environment_id}",
+      "beta": true,
+      "operation": "beta_delete_environment_v1_environments__environment_id__delete",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/files/{file_id}",
+      "beta": true,
+      "operation": "beta_delete_file_v1_files__file_id__delete",
+      "status": "excluded_self_hosted",
+      "reason": "Files API is hosted-only and excluded from Anthropic self-hosted Managed Agents."
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/skills/{skill_id}",
+      "beta": true,
+      "operation": "beta_delete_skill_v1_skills__skill_id__delete",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/skills/{skill_id}/versions/{version}",
+      "beta": true,
+      "operation": "beta_delete_skill_version_v1_skills__skill_id__versions__version__delete",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/files/{file_id}/content",
+      "beta": true,
+      "operation": "beta_download_file_v1_files__file_id__content_get",
+      "status": "excluded_self_hosted",
+      "reason": "Files API is hosted-only and excluded from Anthropic self-hosted Managed Agents."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/skills/{skill_id}/versions/{version}/content",
+      "beta": true,
+      "operation": "beta_download_skill_version_content_v1_skills__skill_id__versions__version__content_get",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/environments/{environment_id}/work/stats",
+      "beta": true,
+      "operation": "beta_get_environment_stats_v1_environments__environment_id__work_stats_get",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/environments/{environment_id}",
+      "beta": true,
+      "operation": "beta_get_environment_v1_environments__environment_id__get",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/files/{file_id}",
+      "beta": true,
+      "operation": "beta_get_file_metadata_v1_files__file_id__get",
+      "status": "excluded_self_hosted",
+      "reason": "Files API is hosted-only and excluded from Anthropic self-hosted Managed Agents."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/skills/{skill_id}",
+      "beta": true,
+      "operation": "beta_get_skill_v1_skills__skill_id__get",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/skills/{skill_id}/versions/{version}",
+      "beta": true,
+      "operation": "beta_get_skill_version_v1_skills__skill_id__versions__version__get",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/environments/{environment_id}/work/{work_id}",
+      "beta": true,
+      "operation": "beta_get_work_v1_environments__environment_id__work__work_id__get",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/environments",
+      "beta": true,
+      "operation": "beta_list_environments_v1_environments_get",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/files",
+      "beta": true,
+      "operation": "beta_list_files_v1_files_get",
+      "status": "excluded_self_hosted",
+      "reason": "Files API is hosted-only and excluded from Anthropic self-hosted Managed Agents."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/skills/{skill_id}/versions",
+      "beta": true,
+      "operation": "beta_list_skill_versions_v1_skills__skill_id__versions_get",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/skills",
+      "beta": true,
+      "operation": "beta_list_skills_v1_skills_get",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/environments/{environment_id}/work",
+      "beta": true,
+      "operation": "beta_list_work_v1_environments__environment_id__work_get",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/environments/{environment_id}/work/poll",
+      "beta": true,
+      "operation": "beta_poll_work_v1_environments__environment_id__work_poll_get",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/environments/{environment_id}/work/{work_id}/heartbeat",
+      "beta": true,
+      "operation": "beta_record_heartbeat_v1_environments__environment_id__work__work_id__heartbeat_post",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/environments/{environment_id}/work/{work_id}/stop",
+      "beta": true,
+      "operation": "beta_stop_work_v1_environments__environment_id__work__work_id__stop_post",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/environments/{environment_id}",
+      "beta": true,
+      "operation": "beta_update_environment_v1_environments__environment_id__post",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/environments/{environment_id}/work/{work_id}",
+      "beta": true,
+      "operation": "beta_update_work_v1_environments__environment_id__work__work_id__post",
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/files",
+      "beta": true,
+      "operation": "beta_upload_file_v1_files_post",
+      "status": "excluded_self_hosted",
+      "reason": "Files API is hosted-only and excluded from Anthropic self-hosted Managed Agents."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/skills",
+      "beta": false,
+      "operation": "create_skill_v1_skills_post",
+      "status": "excluded_self_hosted",
+      "reason": "Managed Agents serves skills through the beta routes with the managed-agents beta header."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/skills/{skill_id}/versions",
+      "beta": false,
+      "operation": "create_skill_version_v1_skills__skill_id__versions_post",
+      "status": "excluded_self_hosted",
+      "reason": "Managed Agents serves skills through the beta routes with the managed-agents beta header."
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/files/{file_id}",
+      "beta": false,
+      "operation": "delete_file_v1_files__file_id__delete",
+      "status": "excluded_self_hosted",
+      "reason": "Files API is hosted-only and excluded from Anthropic self-hosted Managed Agents."
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/skills/{skill_id}",
+      "beta": false,
+      "operation": "delete_skill_v1_skills__skill_id__delete",
+      "status": "excluded_self_hosted",
+      "reason": "Managed Agents serves skills through the beta routes with the managed-agents beta header."
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/skills/{skill_id}/versions/{version}",
+      "beta": false,
+      "operation": "delete_skill_version_v1_skills__skill_id__versions__version__delete",
+      "status": "excluded_self_hosted",
+      "reason": "Managed Agents serves skills through the beta routes with the managed-agents beta header."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/files/{file_id}/content",
+      "beta": false,
+      "operation": "download_file_v1_files__file_id__content_get",
+      "status": "excluded_self_hosted",
+      "reason": "Files API is hosted-only and excluded from Anthropic self-hosted Managed Agents."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/files/{file_id}",
+      "beta": false,
+      "operation": "get_file_metadata_v1_files__file_id__get",
+      "status": "excluded_self_hosted",
+      "reason": "Files API is hosted-only and excluded from Anthropic self-hosted Managed Agents."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/skills/{skill_id}",
+      "beta": false,
+      "operation": "get_skill_v1_skills__skill_id__get",
+      "status": "excluded_self_hosted",
+      "reason": "Managed Agents serves skills through the beta routes with the managed-agents beta header."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/skills/{skill_id}/versions/{version}",
+      "beta": false,
+      "operation": "get_skill_version_v1_skills__skill_id__versions__version__get",
+      "status": "excluded_self_hosted",
+      "reason": "Managed Agents serves skills through the beta routes with the managed-agents beta header."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/files",
+      "beta": false,
+      "operation": "list_files_v1_files_get",
+      "status": "excluded_self_hosted",
+      "reason": "Files API is hosted-only and excluded from Anthropic self-hosted Managed Agents."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/skills/{skill_id}/versions",
+      "beta": false,
+      "operation": "list_skill_versions_v1_skills__skill_id__versions_get",
+      "status": "excluded_self_hosted",
+      "reason": "Managed Agents serves skills through the beta routes with the managed-agents beta header."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/skills",
+      "beta": false,
+      "operation": "list_skills_v1_skills_get",
+      "status": "excluded_self_hosted",
+      "reason": "Managed Agents serves skills through the beta routes with the managed-agents beta header."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/files",
+      "beta": false,
+      "operation": "upload_file_v1_files_post",
+      "status": "excluded_self_hosted",
+      "reason": "Files API is hosted-only and excluded from Anthropic self-hosted Managed Agents."
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import { managedWorkspaceId, matchManagedRoute } from '@mechane/protocol';
+import { managedWorkspaceId, matchManagedRoute } from '@mechane/managed-protocol';
 import { HttpHeader, HttpMethod, HttpStatusCode } from '@mechane/records';
 import type { AuthenticationConfiguration } from '@mechane/runtime';
 import { matchInstalledCommandEnvironment } from '@mechane/sandbox-wire';
@@ -9,6 +9,7 @@ import { managedAuthentication } from './auth.ts';
 import { matchConsoleEvidence, readConsoleEvidence } from './console-evidence.ts';
 import { handleEnvironmentOperation, handleManagedEnvironmentKeys } from './environment-routes.ts';
 import { handleEvents } from './events.ts';
+import { handleDirectEvidenceUpload, matchDirectEvidenceUpload } from './evidence-upload.ts';
 import { managedFailure } from './failure.ts';
 import { ManagedHttpError } from './http-error.ts';
 import { installedCommandEnvironment } from './installed-command-environment.ts';
@@ -26,7 +27,14 @@ import { handleManagedWorkOperation } from './work.ts';
 
 type Dependencies = Pick<
   ManagedRequest,
-  'store' | 'configuration' | 'actors' | 'wakeInstalledSession' | 'scheduleSessionOpen'
+  | 'store'
+  | 'configuration'
+  | 'sessions'
+  | 'slots'
+  | 'wakeInstalledSession'
+  | 'destroyInstalledSession'
+  | 'workspaceFiles'
+  | 'scheduleSessionOpen'
 > & { readonly authentication: AuthenticationConfiguration; readonly managedIdentity: ManagedServiceCredentials };
 
 async function execute(path: string, input: ManagedRequest): Promise<unknown> {
@@ -66,8 +74,18 @@ async function workspaceResponse(path: string, input: ManagedRequest, requestId:
 }
 
 export function createManagedHandler(dependencies: Dependencies) {
-  const { store, actors, configuration, authentication, wakeInstalledSession, scheduleSessionOpen, managedIdentity } =
-    dependencies;
+  const {
+    store,
+    sessions,
+    slots,
+    configuration,
+    authentication,
+    wakeInstalledSession,
+    destroyInstalledSession,
+    workspaceFiles,
+    scheduleSessionOpen,
+    managedIdentity,
+  } = dependencies;
 
   const authenticate = managedAuthentication({ store, configuration: authentication, managedIdentity });
 
@@ -82,13 +100,14 @@ export function createManagedHandler(dependencies: Dependencies) {
     }
 
     const computer = matchInstalledComputer(path);
+    const directEvidence = matchDirectEvidenceUpload(path);
     const evidence = matchConsoleEvidence(path);
     const commandSession = matchInstalledCommandEnvironment({ pathname: path });
     const privateKeys = path.startsWith('/internal/managed/environments/');
     const [, agentId] = /^\/console-api\/agents\/(agent_[a-zA-Z0-9_-]+)\/attention$/u.exec(path) ?? [];
 
     const isPrivateManagement = privateKeys || agentId !== undefined || evidence !== null;
-    const isInstalledSession = computer !== null || Option.isSome(commandSession);
+    const isInstalledSession = computer !== null || directEvidence !== null || Option.isSome(commandSession);
 
     if (!path.startsWith('/v1/') && !isPrivateManagement && !isInstalledSession) {
       return null;
@@ -97,12 +116,21 @@ export function createManagedHandler(dependencies: Dependencies) {
     const requestId = `req_${crypto.randomUUID().replaceAll('-', '')}`;
 
     try {
+      if (directEvidence !== null) {
+        const response = await handleDirectEvidenceUpload({ route: directEvidence, request, store, workspaceFiles });
+
+        response.headers.set(HttpHeader.RequestId, requestId);
+
+        return response;
+      }
+
       if (evidence !== null) {
         const response = await readConsoleEvidence({
           route: evidence,
           request,
           configuration,
           store,
+          workspaceFiles,
           authenticate: (selected) => authenticate(selected, peerAddress),
         });
 
@@ -136,7 +164,7 @@ export function createManagedHandler(dependencies: Dependencies) {
 
         const scope = await authenticate(request, peerAddress);
 
-        return managedResponse(await agentAttention({ actors, scope, store, agentId }), requestId);
+        return managedResponse(await agentAttention({ slots, scope, store, agentId }), requestId);
       }
 
       if (privateKeys) {
@@ -165,11 +193,14 @@ export function createManagedHandler(dependencies: Dependencies) {
         request,
         store,
         configuration,
-        actors,
+        sessions,
+        slots,
         operation,
         params,
         query,
         wakeInstalledSession,
+        destroyInstalledSession,
+        workspaceFiles,
         scheduleSessionOpen,
       };
 

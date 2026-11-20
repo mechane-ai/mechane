@@ -22,8 +22,16 @@ function environmentPath({ id }: { readonly id: string | undefined }): string {
   return `${root}/${encodeURIComponent(id)}`;
 }
 
-function mechDirectoryPath({ root, workspaceId }: { readonly root: string; readonly workspaceId: string }): string {
-  return `${root}/workspaces/${encodeURIComponent(workspaceId)}/mechs`;
+function workspaceResourcePath({
+  root,
+  workspaceId,
+  resource,
+}: {
+  readonly root: string;
+  readonly workspaceId: string;
+  readonly resource: string;
+}): string {
+  return `${root}/workspaces/${encodeURIComponent(workspaceId)}/${resource}`;
 }
 
 export async function membershipChangesApplyImmediately({ stack }: ScenarioInput): Promise<void> {
@@ -81,19 +89,29 @@ export async function membershipChangesApplyImmediately({ stack }: ScenarioInput
     schema: WorkspaceMember,
   });
 
-  const archivedPath = mechDirectoryPath({ root: '/api/operator', workspaceId: workspace.id });
-  const archive = new URL(archivedPath, stack.origin);
+  const credentialsPath = workspaceResourcePath({
+    root: '/api/v1',
+    workspaceId: workspace.id,
+    resource: 'credentials',
+  });
 
-  const ownerArchive = await owner.browser.request({ url: archive });
-  const memberArchive = await member.browser.request({ url: archive });
+  const credentials = new URL(credentialsPath, stack.origin);
 
-  assert.equal(ownerArchive.status, HttpStatusCode.Ok);
-  assert.equal(memberArchive.status, HttpStatusCode.Forbidden);
+  const ownerCredentials = await owner.browser.request({ url: credentials });
+  const memberCredentials = await member.browser.request({ url: credentials });
 
-  const retiredPath = mechDirectoryPath({ root: '/api/v1', workspaceId: workspace.id });
+  assert.equal(ownerCredentials.status, HttpStatusCode.Ok);
+  assert.equal(memberCredentials.status, HttpStatusCode.Forbidden);
+
+  const retiredPath = workspaceResourcePath({ root: '/api/operator', workspaceId: workspace.id, resource: 'mechs' });
+  const retiredRead = await owner.browser.request({ url: new URL(retiredPath, stack.origin) });
+
+  assert.equal(retiredRead.status, HttpStatusCode.NotFound);
+
+  const retiredCreatePath = workspaceResourcePath({ root: '/api/v1', workspaceId: workspace.id, resource: 'mechs' });
 
   const retiredCreate = await owner.browser.request({
-    url: new URL(retiredPath, stack.origin),
+    url: new URL(retiredCreatePath, stack.origin),
     method: HttpMethod.Post,
     headers: { [HttpHeader.Origin]: stack.origin.origin, [HttpHeader.ContentType]: MediaType.Json },
     body: JSON.stringify({ name: 'retired definition' }),
@@ -120,9 +138,9 @@ export async function membershipChangesApplyImmediately({ stack }: ScenarioInput
     schema: WorkspaceMemberRemoval,
   });
 
-  const formerMemberArchive = await member.browser.request({ url: archive });
+  const formerMemberCredentials = await member.browser.request({ url: credentials });
 
-  assert.equal(formerMemberArchive.status, HttpStatusCode.NotFound);
+  assert.equal(formerMemberCredentials.status, HttpStatusCode.NotFound);
   await assertRemoved(environment.id);
   await assertRemoved(environment.id, { name: 'Unauthorized edit' });
 

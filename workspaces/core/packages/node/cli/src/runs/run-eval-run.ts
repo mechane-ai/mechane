@@ -5,7 +5,7 @@ import { createEvalTarget, EvalOutcome, evalRunnerFingerprint, runReplyEval } fr
 import type { EvalTarget, WriteProgress } from '@mechane/eval';
 import { writeDiagnostic } from '@mechane/program';
 import { Effect, Option } from 'effect';
-import { withWorkspace } from './mechs/with-workspace.ts';
+import { withWorkspace } from './with-workspace.ts';
 
 /** The outcome of the command by how its eval run ended: an incomplete run fails the command. */
 const EVAL_RUN_OUTCOME: Readonly<Record<EvalOutcome, RunOutcome>> = {

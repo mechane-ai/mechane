@@ -1,5 +1,5 @@
-import { ReleaseKey, ReleaseManifest, releaseManifestKey } from '@mechane/protocol';
-import type { CliTarget, Release } from '@mechane/protocol';
+import { ReleaseKey, ReleaseManifest, releaseManifestKey } from '@mechane/releases';
+import type { CliTarget, Release } from '@mechane/releases';
 import { Effect, Record, Schema } from 'effect';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';

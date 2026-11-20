@@ -1,0 +1,8 @@
+id: no-prefixed-session-sqlite
+language: TypeScript
+severity: error
+message: 'Open one unprefixed Durable Object SQLite store per session, such as `openDurableObjectSqliteStorage(storage)` (135)'
+files: ['packages/worker/*/src/**']
+ignores: ['**/node_modules/**']
+rule:
+  pattern: openDurableObjectSqliteStorage($STORAGE, $OPTIONS)

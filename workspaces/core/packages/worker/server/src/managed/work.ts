@@ -107,7 +107,7 @@ async function pollWork(input: WorkRequest, workspaceId: string, environmentId: 
   const pollInput = { workspaceId, environmentId, reclaimAfterMilliseconds, origin: input.origin };
 
   try {
-    await reconcileLostWork({ actors: input.actors, store: input.store, workspaceId, environmentId });
+    await reconcileLostWork({ sessions: input.sessions, store: input.store, workspaceId, environmentId });
   } catch (failure) {
     const available = await worker.poll(pollInput);
 

@@ -8,13 +8,10 @@ import type { ConsoleData, ViewerSession } from '@mechane/console-data';
 import { BrowserAuthenticationPath } from '@mechane/protocol';
 import type { Workspace } from '@mechane/protocol';
 import { HttpMethod } from '@mechane/records';
-import { createLink } from '@tanstack/react-router';
 import { useState } from 'react';
 import type { ReactNode, SubmitEvent } from 'react';
 import { useNavigationPreferences } from '../navigation-preferences.tsx';
 import { DataStatus } from './data-status.tsx';
-
-const InternalLink = createLink(TextLink);
 
 type FinishSignOutInput = { readonly lifetime: AbortController };
 
@@ -73,11 +70,6 @@ export function WorkspaceSettings({
         <Stack>
           <SettingsSection title="Workspace">
             <Details items={[{ label: 'Name', value: workspace.name }]} />
-            {workspace.role === 'owner' && (
-              <InternalLink to="/workspaces/$workspaceId/archives" params={{ workspaceId: workspace.id }}>
-                Archived mechs
-              </InternalLink>
-            )}
             {hasPersistenceError && <Notice hasError>This browser could not save your pins and recent agents.</Notice>}
           </SettingsSection>
           <SettingsSection title="Account">

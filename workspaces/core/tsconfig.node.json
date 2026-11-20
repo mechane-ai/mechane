@@ -27,9 +27,11 @@
     "packages/node/rule-generator/src",
     "packages/node/rule-shapes/src",
     "packages/node/rules/src",
+    "packages/node/sandbox-docker/src",
     "packages/node/smoke/src",
     "packages/node/stack/src",
     "packages/node/testing/src",
+    "packages/node/worker-agent/src",
     "packages/node/wrangler/src"
   ]
 }

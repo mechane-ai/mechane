@@ -1,35 +1,16 @@
-import { EvidenceArtifactId, MechId, PrincipalId, TurnId, WorkspaceId } from '@mechane/records';
+import { PrincipalId, WorkspaceId } from '@mechane/records';
 import { Schema } from 'effect';
 import { ReadId } from './requests.ts';
 
 export const INVALIDATION_CHANNEL = 'mechane-console-admission';
 const BROWSER_SCOPE = 'browser';
 
-export const INVALIDATION_KIND = {
-  Session: 'session',
-  Mech: 'mech',
-  Turn: 'turn',
-  Artifact: 'artifact',
-  Read: 'read',
-} as const;
+export const INVALIDATION_KIND = { Session: 'session', Read: 'read' } as const;
 
 const SessionInvalidation = Schema.Struct({ kind: Schema.Literal(INVALIDATION_KIND.Session) });
 
 const InvalidationTarget = Schema.Union([
   SessionInvalidation,
-  Schema.Struct({ kind: Schema.Literal(INVALIDATION_KIND.Mech), workspaceId: WorkspaceId, mechId: MechId }),
-  Schema.Struct({
-    kind: Schema.Literal(INVALIDATION_KIND.Turn),
-    workspaceId: WorkspaceId,
-    mechId: MechId,
-    turnId: TurnId,
-  }),
-  Schema.Struct({
-    kind: Schema.Literal(INVALIDATION_KIND.Artifact),
-    workspaceId: WorkspaceId,
-    mechId: MechId,
-    artifactId: EvidenceArtifactId,
-  }),
   Schema.Struct({ kind: Schema.Literal(INVALIDATION_KIND.Read), workspaceId: WorkspaceId, readId: ReadId }),
 ]);
 

@@ -1,8 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { managedWorkspaceId } from '@mechane/managed-protocol';
 import {
   catalog,
   ManagedAgentPolicy,
-  managedWorkspaceId,
   RevokedWorkspaceServiceKey,
   Workspace,
   WorkspaceMember,

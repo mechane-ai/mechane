@@ -1,6 +1,7 @@
+import type { SlotNamespace } from '@mechane/agent-slot';
 import { isInstalledEnvironment, openControlStore } from '@mechane/control-store';
 import type { ControlStore, InstalledSession } from '@mechane/control-store';
-import type { ActorNamespace, RuntimeConfiguration } from '@mechane/runtime';
+import type { RuntimeConfiguration } from '@mechane/runtime';
 import { Redacted } from 'effect';
 import { reportSessionDeliveryFailure } from '../http/failure.ts';
 import { getSessionRuntime } from '../managed/session-runtime.ts';
@@ -10,7 +11,7 @@ import { reconcileInstalledAllocations } from '../sandboxes/reconcile-installed.
 import { finishRecovery } from './finish-recovery.ts';
 
 type OpenStoreInput = { readonly configuration: RuntimeConfiguration };
-type DispatchContext = OpenStoreInput & { readonly actors: ActorNamespace };
+type DispatchContext = OpenStoreInput & { readonly sessions: Pick<SlotNamespace, 'getByName'> };
 type WakeInput = DispatchContext & { readonly execution: Pick<ExecutionContext, 'waitUntil'> };
 type ReconcileInput = DispatchContext & { readonly store: ControlStore };
 const SWEEP_CONCURRENCY = 4;
@@ -58,11 +59,11 @@ function scheduleDelivery({ execution, work, ...target }: SessionDelivery): void
   }
 }
 
-export function installedSessionWake({ configuration, actors, execution }: WakeInput) {
+export function installedSessionWake({ configuration, sessions, execution }: WakeInput) {
   return (session: InstalledSession): void => {
     if (isInstalledEnvironment(session)) {
       const work = runWithServerStore(configuration, async (store) => {
-        const context = { store, configuration, actors };
+        const context = { store, configuration, sessions };
         const { hasReleasedCapacity } = await dispatchInstalledSession({ ...context, ...session });
 
         if (hasReleasedCapacity) {
@@ -81,34 +82,34 @@ export function installedSessionWake({ configuration, actors, execution }: WakeI
   };
 }
 
-export function installedCapacityWake({ configuration, actors, execution }: WakeInput) {
+export function installedCapacityWake({ configuration, sessions, execution }: WakeInput) {
   return (): void => {
     execution.waitUntil(
-      runWithServerStore(configuration, (store) => dispatchPending({ store, configuration, actors })),
+      runWithServerStore(configuration, (store) => dispatchPending({ store, configuration, sessions })),
     );
   };
 }
 
 export function sessionOpenScheduler(input: WakeInput): ManagedRequest['scheduleSessionOpen'] {
-  const { configuration, actors, execution } = input;
+  const { configuration, sessions, execution } = input;
   const wakeInstalledSession = installedSessionWake(input);
 
   return ({ scope, id }) => {
     const work = runWithServerStore(configuration, async (store) => {
-      await getSessionRuntime({ store, scope, configuration, actors, wakeInstalledSession }, id);
+      await getSessionRuntime({ store, scope, configuration, sessions, wakeInstalledSession }, id);
     });
 
     scheduleDelivery({ execution, workspaceId: scope.workspaceId, sessionId: id, operation: 'open', work });
   };
 }
 
-async function dispatchPending({ store, configuration, actors }: ReconcileInput): Promise<void> {
+async function dispatchPending({ store, configuration, sessions }: ReconcileInput): Promise<void> {
   const pending = await store.managed.installed.pending({ maxRows: SWEEP_CONCURRENCY });
 
   await finishRecovery(
     pending.map((session) => ({
       step: session.sessionId,
-      work: dispatchInstalledSession({ store, configuration, actors, ...session }),
+      work: dispatchInstalledSession({ store, configuration, sessions, ...session }),
     })),
   );
 }

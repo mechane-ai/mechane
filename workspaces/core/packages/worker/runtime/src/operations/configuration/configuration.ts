@@ -1,5 +1,4 @@
 import { createAgentPolicyOperations } from './agent-policy.ts';
-import { createConnectionOperations } from './connections.ts';
 import { createCredentialOperations } from './credentials.ts';
 import { createExecutionOperations } from './execution.ts';
 import type { ConfigurationOperationsInput } from './types.ts';
@@ -10,7 +9,6 @@ export function createConfigurationOperations(input: ConfigurationOperationsInpu
     ...createAgentPolicyOperations(input),
     ...createWorkspaceOperations(input),
     ...createCredentialOperations(input),
-    ...createConnectionOperations(input),
     ...createExecutionOperations(input),
   };
 }

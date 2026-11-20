@@ -1,4 +1,4 @@
-import { RELEASE } from '@mechane/protocol';
+import { RELEASE } from '@mechane/releases';
 import { readBuiltRelease } from '@mechane/wrangler';
 import type { BuiltRelease } from '@mechane/wrangler';
 import { Effect } from 'effect';

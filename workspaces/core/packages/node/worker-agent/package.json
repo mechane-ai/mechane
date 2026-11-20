@@ -1,0 +1,14 @@
+{
+  "name": "@mechane/worker-agent",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "1.10.0",
+    "@mechane/records": "workspace:*",
+    "@mechane/sandbox-provider": "workspace:*",
+    "effect": "4.0.7"
+  }
+}

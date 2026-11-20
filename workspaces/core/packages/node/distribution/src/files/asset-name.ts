@@ -1,4 +1,4 @@
-import { RELEASE } from '@mechane/protocol';
+import { RELEASE } from '@mechane/releases';
 
 type AssetNameInput = { readonly kind: 'cloudflare' | 'guest' | 'setup-provider' };
 const SUFFIXES = { 'cloudflare': 'zip', 'guest': 'oci.tar', 'setup-provider': 'sh' } as const;

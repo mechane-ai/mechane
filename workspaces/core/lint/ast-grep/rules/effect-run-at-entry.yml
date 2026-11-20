@@ -6,7 +6,6 @@ message: 'Compose the Effect with `yield*` and run it only at an entry point, su
 files: ['**/*.ts']
 ignores: [
     'packages/worker/server/src/main.ts',
-    'packages/node/{stack,distribution,testing,smoke}/src/**',
     'packages/shared/deployment/src/worker-deployment.ts',
     'packages/worker/sandbox/src/service/**',
     '**/node_modules/**',
@@ -20,9 +19,11 @@ ignores: [
     'packages/node/guest/src/guest-listener.ts',
     # The Anthropic SDK work handler mounts resources before its first tool execution.
     'packages/node/guest/src/managed-work/checkout.ts',
-    'packages/shared/bash/src/**',
     'packages/worker/sandbox/src/providers/machine-object.ts',
-    'packages/worker/{runtime/src,server/src,control-store/src,sandbox/testing}/**',
+    'packages/worker/{agent-slot/src,authority-store/src,managed-store/src,runtime/src,server/src,control-store/src,sandbox/testing}/**',
+    'packages/node/{stack,distribution,testing,smoke,sandbox-docker,worker-agent}/src/**',
+    'packages/shared/{bash,sandbox-provider,sandbox-tensorlake,sandbox-modal}/src/**',
+    'packages/worker/server/testing/sandbox-providers.ts',
   ]
 rule:
   pattern: Effect.$RUN

@@ -24,6 +24,9 @@ ignores:
   - packages/node/rule-generator/src/load-generate-settings.ts
   - 'packages/node/stack/src/dev/settings.ts'
   - 'packages/worker/sandbox/src/service/machine-settings.ts'
+  - 'packages/worker/agent-slot/src/settings.ts'
+  - 'packages/node/worker-agent/src/settings.ts'
+  - 'packages/node/stack/src/benchmark/settings.ts'
 rule:
   kind: nested_type_identifier
   regex: ^NodeJS\.ProcessEnv$

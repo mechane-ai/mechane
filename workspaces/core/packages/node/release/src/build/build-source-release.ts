@@ -1,4 +1,4 @@
-import { CliTarget, RELEASE } from '@mechane/protocol';
+import { CliTarget, RELEASE } from '@mechane/releases';
 import { Effect, Record } from 'effect';
 import { rm } from 'node:fs/promises';
 import { cleanRevision } from '../clean-revision.ts';

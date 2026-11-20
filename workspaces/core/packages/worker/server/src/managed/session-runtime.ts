@@ -2,7 +2,7 @@ import { createManagedAgentRuntime } from '@mechane/runtime';
 import { Schema } from 'effect';
 import type { ManagedRequest } from './types.ts';
 
-type Services = Pick<ManagedRequest, 'store' | 'actors' | 'configuration' | 'wakeInstalledSession'>;
+type Services = Pick<ManagedRequest, 'store' | 'sessions' | 'configuration' | 'wakeInstalledSession'>;
 type SessionAccess = Services & Pick<ManagedRequest, 'scope'>;
 
 const WireObject = Schema.Record(Schema.String, Schema.Unknown);
@@ -16,13 +16,13 @@ const RuntimeFields = Schema.Struct({
 });
 
 export async function bindSessionRuntime(
-  { store, scope, actors, wakeInstalledSession }: SessionAccess,
+  { store, scope, sessions, wakeInstalledSession }: SessionAccess,
   sessionId: string,
 ) {
   const target = { scope, id: sessionId };
   const catalog = store.managed.sessions;
   const binding = await catalog.runtimeBinding(target);
-  const runtime = createManagedAgentRuntime(actors, { workspaceId: scope.workspaceId, agentId: binding.agentId });
+  const runtime = createManagedAgentRuntime(sessions, { workspaceId: scope.workspaceId, agentId: binding.agentId });
   const targetRuntime = { runtime, environmentId: binding.environmentId };
   const pending = binding.pendingOpen;
 

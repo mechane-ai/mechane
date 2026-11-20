@@ -26,6 +26,9 @@ ignores:
     'packages/node/checks/src/load-checks-settings.ts',
     'packages/node/rename/src/load-rename-settings.ts',
     'packages/node/rule-generator/src/load-generate-settings.ts',
+    'packages/worker/agent-slot/src/settings.ts',
+    'packages/node/worker-agent/src/settings.ts',
+    'packages/node/stack/src/benchmark/settings.ts',
   ]
 rule:
   any:

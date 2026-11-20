@@ -9,8 +9,41 @@
     "consumers": [],
     "confines": []
   },
+  "@mechane/releases": {
+    "owns": "Release identifiers, revision schemas, CLI binary targets, release manifests, and download asset URLs",
+    "layer": 1,
+    "lane": "shared",
+    "dialect": "data",
+    "kind": "library",
+    "criterion": "reuse"
+  },
+  "@mechane/presentation": {
+    "owns": "The bounded json-render visual presentation catalog, validation schemas, and Slack card renderers",
+    "layer": 1,
+    "lane": "shared",
+    "dialect": "plain",
+    "kind": "library",
+    "criterion": "reuse",
+    "consumers": ["@mechane/client"]
+  },
+  "@mechane/managed-protocol": {
+    "owns": "Anthropic Self-Hosted Claude Managed Agents routes, OpenAPI schema projections, worker-access rules, and compatibility matrix",
+    "layer": 2,
+    "lane": "shared",
+    "dialect": "data",
+    "kind": "wire",
+    "criterion": "reuse",
+    "consumers": [
+      "@mechane/server",
+      "@mechane/sandbox",
+      "@mechane/stack",
+      "@mechane/locks",
+      "@mechane/eval",
+      "@mechane/smoke"
+    ]
+  },
   "@mechane/protocol": {
-    "owns": "The operation catalog, public request and response schemas, domain errors, authenticated HTTP paths, release descriptors, and the bounded presentation catalog",
+    "owns": "First-party operator authentication, workspace administration, credentials, command-access, readiness, and evidence schemas",
     "layer": 2,
     "lane": "shared",
     "dialect": "data",
@@ -99,6 +132,60 @@
     "dialect": "data",
     "kind": "library",
     "criterion": "reuse"
+  },
+  "@mechane/sandbox-provider": {
+    "owns": "The minimal 5-method vendor-neutral sandbox provider contract, lifecycle schemas, worker bootstrap environment, and bounded HTTP helper",
+    "layer": 2,
+    "lane": "shared",
+    "dialect": "plain",
+    "kind": "wire",
+    "criterion": "reuse",
+    "consumers": [
+      "@mechane/sandbox-tensorlake",
+      "@mechane/sandbox-modal",
+      "@mechane/sandbox-docker",
+      "@mechane/worker-agent",
+      "@mechane/managed-store",
+      "@mechane/runtime",
+      "@mechane/server",
+      "@mechane/stack"
+    ]
+  },
+  "@mechane/sandbox-tensorlake": {
+    "owns": "HTTPS sandbox provider adapter for Tensorlake Sandboxes with native filesystem snapshot and suspend/resume support",
+    "layer": 3,
+    "lane": "shared",
+    "dialect": "plain",
+    "kind": "library",
+    "criterion": "closure",
+    "consumers": ["@mechane/server", "@mechane/stack"]
+  },
+  "@mechane/sandbox-modal": {
+    "owns": "HTTPS sandbox provider adapter and deployable Modal bridge for Modal Sandboxes with filesystem snapshots",
+    "layer": 3,
+    "lane": "shared",
+    "dialect": "plain",
+    "kind": "library",
+    "criterion": "closure",
+    "consumers": ["@mechane/server", "@mechane/stack"]
+  },
+  "@mechane/sandbox-docker": {
+    "owns": "Local Docker sandbox provider adapter for fast single-host development and benchmarking without a second celld instance",
+    "layer": 4,
+    "lane": "node",
+    "dialect": "plain",
+    "kind": "library",
+    "criterion": "closure",
+    "consumers": ["@mechane/stack"]
+  },
+  "@mechane/worker-agent": {
+    "owns": "Vendor-agnostic Managed Agents sandbox worker entrypoint, work-secret decoder, and direct R2 evidence uploader",
+    "layer": 4,
+    "lane": "node",
+    "dialect": "plain",
+    "kind": "library-program",
+    "criterion": "closure",
+    "consumers": ["@mechane/guest"]
   },
   "@mechane/sandbox-store": {
     "owns": "The sandbox object's database: its tables, rows and record functions",
@@ -424,6 +511,16 @@
     "criterion": "reuse",
     "consumers": ["@mechane-ai/elements", "@mechane/console"]
   },
+  "@mechane/agent-slot": {
+    "owns": "Isolated per-agent serialized execution slot Durable Object, fencing epochs, lease alarms, and FIFO session queue",
+    "layer": 4,
+    "lane": "worker",
+    "dialect": "plain",
+    "kind": "object",
+    "criterion": "state",
+    "consumers": ["@mechane/runtime", "@mechane/server"],
+    "confines": []
+  },
   "@mechane/runtime": {
     "owns": "Managed agent sessions, serialized identity execution, historical inspection, guarded tools, and provider accounting",
     "layer": 6,
@@ -453,15 +550,35 @@
     "criterion": "closure",
     "consumers": ["@mechane/guest"]
   },
+  "@mechane/authority-store": {
+    "owns": "PostgreSQL pool and transaction context, runtime grants, auth and workspace authority, encrypted credentials, provider spend budgets, sandbox capacity, and managed record primitives",
+    "layer": 3,
+    "lane": "worker",
+    "dialect": "plain",
+    "kind": "store",
+    "criterion": "state",
+    "consumers": ["@mechane/managed-store", "@mechane/control-store"],
+    "confines": ["pg"]
+  },
+  "@mechane/managed-store": {
+    "owns": "Managed Agents PostgreSQL catalog: versioned agents, environments, installed allocations, sessions, skills, memory, vaults, evidence, worker leases, and git transfer",
+    "layer": 4,
+    "lane": "worker",
+    "dialect": "plain",
+    "kind": "store",
+    "criterion": "state",
+    "consumers": ["@mechane/control-store"],
+    "confines": []
+  },
   "@mechane/control-store": {
-    "owns": "Shared Postgres authority, credentials, budgets, capacity, control delivery, and read-only preserved-history export",
+    "owns": "Control-plane Postgres store composition (`openControlStore`) and ordered schema migration runner (`DOMAIN_MIGRATIONS`)",
     "layer": 5,
     "lane": "worker",
     "dialect": "plain",
     "kind": "library",
     "criterion": "state",
     "consumers": ["@mechane/runtime", "@mechane/server"],
-    "confines": ["pg"]
+    "confines": []
   },
   "@mechane-ai/bash": {
     "owns": "The reusable Pi native Bash registration bound to a caller-owned command executor",

@@ -1,10 +1,7 @@
-import { readEvidenceViewerPath } from '@mechane/protocol';
 import { Outlet, useMatch, useNavigate, useParams, useRouterState } from '@tanstack/react-router';
-import { Option } from 'effect';
 import type { ReactNode } from 'react';
 import { ConsoleApplication } from './application.tsx';
-import { managedDestination, managedSearch, tableSearch } from './managed-navigation.ts';
-import { consoleTransition } from './navigation.tsx';
+import { managedDestination, managedSearch } from './managed-navigation.ts';
 import type { ConsoleLocation } from './types.ts';
 
 export function ConsoleRoute(): ReactNode {
@@ -17,32 +14,12 @@ export function ConsoleRoute(): ReactNode {
   });
 
   const params = useParams({ strict: false });
-  const pathname = new URL(route.publicHref, 'https://console.invalid').pathname;
-  const evidence = Option.getOrUndefined(readEvidenceViewerPath({ pathname }));
 
   if (route.pathname === '/welcome') {
     return <Outlet />;
   }
 
   function selectedLocation(): ConsoleLocation {
-    if (evidence !== undefined) {
-      return {
-        ...route.state.consoleEvidenceOrigin,
-        workspace: evidence.workspaceId,
-        mech: evidence.mechId,
-        artifact: evidence.artifactId,
-      };
-    }
-
-    if (params.workspaceId !== undefined && params.agentId === undefined) {
-      return {
-        workspace: params.workspaceId,
-        isArchiveIndex: true,
-        ...tableSearch(route.search),
-        ...(typeof route.search.page === 'string' ? { page: route.search.page } : {}),
-      };
-    }
-
     if (params.workspaceId !== undefined && params.agentId !== undefined) {
       return {
         ...managedSearch(route.search),
@@ -69,17 +46,7 @@ export function ConsoleRoute(): ReactNode {
           return;
         }
 
-        if (next.artifact !== undefined && next.workspace !== undefined && next.mech !== undefined) {
-          void navigate({
-            to: '/workspaces/$workspaceId/mechs/$mechId/evidence/$artifactId',
-            params: { workspaceId: next.workspace, mechId: next.mech, artifactId: next.artifact },
-            state: (prior) => ({ ...prior, consoleEvidenceOrigin: location }),
-          });
-
-          return;
-        }
-
-        void navigate({ to: '/', search: next, ...consoleTransition(location, next) });
+        void navigate({ to: '/', search: next });
       }}
     />
   );

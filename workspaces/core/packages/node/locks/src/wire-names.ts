@@ -1,8 +1,9 @@
 import { decodeFile } from '@mechane/checks-kernel';
 import type { InputUnreadable } from '@mechane/checks-kernel';
+import { managedOperations } from '@mechane/managed-protocol';
 import { WireKind } from '@mechane/program';
 import type { Lock } from '@mechane/program';
-import { catalog, EventType, FAILURE_FAMILY, FAMILY_STATUS, managedOperations, ServerFailure } from '@mechane/protocol';
+import { catalog, FAILURE_FAMILY, FAMILY_STATUS, ServerFailure } from '@mechane/protocol';
 import { wireKey } from '@mechane/records';
 import { Effect, Record } from 'effect';
 import { TAG_FIELD } from './constants.ts';
@@ -39,7 +40,7 @@ export const wireNames = Effect.fn('wireNames')(function* (): Effect.fn.Return<L
     [WireKind.Families]: Record.toEntries(FAMILY_STATUS).map(mappedName),
     [WireKind.CliErrors]: reference.errorCodes,
     [WireKind.ExitStatuses]: reference.exitStatuses.map(exitStatusName),
-    [WireKind.Events]: Record.values(EventType),
+    [WireKind.Events]: [],
     [WireKind.Commands]: reference.commands.map(({ name }) => name),
     [WireKind.Flags]: flagNames({ reference }),
     [WireKind.Variables]: variableNames({ reference }),

@@ -6,7 +6,7 @@ import {
   wireStruct,
 } from '@mechane/records';
 import { Schema } from 'effect';
-import { IntegrationSecretReference } from '../connections/schemas.ts';
+import { IntegrationSecretReference } from '../credentials/schemas.ts';
 
 const VARIABLE_MAX_BYTES = 4 * BYTES_PER_KIBIBYTE;
 

@@ -24,8 +24,7 @@ const EvidenceText = boundedText({ maxBytes: EVIDENCE_TEXT_MAX_BYTES });
 export const EvidenceSha256 = Schema.String.check(Schema.isPattern(SHA256_PATTERN));
 export type EvidenceSha256 = typeof EvidenceSha256.Type;
 /** Only these media types may be served from authenticated capture storage. */
-export const EvidenceMediaType = Schema.Literals([MediaType.Png, MediaType.Jpeg, MediaType.Mp4]);
-export type EvidenceMediaType = typeof EvidenceMediaType.Type;
+const EvidenceMediaType = Schema.Literals([MediaType.Png, MediaType.Jpeg, MediaType.Mp4]);
 
 /** Finalization fixes this descriptor before R2 verifies and publishes its full media. */
 export const EvidenceDescriptor = wireStruct({

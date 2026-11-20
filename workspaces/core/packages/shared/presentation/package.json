@@ -1,0 +1,14 @@
+{
+  "name": "@mechane/presentation",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@json-render/chat": "0.22.0",
+    "@json-render/core": "0.22.0",
+    "effect": "4.0.7",
+    "zod": "4.5.4"
+  }
+}

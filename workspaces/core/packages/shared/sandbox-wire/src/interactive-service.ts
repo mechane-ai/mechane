@@ -3,8 +3,8 @@ import { Schema } from 'effect';
 import { BrowserArtifactPart, BrowserRequest, BrowserResponse } from './browser/schemas.ts';
 import { ExecutionEnvironmentRequired } from './execution-environment.ts';
 import { SandboxRunId } from './interactive.ts';
-import { ProcessCanceled, ProcessId, ProcessObservation, ProcessStart } from './processes/process.schemas.ts';
-import { SandboxExecutionRefusal, SandboxServiceIdentity } from './service.ts';
+import { ProcessCanceled, ProcessObservation, ProcessStart } from './processes/process.schemas.ts';
+import { SandboxExecutionRefusal } from './service.ts';
 
 /** A pending start can be rejoined without creating another process. */
 export const ProcessPending = Schema.TaggedStruct('ProcessPending', {});
@@ -29,10 +29,6 @@ export const SandboxProcessAnswer = Schema.Union([
 ]);
 
 export type SandboxProcessAnswer = typeof SandboxProcessAnswer.Type;
-
-/** Original identities address observation without allowing a replacement machine allocation. */
-export const SandboxProcessIdentity = Schema.Struct({ ...SandboxServiceIdentity.fields, processId: ProcessId });
-export type SandboxProcessIdentity = typeof SandboxProcessIdentity.Type;
 
 /** Browser submission retains trusted native identity separately from its derived request ID. */
 export const SandboxBrowserSubmission = Schema.Struct({

@@ -1,7 +1,7 @@
 import { applicationWorkerDeployment, SANDBOX_VARIABLES, SandboxProvider } from '@mechane/deployment';
 import { JSON_INDENT_CHARS } from '@mechane/program';
-import { RELEASE } from '@mechane/protocol';
 import { GIT_OBJECT_ID_PATTERN, MediaType } from '@mechane/records';
+import { RELEASE } from '@mechane/releases';
 import { workerBuildOptions } from '@mechane/wrangler';
 import { Record } from 'effect';
 import { build } from 'esbuild';
@@ -23,7 +23,16 @@ const requireBanner = [
   'const require = createMechaneRequire(import.meta.url);',
 ].join('\n');
 
-const REQUIRED_EXPORTS = ['default', 'MechObject', 'SandboxObject', 'MachineObject', 'EgressGateway'] as const;
+const REQUIRED_EXPORTS = [
+  'default',
+  'MechObject',
+  'AgentSlotObject',
+  'SessionObject',
+  'SandboxObject',
+  'MachineObject',
+  'EgressGateway',
+] as const;
+
 const SOURCE_TIMEOUT_MS = 10_000;
 
 async function writeWorkerConfiguration(): Promise<void> {
@@ -105,14 +114,13 @@ async function main(): Promise<void> {
 
   if (workerOutput === undefined || !REQUIRED_EXPORTS.every((name) => workerOutput.exports.includes(name))) {
     throw new Error(
-      'Worker must export its fetch handler, MechObject, SandboxObject, MachineObject, and EgressGateway',
+      'Worker must export its fetch handler, MechObject, AgentSlotObject, SessionObject, SandboxObject, MachineObject, and EgressGateway',
     );
   }
 
   const migration = await bundleCommand({ entry: 'src/migrate/main.ts', output: 'migrate.mjs' });
   const grant = await bundleCommand({ entry: 'src/grant/main.ts', output: 'grant.mjs' });
-  const historicalImport = await bundleCommand({ entry: 'src/import/main.ts', output: 'import.mjs' });
-  const inputs = [worker, migration, grant, historicalImport].flatMap(({ metafile }) => Record.keys(metafile.inputs));
+  const inputs = [worker, migration, grant].flatMap(({ metafile }) => Record.keys(metafile.inputs));
 
   await writeDependencyNotices({
     inputs,

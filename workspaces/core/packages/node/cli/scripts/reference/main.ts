@@ -1,6 +1,6 @@
 import { commandReference, CommandReference } from '@mechane/commands';
 import { jsonFileText } from '@mechane/program';
-import { RELEASE } from '@mechane/protocol';
+import { RELEASE } from '@mechane/releases';
 
 /** Prints the command reference that the command model generates, the document `reference.json` commits. */
 function main(): void {

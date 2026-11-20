@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: managed-no-mech-table-sql
+valid:
+  - "const sql = 'REFERENCES mechane.managed_agents(id)';"
+invalid:
+  - "const sql = 'REFERENCES mechane.mechs(id)';"

@@ -1,7 +1,7 @@
 import type { CommandResult, RunFailure, RunInput } from '@mechane/cli-kernel';
 import type { ManagedAgentPolicy } from '@mechane/protocol';
 import { Effect } from 'effect';
-import { withWorkspace } from '../mechs/with-workspace.ts';
+import { withWorkspace } from '../with-workspace.ts';
 
 type PolicyInput = { readonly policy: ManagedAgentPolicy };
 

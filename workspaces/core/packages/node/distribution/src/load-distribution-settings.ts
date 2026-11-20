@@ -1,6 +1,6 @@
 import { PROGRAM_ARGUMENTS_START } from '@mechane/program';
-import { RELEASE } from '@mechane/protocol';
 import { SHA256_PATTERN } from '@mechane/records';
+import { RELEASE } from '@mechane/releases';
 import { Effect, Option, Record, Schema } from 'effect';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -26,7 +26,14 @@ const OUTPUT_FOLDER = fileURLToPath(OUTPUT_URL);
 
 const ARGUMENT_MODES: ReadonlySet<DistributionMode> = new Set([
   DistributionMode.Accept,
+  DistributionMode.AcceptShard,
+  DistributionMode.MergeQualification,
   DistributionMode.VerifyQualified,
+]);
+
+const SHARD_TARGET_MODES: ReadonlySet<DistributionMode> = new Set([
+  DistributionMode.AcceptShard,
+  DistributionMode.MergeQualification,
 ]);
 
 const DEFAULT_FOLDER_MODES: ReadonlySet<DistributionMode> = new Set([
@@ -35,6 +42,9 @@ const DEFAULT_FOLDER_MODES: ReadonlySet<DistributionMode> = new Set([
 ]);
 
 const REUSE_MODES: ReadonlySet<DistributionMode> = new Set([DistributionMode.Build, DistributionMode.Candidate]);
+
+const USAGE_MESSAGE =
+  'use candidate [OUTPUT], accept OUTPUT ARTIFACTS_SHA256, accept-shard OUTPUT ARTIFACTS_SHA256 SHARD, merge-qualification OUTPUT ARTIFACTS_SHA256 SHARDS_DIR, build [OUTPUT], verify OUTPUT, preview-module OUTPUT, or verify-qualified OUTPUT SHA256';
 
 /** The staging folder provided by the guest bundler contains one module graph for each output file. */
 export function guestNoticesDirectory(): string {
@@ -46,39 +56,38 @@ export const loadDistributionSettings = Effect.fn('loadDistributionSettings')(fu
   DistributionSettings,
   DistributionFailed
 > {
-  const [modeText, destination, argument, previousFolder, previousDigest, ...extra] =
+  const [modeText, destination, argument, fourthArgument, fifthArgument, ...extra] =
     process.argv.slice(PROGRAM_ARGUMENTS_START);
 
   const modeSchema = Schema.Enum(DistributionMode);
 
   const mode = yield* Schema.decodeUnknownEffect(modeSchema)(modeText).pipe(
-    Effect.mapError(
-      () =>
-        new DistributionFailed({
-          step: DistributionStep.Settings,
-          reason: 'use candidate, accept, build, verify, preview-module, or verify-qualified',
-        }),
-    ),
+    Effect.mapError(() => new DistributionFailed({ step: DistributionStep.Settings, reason: USAGE_MESSAGE })),
   );
 
   const selectedFolder = Option.fromNullishOr(destination);
   const isMissingFolder = Option.isNone(selectedFolder);
-
   const needsArgument = ARGUMENT_MODES.has(mode);
+  const needsShardTarget = SHARD_TARGET_MODES.has(mode);
   const permitsDefaultFolder = DEFAULT_FOLDER_MODES.has(mode);
   const isMissingRequiredFolder = !permitsDefaultFolder && isMissingFolder;
-
   const isReuse = REUSE_MODES.has(mode) && argument === '--reuse-guest';
 
-  const hasExtraArguments = previousFolder !== undefined || previousDigest !== undefined || extra.length > 0;
-  const hasWrongArguments = !isReuse && (hasExtraArguments || needsArgument !== (argument !== undefined));
+  const hasExtraArguments: boolean = (() => {
+    if (needsShardTarget) {
+      return fifthArgument !== undefined || extra.length > 0;
+    }
+
+    return fourthArgument !== undefined || fifthArgument !== undefined || extra.length > 0;
+  })();
+
+  const hasWrongPrimaryArgument = needsArgument !== (argument !== undefined);
+  const hasWrongShardTarget = needsShardTarget !== (fourthArgument !== undefined);
+  const hasArgumentMismatch = hasExtraArguments || hasWrongPrimaryArgument || hasWrongShardTarget;
+  const hasWrongArguments = !isReuse && hasArgumentMismatch;
 
   if (isMissingRequiredFolder || hasWrongArguments) {
-    return yield* new DistributionFailed({
-      step: DistributionStep.Settings,
-      reason:
-        'use candidate [OUTPUT], accept OUTPUT ARTIFACTS_SHA256, build [OUTPUT], verify OUTPUT, preview-module OUTPUT, or verify-qualified OUTPUT SHA256',
-    });
+    return yield* new DistributionFailed({ step: DistributionStep.Settings, reason: USAGE_MESSAGE });
   }
 
   const defaultFolder = resolve(OUTPUT_FOLDER, `v${RELEASE}`);
@@ -94,7 +103,7 @@ export const loadDistributionSettings = Effect.fn('loadDistributionSettings')(fu
   const entries = INHERITED_NAMES.flatMap(variableEntries);
 
   if (isReuse) {
-    if (destination === undefined || previousFolder === undefined || previousDigest === undefined) {
+    if (destination === undefined || fourthArgument === undefined || fifthArgument === undefined) {
       return yield* new DistributionFailed({
         step: DistributionStep.Settings,
         reason: 'select a previous qualified guest folder and SHA-256',
@@ -108,7 +117,7 @@ export const loadDistributionSettings = Effect.fn('loadDistributionSettings')(fu
       });
     }
 
-    if (!SHA256_PATTERN.test(previousDigest)) {
+    if (!SHA256_PATTERN.test(fifthArgument)) {
       return yield* new DistributionFailed({
         step: DistributionStep.Settings,
         reason: 'select an exact qualification SHA-256',
@@ -120,7 +129,7 @@ export const loadDistributionSettings = Effect.fn('loadDistributionSettings')(fu
       folder: resolve(folder),
       inherited: Record.fromEntries(entries),
       nodeExecutable: process.execPath,
-      reuseGuest: Option.some({ folder: resolve(previousFolder), qualificationSha256: previousDigest }),
+      reuseGuest: Option.some({ folder: resolve(fourthArgument), qualificationSha256: fifthArgument }),
     };
   }
 
@@ -134,6 +143,7 @@ export const loadDistributionSettings = Effect.fn('loadDistributionSettings')(fu
     inherited: Record.fromEntries(entries),
     nodeExecutable: process.execPath,
     argument,
+    shardTarget: fourthArgument,
     reuseGuest: Option.none(),
   };
 });

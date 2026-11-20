@@ -1,6 +1,6 @@
-import { latestReleaseUrl, ReleaseManifest } from '@mechane/protocol';
 import { HttpHeader, HttpMethod } from '@mechane/records';
 import type { Bytes } from '@mechane/records';
+import { latestReleaseUrl, ReleaseManifest } from '@mechane/releases';
 import { Effect, Option } from 'effect';
 import type { Duration } from 'effect';
 import { answerWithin } from './answer-within.ts';

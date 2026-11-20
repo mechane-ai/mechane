@@ -1,7 +1,6 @@
 import { wireStruct } from '@mechane/records';
+import { Release, Revision } from '@mechane/releases';
 import { Schema } from 'effect';
-import { Release } from '../../releases/schemas.ts';
-import { Revision } from '../../schemas.ts';
 import { SERVICE } from './constants.ts';
 
 /** Health identifies the service and the immutable release it serves. */

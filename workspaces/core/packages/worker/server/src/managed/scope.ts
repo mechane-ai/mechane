@@ -1,6 +1,6 @@
 import type { ManagedScope } from '@mechane/control-store';
-import { managedWorkerAccess } from '@mechane/protocol';
-import type { ManagedHttpRoute } from '@mechane/protocol';
+import { managedWorkerAccess } from '@mechane/managed-protocol';
+import type { ManagedHttpRoute } from '@mechane/managed-protocol';
 import { HttpStatusCode } from '@mechane/records';
 import { Schema } from 'effect';
 import { ManagedHttpError } from './http-error.ts';

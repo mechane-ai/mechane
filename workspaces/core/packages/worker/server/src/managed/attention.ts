@@ -1,12 +1,16 @@
-import { createManagedAgentRuntime } from '@mechane/runtime';
+import { createAgentSlotClient } from '@mechane/agent-slot';
 import type { ManagedRequest } from './types.ts';
 
-type Attention = Pick<ManagedRequest, 'scope' | 'store' | 'actors'> & { readonly agentId: string };
+type Attention = Pick<ManagedRequest, 'scope' | 'store' | 'slots'> & { readonly agentId: string };
 
-export async function agentAttention({ scope, store, actors, agentId }: Attention) {
+export async function agentAttention({ scope, store, slots, agentId }: Attention) {
   await store.managed.agents.get({ scope, id: agentId });
 
-  const active = await createManagedAgentRuntime(actors, { workspaceId: scope.workspaceId, agentId }).attention();
+  const active = await createAgentSlotClient({
+    namespace: slots,
+    scope: { workspaceId: scope.workspaceId, agentId },
+  }).attention();
+
   const ids = [...active.queuedSessionIds];
 
   if (active.sessionId !== null) {

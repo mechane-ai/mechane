@@ -338,9 +338,6 @@ importers:
 
   packages/browser/console-views:
     dependencies:
-      '@json-render/react':
-        specifier: 0.22.0
-        version: 0.22.0(react@19.3.1)(zod@4.5.4)
       '@mechane-ai/elements':
         specifier: workspace:*
         version: link:../elements
@@ -359,9 +356,6 @@ importers:
       react:
         specifier: 19.3.1
         version: 19.3.1
-      zod:
-        specifier: 4.5.4
-        version: 4.5.4
     devDependencies:
       '@types/react':
         specifier: 19.3.0
@@ -596,6 +590,9 @@ importers:
       '@mechane/records':
         specifier: workspace:*
         version: link:../../shared/records
+      '@mechane/releases':
+        specifier: workspace:*
+        version: link:../../shared/releases
       effect:
         specifier: 4.0.7
         version: 4.0.7
@@ -624,6 +621,9 @@ importers:
       '@mechane/records':
         specifier: workspace:*
         version: link:../../shared/records
+      '@mechane/releases':
+        specifier: workspace:*
+        version: link:../../shared/releases
       effect:
         specifier: 4.0.7
         version: 4.0.7
@@ -666,12 +666,12 @@ importers:
       '@mechane/program':
         specifier: workspace:*
         version: link:../program
-      '@mechane/protocol':
-        specifier: workspace:*
-        version: link:../../shared/protocol
       '@mechane/records':
         specifier: workspace:*
         version: link:../../shared/records
+      '@mechane/releases':
+        specifier: workspace:*
+        version: link:../../shared/releases
       effect:
         specifier: 4.0.7
         version: 4.0.7
@@ -699,15 +699,15 @@ importers:
       '@mechane/program':
         specifier: workspace:*
         version: link:../program
-      '@mechane/protocol':
-        specifier: workspace:*
-        version: link:../../shared/protocol
       '@mechane/records':
         specifier: workspace:*
         version: link:../../shared/records
       '@mechane/release':
         specifier: workspace:*
         version: link:../release
+      '@mechane/releases':
+        specifier: workspace:*
+        version: link:../../shared/releases
       '@mechane/stack':
         specifier: workspace:*
         version: link:../stack
@@ -732,6 +732,9 @@ importers:
       '@mechane/deployment':
         specifier: workspace:*
         version: link:../../shared/deployment
+      '@mechane/managed-protocol':
+        specifier: workspace:*
+        version: link:../../shared/managed-protocol
       '@mechane/program':
         specifier: workspace:*
         version: link:../program
@@ -768,6 +771,9 @@ importers:
       '@mechane/utilities':
         specifier: workspace:*
         version: link:../../shared/utilities
+      '@mechane/worker-agent':
+        specifier: workspace:*
+        version: link:../worker-agent
       effect:
         specifier: 4.0.7
         version: 4.0.7
@@ -784,6 +790,9 @@ importers:
       '@mechane/deployment':
         specifier: workspace:*
         version: link:../../shared/deployment
+      '@mechane/managed-protocol':
+        specifier: workspace:*
+        version: link:../../shared/managed-protocol
       '@mechane/modules':
         specifier: workspace:*
         version: link:../modules
@@ -796,6 +805,9 @@ importers:
       '@mechane/records':
         specifier: workspace:*
         version: link:../../shared/records
+      '@mechane/releases':
+        specifier: workspace:*
+        version: link:../../shared/releases
       '@mechane/sandbox-wire':
         specifier: workspace:*
         version: link:../../shared/sandbox-wire
@@ -868,12 +880,12 @@ importers:
 
   packages/node/program:
     dependencies:
-      '@mechane/protocol':
-        specifier: workspace:*
-        version: link:../../shared/protocol
       '@mechane/records':
         specifier: workspace:*
         version: link:../../shared/records
+      '@mechane/releases':
+        specifier: workspace:*
+        version: link:../../shared/releases
       effect:
         specifier: 4.0.7
         version: 4.0.7
@@ -886,9 +898,9 @@ importers:
       '@mechane/program':
         specifier: workspace:*
         version: link:../program
-      '@mechane/protocol':
+      '@mechane/releases':
         specifier: workspace:*
-        version: link:../../shared/protocol
+        version: link:../../shared/releases
       effect:
         specifier: 4.0.7
         version: 4.0.7
@@ -957,6 +969,15 @@ importers:
         specifier: 24.19.2
         version: 24.19.2
 
+  packages/node/sandbox-docker:
+    dependencies:
+      '@mechane/sandbox-provider':
+        specifier: workspace:*
+        version: link:../../shared/sandbox-provider
+      effect:
+        specifier: 4.0.7
+        version: 4.0.7
+
   packages/node/smoke:
     dependencies:
       '@anthropic-ai/sdk':
@@ -965,6 +986,9 @@ importers:
       '@mechane/eval':
         specifier: workspace:*
         version: link:../eval
+      '@mechane/managed-protocol':
+        specifier: workspace:*
+        version: link:../../shared/managed-protocol
       '@mechane/protocol':
         specifier: workspace:*
         version: link:../../shared/protocol
@@ -989,6 +1013,9 @@ importers:
       '@mechane/deployment':
         specifier: workspace:*
         version: link:../../shared/deployment
+      '@mechane/managed-protocol':
+        specifier: workspace:*
+        version: link:../../shared/managed-protocol
       '@mechane/program':
         specifier: workspace:*
         version: link:../program
@@ -998,6 +1025,18 @@ importers:
       '@mechane/records':
         specifier: workspace:*
         version: link:../../shared/records
+      '@mechane/sandbox-docker':
+        specifier: workspace:*
+        version: link:../sandbox-docker
+      '@mechane/sandbox-modal':
+        specifier: workspace:*
+        version: link:../../shared/sandbox-modal
+      '@mechane/sandbox-provider':
+        specifier: workspace:*
+        version: link:../../shared/sandbox-provider
+      '@mechane/sandbox-tensorlake':
+        specifier: workspace:*
+        version: link:../../shared/sandbox-tensorlake
       '@mechane/sandbox-wire':
         specifier: workspace:*
         version: link:../../shared/sandbox-wire
@@ -1050,14 +1089,29 @@ importers:
         specifier: 1.64.1
         version: 1.64.1
 
+  packages/node/worker-agent:
+    dependencies:
+      '@anthropic-ai/sdk':
+        specifier: 1.10.0
+        version: 1.10.0(zod@4.6.7)
+      '@mechane/records':
+        specifier: workspace:*
+        version: link:../../shared/records
+      '@mechane/sandbox-provider':
+        specifier: workspace:*
+        version: link:../../shared/sandbox-provider
+      effect:
+        specifier: 4.0.7
+        version: 4.0.7
+
   packages/node/wrangler:
     dependencies:
       '@mechane/program':
         specifier: workspace:*
         version: link:../program
-      '@mechane/protocol':
+      '@mechane/releases':
         specifier: workspace:*
-        version: link:../../shared/protocol
+        version: link:../../shared/releases
       effect:
         specifier: 4.0.7
         version: 4.0.7
@@ -1083,12 +1137,18 @@ importers:
       '@anthropic-ai/sdk':
         specifier: 1.10.0
         version: 1.10.0(zod@4.6.7)
+      '@mechane/presentation':
+        specifier: workspace:*
+        version: link:../presentation
       '@mechane/protocol':
         specifier: workspace:*
         version: link:../protocol
       '@mechane/records':
         specifier: workspace:*
         version: link:../records
+      '@mechane/releases':
+        specifier: workspace:*
+        version: link:../releases
       effect:
         specifier: 4.0.7
         version: 4.0.7
@@ -1099,17 +1159,8 @@ importers:
         specifier: 4.0.7
         version: 4.0.7
 
-  packages/shared/protocol:
+  packages/shared/managed-protocol:
     dependencies:
-      '@json-render/chat':
-        specifier: 0.22.0
-        version: 0.22.0(chat@4.44.0(ai@7.0.164(zod@4.5.4))(supports-color@7.2.0)(workflow@5.4.0(@aws-sdk/credential-provider-web-identity@3.972.49)(@nestjs/common@12.3.3(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@7.2.0))(@nestjs/core@12.3.3(@nestjs/common@12.3.3(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@7.2.0))(reflect-metadata@0.2.2)(rxjs@7.8.2))(@opentelemetry/api@1.10.0)(@swc/cli@0.8.2(@swc/core@1.15.3)(chokidar@5.0.0)(supports-color@7.2.0))(@swc/core@1.15.3)(dotenv@17.4.2)(jiti@2.7.0)(magic-string@1.4.5)(oxc-parser@0.156.0)(react@19.3.1)(rolldown@1.2.16)(supports-color@7.2.0)(typescript@7.0.2)(unplugin@3.7.0(esbuild@0.28.2)(rolldown@1.2.16)(rollup@4.67.5)(vite@8.3.5(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)))(ws@8.22.1))(zod@4.5.4))(zod@4.5.4)
-      '@json-render/core':
-        specifier: 0.22.0
-        version: 0.22.0(zod@4.5.4)
-      '@mechane/deployment':
-        specifier: workspace:*
-        version: link:../deployment
       '@mechane/records':
         specifier: workspace:*
         version: link:../records
@@ -1119,12 +1170,90 @@ importers:
       effect:
         specifier: 4.0.7
         version: 4.0.7
+
+  packages/shared/presentation:
+    dependencies:
+      '@json-render/chat':
+        specifier: 0.22.0
+        version: 0.22.0(chat@4.44.0(ai@7.0.164(zod@4.5.4))(supports-color@7.2.0)(workflow@5.4.0(@aws-sdk/credential-provider-web-identity@3.972.49)(@nestjs/common@12.3.3(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@7.2.0))(@nestjs/core@12.3.3(@nestjs/common@12.3.3(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@7.2.0))(reflect-metadata@0.2.2)(rxjs@7.8.2))(@opentelemetry/api@1.10.0)(@swc/cli@0.8.2(@swc/core@1.15.3)(chokidar@5.0.0)(supports-color@7.2.0))(@swc/core@1.15.3)(dotenv@17.4.2)(jiti@2.7.0)(magic-string@1.4.5)(oxc-parser@0.156.0)(react@19.3.1)(rolldown@1.2.16)(supports-color@7.2.0)(typescript@7.0.2)(unplugin@3.7.0(esbuild@0.28.2)(rolldown@1.2.16)(rollup@4.67.5)(vite@8.3.5(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)))(ws@8.22.1))(zod@4.5.4))(zod@4.5.4)
+      '@json-render/core':
+        specifier: 0.22.0
+        version: 0.22.0(zod@4.5.4)
+      effect:
+        specifier: 4.0.7
+        version: 4.0.7
       zod:
         specifier: 4.5.4
         version: 4.5.4
 
+  packages/shared/protocol:
+    dependencies:
+      '@mechane/deployment':
+        specifier: workspace:*
+        version: link:../deployment
+      '@mechane/records':
+        specifier: workspace:*
+        version: link:../records
+      '@mechane/releases':
+        specifier: workspace:*
+        version: link:../releases
+      '@mechane/sandbox-wire':
+        specifier: workspace:*
+        version: link:../sandbox-wire
+      effect:
+        specifier: 4.0.7
+        version: 4.0.7
+
   packages/shared/records:
     dependencies:
+      effect:
+        specifier: 4.0.7
+        version: 4.0.7
+
+  packages/shared/releases:
+    dependencies:
+      '@mechane/deployment':
+        specifier: workspace:*
+        version: link:../deployment
+      '@mechane/records':
+        specifier: workspace:*
+        version: link:../records
+      effect:
+        specifier: 4.0.7
+        version: 4.0.7
+
+  packages/shared/sandbox-modal:
+    dependencies:
+      '@mechane/records':
+        specifier: workspace:*
+        version: link:../records
+      '@mechane/sandbox-provider':
+        specifier: workspace:*
+        version: link:../sandbox-provider
+      effect:
+        specifier: 4.0.7
+        version: 4.0.7
+
+  packages/shared/sandbox-provider:
+    dependencies:
+      '@mechane/records':
+        specifier: workspace:*
+        version: link:../records
+      effect:
+        specifier: 4.0.7
+        version: 4.0.7
+
+  packages/shared/sandbox-tensorlake:
+    dependencies:
+      '@mechane/records':
+        specifier: workspace:*
+        version: link:../records
+      '@mechane/sandbox-provider':
+        specifier: workspace:*
+        version: link:../sandbox-provider
+      '@mechane/utilities':
+        specifier: workspace:*
+        version: link:../utilities
       effect:
         specifier: 4.0.7
         version: 4.0.7
@@ -1144,7 +1273,19 @@ importers:
         specifier: 4.0.7
         version: 4.0.7
 
-  packages/worker/control-store:
+  packages/worker/agent-slot:
+    dependencies:
+      '@mechane/records':
+        specifier: workspace:*
+        version: link:../../shared/records
+      '@mechane/utilities':
+        specifier: workspace:*
+        version: link:../../shared/utilities
+      effect:
+        specifier: 4.0.7
+        version: 4.0.7
+
+  packages/worker/authority-store:
     dependencies:
       '@mechane/protocol':
         specifier: workspace:*
@@ -1155,19 +1296,49 @@ importers:
       effect:
         specifier: 4.0.7
         version: 4.0.7
-      fflate:
-        specifier: 0.8.3
-        version: 0.8.3
       pg:
         specifier: 8.23.1
         version: 8.23.1
-      yaml:
-        specifier: 2.9.1
-        version: 2.9.1
     devDependencies:
       '@types/pg':
         specifier: 8.23.1
         version: 8.23.1
+
+  packages/worker/control-store:
+    dependencies:
+      '@mechane/authority-store':
+        specifier: workspace:*
+        version: link:../authority-store
+      '@mechane/managed-store':
+        specifier: workspace:*
+        version: link:../managed-store
+      effect:
+        specifier: 4.0.7
+        version: 4.0.7
+
+  packages/worker/managed-store:
+    dependencies:
+      '@mechane/authority-store':
+        specifier: workspace:*
+        version: link:../authority-store
+      '@mechane/protocol':
+        specifier: workspace:*
+        version: link:../../shared/protocol
+      '@mechane/records':
+        specifier: workspace:*
+        version: link:../../shared/records
+      '@mechane/sandbox-provider':
+        specifier: workspace:*
+        version: link:../../shared/sandbox-provider
+      effect:
+        specifier: 4.0.7
+        version: 4.0.7
+      fflate:
+        specifier: 0.8.3
+        version: 0.8.3
+      yaml:
+        specifier: 2.9.1
+        version: 2.9.1
 
   packages/worker/runtime:
     dependencies:
@@ -1183,6 +1354,9 @@ importers:
       '@earendil-works/pi-durable':
         specifier: 1.5.1
         version: 1.5.1(@aws-sdk/credential-provider-node@3.972.94)(@modelcontextprotocol/sdk@1.32.1(supports-color@8.1.1)(zod@4.6.7))(@smithy/signature-v4@5.7.5)(esbuild@0.28.2)(supports-color@8.1.1)(undici@7.30.1)(ws@8.21.0)(zod@4.6.7)
+      '@mechane/agent-slot':
+        specifier: workspace:*
+        version: link:../agent-slot
       '@mechane/control-store':
         specifier: workspace:*
         version: link:../control-store
@@ -1195,6 +1369,9 @@ importers:
       '@mechane/records':
         specifier: workspace:*
         version: link:../../shared/records
+      '@mechane/sandbox-provider':
+        specifier: workspace:*
+        version: link:../../shared/sandbox-provider
       '@mechane/sandbox-wire':
         specifier: workspace:*
         version: link:../../shared/sandbox-wire
@@ -1216,12 +1393,18 @@ importers:
       '@mechane/deployment':
         specifier: workspace:*
         version: link:../../shared/deployment
+      '@mechane/managed-protocol':
+        specifier: workspace:*
+        version: link:../../shared/managed-protocol
       '@mechane/protocol':
         specifier: workspace:*
         version: link:../../shared/protocol
       '@mechane/records':
         specifier: workspace:*
         version: link:../../shared/records
+      '@mechane/releases':
+        specifier: workspace:*
+        version: link:../../shared/releases
       '@mechane/sandbox-store':
         specifier: workspace:*
         version: link:../sandbox-store
@@ -1255,24 +1438,42 @@ importers:
 
   packages/worker/server:
     dependencies:
+      '@mechane/agent-slot':
+        specifier: workspace:*
+        version: link:../agent-slot
       '@mechane/control-store':
         specifier: workspace:*
         version: link:../control-store
       '@mechane/deployment':
         specifier: workspace:*
         version: link:../../shared/deployment
+      '@mechane/managed-protocol':
+        specifier: workspace:*
+        version: link:../../shared/managed-protocol
       '@mechane/protocol':
         specifier: workspace:*
         version: link:../../shared/protocol
       '@mechane/records':
         specifier: workspace:*
         version: link:../../shared/records
+      '@mechane/releases':
+        specifier: workspace:*
+        version: link:../../shared/releases
       '@mechane/runtime':
         specifier: workspace:*
         version: link:../runtime
       '@mechane/sandbox':
         specifier: workspace:*
         version: link:../sandbox
+      '@mechane/sandbox-modal':
+        specifier: workspace:*
+        version: link:../../shared/sandbox-modal
+      '@mechane/sandbox-provider':
+        specifier: workspace:*
+        version: link:../../shared/sandbox-provider
+      '@mechane/sandbox-tensorlake':
+        specifier: workspace:*
+        version: link:../../shared/sandbox-tensorlake
       '@mechane/sandbox-wire':
         specifier: workspace:*
         version: link:../../shared/sandbox-wire
@@ -2148,11 +2349,6 @@ packages:
     resolution: {integrity: sha512-BIfJ2V3bLYETetBu2KWoxxRPU5cSAf77dDTBgqaV54kEAfyHta1psPJgNk0fDcB3FCrnCZ5KO/X41VDkrNSYgw==}
     peerDependencies:
       zod: ^4.0.0
-
-  '@json-render/react@0.22.0':
-    resolution: {integrity: sha512-dUBSPn/OZGJGwYiVUVv6qk14AGvfIutKgw7EKJejof14Ft/UPKsoV7/SkF5xIbGIWcM/vk3U4UnNm3NgPnOSSQ==}
-    peerDependencies:
-      react: ^19.2.3
 
   '@keyv/serialize@1.1.1':
     resolution: {integrity: sha512-dXn3FZhPv0US+7dtJsIi2R+c7qWYiReoEh5zUntWCf4oSpMNib8FDhSoed6m3QyZdx5hK7iLFkYk3rNxwt8vTA==}
@@ -8555,13 +8751,6 @@ snapshots:
   '@json-render/core@0.22.0(zod@4.5.4)':
     dependencies:
       zod: 4.5.4
-
-  '@json-render/react@0.22.0(react@19.3.1)(zod@4.5.4)':
-    dependencies:
-      '@json-render/core': 0.22.0(zod@4.5.4)
-      react: 19.3.1
-    transitivePeerDependencies:
-      - zod
 
   '@keyv/serialize@1.1.1':
     optional: true

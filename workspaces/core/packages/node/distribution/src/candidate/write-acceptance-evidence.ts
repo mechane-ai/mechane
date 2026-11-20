@@ -6,7 +6,7 @@ import { QUALIFICATION_FORMAT_VERSION, SOURCE_FOLDER } from '../constants.ts';
 import { qualificationInputDigest } from '../qualification.ts';
 import type { QualificationEvidence, QualificationRequest, QualifiedFile } from '../qualification.ts';
 import type { FileDigest } from '../types.ts';
-import type { CandidateChecks } from './run-candidate-checks.ts';
+import type { CandidateChecks } from './shard-schema.ts';
 
 type WriteEvidenceInput = {
   readonly folder: string;

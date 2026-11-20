@@ -39,85 +39,96 @@ export async function waitManagedTool({
     throw new Error('MCP tools must use the configured server.');
   }
 
-  const useId = await exclusive(context.abortSignal, async () => {
-    const evaluation = await evaluate(call, context);
+  const pointerKey = JSON.stringify([call.sessionId, 'native', call.nativeId]);
+  const existing = await harness.snapshot(CallReceipts, pointerKey, context);
 
-    return await harness.commit(async (transaction) => {
-      const state = await sessionState(transaction, call.sessionId);
+  async function resolveToolUseId(): Promise<string> {
+    if (existing !== undefined && existing.eventId !== '') {
+      return existing.eventId;
+    }
 
-      if (state.activeEvent === null || state.isArchived || state.interrupt !== null) {
-        throw new Error('The tool execution has ended');
-      }
+    return await exclusive(context.abortSignal, async () => {
+      const evaluation = await evaluate(call, context);
 
-      const pointer = await transaction.doc(CallReceipts, JSON.stringify([state.id, 'native', call.nativeId]), null);
+      return await harness.commit(async (transaction) => {
+        const state = await sessionState(transaction, call.sessionId);
 
-      if (pointer.eventId !== '') {
-        return pointer.eventId;
-      }
+        if (state.activeEvent === null || state.isArchived || state.interrupt !== null) {
+          throw new Error('The tool execution has ended');
+        }
 
-      const slot = await transaction.doc(Slot);
+        const pointer = await transaction.doc(CallReceipts, pointerKey, null);
 
-      if (slot.owner !== state.id) {
-        throw new Error('The session has no execution slot');
-      }
+        if (pointer.eventId !== '') {
+          return pointer.eventId;
+        }
 
-      const fields = { type: 'agent.tool_use', name: call.name, input: call.input, ...evaluation };
+        const slot = await transaction.doc(Slot);
 
-      if (call.kind === 'custom') {
-        fields.type = 'agent.custom_tool_use';
-      }
+        if (slot.owner !== state.id) {
+          throw new Error('The session has no execution slot');
+        }
 
-      const event = await appendManagedEvent(
-        transaction,
-        { sessionId: state.id, stableKey: `tool:${call.nativeId}` },
-        fields,
-      );
+        const fields = { type: 'agent.tool_use', name: call.name, input: call.input, ...evaluation };
 
-      const receipt = await transaction.doc(CallReceipts, JSON.stringify([state.id, event.id]), null);
-      pointer.eventId = event.id;
-      receipt.eventId = event.id;
-      receipt.nativeId = call.nativeId;
-      receipt.nativeKind = call.kind;
+        if (call.kind === 'custom') {
+          fields.type = 'agent.custom_tool_use';
+        }
 
-      if (evaluation?.evaluated_permission === 'deny') {
-        const result = await appendManagedEvent(
+        const event = await appendManagedEvent(
           transaction,
-          { sessionId: state.id, stableKey: `denied:${call.nativeId}` },
-          {
-            type: 'agent.tool_result',
-            tool_use_id: event.id,
-            is_error: true,
-            content: [{ type: 'text', text: `Permission to use ${call.name} has been denied.` }],
-          },
+          { sessionId: state.id, stableKey: `tool:${call.nativeId}` },
+          fields,
         );
 
-        receipt.stage = 'complete';
-        receipt.resultId = result.id;
+        const receipt = await transaction.doc(CallReceipts, JSON.stringify([state.id, event.id]), null);
+        pointer.eventId = event.id;
+        receipt.eventId = event.id;
+        receipt.nativeId = call.nativeId;
+        receipt.nativeKind = call.kind;
+
+        if (evaluation?.evaluated_permission === 'deny') {
+          const result = await appendManagedEvent(
+            transaction,
+            { sessionId: state.id, stableKey: `denied:${call.nativeId}` },
+            {
+              type: 'agent.tool_result',
+              tool_use_id: event.id,
+              is_error: true,
+              content: [{ type: 'text', text: `Permission to use ${call.name} has been denied.` }],
+            },
+          );
+
+          receipt.stage = 'complete';
+          receipt.resultId = result.id;
+
+          return event.id;
+        }
+
+        receipt.stage = 'result';
+
+        if (evaluation?.evaluated_permission === 'ask') {
+          receipt.stage = 'approval';
+        }
+
+        state.waiting = event.id;
+
+        if (receipt.stage === 'approval' || call.kind === 'custom') {
+          await transition(transaction, {
+            sessionId: state.id,
+            status: 'idle',
+            reason: { type: 'requires_action', event_ids: [event.id] },
+          });
+        }
+
+        await release(transaction, state.id);
 
         return event.id;
-      }
+      }, context);
+    });
+  }
 
-      receipt.stage = 'result';
-
-      if (evaluation?.evaluated_permission === 'ask') {
-        receipt.stage = 'approval';
-      }
-
-      state.waiting = event.id;
-
-      if (receipt.stage === 'approval' || call.kind === 'custom') {
-        await transition(transaction, {
-          sessionId: state.id,
-          status: 'idle',
-          reason: { type: 'requires_action', event_ids: [event.id] },
-        });
-      }
-
-      await release(transaction, state.id);
-
-      return event.id;
-    }, context);
-  });
+  const useId = await resolveToolUseId();
 
   wake();
   await waitForOwner(harness, call.sessionId, context);

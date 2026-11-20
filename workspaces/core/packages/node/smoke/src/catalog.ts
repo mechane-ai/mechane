@@ -40,7 +40,6 @@ import { sessionsReplayIndependently } from './managed-agents/sessions-replay-in
 import { sharedMemoryIsScoped } from './managed-agents/shared-memory-is-scoped.ts';
 import { confirmedCleanupReleasesPersistentOwnership } from './recovery/confirmed-cleanup-releases-persistent-ownership.ts';
 import { customToolResultSurvivesRestart } from './recovery/custom-tool-result-survives-restart.ts';
-import { importedConversationRemainsReadable } from './recovery/imported-conversation-remains-readable.ts';
 import { sessionEventsReplayWithinTheirWorkspace } from './recovery/session-events-replay-within-their-workspace.ts';
 import { sessionFailureRemainsInspectable } from './recovery/session-failure-remains-inspectable.ts';
 import { installedWorkerFinishesInterruptedTool } from './runs/installed-worker-finishes-interrupted-tool.ts';
@@ -240,13 +239,6 @@ export const CATALOG = [
     guarantee: 'confirmed cleanup releases persistent ownership while preserving saved work',
     regression: 'a recovered cleanup leaves the owner lock behind and permanently blocks the next local start',
     run: confirmedCleanupReleasesPersistentOwnership,
-  },
-  {
-    family: 'recovery',
-    guarantee: 'imported Console history stays readable with valid identifiers and unchanged content',
-    regression:
-      'a migration preserves SQL rows but breaks the authenticated conversation response or its activity links',
-    run: importedConversationRemainsReadable,
   },
   {
     family: 'recovery',
