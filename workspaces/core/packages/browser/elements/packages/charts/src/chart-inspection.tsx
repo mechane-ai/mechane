@@ -21,6 +21,8 @@ type ChartInspectionProps = {
   readonly source: 'pointer' | 'keyboard' | undefined;
   readonly notes?: ReadonlyArray<string> | undefined;
   readonly hasSeriesSummary?: boolean | undefined;
+  /** False for a plot whose axis labels name every mark, so the inspector replaces the legend at every width. */
+  readonly hasLegend?: boolean | undefined;
 };
 
 const styles = stylex.create({
@@ -164,20 +166,22 @@ export function ChartInspection({
   source,
   notes = [],
   hasSeriesSummary = false,
+  hasLegend = true,
 }: ChartInspectionProps): ReactNode {
+  const showsLegend = hasLegend && !hasSeriesSummary;
   const inspectorWidth = Math.min(260, width);
   const preferredLeft = x > width / 2 ? x - inspectorWidth - offset : x + offset;
   const left = Math.max(0, Math.min(width - inspectorWidth, preferredLeft));
 
   return (
     <div {...stylex.props(styles.frame)}>
-      {!hasSeriesSummary && (
+      {showsLegend && (
         <div {...stylex.props(styles.legends)}>
           {layoutLegend !== undefined && (
             <ul aria-hidden inert {...stylex.props(styles.legend, styles.legendLayer, styles.reserved)}>
               {layoutLegend.map((item) => (
                 <li key={item.id} {...stylex.props(styles.item)}>
-                  <ChartSeriesMarker tone={item.tone} />
+                  <ChartSeriesMarker tone={item.tone} shape={item.shape} />
                   <span {...stylex.props(styles.itemText)}>
                     {item.label}
                     <span {...stylex.props(styles.mobileValue)} />
@@ -189,7 +193,7 @@ export function ChartInspection({
           <ul aria-label="Legend" {...stylex.props(styles.legend, styles.legendLayer)}>
             {legend.map((item) => (
               <li key={item.id} {...stylex.props(styles.item)}>
-                <ChartSeriesMarker tone={item.tone} />
+                <ChartSeriesMarker tone={item.tone} shape={item.shape} />
                 <span {...stylex.props(styles.itemText)}>
                   {item.label}
                   <span {...stylex.props(styles.mobileValue)}>
@@ -209,7 +213,7 @@ export function ChartInspection({
           <div
             {...stylex.props(
               styles.inspector,
-              hasSeriesSummary && styles.summaryInspector,
+              !showsLegend && styles.summaryInspector,
               styles.position(left, inspectorWidth),
             )}
           >
@@ -221,7 +225,7 @@ export function ChartInspection({
               {rows.map((row) => (
                 <div key={row.id} {...stylex.props(styles.row)}>
                   <dt {...stylex.props(styles.item)}>
-                    <ChartSeriesMarker tone={row.tone} />
+                    <ChartSeriesMarker tone={row.tone} shape={row.shape} />
                     {row.label}
                   </dt>
                   <dd {...stylex.props(styles.value)}>{row.value}</dd>

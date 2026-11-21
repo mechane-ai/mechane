@@ -17,12 +17,17 @@ import { ChartInspection, ChartInspectionTitle, ChartLegendLoading, inspectionRe
 import type { ChartInspectionRow } from '../chart-inspection.tsx';
 import { ChartSvgSurface } from '../chart-surface.tsx';
 import { chartStyles } from '../chart-theme.ts';
+import type { ChartLegendItem } from '../chart-theme.ts';
 import { usePlotWidth } from '../plot-width.ts';
-import { validateComposition } from './bar-data.ts';
-import type { BarComposition, BarSeries } from './bar-data.ts';
+import { markerPeak, markerValueLabel, validateBarOverlays, validateComposition } from './bar-data.ts';
+import type { BarAnnotation, BarComposition, BarMarker, BarSeries } from './bar-data.ts';
+import { BarAnnotations, BarMarkers } from './bar-overlays.tsx';
+import type { BarSpan } from './bar-overlays.tsx';
 import { CompositionBars } from './composition-bars.tsx';
+import { referenceGutterWidth, ReferenceLines, validateReferenceLines } from './reference-lines.tsx';
+import type { ChartReferenceLine } from './reference-lines.tsx';
 
-export type { BarSeries, BarBucket, BarComposition } from './bar-data.ts';
+export type { BarSeries, BarBucket, BarComposition, BarMarker, BarAnnotation } from './bar-data.ts';
 
 const styles = stylex.create({
   empty: { color: colors.muted, margin: 0, fontSize: typography.captionSize },
@@ -32,6 +37,10 @@ const styles = stylex.create({
 });
 
 const DEFAULT_HEIGHT = 200;
+const PLOT_TOP_PX = 12;
+const ANNOTATED_PLOT_TOP_PX = 30;
+const ANNOTATION_GAP_PX = 8;
+const ANNOTATION_BASELINE_PX = 14;
 
 export type BarChartProps = {
   readonly title: string;
@@ -51,6 +60,17 @@ export type BarChartProps = {
   readonly highlightedSeriesId?: string | undefined;
   readonly selection?: ChartSelection | undefined;
   readonly height?: number | undefined;
+  /** Labelled values drawn across the plot, such as a target or an average. They join every category's readout. */
+  readonly referenceLines?: ReadonlyArray<ChartReferenceLine> | undefined;
+  /** Ticks or whiskers drawn on each bar of a series, listed in the legend and the readout. */
+  readonly markers?: ReadonlyArray<BarMarker> | undefined;
+  /** Short notes above chosen bars. Notes for a category also join its readout and exact values. */
+  readonly annotations?: ReadonlyArray<BarAnnotation> | undefined;
+  /**
+   * Recedes every other category so these stand out, without changing selection or inspection. Emphasis is visual only;
+   * explain it with an annotation or the description.
+   */
+  readonly emphasizedCategoryIds?: ReadonlyArray<string> | undefined;
 };
 
 export type BarChartPlaceholderProps = Pick<BarChartProps, 'description' | 'height' | 'report'> & {
@@ -61,6 +81,8 @@ export type BarChartPlaceholderProps = Pick<BarChartProps, 'description' | 'heig
 type BarChartFrameProps = Pick<BarChartProps, 'title' | 'description' | 'report'> & {
   readonly series: ReadonlyArray<Pick<BarSeries, 'id' | 'label' | 'tone'>>;
   readonly layoutSeries?: ReadonlyArray<Pick<BarSeries, 'id' | 'label' | 'tone'>> | undefined;
+  readonly markerLegend?: ReadonlyArray<ChartLegendItem> | undefined;
+  readonly notes?: ReadonlyArray<string> | undefined;
   readonly inspectionId: string;
   readonly label?: string | undefined;
   readonly detail?: string | undefined;
@@ -81,6 +103,8 @@ function BarChartFrame({
   report,
   series,
   layoutSeries,
+  markerLegend = [],
+  notes,
   children,
   inspectionId,
   label,
@@ -123,10 +147,11 @@ function BarChartFrame({
           id={inspectionId}
           label={label}
           summary={summary}
-          legend={legend}
+          legend={[...legend, ...markerLegend]}
           hasSeriesSummary={report?.seriesValues !== undefined}
-          layoutLegend={layoutLegend}
+          layoutLegend={layoutLegend === undefined ? undefined : [...layoutLegend, ...markerLegend]}
           rows={rows}
+          notes={notes}
           x={x}
           width={width}
           offset={offset}
@@ -238,6 +263,10 @@ export function BarChart({
   selection,
   height = DEFAULT_HEIGHT,
   composition,
+  referenceLines = [],
+  markers = [],
+  annotations = [],
+  emphasizedCategoryIds = [],
 }: BarChartProps): ReactNode {
   const focusSeries = composition?.focusedSeries;
   const contextId = useId();
@@ -249,9 +278,21 @@ export function BarChart({
 
   const inputIssue = validateBars({ categories, series, domain, mode }) ?? focusIssue;
 
+  const categoryIds = categories.map((category) => category.id);
+  const markedSeriesIds = [...series, ...(focusSeries === undefined ? [] : [focusSeries])].map((item) => item.id);
+
+  const overlayIssue =
+    validateBarOverlays({
+      markers,
+      annotations,
+      emphasizedCategoryIds,
+      seriesIds: markedSeriesIds,
+      categoryIds,
+      domain,
+    }) ?? validateReferenceLines({ lines: referenceLines, domain });
+
   const frameIssue =
-    validateComposition({ composition, series, categoryIds: categories.map((category) => category.id), domain }) ??
-    barHeightError(height);
+    validateComposition({ composition, series, categoryIds, domain }) ?? overlayIssue ?? barHeightError(height);
 
   const issue = inputIssue ?? frameIssue;
 
@@ -315,7 +356,7 @@ export function BarChart({
     return <ChartInputError title={title} description={description} report={report} message={issue} />;
   }
 
-  const rows = inspectedSeries.map((item, seriesIndex) => {
+  const seriesRows = inspectedSeries.map((item, seriesIndex) => {
     const value = item.values[readoutIndex];
 
     return {
@@ -326,10 +367,41 @@ export function BarChart({
     };
   });
 
+  const markerLegend: ReadonlyArray<ChartLegendItem> = markers.map((marker) => ({
+    id: marker.id,
+    label: marker.label,
+    tone: marker.tone ?? 'neutral',
+    shape: marker.kind,
+  }));
+
+  const markerRows: ReadonlyArray<ChartInspectionRow> = markers.map((marker) => ({
+    id: marker.id,
+    label: marker.label,
+    tone: marker.tone ?? 'neutral',
+    shape: marker.kind,
+    value: markerValueLabel({ marker, index: readoutIndex, formatValue }),
+  }));
+
+  const referenceRows: ReadonlyArray<ChartInspectionRow> = referenceLines.map((line) => ({
+    id: line.id,
+    label: line.label,
+    tone: line.tone ?? 'neutral',
+    shape: 'dashed',
+    value: formatValue(line.value),
+  }));
+
+  const rows = readout === undefined ? [] : [...seriesRows, ...markerRows, ...referenceRows];
+
+  const notes = annotations
+    .filter((annotation) => annotation.categoryId === readout?.id)
+    .map((annotation) => annotation.label);
+
+  const top = annotations.length > 0 ? ANNOTATED_PLOT_TOP_PX : PLOT_TOP_PX;
   const bottom = height - 28;
-  const y = scaleLinear({ domain: [...domain], range: [bottom, 12] });
+  const y = scaleLinear({ domain: [...domain], range: [bottom, top] });
   const left = Math.max(44, ...y.ticks(3).map((tick) => formatTick(tick).length * 7 + 12));
-  const right = Math.max(left + 1, width - 16);
+  const gutter = referenceGutterWidth({ lines: referenceLines, formatValue: formatTick });
+  const right = Math.max(left + 1, width - 16 - gutter);
   const x = scaleBand({ domain: categories.map((category) => category.id), range: [left, right], padding: 0.3 });
   const grouped = scaleBand({ domain: series.map((item) => item.id), range: [0, x.bandwidth()], padding: 0.08 });
 
@@ -339,6 +411,69 @@ export function BarChart({
   );
 
   const labelEvery = Math.max(1, Math.ceil((labelWidth + 16) / x.step()));
+  const isStackedGeometry = mode === 'stacked' || composition !== undefined;
+
+  function span(categoryId: string, seriesId: string): BarSpan {
+    const start = x(categoryId) ?? left;
+
+    if (isStackedGeometry) {
+      return { x: start, width: x.bandwidth() };
+    }
+
+    return { x: start + (grouped(seriesId) ?? 0), width: grouped.bandwidth() };
+  }
+
+  function barTop(categoryIndex: number, seriesId: string): number | null {
+    if (!isStackedGeometry) {
+      return series.find((item) => item.id === seriesId)?.values[categoryIndex] ?? null;
+    }
+
+    const values = series.flatMap((item) => [item.values[categoryIndex] ?? null].filter((value) => value !== null));
+
+    return values.length === 0 ? null : values.reduce((sum, value) => sum + value, 0);
+  }
+
+  function isReceded(categoryId: string): boolean {
+    const isEmphasized = emphasizedCategoryIds.includes(categoryId);
+
+    return emphasizedCategoryIds.length > 0 && !isEmphasized && active?.id !== categoryId;
+  }
+
+  function annotationPeak(index: number, seriesId: string | undefined): number {
+    const anchored = seriesId === undefined ? series : series.filter((item) => item.id === seriesId);
+    const values = anchored.flatMap((item) => [item.values[index] ?? null].filter((value) => value !== null));
+
+    const stackTop = isStackedGeometry
+      ? values.reduce((sum, value) => sum + Math.max(0, value), 0)
+      : Math.max(0, ...values);
+
+    const composed = composition?.buckets[index];
+    const bucketTop = composed === undefined || composed.kind === 'gap' ? 0 : composed.total;
+
+    const markerTops = markers
+      .filter((marker) => seriesId === undefined || marker.seriesId === seriesId)
+      .flatMap((marker) => [markerPeak(marker, index)].filter((value) => value !== null));
+
+    return Math.max(0, stackTop, bucketTop, ...markerTops);
+  }
+
+  const placedAnnotations = annotations.map((annotation) => {
+    const index = categoryIds.indexOf(annotation.categoryId);
+    const peak = annotationPeak(index, annotation.seriesId);
+
+    const anchor =
+      annotation.seriesId === undefined
+        ? { x: x(annotation.categoryId) ?? left, width: x.bandwidth() }
+        : span(annotation.categoryId, annotation.seriesId);
+
+    return {
+      id: annotation.id,
+      label: annotation.label,
+      x: anchor.x + anchor.width / 2,
+      y: Math.max(ANNOTATION_BASELINE_PX, y(peak) - ANNOTATION_GAP_PX),
+      isReceded: isReceded(annotation.categoryId),
+    };
+  });
 
   const labelCharacters = Math.max(1, Math.floor((x.step() * labelEvery - 16) / 7));
 
@@ -364,6 +499,8 @@ export function BarChart({
       report={report}
       series={legend}
       layoutSeries={series}
+      markerLegend={markerLegend}
+      notes={notes}
       inspectionId={inspectionId}
       label={readout?.label}
       detail={
@@ -381,10 +518,25 @@ export function BarChart({
           { id: 'category', label: 'Category' },
           { id: 'value', label: 'Value' },
         ],
-        rows: categories.map((category, index) => ({
-          id: category.id,
-          values: [category.label, barValueLabel(disclosedSeries, index, formatValue)],
-        })),
+        rows: [
+          ...categories.map((category, index) => ({
+            id: category.id,
+            values: [
+              category.label,
+              [
+                barValueLabel(disclosedSeries, index, formatValue),
+                ...markers.map((marker) => `${marker.label}: ${markerValueLabel({ marker, index, formatValue })}`),
+                ...annotations
+                  .filter((annotation) => annotation.categoryId === category.id)
+                  .map((annotation) => annotation.label),
+              ].join(' · '),
+            ],
+          })),
+          ...referenceLines.map((line) => ({
+            id: `reference:${line.id}`,
+            values: [line.label, formatValue(line.value)],
+          })),
+        ],
       }}
     >
       <div ref={ref} {...stylex.props(chartStyles.plot, styles.plot)}>
@@ -403,7 +555,7 @@ export function BarChart({
               cursor: cursor?.id,
               inspected: active?.id,
               selected: selected?.id,
-              readout: inspectionReadout({ label: active?.label, summary, rows }),
+              readout: inspectionReadout({ label: active?.label, summary, rows, notes }),
               onInspect: (id) => {
                 setKeyboardId(id);
                 setInspection({ id, source: 'keyboard' });
@@ -441,9 +593,9 @@ export function BarChart({
             {active !== undefined && (
               <rect
                 x={(x(active.id) ?? left) - (x.step() - x.bandwidth()) / 2}
-                y={12}
+                y={top}
                 width={x.step()}
-                height={bottom - 12}
+                height={bottom - top}
                 {...stylex.props(styles.guide)}
               />
             )}
@@ -465,7 +617,7 @@ export function BarChart({
               categories.some((category) => category.id === composition.annotation?.categoryId) && (
                 <text
                   x={x(composition.annotation.categoryId)}
-                  y={Math.max(12, y(composition.annotation.value) - 8)}
+                  y={Math.max(top, y(composition.annotation.value) - 8)}
                   {...stylex.props(chartStyles.label)}
                 >
                   {composition.annotation.label}
@@ -477,53 +629,55 @@ export function BarChart({
 
               return (
                 <g key={category.id}>
-                  {composedBucket === undefined ? (
-                    series.map((item, seriesIndex) => {
-                      const value = item.values[categoryIndex];
+                  <g {...stylex.props(chartStyles.emphasis, isReceded(category.id) && chartStyles.receded)}>
+                    {composedBucket === undefined ? (
+                      series.map((item, seriesIndex) => {
+                        const value = item.values[categoryIndex];
 
-                      if (value === null || value === undefined) {
-                        return null;
-                      }
+                        if (value === null || value === undefined) {
+                          return null;
+                        }
 
-                      const base =
-                        mode === 'stacked'
-                          ? series
-                              .slice(0, seriesIndex)
-                              .reduce((sum, previous) => sum + (previous.values[categoryIndex] ?? 0), 0)
-                          : 0;
+                        const base =
+                          mode === 'stacked'
+                            ? series
+                                .slice(0, seriesIndex)
+                                .reduce((sum, previous) => sum + (previous.values[categoryIndex] ?? 0), 0)
+                            : 0;
 
-                      const start = y(base);
-                      const end = y(base + value);
-                      const isHighlighted = selection?.selectedId === category.id || active?.id === category.id;
+                        const start = y(base);
+                        const end = y(base + value);
+                        const isHighlighted = selection?.selectedId === category.id || active?.id === category.id;
 
-                      return (
-                        <Bar
-                          key={item.id}
-                          x={(x(category.id) ?? left) + (mode === 'stacked' ? 0 : (grouped(item.id) ?? 0))}
-                          y={Math.min(start, end)}
-                          width={mode === 'stacked' ? x.bandwidth() : grouped.bandwidth()}
-                          height={Math.max(value === 0 ? 1 : 0, Math.abs(end - start))}
-                          fill={chartToneColors[colorTone(item.tone, seriesIndex)]}
-                          {...stylex.props(
-                            isHighlighted && chartStyles.selected,
-                            highlightedSeriesId !== undefined && highlightedSeriesId !== item.id && styles.mutedMark,
-                          )}
-                        />
-                      );
-                    })
-                  ) : (
-                    <CompositionBars
-                      bucket={composedBucket}
-                      series={series}
-                      focusedSeries={focusSeries}
-                      index={categoryIndex}
-                      x={x(category.id) ?? left}
-                      width={x.bandwidth()}
-                      y={y}
-                      isHighlighted={selection?.selectedId === category.id || active?.id === category.id}
-                      highlightedSeriesId={highlightedSeriesId}
-                    />
-                  )}
+                        return (
+                          <Bar
+                            key={item.id}
+                            x={(x(category.id) ?? left) + (mode === 'stacked' ? 0 : (grouped(item.id) ?? 0))}
+                            y={Math.min(start, end)}
+                            width={mode === 'stacked' ? x.bandwidth() : grouped.bandwidth()}
+                            height={Math.max(value === 0 ? 1 : 0, Math.abs(end - start))}
+                            fill={chartToneColors[colorTone(item.tone, seriesIndex)]}
+                            {...stylex.props(
+                              isHighlighted && chartStyles.selected,
+                              highlightedSeriesId !== undefined && highlightedSeriesId !== item.id && styles.mutedMark,
+                            )}
+                          />
+                        );
+                      })
+                    ) : (
+                      <CompositionBars
+                        bucket={composedBucket}
+                        series={series}
+                        focusedSeries={focusSeries}
+                        index={categoryIndex}
+                        x={x(category.id) ?? left}
+                        width={x.bandwidth()}
+                        y={y}
+                        isHighlighted={selection?.selectedId === category.id || active?.id === category.id}
+                        highlightedSeriesId={highlightedSeriesId}
+                      />
+                    )}
+                  </g>
                   {categoryIndex % labelEvery === 0 && (
                     <text
                       x={(x(category.id) ?? left) + x.bandwidth() / 2}
@@ -537,10 +691,28 @@ export function BarChart({
                 </g>
               );
             })}
+            <ReferenceLines
+              lines={referenceLines}
+              y={y}
+              left={left}
+              right={right}
+              top={top}
+              bottom={bottom}
+              formatValue={formatTick}
+            />
+            <BarMarkers
+              markers={markers}
+              categoryIds={categoryIds}
+              span={span}
+              barTop={barTop}
+              y={y}
+              isReceded={isReceded}
+            />
+            <BarAnnotations annotations={placedAnnotations} left={left} right={right} />
             {cursor !== undefined && (
               <ChartCursor
                 x={(x(cursor.id) ?? left) + x.bandwidth() / 2}
-                top={12}
+                top={top}
                 bottom={bottom}
                 width={Math.max(8, x.bandwidth())}
               />

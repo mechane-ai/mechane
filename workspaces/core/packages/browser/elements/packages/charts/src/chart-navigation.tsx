@@ -9,9 +9,10 @@ type ChartNavigationInput = {
   readonly title: string;
   readonly items: ReadonlyArray<ChartNavigationItem>;
   readonly selection: ChartSelection | undefined;
+  readonly columnCount?: number | undefined;
 };
 
-export function useChartNavigation({ title, items, selection }: ChartNavigationInput) {
+export function useChartNavigation({ title, items, selection, columnCount }: ChartNavigationInput) {
   const id = useId();
   const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [isInspecting, setInspecting] = useState(false);
@@ -36,6 +37,7 @@ export function useChartNavigation({ title, items, selection }: ChartNavigationI
       readout: isInspecting ? active?.label : undefined,
       selected: items.find((item) => item.id === selection?.selectedId)?.id,
       allowVerticalNavigation: true,
+      columnCount,
       onInspect: inspect,
       onDismiss: () => setInspecting(false),
       onSelect: selection?.onSelect,

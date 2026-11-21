@@ -417,6 +417,19 @@ export const PassiveTrendStates: Story = {
   render: () => (
     <Stack>
       <Row>
+        <Text>Marked range</Text>
+        <Sparkline
+          title="Candidate latency"
+          summary="Latency ranged from 9 to 18 milliseconds and ended at 16, above the 14 millisecond objective."
+          unit="milliseconds"
+          timestampUnit="seconds"
+          series={candidate}
+          valueDomain={[0, 24]}
+          markedPoints={['minimum', 'maximum', 'last']}
+          baseline={14}
+        />
+      </Row>
+      <Row>
         <Text>Missing sample</Text>
         <Sparkline
           title="Baseline latency"

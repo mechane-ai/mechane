@@ -16,7 +16,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Matrix renders explicit row and column identities as a semantic table. Values, masked cells, unavailable cells, and values outside the color domain stay distinct. The application supplies normalization, units, and formatting. TokenHeatmap preserves exact text and supplied indices, including whitespace. Its underline indicates a score while keeping text readable in both themes. Selection is controlled. The render limits are 4,096 matrix coordinates and 2,048 tokens; larger inputs show an explicit error and must be windowed by the application. Invalid identifiers and nonfinite values also show an error. ColorLegend uses the same scale as the supplied values.',
+          'Matrix renders explicit row and column identities as a semantic table. The strip variant draws the same cells as compact intensity rows that fill the width, such as months across categories; Up and Down move between rows. Values, masked cells, unavailable cells, and values outside the color domain stay distinct. The application supplies normalization, units, and formatting. TokenHeatmap preserves exact text and supplied indices, including whitespace. Its underline indicates a score while keeping text readable in both themes. Selection is controlled. The render limits are 4,096 matrix coordinates and 2,048 tokens; larger inputs show an explicit error and must be windowed by the application. Invalid identifiers and nonfinite values also show an error. ColorLegend uses the same scale as the supplied values.',
       },
     },
   },
@@ -109,7 +109,79 @@ function Tokens(): ReactNode {
   );
 }
 
+const months = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+].map((label) => ({ id: label.toLowerCase(), label, axisLabel: label.slice(0, 1) }));
+
+const seasonalRows: ReadonlyArray<MatrixAxisItem> = [
+  { id: 'heating', label: 'Heating' },
+  { id: 'travel', label: 'Travel' },
+  { id: 'gifts', label: 'Gifts' },
+  { id: 'gardening', label: 'Gardening' },
+  { id: 'school', label: 'School supplies' },
+];
+
+const seasonalShares: Readonly<Record<string, ReadonlyArray<number | null>>> = {
+  heating: [2.1, 1.9, 1.4, 0.8, 0.3, 0.1, 0, 0, 0.3, 0.9, 1.7, 2.4],
+  travel: [0.4, 0.5, 1.2, 0.8, 0.9, 1.8, 2.6, 2.2, 0.7, 0.5, 0.6, 1.1],
+  gifts: [0.3, 0.6, 0.2, 0.3, 0.8, 0.4, 0.2, 0.3, 0.4, 0.6, 1.9, 4.9],
+  gardening: [0, 0.1, 1.3, 2.4, 2.8, 1.9, 1.2, 0.9, 0.6, 0.4, null, 0],
+  school: [0.6, 0.2, 0.1, 0.1, 0.1, 0.2, 0.9, 4.6, 3.1, 0.3, 0.2, 0.2],
+};
+
+const seasonalCells: ReadonlyArray<MatrixCell> = seasonalRows.flatMap((row) =>
+  months.map((month, index): MatrixCell => {
+    const value = seasonalShares[row.id]?.[index] ?? null;
+    const id = `${row.id}-${month.id}`;
+
+    if (value === null) {
+      return { id, rowId: row.id, columnId: month.id, kind: 'missing', reason: 'Not planned yet' };
+    }
+
+    return { id, rowId: row.id, columnId: month.id, kind: 'value', value };
+  }),
+);
+
+function formatShare(value: number): string {
+  return `${new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }).format(value)}× monthly average`;
+}
+
+function SeasonalStrip(): ReactNode {
+  const [selectedId, setSelectedId] = useState<string>();
+
+  return (
+    <Panel>
+      <Matrix
+        title="Seasonal spending"
+        description="Synthetic plan. Each cell is a month's planned spending divided by that category's monthly average, so 1× is a typical month. November gardening has no plan yet."
+        rows={seasonalRows}
+        columns={months}
+        cells={seasonalCells}
+        domain={[0, 5]}
+        palette="sequential"
+        valueLabel="Month compared with the category average"
+        formatValue={formatShare}
+        selection={{ selectedId, onSelect: setSelectedId }}
+        emptyLabel="No seasonal plan was supplied."
+        variant="strip"
+      />
+    </Panel>
+  );
+}
+
 export const AttentionWeights: Story = { render: () => <Attention /> };
+export const CompactStrip: Story = { render: () => <SeasonalStrip /> };
 export const ExactTokenText: Story = { render: () => <Tokens /> };
 
 export const ColorDomains: Story = {

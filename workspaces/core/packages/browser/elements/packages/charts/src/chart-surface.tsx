@@ -7,6 +7,49 @@ const activationKeys: ReadonlySet<string> = new Set([' ', 'Enter']);
 
 type ChartItem = { readonly id: string; readonly label: string };
 
+type NavigationIndices = Readonly<Record<string, number | undefined>>;
+
+type NavigationPosition = { readonly index: number; readonly last: number };
+
+function listIndices({
+  index,
+  last,
+  allowVerticalNavigation,
+}: NavigationPosition & { readonly allowVerticalNavigation: boolean }): NavigationIndices {
+  const previous = Math.max(0, index - 1);
+  const next = Math.min(last, index + 1);
+
+  return {
+    Home: 0,
+    End: last,
+    ArrowLeft: previous,
+    ArrowRight: next,
+    ArrowUp: allowVerticalNavigation ? previous : undefined,
+    ArrowDown: allowVerticalNavigation ? next : undefined,
+  };
+}
+
+function gridIndices({
+  index,
+  last,
+  columnCount,
+}: NavigationPosition & { readonly columnCount: number }): NavigationIndices {
+  const current = Math.max(0, index);
+  const rowStart = current - (current % columnCount);
+  const rowEnd = Math.min(last, rowStart + columnCount - 1);
+  const above = current - columnCount;
+  const below = current + columnCount;
+
+  return {
+    Home: rowStart,
+    End: rowEnd,
+    ArrowLeft: Math.max(rowStart, current - 1),
+    ArrowRight: Math.min(rowEnd, current + 1),
+    ArrowUp: above < 0 ? current : above,
+    ArrowDown: below > last ? current : below,
+  };
+}
+
 export type ChartControls = {
   readonly items: ReadonlyArray<ChartItem>;
   readonly cursor: string | undefined;
@@ -14,6 +57,8 @@ export type ChartControls = {
   readonly readout: string | undefined;
   readonly selected?: string | undefined;
   readonly allowVerticalNavigation?: boolean;
+  /** Arranges the items row by row in a grid of this width. Up and Down change rows; Home and End stay in the row. */
+  readonly columnCount?: number | undefined;
   readonly onInspect: (id: string) => void;
   readonly onDismiss: () => void;
   readonly onSelect?: ((id: string) => void) | undefined;
@@ -85,15 +130,12 @@ const chartInspection = definePrimitive({
 
       const index = items.findIndex((item) => item.id === cursor);
       const last = items.length - 1;
+      const { columnCount } = options().controls;
 
-      const indices: Readonly<Record<string, number | undefined>> = {
-        Home: 0,
-        End: last,
-        ArrowLeft: Math.max(0, index - 1),
-        ArrowRight: Math.min(last, index + 1),
-        ArrowUp: allowVerticalNavigation === true ? Math.max(0, index - 1) : undefined,
-        ArrowDown: allowVerticalNavigation === true ? Math.min(last, index + 1) : undefined,
-      };
+      const indices =
+        columnCount === undefined || columnCount < 1
+          ? listIndices({ index, last, allowVerticalNavigation: allowVerticalNavigation === true })
+          : gridIndices({ index, last, columnCount });
 
       const next = indices[event.key];
       const item = next === undefined ? undefined : items[next];

@@ -15,6 +15,8 @@ import { ChartInspection, ChartInspectionTitle, inspectionReadout } from '../cha
 import { ChartSvgSurface } from '../chart-surface.tsx';
 import { chartStyles } from '../chart-theme.ts';
 import { usePlotWidth } from '../plot-width.ts';
+import { bandValues, findCrossings, nearestTimestamp, prepareBands, validateBands } from './time-series-bands.ts';
+import type { FoundCrossing, PlotBand, TimeSeriesBand, TimeSeriesCrossing } from './time-series-bands.ts';
 import {
   observationDomain,
   prepareTimeSeries,
@@ -24,6 +26,8 @@ import {
 } from './time-series-data.ts';
 import type { PlotPoint, TimeSeries, TimeSeriesMarker } from './time-series-data.ts';
 import { TimeSeriesLine } from './time-series-line.tsx';
+import { instantsTop, placeInstants, TimeInstants, TimeSeriesBands } from './time-series-overlays.tsx';
+import type { TimeLabelledInstant } from './time-series-overlays.tsx';
 
 export type TimeSeriesChartProps = {
   readonly title: string;
@@ -37,6 +41,10 @@ export type TimeSeriesChartProps = {
   readonly height?: number | undefined;
   readonly actions?: ReactNode;
   readonly report?: ChartSeriesReport | undefined;
+  /** Shaded ranges with optional center lines, drawn beneath the line series and listed in the legend. */
+  readonly bands?: ReadonlyArray<TimeSeriesBand> | undefined;
+  /** Where a series or band center first reaches a value. A crossing that never happens is listed as not reached. */
+  readonly crossings?: ReadonlyArray<TimeSeriesCrossing> | undefined;
 };
 
 export type AreaChartProps = TimeSeriesChartProps & { readonly isStacked?: boolean | undefined };
@@ -48,7 +56,16 @@ export type TimeSeriesChartPlaceholderProps = Pick<
 
 export type SmallMultiplesProps = Omit<
   TimeSeriesChartProps,
-  'series' | 'title' | 'description' | 'actions' | 'formatValue' | 'formatTick' | 'markers' | 'report'
+  | 'series'
+  | 'title'
+  | 'description'
+  | 'actions'
+  | 'formatValue'
+  | 'formatTick'
+  | 'markers'
+  | 'report'
+  | 'bands'
+  | 'crossings'
 > & {
   readonly charts: ReadonlyArray<{
     readonly id: string;
@@ -124,6 +141,72 @@ const styles = stylex.create({
   joinedPanel: { marginBlockStart: -REPORT_BORDER_WIDTH_PX },
   guide: { stroke: colors.muted, strokeDasharray: '3 3', vectorEffect: 'non-scaling-stroke' },
 });
+
+function bandSignature({
+  bands,
+  crossings,
+}: {
+  readonly bands: ReadonlyArray<TimeSeriesBand>;
+  readonly crossings: ReadonlyArray<TimeSeriesCrossing>;
+}): string {
+  return JSON.stringify([
+    bands.map((band) => [
+      band.id,
+      band.label,
+      band.rangeLabel,
+      band.tone,
+      band.points.map((point) => [point.timestamp, point.lower, point.center, point.upper]),
+    ]),
+    crossings.map((crossing) => [crossing.id, crossing.seriesId, crossing.value, crossing.label, crossing.direction]),
+  ]);
+}
+
+function bandRows({
+  bands,
+  timestamp,
+  formatValue,
+}: {
+  readonly bands: ReadonlyArray<PlotBand>;
+  readonly timestamp: number | undefined;
+  readonly formatValue: (value: number) => string;
+}) {
+  return bands.flatMap((band) => {
+    const point = band.points.find((item) => item.timestamp === timestamp);
+    const center = point?.center ?? null;
+    const isBounded = point?.lower !== null && point?.upper !== null && point !== undefined;
+
+    return [
+      {
+        id: band.id,
+        label: band.label,
+        tone: band.tone,
+        shape: 'band' as const,
+        value: center === null ? 'Unavailable' : formatValue(center),
+      },
+      {
+        id: `${band.id}:range`,
+        label: band.rangeLabel,
+        tone: band.tone,
+        shape: 'band' as const,
+        value: isBounded ? `${formatValue(point.lower)} – ${formatValue(point.upper)}` : 'Unavailable',
+      },
+    ];
+  });
+}
+
+function crossingText({
+  found,
+  formatTimestamp,
+}: {
+  readonly found: FoundCrossing;
+  readonly formatTimestamp: (timestamp: number) => string;
+}): string {
+  if (found.timestamp === undefined) {
+    return `${found.crossing.label} · Not reached in this range`;
+  }
+
+  return `About ${formatTimestamp(found.timestamp)} · ${found.crossing.label}`;
+}
 
 export function LineChart(props: TimeSeriesChartProps): ReactNode {
   return <TimeChart {...props} kind="line" isStacked={false} />;
@@ -338,6 +421,8 @@ function TimeChart({
   sharedInspection,
   axisWidth,
   showTimeAxis = true,
+  bands = [],
+  crossings = [],
 }: TimeSeriesChartProps & {
   readonly kind: 'line' | 'area';
   readonly isStacked: boolean;
@@ -345,17 +430,26 @@ function TimeChart({
   readonly axisWidth?: number;
   readonly showTimeAxis?: boolean;
 }): ReactNode {
+  const bandTimeline = bands[0]?.points.map((point) => point.timestamp) ?? [];
+  const timeline = series[0]?.points.map((point) => point.timestamp) ?? bandTimeline;
+
   const issue =
     !Number.isFinite(height) || height < 48
       ? 'Chart height must be at least 48 pixels.'
-      : validateTimeSeries({ series, isStacked, markers });
+      : (validateTimeSeries({ series, isStacked, markers, timeline: bandTimeline }) ??
+        validateBands({ bands, crossings, series, timestamps: timeline }));
 
   const prepared = useMemo(
     () => (issue === undefined ? prepareTimeSeries(series, isStacked) : []),
     [series, isStacked, issue],
   );
 
-  const points = prepared[0]?.points ?? [];
+  const preparedBands = useMemo(
+    () => (issue === undefined ? prepareBands({ series, bands }) : []),
+    [series, bands, issue],
+  );
+
+  const points: ReadonlyArray<{ readonly timestamp: number }> = prepared[0]?.points ?? preparedBands[0]?.points ?? [];
   const { ref, width, element } = usePlotWidth();
   const rootRef = useRef<HTMLDivElement>(null);
   const [keyboardTimestamp, setKeyboardTimestamp] = useState<number>();
@@ -367,7 +461,12 @@ function TimeChart({
 
   const cursor = points.find((point) => point.timestamp === keyboardTimestamp) ?? points[0];
   const [inspection, setInspection] = useState<Inspection | undefined>();
-  const signature = timeSeriesSignature({ series, markers, timestampUnit, isStacked });
+  const signature = `${timeSeriesSignature({ series, markers, timestampUnit, isStacked })}${bandSignature({ bands, crossings })}`;
+
+  const legendSeries = [
+    ...prepared.map(({ id, label, tone }) => ({ id, label, tone })),
+    ...preparedBands.map(({ id, label, tone }) => ({ id, label, tone, shape: 'band' as const })),
+  ];
 
   const active =
     sharedInspection === undefined
@@ -409,46 +508,75 @@ function TimeChart({
 
   if (points.length === 0) {
     return (
-      <ChartFrame title={title} description={description} actions={actions} report={report} series={prepared}>
+      <ChartFrame title={title} description={description} actions={actions} report={report} series={legendSeries}>
         <p {...stylex.props(styles.muted)}>No observations</p>
       </ChartFrame>
     );
   }
 
+  const timestamps = points.map((point) => point.timestamp);
+  const foundCrossings = findCrossings({ crossings, series, bands });
+
+  const instants: ReadonlyArray<TimeLabelledInstant> = [
+    ...markers.flatMap((marker) => (marker.kind === 'event' ? [marker] : [])),
+    ...foundCrossings.flatMap(({ crossing, timestamp }) =>
+      timestamp === undefined ? [] : [{ id: crossing.id, timestamp, label: crossing.label, value: crossing.value }],
+    ),
+  ];
+
+  const instantNotes = instants
+    .filter((instant) => nearestTimestamp(timestamps, instant.timestamp) === inspected?.timestamp)
+    .map((instant) => `${instant.label} · ${formatTimestamp(instant.timestamp)}`);
+
   const reading = {
     label: inspected === undefined ? undefined : formatTimestamp(inspected.timestamp),
-    rows: prepared.map((item) => {
-      const point = item.points.find((value) => value.timestamp === inspected?.timestamp);
+    rows: [
+      ...prepared.map((item) => {
+        const point = item.points.find((value) => value.timestamp === inspected?.timestamp);
 
-      return {
-        id: item.id,
-        label: item.label,
-        tone: item.tone,
-        value: point?.value === null || point === undefined ? 'Unavailable' : formatValue(point.value),
-      };
-    }),
-    notes: markers.filter((marker) => marker.timestamp === inspected?.timestamp).map((marker) => marker.label),
+        return {
+          id: item.id,
+          label: item.label,
+          tone: item.tone,
+          value: point?.value === null || point === undefined ? 'Unavailable' : formatValue(point.value),
+        };
+      }),
+      ...bandRows({ bands: preparedBands, timestamp: inspected?.timestamp, formatValue }),
+    ],
+    notes: [
+      ...markers
+        .filter((marker) => marker.kind !== 'event' && marker.timestamp === inspected?.timestamp)
+        .map((marker) => marker.label),
+      ...instantNotes,
+    ],
   };
 
-  const top = 12;
   const bottom = height - 28;
   const svgHeight = bottom + 12;
   const first = points[0]?.timestamp ?? 0;
   const last = points.at(-1)?.timestamp ?? first;
 
-  const observed = prepared.flatMap((item) =>
-    item.points.flatMap((point) => (point.value === null ? [] : [point.value + point.base])),
-  );
+  const observed = [
+    ...prepared.flatMap((item) =>
+      item.points.flatMap((point) => (point.value === null ? [] : [point.value + point.base])),
+    ),
+    ...bandValues(bands),
+    ...crossings.map((crossing) => crossing.value),
+  ];
 
   const minimum = kind === 'area' ? Math.min(0, ...observed) : Math.min(...observed);
   const maximum = kind === 'area' ? Math.max(0, ...observed) : Math.max(...observed);
   const low = observed.length === 0 ? 0 : minimum;
   const high = observed.length === 0 ? 1 : maximum;
-  const y = scaleLinear({ domain: [...observationDomain(low, high, kind === 'area')], range: [bottom, top] });
-  const yTicks = y.ticks(3);
-  const left = axisWidth ?? Math.max(44, ...yTicks.map((tick) => formatTick(tick).length * 7 + 12));
+  const valueDomain = observationDomain(low, high, kind === 'area');
+  const tickScale = scaleLinear({ domain: [...valueDomain], range: [bottom, 0] });
+  const left = axisWidth ?? Math.max(44, ...tickScale.ticks(3).map((tick) => formatTick(tick).length * 7 + 12));
   const right = Math.max(left + 1, width - 16);
   const x = scaleLinear({ domain: [...observationDomain(first, last)], range: [left, right] });
+  const placedInstants = placeInstants({ instants, x, right });
+  const top = instantsTop(placedInstants);
+  const y = scaleLinear({ domain: [...valueDomain], range: [bottom, top] });
+  const yTicks = y.ticks(3);
 
   function inspectClient(clientX: number): void {
     const bounds = element?.getBoundingClientRect();
@@ -495,7 +623,7 @@ function TimeChart({
         }
         description={description}
         report={report}
-        series={prepared}
+        series={legendSeries}
         actions={actions}
       >
         <ChartData
@@ -503,6 +631,10 @@ function TimeChart({
           columns={[
             { id: 'time', label: `Time (${timestampUnit})` },
             ...prepared.map((item) => ({ id: `series:${item.id}`, label: item.label })),
+            ...preparedBands.flatMap((band) => [
+              { id: `band:${band.id}`, label: band.label },
+              { id: `band-range:${band.id}`, label: `${band.label}: ${band.rangeLabel}` },
+            ]),
           ]}
           rows={points.map((point, index) => ({
             id: point.timestamp,
@@ -513,6 +645,7 @@ function TimeChart({
                   ? 'Unavailable'
                   : formatValue(item.points[index].value),
               ),
+              ...bandRows({ bands: preparedBands, timestamp: point.timestamp, formatValue }).map((row) => row.value),
             ],
           }))}
         />
@@ -520,7 +653,7 @@ function TimeChart({
           <ChartInspection
             id={inspectionId}
             label={reading.label}
-            legend={prepared.map(({ id, label, tone }) => ({ id, label, tone }))}
+            legend={legendSeries}
             rows={reading.rows}
             x={x(active?.timestamp ?? first)}
             width={width}
@@ -585,6 +718,17 @@ function TimeChart({
                   </text>
                 </g>
               ))}
+              {crossings.map((crossing) => (
+                <line
+                  key={crossing.id}
+                  x1={left}
+                  x2={right}
+                  y1={y(crossing.value)}
+                  y2={y(crossing.value)}
+                  {...stylex.props(chartStyles.baseline)}
+                />
+              ))}
+              <TimeSeriesBands bands={preparedBands} x={x} y={y} />
               {prepared.map((item) => (
                 <g key={item.id}>
                   {kind === 'area' && (
@@ -602,35 +746,38 @@ function TimeChart({
                   <TimeSeriesLine series={item} x={x} y={y} inspectedTimestamp={active?.timestamp} />
                 </g>
               ))}
-              {markers.map((marker) => (
-                <g key={marker.id}>
-                  {marker.kind === 'time' ? (
-                    <line
-                      x1={x(marker.timestamp)}
-                      x2={x(marker.timestamp)}
-                      y1={top}
-                      y2={bottom}
-                      {...stylex.props(styles.guide)}
-                    />
-                  ) : (
-                    <circle
-                      cx={x(marker.timestamp)}
-                      cy={y(
-                        marker.value +
-                          (prepared
-                            .find((item) => item.id === marker.seriesId)
-                            ?.points.find((point) => point.timestamp === marker.timestamp)?.base ?? 0),
-                      )}
-                      r={4}
-                      fill={colors.surface}
-                      {...stylex.props(chartStyles.selected)}
-                    />
-                  )}
-                  <title>
-                    {marker.kind === 'point' ? `${marker.label}: ${formatValue(marker.value)}` : marker.label}
-                  </title>
-                </g>
-              ))}
+              <TimeInstants placed={placedInstants} x={x} y={y} bottom={bottom} />
+              {markers
+                .filter((marker) => marker.kind !== 'event')
+                .map((marker) => (
+                  <g key={marker.id}>
+                    {marker.kind === 'time' ? (
+                      <line
+                        x1={x(marker.timestamp)}
+                        x2={x(marker.timestamp)}
+                        y1={top}
+                        y2={bottom}
+                        {...stylex.props(styles.guide)}
+                      />
+                    ) : (
+                      <circle
+                        cx={x(marker.timestamp)}
+                        cy={y(
+                          marker.value +
+                            (prepared
+                              .find((item) => item.id === marker.seriesId)
+                              ?.points.find((point) => point.timestamp === marker.timestamp)?.base ?? 0),
+                        )}
+                        r={4}
+                        fill={colors.surface}
+                        {...stylex.props(chartStyles.selected)}
+                      />
+                    )}
+                    <title>
+                      {marker.kind === 'point' ? `${marker.label}: ${formatValue(marker.value)}` : marker.label}
+                    </title>
+                  </g>
+                ))}
               {active !== undefined && (
                 <line
                   x1={x(active.timestamp)}
@@ -661,13 +808,16 @@ function TimeChart({
               </div>
             )}
           </div>
-          {markers.length > 0 && (
+          {markers.length + foundCrossings.length > 0 && (
             <ul {...stylex.props(styles.markerList)}>
               {markers.map((marker) => (
                 <li key={marker.id}>
                   {formatTimestamp(marker.timestamp)} · {marker.label}
                   {marker.kind === 'point' && ` · ${formatValue(marker.value)}`}
                 </li>
+              ))}
+              {foundCrossings.map((found) => (
+                <li key={found.crossing.id}>{crossingText({ found, formatTimestamp })}</li>
               ))}
             </ul>
           )}

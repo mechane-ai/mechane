@@ -1,3 +1,5 @@
+export type { FlowDiagramProps, FlowLink, FlowNode } from './flow-diagram.tsx';
+export { FlowDiagram, MAX_FLOW_LINKS, MAX_FLOW_NODES } from './flow-diagram.tsx';
 export type { RelationNode, RelationEdge, RelationGroup, RelationGraphProps } from './relation-graph.tsx';
 export {
   MAX_RELATION_NODES,

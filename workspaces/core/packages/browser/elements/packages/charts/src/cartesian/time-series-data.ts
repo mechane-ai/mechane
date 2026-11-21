@@ -10,9 +10,14 @@ export type TimeSeries = {
   readonly tone?: ChartTone | undefined;
 };
 
+/**
+ * A time marker flags an observation timestamp, such as a partial period. A point marker annotates a recorded series
+ * value. An event marker labels a supplied instant inside the range, possibly between observations, without a value.
+ */
 export type TimeSeriesMarker = { readonly id: string; readonly timestamp: number; readonly label: string } & (
   | { readonly kind: 'time'; readonly seriesId?: never; readonly value?: never }
   | { readonly kind: 'point'; readonly seriesId: string; readonly value: number }
+  | { readonly kind: 'event'; readonly seriesId?: never; readonly value?: never }
 );
 
 export type PlotPoint = { readonly timestamp: number; readonly value: number | null; readonly base: number };
@@ -32,12 +37,15 @@ export function validateTimeSeries({
   series,
   isStacked,
   markers,
+  timeline = [],
 }: {
   readonly series: ReadonlyArray<TimeSeries>;
   readonly isStacked: boolean;
   readonly markers: ReadonlyArray<TimeSeriesMarker>;
+  /** The observation timestamps when no line series supplies them, such as a chart of bands alone. */
+  readonly timeline?: ReadonlyArray<number>;
 }): string | undefined {
-  const timestamps = series[0]?.points.map((point) => point.timestamp) ?? [];
+  const timestamps = series[0]?.points.map((point) => point.timestamp) ?? timeline;
 
   if (
     series.length > timeSeriesLimits.series ||
@@ -64,18 +72,10 @@ export function validateTimeSeries({
   }
 
   for (const marker of markers) {
-    if (!timestamps.includes(marker.timestamp)) {
-      return 'Every marker must align with an observation timestamp.';
-    }
+    const problem = markerProblem({ marker, series, timestamps });
 
-    if (marker.kind === 'point') {
-      const point = series
-        .find((item) => item.id === marker.seriesId)
-        ?.points.find((item) => item.timestamp === marker.timestamp);
-
-      if (point === undefined || point.value !== marker.value) {
-        return 'Point markers must reference the recorded series value.';
-      }
+    if (problem !== undefined) {
+      return problem;
     }
   }
 
@@ -100,6 +100,40 @@ export function validateTimeSeries({
   }
 
   return undefined;
+}
+
+function markerProblem({
+  marker,
+  series,
+  timestamps,
+}: {
+  readonly marker: TimeSeriesMarker;
+  readonly series: ReadonlyArray<TimeSeries>;
+  readonly timestamps: ReadonlyArray<number>;
+}): string | undefined {
+  if (marker.kind === 'event') {
+    const first = timestamps[0] ?? 0;
+    const last = timestamps.at(-1) ?? first;
+    const isInside = marker.timestamp >= first && marker.timestamp <= last;
+
+    return Number.isFinite(marker.timestamp) && isInside
+      ? undefined
+      : 'Every event marker must fall inside the observed time range.';
+  }
+
+  if (!timestamps.includes(marker.timestamp)) {
+    return 'Every time and point marker must align with an observation timestamp.';
+  }
+
+  if (marker.kind === 'time') {
+    return undefined;
+  }
+
+  const point = series
+    .find((item) => item.id === marker.seriesId)
+    ?.points.find((item) => item.timestamp === marker.timestamp);
+
+  return point?.value === marker.value ? undefined : 'Point markers must reference the recorded series value.';
 }
 
 export function timeSeriesSignature({

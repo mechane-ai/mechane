@@ -12,14 +12,11 @@ import { ChartSurface } from '../chart-surface.tsx';
 import { ColorLegend } from './color-legend.tsx';
 import { heatmapColor, heatmapScaleProblem, isHeatmapValueInDomain } from './heatmap-scale.ts';
 import type { HeatmapScale } from './heatmap-scale.ts';
+import { CELL_TEXT_MAX_CHARACTERS, matrixCellGlyph, matrixValueText } from './matrix-cells.ts';
+import { MatrixStrip } from './matrix-strip.tsx';
+import type { MatrixAxisItem, MatrixCell } from './matrix-types.ts';
 
-export type MatrixAxisItem = { readonly id: string; readonly label: string };
-
-export type MatrixCell = { readonly id: string; readonly rowId: string; readonly columnId: string } & (
-  | { readonly kind: 'value'; readonly value: number }
-  | { readonly kind: 'masked'; readonly reason: string }
-  | { readonly kind: 'missing'; readonly reason: string }
-);
+export type { MatrixAxisItem, MatrixCell } from './matrix-types.ts';
 
 export type MatrixProps = HeatmapScale & {
   readonly title: string;
@@ -32,6 +29,11 @@ export type MatrixProps = HeatmapScale & {
   readonly formatValue: (value: number) => string;
   readonly selection?: ChartSelection;
   readonly emptyLabel: string;
+  /**
+   * The values variant draws square cells with short values for exact comparison. The strip variant draws compact
+   * intensity rows that fill the width, such as months across categories. Absent means values.
+   */
+  readonly variant?: 'values' | 'strip' | undefined;
 };
 
 const styles = stylex.create({
@@ -122,7 +124,12 @@ const styles = stylex.create({
     fontSize: typography.captionSize,
   },
   data: { listStyle: 'none', margin: 0, padding: 0 },
+  strip: { paddingBlock: spacing.xxs },
 });
+
+function coordinateId(rowId: string, columnId: string): string {
+  return JSON.stringify([rowId, columnId]);
+}
 
 const cellStyles = { value: undefined, masked: styles.masked, missing: styles.missing } satisfies Record<
   MatrixCell['kind'],
@@ -130,7 +137,6 @@ const cellStyles = { value: undefined, masked: styles.masked, missing: styles.mi
 >;
 
 export const MAX_MATRIX_CELLS = 4096;
-const MAX_CELL_TEXT_LENGTH = 6;
 
 export function Matrix({
   title,
@@ -145,15 +151,42 @@ export function Matrix({
   formatValue,
   selection,
   emptyLabel,
+  variant = 'values',
 }: MatrixProps): ReactNode {
+  const isStrip = variant === 'strip';
+
+  function cellAt(rowId: string, columnId: string): MatrixCell | undefined {
+    return cells.find((cell) => cell.rowId === rowId && cell.columnId === columnId);
+  }
+
+  const stripItems = rows.flatMap((row) =>
+    columns.map((column) => {
+      const cell = cellAt(row.id, column.id);
+
+      return {
+        id: cell?.id ?? coordinateId(row.id, column.id),
+        label: `${row.label} → ${column.label}: ${matrixValueText(cell, domain, formatValue)}`,
+      };
+    }),
+  );
+
   const navigation = useChartNavigation({
     title,
-    selection,
-    items: cells.map((cell) => ({
-      id: cell.id,
-      label: `${rows.find((row) => row.id === cell.rowId)?.label ?? cell.rowId} → ${columns.find((column) => column.id === cell.columnId)?.label ?? cell.columnId}: ${matrixValueText(cell, domain, formatValue)}`,
-    })),
+    selection: isStrip && selection !== undefined ? { ...selection, onSelect: selectSupplied } : selection,
+    columnCount: isStrip ? columns.length : undefined,
+    items: isStrip
+      ? stripItems
+      : cells.map((cell) => ({
+          id: cell.id,
+          label: `${rows.find((row) => row.id === cell.rowId)?.label ?? cell.rowId} → ${columns.find((column) => column.id === cell.columnId)?.label ?? cell.columnId}: ${matrixValueText(cell, domain, formatValue)}`,
+        })),
   });
+
+  function selectSupplied(id: string): void {
+    if (cells.some((cell) => cell.id === id)) {
+      selection?.onSelect(id);
+    }
+  }
 
   const problem = matrixProblem({ rows, columns, cells, domain, palette });
 
@@ -185,9 +218,11 @@ export function Matrix({
             {cells.some((cell) => cell.kind === 'value' && !isHeatmapValueInDomain(cell.value, domain)) && (
               <li>! Outside domain</li>
             )}
-            {cells.some((cell) => cell.kind === 'value' && formatValue(cell.value).length > MAX_CELL_TEXT_LENGTH) && (
-              <li>• Inspect a cell for its exact value</li>
-            )}
+            {isStrip && <li>Inspect a cell for its exact value</li>}
+            {!isStrip &&
+              cells.some(
+                (cell) => cell.kind === 'value' && formatValue(cell.value).length > CELL_TEXT_MAX_CHARACTERS,
+              ) && <li>• Inspect a cell for its exact value</li>}
           </ul>
           <ChartReadout id={navigation.id}>{navigation.label ?? '\u00A0'}</ChartReadout>
           <ChartData
@@ -211,6 +246,21 @@ export function Matrix({
     >
       {rows.length === 0 || columns.length === 0 ? (
         <p {...stylex.props(styles.empty)}>{emptyLabel}</p>
+      ) : isStrip ? (
+        <ChartSurface {...navigation.props} {...stylex.props(styles.scroll, styles.strip)}>
+          <MatrixStrip
+            rows={rows}
+            columns={columns}
+            cellAt={(rowId, columnId) => cellRows.get(rowId)?.get(columnId)}
+            coordinateId={coordinateId}
+            inspectedId={navigation.label === undefined ? undefined : navigation.activeId}
+            onInspect={navigation.inspect}
+            domain={domain}
+            palette={palette}
+            formatValue={formatValue}
+            selection={selection}
+          />
+        </ChartSurface>
       ) : (
         <ChartSurface {...navigation.props} {...stylex.props(styles.scroll)}>
           <table {...stylex.props(styles.table)}>
@@ -333,44 +383,6 @@ function MatrixValue({
       {content}
     </ChartButton>
   );
-}
-
-function matrixCellGlyph(cell: MatrixCell, text: string, isOutsideDomain: boolean): string {
-  switch (cell.kind) {
-    case 'masked':
-      return '×';
-    case 'missing':
-      return '—';
-    case 'value':
-      if (isOutsideDomain) {
-        return '!';
-      }
-
-      if (text.length <= MAX_CELL_TEXT_LENGTH) {
-        return text;
-      }
-
-      return cell.value === 0 ? '0' : '•';
-  }
-}
-
-function matrixValueText(
-  cell: MatrixCell | undefined,
-  domain: readonly [number, number],
-  formatValue: (value: number) => string,
-): string {
-  if (cell === undefined) {
-    return 'Not supplied';
-  }
-
-  switch (cell.kind) {
-    case 'value':
-      return `${formatValue(cell.value)}${isHeatmapValueInDomain(cell.value, domain) ? '' : ' (outside domain)'}`;
-    case 'masked':
-      return `Masked: ${cell.reason}`;
-    case 'missing':
-      return `Missing: ${cell.reason}`;
-  }
 }
 
 function matrixProblem({

@@ -52,7 +52,7 @@ export function ChartSeriesSummary({
       {series.map((item, index) => (
         <div key={item.id} {...stylex.props(styles.metric, index > 0 && styles.divided)}>
           <dt {...stylex.props(styles.label)}>
-            <ChartSeriesMarker tone={item.tone} />
+            <ChartSeriesMarker tone={item.tone} shape={item.shape} />
             {item.label}
           </dt>
           <dd {...stylex.props(styles.value)}>

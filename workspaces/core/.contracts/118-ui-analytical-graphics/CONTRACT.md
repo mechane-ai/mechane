@@ -54,6 +54,16 @@ values remain unavailable. The caller owns reconciliation and the supplied fixed
 category selection and keeps the independent context visible. Inspect both amounts through the shared inspector and accessible value list.
 Use interruptible transform and opacity transitions for series focus under contract 073.
 
+BarChart reference lines, markers and annotations draw supplied values and notes; the application computes targets,
+extremes and ranges and chooses which bars to annotate. Markers sit on the value axis, never on a stack. Emphasis
+recedes other categories without changing inspection or selection. Every overlay joins the readout and exact values.
+
+BridgeChart stacks supplied signed changes from one start total; that running sum is rendering geometry. A missing
+change leaves later levels unknown rather than assuming zero. FlowDiagram draws only supplied links and amounts. It
+assigns columns by longest incoming path, keeps supplied order within a column, and rejects cycles. A null amount draws
+a dashed thread. Inflow and outflow stay unbalanced when supplied that way. The Matrix strip variant presents the same
+cells, states and exact values as compact rows with grid keyboard movement.
+
 Cartesian charts share chart-owned inspection and accessible exact values. Do not add a default data-dialog
 button or hidden interactive controls. The plot owns keyboard selection; its screen-reader alternative is static.
 Product reports own useful visible breakdowns; the library does not decide which diagnostic tables belong on a page.

@@ -223,7 +223,7 @@ export function ChartLegend({ items, label = 'Legend', isScrollable = false }: C
     <ul aria-label={label} {...stylex.props(styles.legend, isScrollable && styles.scrollLegend)}>
       {items.map((item) => (
         <li key={item.id} {...stylex.props(styles.legendItem, isScrollable && styles.scrollItem)}>
-          <ChartSeriesMarker tone={item.tone} />
+          <ChartSeriesMarker tone={item.tone} shape={item.shape} />
           {item.label}
         </li>
       ))}

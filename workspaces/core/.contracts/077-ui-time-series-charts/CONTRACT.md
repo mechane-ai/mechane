@@ -71,6 +71,16 @@ metric rows can share a comparable domain. Reject observations outside that doma
 it silently. All input validation, elapsed-time spacing, linear geometry, missing-value gaps, isolated observations,
 shared colors, and explicit empty or invalid states remain required.
 
+Sparkline may mark its lowest, highest and latest recorded points and draw a reference `baseline` inside its declared
+domain. Marked values and the baseline join its accessible description; they add no interaction.
+
+The "Align every annotation marker" clause governs `time` and `point` markers. An `event` marker names a supplied
+instant inside the observed range and may fall between observations. It claims no value, shows its label on the plot,
+and joins inspection at the nearest observation timestamp. Bands supply lower, center and upper values at the series
+timestamps; a missing pair of bounds is a gap. A crossing locates where a drawn line first reaches a supplied value by
+the same linear interpolation that draws the line, and says when the line never reaches it. The application computes
+every bound, event and threshold.
+
 Review Sparkline's accessible summary and passive behavior alongside its gap, single-point, empty and invalid
 examples. Run the pointer, touch, keyboard and inspection-lifecycle checks on the interactive time-series families.
 
