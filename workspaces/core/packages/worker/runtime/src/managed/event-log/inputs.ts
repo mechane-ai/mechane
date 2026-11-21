@@ -1,6 +1,6 @@
+import { failManagedRequest } from '@mechane/model-gateway';
 import { HttpStatusCode, MediaType, wireStruct } from '@mechane/records';
 import { Schema } from 'effect';
-import { failManagedRequest } from '../failure.ts';
 
 const TOOL_ID_CHARS = 128;
 const RUBRIC_CHARS = 262_144;

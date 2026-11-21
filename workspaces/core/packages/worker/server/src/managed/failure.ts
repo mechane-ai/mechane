@@ -1,7 +1,7 @@
 import { ManagedStoreError } from '@mechane/control-store';
+import { ManagedRuntimeError } from '@mechane/model-gateway';
 import { RequestInvalid } from '@mechane/protocol';
 import { HttpHeader, HttpStatusCode } from '@mechane/records';
-import { ManagedRuntimeError } from '@mechane/runtime';
 import { respondFailure } from '../http/failure.ts';
 import { ManagedHttpError } from './http-error.ts';
 

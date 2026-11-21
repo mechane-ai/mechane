@@ -1,9 +1,9 @@
 import { BACKGROUND_CONTEXT } from '@earendil-works/chord/context';
 import type { Tx } from '@earendil-works/pi-durable';
+import { failManagedRequest } from '@mechane/model-gateway';
 import { HttpStatusCode } from '@mechane/records';
 import type { ActorRecordReader } from '../actor/record-store.ts';
 import { retireDelegatedThread } from './delegation/retire.ts';
-import { failManagedRequest } from './failure.ts';
 import type {
   ManagedSessionThread,
   ManagedSessionThreadReference,

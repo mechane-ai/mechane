@@ -1,6 +1,6 @@
+import { failManagedRequest } from '@mechane/model-gateway';
 import { BYTES_PER_MEBIBYTE, HttpStatusCode } from '@mechane/records';
 import type { ActorRecordReader } from '../../actor/record-store.ts';
-import { failManagedRequest } from '../failure.ts';
 import type { ManagedEvent, ManagedEventPage, ManagedEventPageInput } from '../protocol.ts';
 import { indexedEvents, visibleEvent } from './collections.ts';
 import { sessionEvents } from './payload-storage.ts';

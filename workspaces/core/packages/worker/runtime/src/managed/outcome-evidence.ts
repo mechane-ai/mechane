@@ -1,8 +1,8 @@
 import type { ImageContent, TextContent } from '@earendil-works/pi-ai';
 import type { Tx, UserInput } from '@earendil-works/pi-durable';
+import { pdfBytes } from '@mechane/model-gateway';
 import { Schema } from 'effect';
 import { readManagedEvent } from './event-log/write.ts';
-import { pdfBytes } from './pdf-attachment.ts';
 import type { ManagedEvent } from './protocol.ts';
 import { managedResultContent } from './tool-content.ts';
 

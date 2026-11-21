@@ -1,5 +1,6 @@
 import { managedSessionName } from '@mechane/agent-slot';
 import type { SlotNamespace } from '@mechane/agent-slot';
+import { ManagedRuntimeError, ManagedRuntimeFailureWire } from '@mechane/model-gateway';
 import { HttpHeader, HttpMethod, MediaType } from '@mechane/records';
 import { Schema } from 'effect';
 import type {
@@ -11,7 +12,6 @@ import type {
   ManagedDelegationSend,
 } from './delegation/protocol.ts';
 import { ManagedDelegationPage } from './delegation/protocol.ts';
-import { ManagedRuntimeError, ManagedRuntimeFailureWire } from './failure.ts';
 import { managedActorUrl } from './identity.ts';
 import type { ManagedDelegationPreview } from './preview-coordinates.ts';
 import {

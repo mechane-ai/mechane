@@ -1,6 +1,6 @@
 import type { Tx } from '@earendil-works/pi-durable';
+import { failManagedRequest } from '@mechane/model-gateway';
 import { HttpStatusCode } from '@mechane/records';
-import { failManagedRequest } from '../failure.ts';
 import { Slot } from '../scheduler.ts';
 import type { sessionState } from '../scheduler.ts';
 

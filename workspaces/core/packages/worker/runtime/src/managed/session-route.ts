@@ -1,3 +1,4 @@
+import { decodeManagedInput } from '@mechane/model-gateway';
 import { fingerprint } from '../actor/state.ts';
 import {
   ManagedDelegationBudgetUpdate,
@@ -8,7 +9,6 @@ import {
   ManagedDelegationSend,
 } from './delegation/protocol.ts';
 import { assertDelegationOpen, validateScope } from './delegation/receiver-origin.ts';
-import { decodeManagedInput } from './failure.ts';
 import { managedWriteOperations } from './operations.ts';
 import { ManagedDelegationPreview } from './preview-coordinates.ts';
 import { ManagedSessionMutation, ManagedSessionOpen, ManagedSessionReference } from './protocol.ts';

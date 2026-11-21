@@ -1,4 +1,4 @@
-import type { ModelOffer, RuntimeConfiguration } from '../config.ts';
+import type { ModelGatewayConfiguration, ModelOffer } from './offers.ts';
 
 const CHAT_COMPLETIONS_PATH = 'chat/completions';
 const ANTHROPIC_MESSAGES_PATH = 'v1/messages?beta=true';
@@ -7,7 +7,7 @@ function anthropicGatewayBase(upstreamUrl: string): string {
   return upstreamUrl.replace(/\/$/u, '').replace(/\/v1(?:\/messages)?$/u, '');
 }
 
-export function gatewayBase(configuration: RuntimeConfiguration, protocol?: ModelOffer['protocol']): string {
+export function gatewayBase(configuration: ModelGatewayConfiguration, protocol?: ModelOffer['protocol']): string {
   if (protocol === 'anthropic-messages') {
     return anthropicGatewayBase(configuration.model.upstreamUrl);
   }
@@ -21,7 +21,7 @@ export function gatewayBase(configuration: RuntimeConfiguration, protocol?: Mode
   return base.href.replace(/\/$/u, '');
 }
 
-export function gatewayEndpoint(configuration: RuntimeConfiguration, protocol?: ModelOffer['protocol']): URL {
+export function gatewayEndpoint(configuration: ModelGatewayConfiguration, protocol?: ModelOffer['protocol']): URL {
   const prefix = gatewayBase(configuration, protocol);
   const base = new URL(`${prefix}/`);
 

@@ -1,12 +1,11 @@
 import type { SystemMessage } from '@earendil-works/pi-ai';
 import { defineDoc, defineEntry, GenerationTask, hook } from '@earendil-works/pi-durable';
 import type { ConversationId, EntryId, Tx } from '@earendil-works/pi-durable';
+import { failManagedRequest, supportsManagedSystemMessages } from '@mechane/model-gateway';
 import { HttpStatusCode } from '@mechane/records';
-import { supportsManagedSystemMessages } from '../models/managed-system-message.ts';
 import type { ManagedInputEvent } from './event-log/inputs.ts';
 import { sessionEvents } from './event-log/payload-storage.ts';
 import { processManagedEvent } from './event-log/write.ts';
-import { failManagedRequest } from './failure.ts';
 import { nativeSystemContent } from './large-native-content.ts';
 import type { ManagedEvent } from './protocol.ts';
 import { inputKey, sessionState, ThreadInputs } from './scheduler.ts';

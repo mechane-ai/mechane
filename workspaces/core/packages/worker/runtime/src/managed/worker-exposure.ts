@@ -1,10 +1,10 @@
 import { BACKGROUND_CONTEXT } from '@earendil-works/chord/context';
 import { defineDocFamily } from '@earendil-works/pi-durable';
 import type { Session, Tx } from '@earendil-works/pi-durable';
+import { failManagedRequest } from '@mechane/model-gateway';
 import { HttpStatusCode } from '@mechane/records';
 import { pendingChildCalls } from './delegation/inputs.ts';
 import { sessionEvents } from './event-log/payload-storage.ts';
-import { failManagedRequest } from './failure.ts';
 import type { ManagedEvent, ManagedWireObject, ManagedWorkerLease } from './protocol.ts';
 import { Sessions } from './scheduler.ts';
 import { liveThreadIds } from './thread-records.ts';

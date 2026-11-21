@@ -1,11 +1,11 @@
 import { defineTool } from '@earendil-works/pi-durable';
 import type { Tx } from '@earendil-works/pi-durable';
+import { failManagedRequest } from '@mechane/model-gateway';
 import { HttpStatusCode } from '@mechane/records';
 import { Schema } from 'effect';
 import { fingerprint } from '../../actor/state.ts';
 import { pauseManagedBudget } from '../budget-resume.ts';
 import { appendManagedEvent } from '../event-log/write.ts';
-import { failManagedRequest } from '../failure.ts';
 import { transition } from '../lifecycle.ts';
 import type { ManagedWireObject } from '../protocol.ts';
 import { ensureManagedSessionAvailable, queueInput, sessionState } from '../scheduler.ts';

@@ -211,7 +211,9 @@
 /packages/worker/authority-store/tsconfig.json linguist-generated merge=ours
 /packages/worker/control-store/tsconfig.json linguist-generated merge=ours
 /packages/worker/managed-store/tsconfig.json linguist-generated merge=ours
+/packages/worker/model-gateway/tsconfig.json linguist-generated merge=ours
 /packages/worker/runtime/tsconfig.json linguist-generated merge=ours
+/packages/worker/sandbox-egress/tsconfig.json linguist-generated merge=ours
 /packages/worker/sandbox-store/tsconfig.json linguist-generated merge=ours
 /packages/worker/sandbox/tsconfig.json linguist-generated merge=ours
 /packages/worker/server/tsconfig.json linguist-generated merge=ours

@@ -57,7 +57,13 @@ export const SessionObject = createSessionObject(installedSessionWake);
  *
  * @public
  */
-export { SandboxObject, MachineObject, EgressGateway } from '@mechane/sandbox';
+export { SandboxObject, MachineObject } from '@mechane/sandbox';
+/**
+ * Cloudflare loads the container egress gateway entrypoint by its deployment binding name.
+ *
+ * @public
+ */
+export { EgressGateway } from '@mechane/sandbox-egress';
 
 const SCHEDULED_DELIVERY_MAX_ROWS = 50;
 

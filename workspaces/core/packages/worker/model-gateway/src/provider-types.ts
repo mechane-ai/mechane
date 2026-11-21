@@ -1,8 +1,30 @@
 import type { AssistantMessage, TranscriptContext } from '@earendil-works/pi-ai';
-import type { ControlStore } from '@mechane/control-store';
-import type { RuntimeConfiguration } from '../config.ts';
-import type { RawUsage } from '../models/gateway.ts';
-import type { ManagedModelOptions } from '../models/model-effort.ts';
+import type { ProviderAttemptStore } from '@mechane/authority-store';
+import type { RawUsage } from './gateway.ts';
+import type { ManagedModelOptions } from './model-effort.ts';
+import type { ModelGatewayConfiguration } from './offers.ts';
+
+export type ModelGatewayControlStore = Pick<
+  ProviderAttemptStore,
+  | 'getProviderAttempt'
+  | 'markProviderAttemptDispatched'
+  | 'releaseUnusedProviderAttempt'
+  | 'reserveManagedProviderAttempt'
+  | 'releaseUnsentManagedDispatch'
+  | 'markManagedUsageUnconfirmed'
+  | 'settleProviderAttempt'
+> & {
+  readonly managed: {
+    readonly sessions: {
+      readonly assertionContext: (scope: {
+        readonly workspaceId: string;
+        readonly id: string;
+        readonly runtimeMechId: string;
+        readonly forwardMetadata: ReadonlyArray<string>;
+      }) => Promise<Readonly<Record<string, unknown>>>;
+    };
+  };
+};
 
 export type ManagedExecution = ManagedModelOptions & {
   readonly runtimeMechId: string;
@@ -16,7 +38,7 @@ export type ManagedExecution = ManagedModelOptions & {
   readonly webTools?: ReadonlyArray<Readonly<Record<string, unknown>>> | undefined;
 };
 
-type ProviderControl = <T>(operation: (store: ControlStore) => Promise<T>) => Promise<T>;
+type ProviderControl = <T>(operation: (store: ModelGatewayControlStore) => Promise<T>) => Promise<T>;
 type CurrentExecution = () => Promise<ManagedExecution>;
 
 export type ModelSpanResult = {
@@ -35,7 +57,7 @@ export type BeginManagedModelSpan = (
 ) => Promise<ManagedModelSpan>;
 
 export type ManagedRequest = {
-  readonly configuration: RuntimeConfiguration;
+  readonly configuration: ModelGatewayConfiguration;
   readonly workspaceId: string;
   readonly current: CurrentExecution;
   readonly withControl: ProviderControl;

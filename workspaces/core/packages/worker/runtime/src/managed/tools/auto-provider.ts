@@ -1,8 +1,8 @@
 import type { AssistantMessage } from '@earendil-works/pi-ai';
 import { contentText } from '@earendil-works/pi-ai/utils/text';
+import type { ManagedRequest } from '@mechane/model-gateway';
+import { createManagedModels } from '@mechane/model-gateway';
 import { Schema } from 'effect';
-import type { ManagedRequest } from '../provider-types.ts';
-import { createManagedModels } from '../provider.ts';
 import type { AutoAssessmentInput } from './auto-context.ts';
 
 const RESPONSE_MAX_TOKENS = 128;

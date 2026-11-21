@@ -1,8 +1,7 @@
+import { failManagedRequest, resolveManagedModel } from '@mechane/model-gateway';
 import { HttpStatusCode } from '@mechane/records';
 import { Schema } from 'effect';
 import type { RuntimeConfiguration } from '../config.ts';
-import { resolveManagedModel } from '../models/managed-offers.ts';
-import { failManagedRequest } from './failure.ts';
 import { multiagentMemberEntries } from './multiagent.ts';
 
 const AgentModel = Schema.Struct({

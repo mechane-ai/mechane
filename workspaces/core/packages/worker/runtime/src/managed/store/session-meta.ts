@@ -1,8 +1,8 @@
 import { openDurableObjectSqliteStorage } from '@earendil-works/pi-durable/storage/sqlite/cloudflare';
 import type { DurableObjectSqliteStorage } from '@earendil-works/pi-durable/storage/sqlite/cloudflare';
+import { failManagedRequest } from '@mechane/model-gateway';
 import { HttpStatusCode } from '@mechane/records';
 import { Schema } from 'effect';
-import { failManagedRequest } from '../failure.ts';
 import { ManagedAgentScope } from '../protocol.ts';
 
 const META_KEY = 'managed.session.meta';

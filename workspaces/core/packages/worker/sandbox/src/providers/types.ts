@@ -1,8 +1,8 @@
 import type { SandboxContainerNetwork } from '@mechane/deployment';
+import type { EgressGateway } from '@mechane/sandbox-egress';
 import type { machineCacheRecords } from '@mechane/sandbox-store';
 import type { SandboxTools } from '@mechane/sandbox-wire';
 import type { Option, Redacted } from 'effect';
-import type { EgressGateway } from '../egress/egress-gateway.ts';
 import type { MachineIdInput } from '../types.ts';
 
 type ContainerState = {

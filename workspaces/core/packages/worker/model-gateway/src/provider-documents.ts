@@ -1,7 +1,7 @@
 import type { ImageContent, Message, StreamOptions, TextContent, TranscriptContext } from '@earendil-works/pi-ai';
 import { Schema } from 'effect';
-import type { ModelOffer } from '../config.ts';
 import { insertFiles } from './document-payload.ts';
+import type { ModelOffer } from './offers.ts';
 import { pdfBytes } from './pdf-attachment.ts';
 
 type Content = TextContent | ImageContent;

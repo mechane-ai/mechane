@@ -1,13 +1,13 @@
 import { BACKGROUND_CONTEXT } from '@earendil-works/chord/context';
 import { defineDoc, defineDocFamily, LiveDoc } from '@earendil-works/pi-durable';
 import type { ConversationId, Harness, Tx } from '@earendil-works/pi-durable';
+import { RawUsage } from '@mechane/model-gateway';
+import type { BeginManagedModelSpan, ModelSpanResult } from '@mechane/model-gateway';
 import { Schema } from 'effect';
 import type { WithControl } from '../actor/types.ts';
-import { RawUsage } from '../models/gateway.ts';
 import { appendManagedEvent, readManagedEvent } from './event-log/write.ts';
 import { appendManagedAssistant } from './preview-output.ts';
 import type { GenerationRegistry, PublicGeneration } from './preview-output.ts';
-import type { BeginManagedModelSpan, ModelSpanResult } from './provider-types.ts';
 import { sessionState, Slot } from './scheduler.ts';
 
 type SpanReceipt = {

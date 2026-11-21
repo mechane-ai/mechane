@@ -1340,6 +1340,21 @@ importers:
         specifier: 2.9.1
         version: 2.9.1
 
+  packages/worker/model-gateway:
+    dependencies:
+      '@earendil-works/pi-ai':
+        specifier: 1.5.1
+        version: 1.5.1(@aws-sdk/credential-provider-node@3.972.94)(@modelcontextprotocol/sdk@1.32.1(supports-color@8.1.1)(zod@4.6.7))(@smithy/signature-v4@5.7.5)(supports-color@8.1.1)(undici@7.30.1)(ws@8.22.1)(zod@4.6.7)
+      '@mechane/authority-store':
+        specifier: workspace:*
+        version: link:../authority-store
+      '@mechane/records':
+        specifier: workspace:*
+        version: link:../../shared/records
+      effect:
+        specifier: 4.0.7
+        version: 4.0.7
+
   packages/worker/runtime:
     dependencies:
       '@ai-sdk/mcp':
@@ -1363,6 +1378,9 @@ importers:
       '@mechane/deployment':
         specifier: workspace:*
         version: link:../../shared/deployment
+      '@mechane/model-gateway':
+        specifier: workspace:*
+        version: link:../model-gateway
       '@mechane/protocol':
         specifier: workspace:*
         version: link:../../shared/protocol
@@ -1393,9 +1411,6 @@ importers:
       '@mechane/deployment':
         specifier: workspace:*
         version: link:../../shared/deployment
-      '@mechane/managed-protocol':
-        specifier: workspace:*
-        version: link:../../shared/managed-protocol
       '@mechane/protocol':
         specifier: workspace:*
         version: link:../../shared/protocol
@@ -1405,6 +1420,9 @@ importers:
       '@mechane/releases':
         specifier: workspace:*
         version: link:../../shared/releases
+      '@mechane/sandbox-egress':
+        specifier: workspace:*
+        version: link:../sandbox-egress
       '@mechane/sandbox-store':
         specifier: workspace:*
         version: link:../sandbox-store
@@ -1417,6 +1435,25 @@ importers:
       effect:
         specifier: 4.0.7
         version: 4.0.7
+
+  packages/worker/sandbox-egress:
+    dependencies:
+      '@mechane/deployment':
+        specifier: workspace:*
+        version: link:../../shared/deployment
+      '@mechane/managed-protocol':
+        specifier: workspace:*
+        version: link:../../shared/managed-protocol
+      '@mechane/records':
+        specifier: workspace:*
+        version: link:../../shared/records
+      effect:
+        specifier: 4.0.7
+        version: 4.0.7
+    devDependencies:
+      '@mechane/protocol':
+        specifier: workspace:*
+        version: link:../../shared/protocol
 
   packages/worker/sandbox-store:
     dependencies:
@@ -1450,6 +1487,9 @@ importers:
       '@mechane/managed-protocol':
         specifier: workspace:*
         version: link:../../shared/managed-protocol
+      '@mechane/model-gateway':
+        specifier: workspace:*
+        version: link:../model-gateway
       '@mechane/protocol':
         specifier: workspace:*
         version: link:../../shared/protocol
@@ -1465,6 +1505,9 @@ importers:
       '@mechane/sandbox':
         specifier: workspace:*
         version: link:../sandbox
+      '@mechane/sandbox-egress':
+        specifier: workspace:*
+        version: link:../sandbox-egress
       '@mechane/sandbox-modal':
         specifier: workspace:*
         version: link:../../shared/sandbox-modal
@@ -8364,6 +8407,31 @@ snapshots:
       - ws
       - zod
 
+  '@earendil-works/pi-ai@1.5.1(@aws-sdk/credential-provider-node@3.972.94)(@modelcontextprotocol/sdk@1.32.1(supports-color@8.1.1)(zod@4.6.7))(@smithy/signature-v4@5.7.5)(supports-color@8.1.1)(undici@7.30.1)(ws@8.22.1)(zod@4.6.7)':
+    dependencies:
+      '@anthropic-ai/sdk': 0.129.0(zod@4.6.7)
+      '@aws-sdk/client-bedrock-runtime': 3.1127.0
+      '@earendil-works/pi-schema': 1.5.1
+      '@earendil-works/pi-telemetry': 1.5.1
+      '@google/genai': 2.21.0(@modelcontextprotocol/sdk@1.32.1(supports-color@8.1.1)(zod@4.6.7))(supports-color@8.1.1)
+      '@smithy/node-http-handler': 4.12.1
+      http-proxy-agent: 9.1.0(supports-color@8.1.1)
+      https-proxy-agent: 9.1.0(supports-color@8.1.1)
+      openai: 7.19.0(@aws-sdk/credential-provider-node@3.972.94)(@smithy/signature-v4@5.7.5)(undici@7.30.1)(ws@8.22.1)(zod@4.6.7)
+      partial-json: 0.1.7
+    transitivePeerDependencies:
+      - '@aws-sdk/credential-provider-node'
+      - '@modelcontextprotocol/sdk'
+      - '@smithy/hash-node'
+      - '@smithy/signature-v4'
+      - bufferutil
+      - kerberos
+      - supports-color
+      - undici
+      - utf-8-validate
+      - ws
+      - zod
+
   '@earendil-works/pi-codemode@1.5.1':
     dependencies:
       quickjs-wasi: 3.6.2
@@ -13313,6 +13381,14 @@ snapshots:
       '@smithy/signature-v4': 5.7.5
       undici: 7.30.1
       ws: 8.21.0
+      zod: 4.6.7
+
+  openai@7.19.0(@aws-sdk/credential-provider-node@3.972.94)(@smithy/signature-v4@5.7.5)(undici@7.30.1)(ws@8.22.1)(zod@4.6.7):
+    optionalDependencies:
+      '@aws-sdk/credential-provider-node': 3.972.94
+      '@smithy/signature-v4': 5.7.5
+      undici: 7.30.1
+      ws: 8.22.1
       zod: 4.6.7
 
   ora@8.2.0:

@@ -1,3 +1,4 @@
+import { decodeManagedInput, failManagedRequest } from '@mechane/model-gateway';
 import { HttpStatusCode } from '@mechane/records';
 import type { ManagedAgentRuntime } from './client.ts';
 import {
@@ -16,7 +17,6 @@ import {
 } from './delegation/receiver.ts';
 import { receiveDelegateWorkerLeaseLoss } from './delegation/worker-loss.ts';
 import type { ManagedAgentEngine } from './engine.ts';
-import { decodeManagedInput, failManagedRequest } from './failure.ts';
 import type { ManagedAgentScope } from './protocol.ts';
 import {
   ManagedSessionMutation,

@@ -1,5 +1,7 @@
 import type { CredentialKeyring } from '@mechane/control-store';
 import { OriginProtocol, SecureOrigin, ServiceOrigin } from '@mechane/deployment';
+import { assertDistinctModelIdentifiers, gatewayCredentials, OffersSchema } from '@mechane/model-gateway';
+import type { GatewayCredentials, ModelOffer } from '@mechane/model-gateway';
 import { SHA256_PATTERN } from '@mechane/records';
 import type { PluggableSandboxProvider } from '@mechane/sandbox-provider';
 import { Predicate, Record, Redacted, Schema } from 'effect';
@@ -9,49 +11,15 @@ import { readManagedMcpSettings } from './managed/mcp/settings.ts';
 import type { ManagedMcpSettings } from './managed/mcp/settings.ts';
 import { readManagedWebSettings } from './managed/tools/web-settings.ts';
 import type { ManagedWebSettings } from './managed/tools/web-settings.ts';
-import { gatewayCredentials } from './models/gateway-credential-settings.ts';
-import type { GatewayCredentials } from './models/gateway-credential-settings.ts';
-import { ManagedEffort } from './models/model-effort.ts';
 
-const PositiveInteger = Schema.Int.check(Schema.isGreaterThan(0));
-const NonnegativeInteger = Schema.Int.check(Schema.isGreaterThanOrEqualTo(0));
 const SecretBinding = Schema.Struct({ get: Schema.declare(Predicate.isFunction) });
 const HyperdriveBinding = Schema.Struct({ connectionString: Schema.NonEmptyString });
-
-const TokenRates = Schema.Struct({
-  inputMicrosPerMillionTokens: NonnegativeInteger,
-  outputMicrosPerMillionTokens: NonnegativeInteger,
-  cacheReadMicrosPerMillionTokens: NonnegativeInteger,
-  cacheWriteMicrosPerMillionTokens: NonnegativeInteger,
-  cacheWriteOneHourMicrosPerMillionTokens: Schema.optionalKey(NonnegativeInteger),
-});
-
-const PricedOffer = Schema.Struct({ ...TokenRates.fields, listPrice: Schema.optionalKey(TokenRates) });
-
-const ModelOfferSchema = Schema.Struct({
-  ...PricedOffer.fields,
-  id: Schema.NonEmptyString,
-  aliases: Schema.optionalKey(Schema.Array(Schema.NonEmptyString)),
-  contextWindowTokens: PositiveInteger,
-  maxOutputTokens: PositiveInteger,
-  supportsImages: Schema.optionalKey(Schema.Boolean),
-  protocol: Schema.optionalKey(Schema.Literals(['openai-completions', 'anthropic-messages'])),
-  efforts: Schema.optionalKey(Schema.NonEmptyArray(ManagedEffort)),
-  defaultEffort: Schema.optionalKey(ManagedEffort),
-  fastPricing: Schema.optionalKey(PricedOffer),
-}).check(
-  Schema.makeFilter(
-    (offer) => offer.defaultEffort === undefined || offer.efforts?.includes(offer.defaultEffort) === true,
-  ),
-  Schema.makeFilter((offer) => offer.fastPricing === undefined || offer.protocol === 'anthropic-messages'),
-);
 
 const KeyringSchema = Schema.Struct({
   current: Schema.NonEmptyString,
   keys: Schema.Record(Schema.NonEmptyString, Schema.String),
 });
 
-const OffersSchema = Schema.NonEmptyArray(ModelOfferSchema);
 const DEFAULT_MAX_CONNECTIONS = 8;
 const DEFAULT_DAILY_CAP_MICROS = 50_000_000;
 const DEFAULT_MAX_MACHINES = 10;
@@ -62,8 +30,6 @@ const DISABLED_SANDBOX_ORIGIN = 'https://sandbox.invalid';
 const DISABLED_SANDBOX_BEARER = 'disabled-sandbox-service-key';
 const WORKER_IDLE_MIN_MS = 1000;
 const WORKER_IDLE_MAX_MS = 3_600_000;
-
-export type ModelOffer = typeof ModelOfferSchema.Type;
 
 export type SandboxRuntimeConfiguration = {
   readonly provider: PluggableSandboxProvider;
@@ -335,20 +301,6 @@ function optionalInteger(environment: RuntimeEnvironment, name: string, defaultV
   }
 
   return parsed;
-}
-
-function assertDistinctModelIdentifiers(offers: ReadonlyArray<ModelOffer>): void {
-  const modelIds = new Set(offers.map((offer) => offer.id));
-
-  if (modelIds.size !== offers.length) {
-    throw new Error('Model offers must have distinct IDs');
-  }
-
-  const allIdentifiers = offers.flatMap((offer) => [offer.id, ...(offer.aliases ?? [])]);
-
-  if (new Set(allIdentifiers).size !== allIdentifiers.length) {
-    throw new Error('Model offer aliases must be distinct from all model IDs and aliases');
-  }
 }
 
 export function loadRuntimeConfiguration({

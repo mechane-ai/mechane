@@ -1,10 +1,10 @@
 import type { Tx } from '@earendil-works/pi-durable';
+import { failManagedRequest } from '@mechane/model-gateway';
 import { HttpStatusCode } from '@mechane/records';
 import { admitChildInput } from './delegation/inputs.ts';
 import { validateManagedInputs } from './event-log/inputs.ts';
 import type { ManagedInputEvent } from './event-log/inputs.ts';
 import { appendManagedEvent, processManagedEvent } from './event-log/write.ts';
-import { failManagedRequest } from './failure.ts';
 import { acceptManagedToolReply, interruptManagedTurn, pendingManagedCall } from './input-turns.ts';
 import type { AdmissionSession } from './input-turns.ts';
 import { transition } from './lifecycle.ts';

@@ -1,0 +1,17 @@
+{
+  "name": "@mechane/sandbox-egress",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@mechane/deployment": "workspace:*",
+    "@mechane/managed-protocol": "workspace:*",
+    "@mechane/records": "workspace:*",
+    "effect": "4.0.7"
+  },
+  "devDependencies": {
+    "@mechane/protocol": "workspace:*"
+  }
+}

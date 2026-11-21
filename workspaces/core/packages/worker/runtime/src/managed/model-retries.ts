@@ -1,7 +1,7 @@
 import { LiveDoc } from '@earendil-works/pi-durable';
 import type { TaskId, Tx } from '@earendil-works/pi-durable';
+import { managedModelError } from '@mechane/model-gateway';
 import { appendManagedEvent } from './event-log/write.ts';
-import { managedModelError } from './model-error.ts';
 import { LastModelFailure } from './model-spans.ts';
 
 export async function recordManagedRetry(transaction: Tx, sessionId: string, taskId: TaskId): Promise<void> {

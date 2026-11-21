@@ -1,9 +1,9 @@
 import type { ImageContent, TextContent } from '@earendil-works/pi-ai';
 import { MediaType } from '@mechane/records';
 import { Schema } from 'effect';
-import type { ModelOffer } from '../config.ts';
+import { ManagedWireObject } from './offers.ts';
+import type { ModelOffer } from './offers.ts';
 import { pdfBytes } from './pdf-attachment.ts';
-import { ManagedWireObject } from './protocol.ts';
 
 type Content = TextContent | ImageContent;
 type Protocol = NonNullable<ModelOffer['protocol']>;

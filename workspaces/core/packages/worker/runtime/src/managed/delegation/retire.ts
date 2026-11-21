@@ -1,7 +1,7 @@
 import { BACKGROUND_CONTEXT } from '@earendil-works/chord/context';
 import type { Harness, Tx } from '@earendil-works/pi-durable';
+import { failManagedRequest } from '@mechane/model-gateway';
 import { HttpStatusCode } from '@mechane/records';
-import { failManagedRequest } from '../failure.ts';
 import type { ResolveDelegationTarget } from './dispatch.ts';
 import { eraseFollowups } from './followup-fence.ts';
 import { eraseChildInputReceipts } from './inputs.ts';

@@ -1,7 +1,7 @@
 import type { Tx } from '@earendil-works/pi-durable';
+import { failManagedRequest } from '@mechane/model-gateway';
 import { HttpStatusCode } from '@mechane/records';
 import { fingerprint } from '../../actor/state.ts';
-import { failManagedRequest } from '../failure.ts';
 import type { ManagedEvent } from '../protocol.ts';
 import { DirtySessions } from '../scheduler.ts';
 import { crossPosts, EventClock, indexedEvents, stableEvents } from './collections.ts';

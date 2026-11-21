@@ -1,19 +1,29 @@
 import type { AssistantMessage } from '@earendil-works/pi-ai';
-import { ProviderDispatchRefused } from '@mechane/control-store';
+import { ProviderDispatchRefused } from '@mechane/authority-store';
 import { HttpHeader, HttpMethod } from '@mechane/records';
 import { Schema } from 'effect';
+import { createHash } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
-import { fingerprint } from '../actor/state.ts';
-import type { ModelOffer } from '../config.ts';
-import { observeAnthropicGateway } from '../models/anthropic-gateway.ts';
-import { gatewayEndpoint } from '../models/gateway-address.ts';
-import { resolveGatewayCredential } from '../models/gateway-credentials.ts';
-import { charge, reservation, sessionListCost, usageTransport } from '../models/gateway.ts';
-import type { RawUsage } from '../models/gateway.ts';
-import { matchesGatewayModel } from '../models/managed-offers.ts';
-import { rejectRedirect } from '../tools/http.ts';
+import { observeAnthropicGateway } from './anthropic-gateway.ts';
+import { gatewayEndpoint } from './gateway-address.ts';
+import { resolveGatewayCredential } from './gateway-credentials.ts';
+import { charge, reservation, sessionListCost, usageTransport } from './gateway.ts';
+import type { RawUsage } from './gateway.ts';
+import { rejectRedirect } from './http.ts';
+import { matchesGatewayModel } from './managed-offers.ts';
 import { encodeModelRefusal, modelHttpFailures, modelStreamFailure } from './model-error.ts';
+import type { ModelOffer } from './offers.ts';
 import type { ManagedExecution, ManagedRequest } from './provider-types.ts';
+
+function modelRequestFingerprint(model: string, body: string): string {
+  return createHash('sha256')
+    .update('{"body":')
+    .update(JSON.stringify(body))
+    .update(',"model":')
+    .update(JSON.stringify(model))
+    .update('}')
+    .digest('hex');
+}
 
 const WireEffort = Schema.optionalKey(Schema.NullOr(Schema.String));
 const EffortConfiguration = Schema.optionalKey(Schema.NullOr(Schema.Struct({ effort: WireEffort })));
@@ -188,7 +198,7 @@ export function managedAttempt({ owner, execution, offer, signal }: AttemptInput
       throw new Error(state.error);
     }
 
-    const requestFingerprint = await fingerprint({ model: offer.id, body: init.body });
+    const requestFingerprint = modelRequestFingerprint(offer.id, init.body);
     const identity = { ...scope, requestFingerprint };
     state.fingerprint = requestFingerprint;
 

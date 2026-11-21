@@ -1,8 +1,8 @@
 import type { Tx } from '@earendil-works/pi-durable';
+import { failManagedRequest } from '@mechane/model-gateway';
 import { HttpStatusCode } from '@mechane/records';
 import { Schema } from 'effect';
 import { actorRecordCollection, actorRecordSet } from '../actor/record-store.ts';
-import { failManagedRequest } from './failure.ts';
 import { ManagedSessionStatus, ManagedWireObject } from './protocol.ts';
 import type { ManagedSessionThread } from './protocol.ts';
 

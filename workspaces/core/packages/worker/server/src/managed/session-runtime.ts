@@ -1,5 +1,6 @@
+import { ManagedRuntimeError } from '@mechane/model-gateway';
 import { HttpStatusCode } from '@mechane/records';
-import { createManagedAgentRuntime, ManagedRuntimeError } from '@mechane/runtime';
+import { createManagedAgentRuntime } from '@mechane/runtime';
 import { Schema } from 'effect';
 import type { ManagedRequest } from './types.ts';
 

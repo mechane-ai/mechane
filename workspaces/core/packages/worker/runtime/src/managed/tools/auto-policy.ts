@@ -1,7 +1,7 @@
 import type { Context } from '@earendil-works/chord/context';
 import type { Harness } from '@earendil-works/pi-durable';
+import type { ManagedRequest } from '@mechane/model-gateway';
 import type { ManagedToolCall } from '../pi-tools.ts';
-import type { ManagedRequest } from '../provider-types.ts';
 import { CallReceipts, sessionState, Slot } from '../scheduler.ts';
 import { autoAssessmentContext } from './auto-context.ts';
 import { assessManagedTool } from './auto-provider.ts';

@@ -1,11 +1,11 @@
 import type { Tx } from '@earendil-works/pi-durable';
+import { failManagedRequest } from '@mechane/model-gateway';
 import { HttpStatusCode } from '@mechane/records';
 import { Schema } from 'effect';
 import { actorRecordCollection } from '../../actor/record-store.ts';
 import type { ManagedInputEvent } from '../event-log/inputs.ts';
 import { sessionEvents } from '../event-log/payload-storage.ts';
 import { appendManagedEvent, processManagedEvent, readManagedEvent } from '../event-log/write.ts';
-import { failManagedRequest } from '../failure.ts';
 import type { ManagedEvent, ManagedSessionThreadReference } from '../protocol.ts';
 import { liveThreadIds, requiredThread } from '../thread-records.ts';
 import type { ThreadRecord } from '../thread-records.ts';

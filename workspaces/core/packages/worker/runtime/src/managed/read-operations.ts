@@ -1,8 +1,8 @@
+import { decodeManagedInput, failManagedRequest } from '@mechane/model-gateway';
 import { HttpStatusCode } from '@mechane/records';
 import type { ResolveDelegationTarget } from './delegation/dispatch.ts';
 import { ManagedDelegationRead } from './delegation/protocol.ts';
 import { receiveDelegationRead } from './delegation/receiver.ts';
-import { decodeManagedInput, failManagedRequest } from './failure.ts';
 import { ManagedDelegationPreview } from './preview-coordinates.ts';
 import { delegatedPreviews, watchSessionPreviews } from './preview-relay.ts';
 import type { ManagedAgentScope, ManagedEvent } from './protocol.ts';

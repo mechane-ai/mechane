@@ -1,7 +1,7 @@
 import type { Tx } from '@earendil-works/pi-durable';
+import { failManagedRequest } from '@mechane/model-gateway';
 import { HttpStatusCode } from '@mechane/records';
 import { appendManagedEvent } from './event-log/write.ts';
-import { failManagedRequest } from './failure.ts';
 import type { ManagedSessionOpen, ManagedSessionThread, ManagedWireObject } from './protocol.ts';
 import { sessionState } from './scheduler.ts';
 import { liveThreadIds, publicThread, requiredThread, threadRecords } from './thread-records.ts';

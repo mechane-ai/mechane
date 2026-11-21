@@ -1,8 +1,7 @@
 import type { ToolExecutionResult, UserInput } from '@earendil-works/pi-durable';
+import { ManagedRuntimeError, pdfAttachment } from '@mechane/model-gateway';
 import { HttpStatusCode, MediaType } from '@mechane/records';
 import { Schema } from 'effect';
-import { ManagedRuntimeError } from './failure.ts';
-import { pdfAttachment } from './pdf-attachment.ts';
 import { ManagedWireObject } from './protocol.ts';
 
 type Content = Exclude<UserInput, string>[number];

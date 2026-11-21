@@ -1,10 +1,10 @@
 import type { Context } from '@earendil-works/chord/context';
 import { defineTool } from '@earendil-works/pi-durable';
 import type { ToolRegistration, Tx } from '@earendil-works/pi-durable';
+import { failManagedRequest } from '@mechane/model-gateway';
 import { HttpStatusCode } from '@mechane/records';
 import { Schema } from 'effect';
 import { fingerprint } from '../../actor/state.ts';
-import { failManagedRequest } from '../failure.ts';
 import type { ManagedAgentScope, ManagedSessionOpen } from '../protocol.ts';
 import { sessionState } from '../scheduler.ts';
 import { registerManagedChild } from '../thread-registration.ts';

@@ -3,12 +3,13 @@ import { catalog } from '@mechane/protocol';
 import { HttpHeader, HttpMethod, HttpStatusCode, MediaType } from '@mechane/records';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { passEgress } from '../src/egress/pass-egress.ts';
-import type { EgressVariables } from '../src/egress/schemas.ts';
+import { passEgress } from '../src/pass-egress.ts';
+import type { EgressVariables } from '../src/schemas.ts';
 
 const ORIGIN = 'https://agents.example.com';
 const ALIAS = 'https://alias.example.com';
 const RUNTIME_ORIGIN = 'https://runtime.example.com';
+const EXPECTED_FORWARDED = 2;
 const WORK_CREDENTIAL = 'Bearer sk-ant-req-fixture';
 const MESSAGE_ID = 'b104e4ce-0918-46f9-96d8-c0fc70b0bcfe';
 
@@ -140,6 +141,17 @@ void test('Gateway preserves a scoped SDK result and confines its credential to 
   assert.equal(result.redirect, 'manual');
   assert.equal(await result.text(), content);
 
+  const fileUpload = new Request(new URL('/v1/files', ORIGIN), {
+    method: HttpMethod.Post,
+    headers: { [HttpHeader.Authorization]: WORK_CREDENTIAL },
+    body: 'artifact',
+  });
+
+  const uploaded = await passEgress({ request: fileUpload, settings });
+
+  assert.equal(uploaded.status, HttpStatusCode.Ok);
+  assert.equal(forwarded.length, EXPECTED_FORWARDED);
+
   const disallowed = [
     new Request(new URL(path, 'https://code.example.org'), { headers }),
     new Request(new URL(path, ALIAS), { headers }),
@@ -157,5 +169,5 @@ void test('Gateway preserves a scoped SDK result and confines its credential to 
     assert.equal(response.status, HttpStatusCode.Forbidden);
   }
 
-  assert.equal(forwarded.length, 1);
+  assert.equal(forwarded.length, EXPECTED_FORWARDED);
 });

@@ -1,6 +1,6 @@
+import { failManagedRequest } from '@mechane/model-gateway';
 import { HttpStatusCode } from '@mechane/records';
 import { Schema } from 'effect';
-import { failManagedRequest } from '../failure.ts';
 import { multiagentMemberEntries } from '../multiagent.ts';
 import { ManagedWireObject } from '../protocol.ts';
 import type { ManagedSessionOpen } from '../protocol.ts';

@@ -1,5 +1,6 @@
 import { BACKGROUND_CONTEXT } from '@earendil-works/chord/context';
 import type { Tx } from '@earendil-works/pi-durable';
+import { failManagedRequest } from '@mechane/model-gateway';
 import { HttpStatusCode } from '@mechane/records';
 import { Schema } from 'effect';
 import { actorRecordCollection } from '../../actor/record-store.ts';
@@ -8,7 +9,6 @@ import { acceptInputs, preflightManagedEvents } from '../admission.ts';
 import { applyManagedBudgetRevision } from '../budget-resume.ts';
 import type { ManagedAgentEngine } from '../engine.ts';
 import { sessionEvents } from '../event-log/payload-storage.ts';
-import { failManagedRequest } from '../failure.ts';
 import { transition } from '../lifecycle.ts';
 import type { ManagedAgentScope, ManagedEvent } from '../protocol.ts';
 import { Sessions, sessionState } from '../scheduler.ts';

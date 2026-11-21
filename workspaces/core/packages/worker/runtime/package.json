@@ -13,6 +13,7 @@
     "@mechane/agent-slot": "workspace:*",
     "@mechane/control-store": "workspace:*",
     "@mechane/deployment": "workspace:*",
+    "@mechane/model-gateway": "workspace:*",
     "@mechane/protocol": "workspace:*",
     "@mechane/records": "workspace:*",
     "@mechane/sandbox-provider": "workspace:*",

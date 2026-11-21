@@ -1,9 +1,9 @@
 import type { Model, SimpleStreamOptions, StreamOptions, TranscriptContext } from '@earendil-works/pi-ai';
 import { stream, streamSimple } from '@earendil-works/pi-ai/api/anthropic-messages';
 import { Schema, Struct } from 'effect';
-import { publicClaudeId } from '../models/managed-offers.ts';
-import { supportsManagedSystemMessages } from '../models/managed-system-message.ts';
-import type { ManagedModelOptions } from '../models/model-effort.ts';
+import { publicClaudeId } from './managed-offers.ts';
+import { supportsManagedSystemMessages } from './managed-system-message.ts';
+import type { ManagedModelOptions } from './model-effort.ts';
 
 const object = Schema.is(Schema.Record(Schema.String, Schema.Unknown));
 const betas = Schema.is(Schema.Array(Schema.String));

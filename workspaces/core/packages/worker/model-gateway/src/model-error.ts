@@ -1,6 +1,6 @@
 import { HttpStatusCode } from '@mechane/records';
 import { Schema } from 'effect';
-import type { ManagedWireObject } from './protocol.ts';
+import type { ManagedWireObject } from './offers.ts';
 
 type ModelErrorType =
   | 'billing_error'

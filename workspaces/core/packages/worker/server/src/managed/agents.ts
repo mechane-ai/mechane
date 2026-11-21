@@ -1,5 +1,6 @@
+import { managedModelSettings } from '@mechane/model-gateway';
 import { HttpStatusCode } from '@mechane/records';
-import { managedModelSettings, resolveManagedToolsets, validateManagedMcpServers } from '@mechane/runtime';
+import { resolveManagedToolsets, validateManagedMcpServers } from '@mechane/runtime';
 import type { RuntimeConfiguration } from '@mechane/runtime';
 import { Predicate, Record, Schema } from 'effect';
 import { ManagedHttpError } from './http-error.ts';

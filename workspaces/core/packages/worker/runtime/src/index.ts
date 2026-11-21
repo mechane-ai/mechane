@@ -17,10 +17,8 @@ export {
 export { hashAuthToken, createAuthToken } from './operations/auth/secrets.ts';
 export { createOperationExecutor } from './operations/execute.ts';
 export type { AuthCaller } from './operations/types.ts';
-export { managedModelSettings } from './models/managed-options.ts';
 export { createManagedAgentRuntime } from './managed/client.ts';
 export { createSessionObject } from './managed/session-object.ts';
-export { ManagedRuntimeError } from './managed/failure.ts';
 export {
   ManagedEventPageInput,
   ManagedSessionSend,

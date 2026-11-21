@@ -7,12 +7,12 @@ import type {
   Tx,
 } from '@earendil-works/pi-durable';
 import { LiveDoc } from '@earendil-works/pi-durable';
+import { managedModelError, parseModelRefusal } from '@mechane/model-gateway';
 import { pauseManagedBudget } from './budget-resume.ts';
 import { sessionEvents } from './event-log/payload-storage.ts';
 import { appendManagedEvent } from './event-log/write.ts';
 import { finishManagedInterrupt } from './input-turns.ts';
 import { transition } from './lifecycle.ts';
-import { managedModelError, parseModelRefusal } from './model-error.ts';
 import { completeManagedOutcomeTurn, managedGraderHeartbeat } from './outcomes.ts';
 import { readManagedAnswer } from './preview-output.ts';
 import type { ManagedWireObject } from './protocol.ts';

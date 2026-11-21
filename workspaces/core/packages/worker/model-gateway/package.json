@@ -1,0 +1,14 @@
+{
+  "name": "@mechane/model-gateway",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@earendil-works/pi-ai": "1.5.1",
+    "@mechane/authority-store": "workspace:*",
+    "@mechane/records": "workspace:*",
+    "effect": "4.0.7"
+  }
+}

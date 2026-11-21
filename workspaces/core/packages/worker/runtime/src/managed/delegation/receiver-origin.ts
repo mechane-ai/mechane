@@ -1,9 +1,9 @@
 import { BACKGROUND_CONTEXT } from '@earendil-works/chord/context';
 import { defineDocFamily } from '@earendil-works/pi-durable';
 import type { Session, Tx } from '@earendil-works/pi-durable';
+import { failManagedRequest } from '@mechane/model-gateway';
 import { HttpStatusCode } from '@mechane/records';
 import { fingerprint } from '../../actor/state.ts';
-import { failManagedRequest } from '../failure.ts';
 import type { ManagedAgentScope } from '../protocol.ts';
 import type { ManagedDelegationOpen, ManagedDelegationOrigin } from './protocol.ts';
 

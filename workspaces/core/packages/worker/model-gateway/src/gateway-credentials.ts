@@ -1,8 +1,8 @@
 import { HttpHeader, HttpMethod, HttpStatusCode, MediaType } from '@mechane/records';
 import { Redacted, Result, Schema } from 'effect';
-import type { ManagedExecution, ManagedRequest } from '../managed/provider-types.ts';
-import { readBoundedJson } from '../tools/http.ts';
 import { GatewayBearer } from './gateway-credential-settings.ts';
+import { readBoundedJson } from './http.ts';
+import type { ManagedExecution, ManagedRequest } from './provider-types.ts';
 
 const assertionDeadlineMs = 10_000;
 const assertionResponseBytes = 32_768;

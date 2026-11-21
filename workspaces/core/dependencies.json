@@ -35,7 +35,7 @@
     "criterion": "reuse",
     "consumers": [
       "@mechane/server",
-      "@mechane/sandbox",
+      "@mechane/sandbox-egress",
       "@mechane/stack",
       "@mechane/locks",
       "@mechane/eval",
@@ -186,6 +186,16 @@
     "kind": "library-program",
     "criterion": "closure",
     "consumers": ["@mechane/guest"]
+  },
+  "@mechane/sandbox-egress": {
+    "owns": "Cloudflare Worker egress gateway entrypoint (`EgressGateway`) enforcing container destination allowlists and worker credential confinement",
+    "layer": 3,
+    "lane": "worker",
+    "dialect": "effect",
+    "kind": "object",
+    "criterion": "closure",
+    "consumers": ["@mechane/sandbox", "@mechane/server"],
+    "confines": []
   },
   "@mechane/sandbox-store": {
     "owns": "The sandbox object's database: its tables, rows and record functions",
@@ -521,6 +531,16 @@
     "consumers": ["@mechane/runtime", "@mechane/server"],
     "confines": []
   },
+  "@mechane/model-gateway": {
+    "owns": "Model offers, alias resolution, gateway credentials, OpenAI/Anthropic provider dispatch, document attachments, and spend accounting",
+    "layer": 4,
+    "lane": "worker",
+    "dialect": "plain",
+    "kind": "library",
+    "criterion": "closure",
+    "consumers": ["@mechane/runtime", "@mechane/server"],
+    "confines": ["@earendil-works/pi-ai"]
+  },
   "@mechane/runtime": {
     "owns": "Managed agent sessions, serialized identity execution, historical inspection, guarded tools, and provider accounting",
     "layer": 6,
@@ -551,13 +571,13 @@
     "consumers": ["@mechane/guest"]
   },
   "@mechane/authority-store": {
-    "owns": "PostgreSQL pool and transaction context, runtime grants, auth and workspace authority, encrypted credentials, provider spend budgets, sandbox capacity, and managed record primitives",
+    "owns": "PostgreSQL pool and transaction context, runtime grants, auth and workspace authority, encrypted credentials, provider spend budgets, and managed record primitives",
     "layer": 3,
     "lane": "worker",
     "dialect": "plain",
     "kind": "store",
     "criterion": "state",
-    "consumers": ["@mechane/managed-store", "@mechane/control-store"],
+    "consumers": ["@mechane/managed-store", "@mechane/control-store", "@mechane/model-gateway"],
     "confines": ["pg"]
   },
   "@mechane/managed-store": {

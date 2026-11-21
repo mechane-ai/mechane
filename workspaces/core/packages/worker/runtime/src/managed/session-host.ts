@@ -2,6 +2,7 @@ import { SessionFailed } from '@earendil-works/pi-durable';
 import { createAgentSlotClient, managedSessionName, SESSION_SLOT_WAKE_URL } from '@mechane/agent-slot';
 import { openControlStore } from '@mechane/control-store';
 import type { ControlStore } from '@mechane/control-store';
+import { failManagedRequest, ManagedRuntimeError, ManagedRuntimeFailureWire } from '@mechane/model-gateway';
 import { HttpMethod, HttpStatusCode } from '@mechane/records';
 import { capturePromise, serialCalls } from '@mechane/utilities';
 import { Redacted, Schema } from 'effect';
@@ -13,7 +14,6 @@ import { writeActorOperationFailure } from '../output/write-actor-diagnostic.ts'
 import { createManagedAgentRuntime } from './client.ts';
 import { startManagedSessionEngine } from './engine.ts';
 import type { ManagedAgentEngine } from './engine.ts';
-import { failManagedRequest, ManagedRuntimeError, ManagedRuntimeFailureWire } from './failure.ts';
 import { managedActorUrl } from './identity.ts';
 import { runManagedOperation } from './operations.ts';
 import { ManagedAgentScope } from './protocol.ts';

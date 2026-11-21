@@ -1,9 +1,9 @@
 import { defineDoc, defineDocFamily } from '@earendil-works/pi-durable';
 import type { ConversationId, SubmissionId, Tx } from '@earendil-works/pi-durable';
+import type { ManagedEffort } from '@mechane/model-gateway';
+import { failManagedRequest } from '@mechane/model-gateway';
 import { HttpStatusCode } from '@mechane/records';
 import { actorRecordSet } from '../actor/record-store.ts';
-import type { ManagedEffort } from '../models/model-effort.ts';
-import { failManagedRequest } from './failure.ts';
 
 type SessionState = {
   readonly id: string;

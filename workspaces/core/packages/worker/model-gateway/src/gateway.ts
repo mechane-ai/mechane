@@ -1,8 +1,8 @@
 import type { Api, Model, ProviderStreams } from '@earendil-works/pi-ai';
 import { createModels, createProvider } from '@earendil-works/pi-ai/models';
 import { Schema } from 'effect';
-import type { ModelOffer, RuntimeConfiguration } from '../config.ts';
 import { gatewayBase } from './gateway-address.ts';
+import type { ModelGatewayConfiguration, ModelOffer } from './offers.ts';
 
 export const MODEL_GATEWAY_AUTH_MARKER = 'managed-transport-credential';
 
@@ -187,7 +187,7 @@ export function observeGatewayEvents(response: Response, onEvent: (event: unknow
 }
 
 export function gatewayModelRegistry(
-  configuration: RuntimeConfiguration,
+  configuration: ModelGatewayConfiguration,
   api: ProviderStreams,
   offers: ReadonlyArray<ModelOffer>,
 ) {

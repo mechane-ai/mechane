@@ -1,7 +1,7 @@
+import { failManagedRequest } from '@mechane/model-gateway';
 import { HttpStatusCode } from '@mechane/records';
 import { Redacted, Schema } from 'effect';
 import { randomUUID } from 'node:crypto';
-import { failManagedRequest } from '../failure.ts';
 import type { ManagedIdentitySettings } from './identity-settings.ts';
 import { identityHttpsUrl } from './identity-settings.ts';
 

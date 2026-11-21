@@ -34,6 +34,7 @@ export { readManagedSessionUsage, readManagedSessionUsages } from './store/manag
 export type { ManagedDocument, ManagedPage, ManagedPageQuery, ManagedScope } from './store/managed-types.ts';
 export { openPool } from './store/postgres.ts';
 export type { DatabaseInput } from './store/postgres.ts';
+export type { ProviderAttemptStore } from './provider-attempt.ts';
 export { createProviderAttemptStore } from './store/provider-attempts.ts';
 export { StoredChecksum, StoredText, StoredTimestamp } from './store/row-values.ts';
 export { lockWorkspace } from './store/scope-locks.ts';

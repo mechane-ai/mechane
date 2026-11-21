@@ -1,9 +1,9 @@
 import { BACKGROUND_CONTEXT } from '@earendil-works/chord/context';
 import type { Session } from '@earendil-works/pi-durable';
+import { failManagedRequest } from '@mechane/model-gateway';
 import { HttpStatusCode } from '@mechane/records';
 import type { WithControl } from '../actor/types.ts';
 import { listManagedEvents, managedEventTail, readManagedEventTail } from './event-log/read.ts';
-import { failManagedRequest } from './failure.ts';
 import type { ManagedEvent, ManagedEventPageInput, ManagedEventScope } from './protocol.ts';
 import { sessionState } from './scheduler.ts';
 import { readManagedThread } from './thread-records.ts';

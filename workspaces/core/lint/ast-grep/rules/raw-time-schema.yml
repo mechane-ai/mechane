@@ -15,10 +15,10 @@ ignores:
     'packages/node/program/src/{start-process,finished-process,types}.ts',
     'packages/node/guest/src/guest-listener.ts',
     'packages/worker/sandbox/src/providers/machine-object.ts',
-    'packages/worker/{agent-slot/src,authority-store/src,managed-store/src,runtime/src,server/src,control-store/src,sandbox/testing}/**',
     'packages/node/{stack,distribution,testing,smoke,sandbox-docker,worker-agent}/src/**',
     'packages/shared/{bash,sandbox-provider,sandbox-tensorlake,sandbox-modal}/src/**',
     'packages/worker/server/testing/sandbox-providers.ts',
+    'packages/worker/{agent-slot/src,authority-store/src,managed-store/src,model-gateway/src,runtime/src,server/src,control-store/src,sandbox/testing,sandbox-egress/testing}/**',
   ]
 rule:
   kind: pair

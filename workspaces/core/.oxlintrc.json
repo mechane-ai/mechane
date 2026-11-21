@@ -810,7 +810,7 @@
         "packages/shared/deployment/src/worker-deployment.ts",
         "packages/node/{stack,distribution,testing,smoke,sandbox-docker,worker-agent}/src/**",
         "packages/node/program/src/{start-process,finished-process,types}.ts",
-        "packages/worker/{agent-slot/src,authority-store/src,managed-store/src,runtime/src,server/src,control-store/src,sandbox/testing}/**",
+        "packages/worker/{agent-slot/src,authority-store/src,managed-store/src,model-gateway/src,runtime/src,server/src,control-store/src,sandbox/testing,sandbox-egress/testing}/**",
         "packages/worker/server/testing/sandbox-providers.ts",
         "packages/worker/sandbox/src/service/**",
         "packages/worker/sandbox/src/providers/machine-object.ts"
@@ -898,7 +898,7 @@
         "packages/node/smoke/src/run-scenarios.ts",
         "packages/node/smoke/src/dev/main.ts",
         "packages/node/stack/src/dev/output.ts",
-        "packages/worker/sandbox/src/egress/pass-egress.ts",
+        "packages/worker/sandbox-egress/src/pass-egress.ts",
         "packages/worker/sandbox/src/evidence/evidence-cleanup.ts",
         "packages/worker/sandbox/src/output/write-container-startup-timing.ts",
         "packages/worker/sandbox/src/output/write-sandbox-diagnostic.ts"
@@ -1319,7 +1319,7 @@
         "packages/shared/deployment/src/worker-deployment.ts",
         "packages/node/{stack,distribution,testing,smoke,sandbox-docker,worker-agent}/src/**",
         "packages/node/program/src/{start-process,finished-process,types}.ts",
-        "packages/worker/{agent-slot/src,authority-store/src,managed-store/src,runtime/src,server/src,control-store/src,sandbox/testing}/**",
+        "packages/worker/{agent-slot/src,authority-store/src,managed-store/src,model-gateway/src,runtime/src,server/src,control-store/src,sandbox/testing,sandbox-egress/testing}/**",
         "packages/worker/server/testing/sandbox-providers.ts",
         "packages/worker/sandbox/src/service/**",
         "packages/worker/sandbox/src/providers/machine-object.ts"
@@ -4338,7 +4338,7 @@
       "files": [
         "packages/node/cli/scripts/reference/main.ts",
         "packages/node/program/src/output/**",
-        "packages/worker/sandbox/src/egress/pass-egress.ts",
+        "packages/worker/sandbox-egress/src/pass-egress.ts",
         "packages/worker/sandbox/src/evidence/evidence-cleanup.ts",
         "packages/worker/sandbox/src/output/write-container-startup-timing.ts",
         "packages/worker/sandbox/src/output/write-sandbox-diagnostic.ts"

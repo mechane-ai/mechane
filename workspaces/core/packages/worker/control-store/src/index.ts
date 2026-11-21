@@ -1,4 +1,4 @@
-export { grantControlStoreRuntime, ManagedStoreError, ProviderDispatchRefused } from '@mechane/authority-store';
+export { grantControlStoreRuntime, ManagedStoreError } from '@mechane/authority-store';
 export type {
   AuthKey,
   AuthRuntimeStore,

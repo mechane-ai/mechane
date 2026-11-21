@@ -1,10 +1,10 @@
 import { HttpStatusCode } from '@mechane/records';
 import { Predicate, Schema } from 'effect';
-import type { ModelOffer } from '../config.ts';
-import { failManagedRequest } from '../managed/failure.ts';
+import { failManagedRequest } from './failure.ts';
 import { resolveManagedModel } from './managed-offers.ts';
 import { ManagedEffort } from './model-effort.ts';
 import type { ManagedModelOptions } from './model-effort.ts';
+import type { ModelOffer } from './offers.ts';
 
 const Speed = Schema.Literals(['standard', 'fast']);
 const Effort = Schema.Struct({ type: ManagedEffort });

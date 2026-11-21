@@ -1,8 +1,8 @@
 import { BACKGROUND_CONTEXT as context } from '@earendil-works/chord/context';
 import type { Harness, Tx } from '@earendil-works/pi-durable';
+import { failManagedRequest, ManagedRuntimeError } from '@mechane/model-gateway';
 import { HttpStatusCode } from '@mechane/records';
 import { sessionEvents } from '../event-log/payload-storage.ts';
-import { failManagedRequest, ManagedRuntimeError } from '../failure.ts';
 import type { ManagedDelegationPreview } from '../preview-coordinates.ts';
 import type { ManagedEvent, ManagedSessionState, ManagedWireObject } from '../protocol.ts';
 import { hasProjectedBudgetPause, relayChildBudget } from './budget-update.ts';

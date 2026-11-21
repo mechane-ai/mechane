@@ -1,9 +1,9 @@
 import { defineDoc, defineDocFamily } from '@earendil-works/pi-durable';
 import type { Tx } from '@earendil-works/pi-durable';
+import { failManagedRequest } from '@mechane/model-gateway';
 import { HttpStatusCode } from '@mechane/records';
 import { Schema } from 'effect';
 import { fingerprint } from '../actor/state.ts';
-import { failManagedRequest } from './failure.ts';
 import { ManagedSessionMutation } from './protocol.ts';
 import { sessionState } from './scheduler.ts';
 import { readManagedSessionState } from './thread-state.ts';

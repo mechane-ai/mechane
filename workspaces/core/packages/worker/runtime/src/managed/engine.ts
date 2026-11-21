@@ -3,11 +3,12 @@ import type { Context } from '@earendil-works/chord/context';
 import { configure, Harness, ProviderDoc } from '@earendil-works/pi-durable';
 import type { Storage, Tx } from '@earendil-works/pi-durable';
 import type { ManagedIdentitySlot } from '@mechane/agent-slot';
+import { createManagedModels, failManagedRequest, pinnedModelSettings } from '@mechane/model-gateway';
+import type { ManagedExecution } from '@mechane/model-gateway';
 import { HttpStatusCode } from '@mechane/records';
 import { serialCalls } from '@mechane/utilities';
 import type { InstalledWorkerWake, WithControl } from '../actor/types.ts';
 import type { RuntimeConfiguration } from '../config.ts';
-import { pinnedModelSettings } from '../models/managed-options.ts';
 import { destroySessionWorkspace } from '../tools/managed-sandbox-work.ts';
 import { acceptInputs, preflightManagedEvents } from './admission.ts';
 import { advanceManagedFocus } from './advance-focus.ts';
@@ -20,7 +21,6 @@ import { encodeCoordinatorRoster } from './delegation/roster.ts';
 import { openNativeLifetime } from './engine-lifetime.ts';
 import { managedWakeDeadline } from './engine-wake.ts';
 import { createExecutionGate } from './execution-gate.ts';
-import { failManagedRequest } from './failure.ts';
 import { transition } from './lifecycle.ts';
 import { managedModelSpans } from './model-spans.ts';
 import { hydrateNativeCompaction } from './native-compaction.ts';
@@ -36,8 +36,6 @@ import type {
   ManagedSessionThreadReference,
   ManagedWireObject,
 } from './protocol.ts';
-import type { ManagedExecution } from './provider-types.ts';
-import { createManagedModels } from './provider.ts';
 import { ActiveNativeSessions, choose, Sessions, sessionState, Slot } from './scheduler.ts';
 import { createSessionExtensions } from './session-extension.ts';
 import { createManagedSessionLifecycle } from './session-lifecycle.ts';

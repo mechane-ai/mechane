@@ -67,7 +67,7 @@ run = "node --test packages/worker/server/testing/*.ts"
 
 [tasks."sandbox:native:check"]
 description = "Check native container safety, transfer diagnostics and Gateway control-plane isolation without cloud credentials"
-run = "node --test packages/worker/sandbox/testing/*.ts"
+run = "node --test packages/worker/sandbox/testing/*.ts packages/worker/sandbox-egress/testing/*.ts"
 
 [tasks.fingerprint]
 description = "Print the fingerprint: the hash of each role's minified bundle, of the inputs besides TypeScript the smoke reads, and of them all"

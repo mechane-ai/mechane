@@ -1,4 +1,4 @@
-import type { ModelOffer } from '../config.ts';
+import type { ModelOffer } from './offers.ts';
 
 const anthropicPrefix = 'anthropic/';
 

@@ -12,10 +12,10 @@ export const testSupportModules = {
         'Import the smoke and its testing support only from each other, such as `packages/node/testing/src/cli/run-cli.ts` from `packages/node/smoke/src`',
       from: {
         pathNot:
-          '^(packages/node/smoke/src|packages/node/testing/src|packages/node/distribution/testing|packages/worker/(?:sandbox|server)/testing)/',
+          '^(packages/node/smoke/src|packages/node/testing/src|packages/node/distribution/testing|packages/worker/(?:sandbox|sandbox-egress|server)/testing)/',
       },
       to: {
-        path: '^(packages/node/smoke/src|packages/node/testing/src|packages/node/distribution/testing|packages/worker/(?:sandbox|server)/testing)/',
+        path: '^(packages/node/smoke/src|packages/node/testing/src|packages/node/distribution/testing|packages/worker/(?:sandbox|sandbox-egress|server)/testing)/',
       },
       standard: '050',
       ...ADOPTED,
