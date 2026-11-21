@@ -1,6 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
-import { colors, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
+import { chartColors, colors, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import type { useChartNavigation } from '../chart-navigation.tsx';
 import { ChartSurface } from '../chart-surface.tsx';
 import { usePlotWidth } from '../plot-width.ts';
@@ -28,7 +28,7 @@ export const distributionStyles = stylex.create({
   },
   plotArea: { minWidth: 0 },
   svg: { display: 'block', width: '100%', height: distributionGeometry.height, overflow: 'hidden' },
-  grid: { stroke: colors.line, strokeDasharray: '3 3', vectorEffect: 'non-scaling-stroke' },
+  grid: { stroke: colors.line, vectorEffect: 'non-scaling-stroke' },
   axis: {
     display: 'flex',
     justifyContent: 'space-between',
@@ -74,6 +74,7 @@ export const distributionStyles = stylex.create({
   rowSvg: { display: 'block', width: '100%', height: 28, overflow: 'hidden' },
   empty: { margin: 0, color: colors.muted, fontSize: typography.bodySize, lineHeight: typography.bodyLineHeight },
   baseline: { stroke: colors.line, vectorEffect: 'non-scaling-stroke' },
+  track: { fill: chartColors.missing },
   missing: { fill: colors.canvas, stroke: colors.muted, strokeDasharray: '3 3', vectorEffect: 'non-scaling-stroke' },
 });
 

@@ -82,6 +82,7 @@ export function RankedBars({
                     preserveAspectRatio="none"
                     {...stylex.props(distributionStyles.rowSvg)}
                   >
+                    <rect x={0} y={10} width={width} height={8} {...stylex.props(distributionStyles.track)} />
                     <line x1={zero} x2={zero} y1={3} y2={25} {...stylex.props(distributionStyles.baseline)} />
                     {item.value !== null &&
                       (item.value === 0 ? (

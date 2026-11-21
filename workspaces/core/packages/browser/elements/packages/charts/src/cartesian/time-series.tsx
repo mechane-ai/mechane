@@ -740,7 +740,7 @@ function TimeChart({
                       y1={(point) => y((point.value ?? 0) + point.base)}
                       yScale={y}
                       fill={chartToneColors[item.tone]}
-                      fillOpacity={isStacked ? 0.65 : 0.15}
+                      fillOpacity={isStacked ? 0.65 : 0.12}
                     />
                   )}
                   <TimeSeriesLine series={item} x={x} y={y} inspectedTimestamp={active?.timestamp} />

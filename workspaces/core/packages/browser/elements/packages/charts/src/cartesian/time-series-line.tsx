@@ -18,6 +18,8 @@ export function TimeSeriesLine({
   readonly inspectedTimestamp?: number | undefined;
   readonly pointRadius?: number | undefined;
 }): ReactNode {
+  const lastDefinedIndex = series.points.findLastIndex((point) => point.value !== null);
+
   return (
     <>
       <LinePath<PlotPoint>
@@ -35,8 +37,15 @@ export function TimeSeriesLine({
           }
 
           const isAdjacentToGap = series.points[index - 1]?.value === null || series.points[index + 1]?.value === null;
+          const isOnlyPoint = series.points.length === 1;
+          const isLastPoint = index === lastDefinedIndex;
+          const isInspected = point.timestamp === inspectedTimestamp;
 
-          return series.points.length === 1 || isAdjacentToGap || point.timestamp === inspectedTimestamp;
+          if (isOnlyPoint || isLastPoint) {
+            return true;
+          }
+
+          return isAdjacentToGap || isInspected;
         })
         .map((point) => (
           <circle

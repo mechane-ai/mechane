@@ -68,7 +68,7 @@ const styles = stylex.create({
     margin: 0,
     fontSize: typography.inputSize,
     lineHeight: typography.bodyLineHeight,
-    fontWeight: typography.mediumWeight,
+    fontWeight: typography.strongWeight,
   },
   description: {
     margin: 0,
