@@ -82,6 +82,6 @@ well as Sandbox SQLite statements.
 - ast-grep `sql-statement-not-literal` (DO-06): enforced
 - ast-grep `sql-text-outside-store` (DO-06): enforced
 - ast-grep `store-handle-exposed` (DO-06): enforced
-- ast-grep `records-type-inferred` (TD-04): a ratchet until phase F2
+- ast-grep `records-type-inferred` (TD-04): enforced in phase F2
 
 <!-- End of the generated block. -->

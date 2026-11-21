@@ -1,11 +1,11 @@
-import { HttpMethod, RecordId, wireStruct } from '@mechane/records';
+import { HttpMethod, KeyId, wireStruct } from '@mechane/records';
 import { KeyNotFound, ServiceUnavailable } from '../../errors/errors.ts';
 import { Access } from '../../operation/constants.ts';
 import { NoFields } from '../../operation/schemas.ts';
 import type { Operation } from '../../operation/types.ts';
 import { KeyMetadata } from './schemas.ts';
 
-const KeyParams = wireStruct({ fields: { keyId: RecordId } });
+const KeyParams = wireStruct({ fields: { keyId: KeyId } });
 
 type KeyParams = typeof KeyParams.Type;
 

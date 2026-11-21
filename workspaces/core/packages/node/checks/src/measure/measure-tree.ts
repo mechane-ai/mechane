@@ -93,7 +93,7 @@ export const measureTree = Effect.fn('measureTree')(function* ({
       try: () => writeFile(MEASURE_CONFIGURATION, text),
       catch: (cause) => new FileUnwritable({ path: MEASURE_CONFIGURATION, reason: String(cause) }),
     }),
-    () => removePath({ path: MEASURE_CONFIGURATION }),
+    () => removePath({ path: MEASURE_CONFIGURATION }).pipe(Effect.orDie),
   );
 
   const known = yield* runOxlint({ args: ['--rules', '-f', 'json'], schema: RuleList, inherited });

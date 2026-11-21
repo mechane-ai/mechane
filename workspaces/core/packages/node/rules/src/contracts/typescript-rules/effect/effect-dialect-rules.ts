@@ -11,7 +11,7 @@ import {
 const RESTRICTED = { ...RESTRICTED_DEFAULTS, imports: [], exemptRoles: [] } as const;
 
 /** The rollout of a rule of the Effect dialect, which its sweep clears (EF-01, EF-02). */
-const SWEPT_IN_DIALECT = { status: RuleStatus.Ratchet, phase: RolloutPhase.EffectDialect } as const;
+const SWEPT_IN_DIALECT = { status: RuleStatus.Enforced, phase: RolloutPhase.EffectDialect } as const;
 
 /**
  * The rules of the Effect dialect, EF-01's `Effect.fn` and EF-02's `yield*`, which the standard gives local contract
@@ -64,7 +64,7 @@ export const EFFECT_DIALECT_RULES = [
     ...AST_GREP_DEFAULTS,
     name: 'effect-function-form',
     standard: 'EF-01',
-    status: RuleStatus.Ratchet,
+    status: RuleStatus.Enforced,
     phase: RolloutPhase.EffectDialect,
     violation: ['function start(): Effect.Effect<Stack> { return open(); }'],
     allowed: ["const start = Effect.fn('start')(function* (): Effect.fn.Return<Stack> { return yield* open(); });"],

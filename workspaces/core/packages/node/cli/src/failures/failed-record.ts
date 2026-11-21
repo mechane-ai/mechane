@@ -10,13 +10,13 @@ type FailedRecordInput = { readonly failed: AnsweredFailure };
  * For a code this release does not know, the fields are as the deployment sent them.
  */
 export function failedRecord({ failed }: FailedRecordInput): FailureReport['record'] {
-  const { family, message, failure } = failed;
+  const { family, reason, failure } = failed;
 
   if (Schema.is(UnknownFailure)(failure)) {
-    return { ...failure.fields, family: Option.some(family), code: failure.code, message };
+    return { ...failure.fields, family: Option.some(family), code: failure.errorCode, message: reason };
   }
 
-  const detail = errorDetail({ failure, message });
+  const detail = errorDetail({ failure, message: reason });
 
   return { ...detail, family: Option.some(detail.family) };
 }

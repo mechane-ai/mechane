@@ -1,9 +1,0 @@
-{
-  "packages/node/boundaries/src/check-boundaries.ts": 1,
-  "packages/node/checks-kernel/src/lint/rule-key.ts": 1,
-  "packages/node/checks-kernel/src/ratchets/proposed-rules.ts": 1,
-  "packages/node/checks/src/run-checks.ts": 1,
-  "packages/node/rule-generator/src/load-generate-settings.ts": 1,
-  "packages/node/rule-generator/src/validate/message-findings.ts": 1,
-  "packages/node/rule-generator/src/validate/suppression-budget.ts": 1
-}

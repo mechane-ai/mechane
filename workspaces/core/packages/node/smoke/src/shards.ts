@@ -26,6 +26,7 @@ const CONTAINER_SCENARIO_NAMES: ReadonlySet<string> = new Set([
   'drainCompletesBeforePendingBash',
   'executionGrantIsCurrentAndTransient',
   'installedCapacityProtectsPhysicalMachines',
+  'installedWorkerMountsAndExportsFiles',
   'installedWorkerRecoversInterruptedCommand',
   'largeHomeSurvivesRestore',
   'recordingFailurePreservesEnvironment',
@@ -44,6 +45,7 @@ const LIFECYCLE_CORE_NAMES: ReadonlySet<string> = new Set([
 
 const COMPUTE_CORE_NAMES: ReadonlySet<string> = new Set([
   'installedWorkerRecoversInterruptedCommand',
+  'installedWorkerMountsAndExportsFiles',
   'installedWorkerFinishesInterruptedTool',
   'backgroundProcessKeepsItsCompletion',
   'executionGrantIsCurrentAndTransient',

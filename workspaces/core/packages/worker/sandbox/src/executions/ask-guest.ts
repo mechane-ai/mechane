@@ -43,7 +43,7 @@ export async function askGuest({
   });
 
   // The claim wrote the execution's row, which nothing deletes.
-  return executionProgress({ execution: Option.getOrThrow(store.execution({ executionId })) });
+  return executionProgress({ execution: store.requireExecution({ executionId }) });
 }
 
 /** Sends the stored request again to the machine it was sent to while that machine runs, for the rest of the wait. */

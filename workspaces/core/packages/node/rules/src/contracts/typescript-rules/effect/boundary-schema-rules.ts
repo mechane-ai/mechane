@@ -9,7 +9,7 @@ export const BOUNDARY_SCHEMA_RULES = [
     ...AST_GREP_DEFAULTS,
     name: 'encode-keys-outside-records',
     standard: 'CP-06',
-    status: RuleStatus.Ratchet,
+    status: RuleStatus.Enforced,
     phase: RolloutPhase.DataShapes,
     violation: ["const Row = Schema.Struct({ mechId: RecordId }).pipe(Schema.encodeKeys({ mechId: 'mech_id' }));"],
     allowed: ['const Row = wireStruct({ fields: { mechId: RecordId } });'],
@@ -27,7 +27,7 @@ export const BOUNDARY_SCHEMA_RULES = [
     ...AST_GREP_DEFAULTS,
     name: 'bare-string-schema',
     standard: 'TD-26',
-    status: RuleStatus.Ratchet,
+    status: RuleStatus.Enforced,
     phase: RolloutPhase.DataShapes,
     violation: ['const Thread = Schema.Struct({ title: Schema.String });'],
     allowed: [

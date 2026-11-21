@@ -1,4 +1,4 @@
-import { boundedText, MachineId, RecordId, wireStruct } from '@mechane/records';
+import { boundedText, Bytes, MachineId, RecordId, wireStruct } from '@mechane/records';
 import { Schema } from 'effect';
 import { EXECUTION_MAX_BYTES, INSTALLED_WORKSPACE_PATH } from '../constants.ts';
 import { ExecutionEnvironment } from '../execution-environment.ts';
@@ -14,7 +14,7 @@ export type ProcessId = typeof ProcessId.Type;
 export const ProcessStart = wireStruct({
   fields: {
     processId: ProcessId,
-    command: boundedText({ maxBytes: EXECUTION_MAX_BYTES }),
+    command: boundedText({ maxBytes: Bytes.make(EXECUTION_MAX_BYTES) }),
     workingDirectory: Schema.optionalKey(Schema.Literal(INSTALLED_WORKSPACE_PATH)),
     /** None runs without granted variables or secrets. */
     environment: Schema.OptionFromOptionalKey(ExecutionEnvironment),

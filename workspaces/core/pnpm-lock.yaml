@@ -463,6 +463,9 @@ importers:
       '@mechane/modules':
         specifier: workspace:*
         version: link:../modules
+      '@mechane/records':
+        specifier: workspace:*
+        version: link:../../shared/records
       '@mechane/rule-shapes':
         specifier: workspace:*
         version: link:../rule-shapes

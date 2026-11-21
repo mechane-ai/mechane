@@ -75,7 +75,7 @@ export const INSTALLED_ERROR_RULES = [
       hash: 'blake3:4ba4789a552288ff904193f522fd3b40a91fb15b40a4eee6052a6347a9d9a6fb',
     }),
     exemptRoles: [FileRole.Browser, FileRole.NativeRuntime, FileRole.NativePresentation],
-    status: RuleStatus.Ratchet,
+    status: RuleStatus.Enforced,
     violation: ['promise.then(read);', 'promise.finally(close);'],
     allowed: ['const result = await promise;'],
   },

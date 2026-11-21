@@ -1,13 +1,4 @@
-import {
-  memberOrUnknown,
-  Micros,
-  PrincipalId,
-  RecordId,
-  RecordName,
-  UtcDay,
-  wireStruct,
-  WorkspaceId,
-} from '@mechane/records';
+import { memberOrUnknown, Micros, PrincipalId, RecordName, UtcDay, wireStruct, WorkspaceId } from '@mechane/records';
 import { Schema } from 'effect';
 import { WireTime } from '../../schemas.ts';
 import { MembershipRole, WorkspaceKind } from './constants.ts';
@@ -15,7 +6,7 @@ import { MembershipRole, WorkspaceKind } from './constants.ts';
 /** A workspace the caller belongs to, with the caller's role and the model spend it may make each day. */
 export const Workspace = wireStruct({
   fields: {
-    id: RecordId,
+    id: WorkspaceId,
     name: RecordName,
     kind: Schema.Enum(WorkspaceKind),
     role: memberOrUnknown({ set: MembershipRole }),
@@ -32,7 +23,7 @@ export const WorkspaceList = Schema.Struct({ workspaces: Schema.NonEmptyArray(Wo
 export type WorkspaceList = typeof WorkspaceList.Type;
 
 /** The path of an operation on one workspace, which admission checks the caller belongs to. */
-export const WorkspacePath = wireStruct({ fields: { workspaceId: RecordId } });
+export const WorkspacePath = wireStruct({ fields: { workspaceId: WorkspaceId } });
 
 export type WorkspacePath = typeof WorkspacePath.Type;
 

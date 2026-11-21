@@ -1,9 +1,10 @@
 import {
   DurationFromSeconds,
+  KeyId,
   memberOrUnknown,
   PAGE_RENAMES,
+  PrincipalId,
   PrintableName,
-  RecordId,
   RecordName,
   renamedWireStruct,
   wireStruct,
@@ -42,7 +43,7 @@ export type UserCode = typeof UserCode.Type;
 /** What a key's owner may know about it; the token itself is returned once, by the poll that claims it. */
 export const KeyMetadata = wireStruct({
   fields: {
-    id: RecordId,
+    id: KeyId,
     name: RecordName,
     purpose: memberOrUnknown({ set: KeyPurpose }),
     createdAt: WireTime,
@@ -55,7 +56,7 @@ export const KeyMetadata = wireStruct({
 export type KeyMetadata = typeof KeyMetadata.Type;
 
 /** The person a key acts for; its name is the GitHub login it signed up with. */
-export const Principal = Schema.Struct({ id: RecordId, name: RecordName });
+export const Principal = Schema.Struct({ id: PrincipalId, name: RecordName });
 
 export type Principal = typeof Principal.Type;
 

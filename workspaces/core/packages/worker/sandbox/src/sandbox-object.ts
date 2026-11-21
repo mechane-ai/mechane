@@ -23,6 +23,7 @@ import {
   BrowserProgress,
   BrowserRequestId,
   EvidenceExportResult,
+  ExecutionId,
   ExecutionProgress,
   InstalledActionOrigin,
   InstalledCompletionCursor,
@@ -63,12 +64,7 @@ import {
   SandboxStopReceipt,
   StartupFailure,
 } from '@mechane/sandbox-wire';
-import type {
-  ExecutionId,
-  InstalledProcessCompletion,
-  ManagedWorkerClaimWire,
-  RunExecutionInput,
-} from '@mechane/sandbox-wire';
+import type { InstalledProcessCompletion, ManagedWorkerClaimWire, RunExecutionInput } from '@mechane/sandbox-wire';
 import { afterSettling, capturePromise } from '@mechane/utilities';
 import { DurableObject } from 'cloudflare:workers';
 import { DateTime, Duration, Option, Result, Schema } from 'effect';
@@ -648,13 +644,14 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
     this.#requireOwnerMode({ isInstalled: false });
     this.#capacity.requireOwner();
 
+    const decodedExecutionId = Schema.decodeUnknownSync(ExecutionId)(executionId);
     const input = { executionId, command, timeoutMs, waitMs, environment };
 
     const recovery = this.#store.workspace().recovery;
     const foreground = Option.fromNullishOr(environment);
 
     if (Option.isSome(foreground) && Option.isSome(recovery)) {
-      const previous = this.#store.execution({ executionId });
+      const previous = this.#store.execution({ executionId: decodedExecutionId });
 
       if (Option.isNone(previous)) {
         await this.#calls.run({ run: () => resumeIdleWorkspace({ store: this.#store, provider: this.#provider }) });
@@ -662,7 +659,7 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
     }
 
     const timeout = Duration.millis(timeoutMs);
-    const request = { executionId, command, timeout };
+    const request = { executionId: decodedExecutionId, command, timeout };
     const now = DateTime.nowUnsafe();
     const claim = claimExecution({ store: this.#store, request, now });
 
@@ -703,7 +700,8 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
     this.#requireOwnerMode({ isInstalled: false });
     this.#capacity.requireOwner();
 
-    const found = this.#store.execution({ executionId });
+    const decodedExecutionId = Schema.decodeUnknownSync(ExecutionId)(executionId);
+    const found = this.#store.execution({ executionId: decodedExecutionId });
 
     if (Option.isNone(found)) {
       const refusal = SandboxExecutionRefusal.cases.ExecutionNotFound.make({});
@@ -745,6 +743,7 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
       await this.#alarm.arm({ at: observeAt });
     }
 
+    const decodedExecutionId = Schema.decodeUnknownSync(ExecutionId)(executionId);
     const timeout = Duration.millis(timeoutMs);
     const wait = Duration.millis(waitMs);
 
@@ -752,7 +751,7 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
       store: this.#store,
       provider: this.#provider,
       workspace: this.#workspace,
-      request: { executionId, command, timeout, wait },
+      request: { executionId: decodedExecutionId, command, timeout, wait },
       environment: decodedEnvironment,
     });
 

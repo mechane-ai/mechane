@@ -57,9 +57,9 @@ basis, trial identity, and submitted request identities so interrupted evaluatio
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-- ast-grep `bare-random-uuid` (TD-14): a ratchet until phase F2
+- ast-grep `bare-random-uuid` (TD-14): enforced in phase F2
 - ast-grep `object-name-outside-object-calls` (044): enforced
-- ast-grep `plain-id-schema` (TD-14): a ratchet until phase F2
-- ast-grep `plain-id-type` (TD-14): a ratchet until phase F2
+- ast-grep `plain-id-schema` (TD-14): enforced in phase F2
+- ast-grep `plain-id-type` (TD-14): enforced in phase F2
 
 <!-- End of the generated block. -->

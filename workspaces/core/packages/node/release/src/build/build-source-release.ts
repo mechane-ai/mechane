@@ -13,21 +13,21 @@ import type { BuiltRelease } from './types.ts';
  * release alone. It builds from a clean working tree, whose revision its manifest records, and an upload then publishes
  * it.
  */
-export function buildSourceRelease({ inherited }: InheritedInput): Effect.Effect<BuiltRelease, ReleaseFailed> {
-  return Effect.gen(function* () {
-    yield* Effect.tryPromise({
-      try: () => rm(RELEASE_BUILD_FOLDER, { recursive: true, force: true }),
-      catch: (cause) => new ReleaseFailed({ step: ReleaseStep.EmptyBuildFolder, reason: String(cause) }),
-    });
-
-    const revision = yield* cleanRevision({ inherited });
-
-    return yield* buildRelease({
-      release: RELEASE,
-      revision,
-      targets: Record.values(CliTarget),
-      folder: RELEASE_BUILD_FOLDER,
-      inherited,
-    });
+export const buildSourceRelease = Effect.fn('buildSourceRelease')(function* ({
+  inherited,
+}: InheritedInput): Effect.fn.Return<BuiltRelease, ReleaseFailed> {
+  yield* Effect.tryPromise({
+    try: () => rm(RELEASE_BUILD_FOLDER, { recursive: true, force: true }),
+    catch: (cause) => new ReleaseFailed({ step: ReleaseStep.EmptyBuildFolder, reason: String(cause) }),
   });
-}
+
+  const revision = yield* cleanRevision({ inherited });
+
+  return yield* buildRelease({
+    release: RELEASE,
+    revision,
+    targets: Record.values(CliTarget),
+    folder: RELEASE_BUILD_FOLDER,
+    inherited,
+  });
+});

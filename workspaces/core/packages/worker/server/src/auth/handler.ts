@@ -8,7 +8,7 @@ import {
 import { HttpHeader, HttpMethod, HttpStatusCode } from '@mechane/records';
 import { limitAuthentication } from '@mechane/runtime';
 import { escapeHtml } from '@mechane/utilities';
-import { Schema } from 'effect';
+import { Duration, Schema } from 'effect';
 import { authenticationChallenge } from '../http/authentication-challenge.ts';
 import { browserAuthenticationPage } from './browser-page.ts';
 import { requireBrowserAuthentication, validateAuthOrigin } from './cookies.ts';
@@ -35,11 +35,12 @@ function renderPageFailure(failure: unknown): Response {
   }
 
   if (Schema.is(RateLimited)(failure)) {
-    const headers = new Headers({ [HttpHeader.RetryAfter]: String(failure.retryAfterSeconds) });
+    const seconds = Math.ceil(Duration.toSeconds(failure.retryAfterSeconds));
+    const headers = new Headers({ [HttpHeader.RetryAfter]: String(seconds) });
 
     return authPage({
       title: 'Try again shortly',
-      content: `<p>Too many attempts. Try again in ${failure.retryAfterSeconds} seconds.</p>`,
+      content: `<p>Too many attempts. Try again in ${seconds} seconds.</p>`,
       status: HttpStatusCode.TooManyRequests,
       headers,
     });

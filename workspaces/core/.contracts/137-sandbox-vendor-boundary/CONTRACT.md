@@ -1,7 +1,7 @@
 ---
 name: sandbox-vendor-boundary
 message: Keep managed agent orchestration and HTTP handlers decoupled from concrete sandbox vendors behind the Managed Agents Worker Protocol.
-paths: ["packages/worker/runtime/src/managed/**", "packages/worker/session-runtime/**", "packages/worker/agent-slot/**", "packages/worker/server/src/managed/**", "packages/shared/sandbox-provider/**"]
+paths: ["packages/worker/runtime/src/managed/**", "packages/worker/agent-slot/**", "packages/worker/server/src/managed/**", "packages/shared/sandbox-provider/**"]
 ---
 
 ## Rules

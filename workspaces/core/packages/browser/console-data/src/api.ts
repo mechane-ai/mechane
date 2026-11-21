@@ -120,7 +120,11 @@ export function problemMessage(error: unknown): string {
     return 'The conversation could not be loaded. Try again.';
   }
 
-  if (error instanceof OperationFailed || Schema.is(ConsoleStorageFailed)(error)) {
+  if (error instanceof OperationFailed) {
+    return error.reason;
+  }
+
+  if (Schema.is(ConsoleStorageFailed)(error)) {
     return error.message;
   }
 

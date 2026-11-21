@@ -19,14 +19,21 @@ export function withImporters({ files, graph }: WithImportersInput): ReadonlyArr
 
 /** The reached modules with every module that imports one of them, until a round reaches no other. */
 function importerClosure({ edges, reached }: ImporterClosureInput): ReadonlyArray<string> {
-  const isUnreachedImporter: (edge: GraphEdge) => boolean = ([source, imported]) =>
-    !reached.includes(source) && imported.some((file) => reached.includes(file));
+  let closed: ReadonlySet<string> = new Set(reached);
+  let importers = nextImporters({ edges, closed });
 
-  const importers = edges.filter(isUnreachedImporter).map(([source]) => source);
-
-  if (importers.length === 0) {
-    return reached;
+  while (importers.length > 0) {
+    closed = new Set([...closed, ...importers]);
+    importers = nextImporters({ edges, closed });
   }
 
-  return importerClosure({ edges, reached: [...reached, ...importers] });
+  return [...closed];
+}
+
+type NextImportersInput = { readonly edges: ReadonlyArray<GraphEdge>; readonly closed: ReadonlySet<string> };
+
+function nextImporters({ edges, closed }: NextImportersInput): ReadonlyArray<string> {
+  return edges
+    .filter(([source, imported]) => !closed.has(source) && imported.some((file) => closed.has(file)))
+    .map(([source]) => source);
 }

@@ -9,7 +9,7 @@ import type { Collection, CollectionConfig, DbClient, InferSchemaOutput } from '
 import { persistedCollectionOptions } from '@tanstack/db-sqlite-persistence-core';
 import type { PersistedCollectionPersistence, PersistedCollectionUtils } from '@tanstack/db-sqlite-persistence-core';
 import { MutableRef, Schema } from 'effect';
-import { ManagedAgent, ManagedEnvironment, ManagedSession, ManagedThread } from './managed-records.ts';
+import { ManagedAgent, ManagedEnvironment, ManagedFile, ManagedSession, ManagedThread } from './managed-records.ts';
 import { restoreRecord, SessionEvidenceRow } from './records.ts';
 import { ReadReceipt } from './requests.ts';
 
@@ -94,6 +94,12 @@ export function createCanonicalCollections(scope: string, persistence: Persisted
       persistence,
       key: rowKey,
     }),
+    managedFiles: table({
+      name: collectionId(scope, 'managedFiles'),
+      row: Schema.Struct({ key: Schema.String, value: ManagedFile }),
+      persistence,
+      key: rowKey,
+    }),
     managedSessions: table({
       name: collectionId(scope, 'managedSessions'),
       row: Schema.Struct({ key: Schema.String, value: ManagedSession }),
@@ -123,6 +129,7 @@ export function materializeCanonicalCollections(db: DbClient, collections: Canon
   return {
     managedAgents: db.collection(collections.managedAgents),
     managedEnvironments: db.collection(collections.managedEnvironments),
+    managedFiles: db.collection(collections.managedFiles),
     managedSessions: db.collection(collections.managedSessions),
     managedThreads: db.collection(collections.managedThreads),
     sessionEvidence: db.collection(collections.sessionEvidence),

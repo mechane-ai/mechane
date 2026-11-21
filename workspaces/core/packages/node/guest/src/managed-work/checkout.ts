@@ -1,7 +1,9 @@
 import type { BetaManagedAgentsSession } from '@anthropic-ai/sdk/resources/beta/sessions/sessions';
 import { HttpHeader } from '@mechane/records';
 import { ManagedGitIdentity, managedGitIdentityPath } from '@mechane/sandbox-wire';
-import { Effect, Exit, Schema } from 'effect';
+import { capturePromise } from '@mechane/utilities';
+import { Effect, Exit, Option, Schema } from 'effect';
+import { createOutputExportState, exportSessionOutputs } from './file-export.ts';
 import { mountSessionFile } from './file-mount.ts';
 import { GitMountFailed, mountGitRepository } from './git-mount.ts';
 import { gitMountRoute, startGitRelay } from './git-relay.ts';
@@ -49,6 +51,58 @@ const gitIdentity = Effect.fn('gitIdentity')(function* ({
 
   return yield* Effect.mapError(decoded, () => new GitMountFailed({ reason: 'Invalid Git author identity' }));
 });
+
+type SessionOutputExporterInput = Pick<ManagedGitCheckout, 'origin' | 'token' | 'transport' | 'workspace' | 'signal'>;
+type QueuedExport = { readonly previous: Option.Option<Promise<void>> };
+
+export type SessionOutputExporter = { readonly flush: () => Promise<void>; readonly flushOnce: () => Promise<void> };
+
+/** Serializes `/workspace/outputs/` uploads so concurrent tool completions never duplicate an export. */
+export function createSessionOutputExporter({
+  origin,
+  token,
+  transport,
+  workspace,
+  signal,
+}: SessionOutputExporterInput): SessionOutputExporter {
+  const state = createOutputExportState();
+  const queue = { current: Option.none<Promise<void>>(), hasFlushedClose: false };
+
+  async function runExport(): Promise<void> {
+    const program = exportSessionOutputs({ origin, token, transport, workspace, signal, state });
+    const execution = Effect.runPromise(program);
+
+    await capturePromise({ promise: execution });
+  }
+
+  async function runQueued({ previous }: QueuedExport): Promise<void> {
+    if (Option.isSome(previous)) {
+      await previous.value;
+    }
+
+    await runExport();
+  }
+
+  async function flush(): Promise<void> {
+    const next = runQueued({ previous: queue.current });
+
+    queue.current = Option.some(next);
+
+    await next;
+  }
+
+  async function flushOnce(): Promise<void> {
+    if (queue.hasFlushedClose) {
+      return;
+    }
+
+    queue.hasFlushedClose = true;
+
+    await flush();
+  }
+
+  return { flush, flushOnce };
+}
 
 /** The SDK work handler owns this relay until its claim ends. */
 export async function prepareManagedGitCheckout({

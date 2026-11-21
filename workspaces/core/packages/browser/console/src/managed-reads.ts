@@ -59,6 +59,10 @@ export function useManagedEnvironments(data: ConsoleData, request: ReadRequest<'
   });
 }
 
+export function useManagedFiles(data: ConsoleData, request: ReadRequest<'managedFiles'>) {
+  return useCollectionRead({ data, request, collection: data.collections.managedFiles, project: page });
+}
+
 export function useManagedThreads(data: ConsoleData, request: ReadRequest<'threads'>) {
   return useCollectionRead({
     data,

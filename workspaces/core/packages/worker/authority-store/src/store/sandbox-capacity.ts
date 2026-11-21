@@ -1,5 +1,5 @@
 import { MechNotFound } from '@mechane/protocol';
-import { RecordId } from '@mechane/records';
+import { MechId } from '@mechane/records';
 import { Schema } from 'effect';
 import { createWorkspaceRecords } from './api/configuration/workspaces.ts';
 import type { Page } from './api/page.ts';
@@ -171,7 +171,7 @@ async function lockCapacityScope(context: StoreContext, identity: CapacityIdenti
   ]);
 
   if (result.rows.length === 0) {
-    throw new MechNotFound({ mechId: RecordId.make(identity.mechId) });
+    throw new MechNotFound({ mechId: MechId.make(identity.mechId) });
   }
 }
 

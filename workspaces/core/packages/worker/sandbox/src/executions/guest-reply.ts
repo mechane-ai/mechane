@@ -1,7 +1,8 @@
 import { HttpHeader, HttpMethod, MediaType } from '@mechane/records';
 import { ExecutionRequest, guestExecutionPath } from '@mechane/sandbox-wire';
 import type { ExecutionEnvironment } from '@mechane/sandbox-wire';
-import { Duration, Option, Schema } from 'effect';
+import { capturePromise } from '@mechane/utilities';
+import { Duration, Option, Result, Schema } from 'effect';
 import { ANSWER_SLACK } from '../constants.ts';
 import type { DispatchedExecution, GuestTransport } from '../types.ts';
 import type { GuestReply } from './types.ts';
@@ -36,22 +37,28 @@ export async function guestReply({
     },
   });
 
-  const response = await guest
-    .fetch({
-      path: guestExecutionPath({ machineId, executionId, wait }),
-      init: {
-        ...submission,
-        headers: { [HttpHeader.ContentType]: MediaType.Json },
-        signal: AbortSignal.timeout(Duration.toMillis(Duration.sum(wait, ANSWER_SLACK))),
-      },
-    })
-    .then(Option.some, () => Option.none());
+  const path = guestExecutionPath({ machineId, executionId, wait });
+  const timeoutDuration = Duration.sum(wait, ANSWER_SLACK);
+  const timeoutMs = Duration.toMillis(timeoutDuration);
+  const signal = AbortSignal.timeout(timeoutMs);
 
-  if (Option.isNone(response)) {
+  const fetchPromise = guest.fetch({
+    path,
+    init: { ...submission, headers: { [HttpHeader.ContentType]: MediaType.Json }, signal },
+  });
+
+  const response = await capturePromise({ promise: fetchPromise });
+
+  if (Result.isFailure(response)) {
     return Option.none();
   }
 
-  const text = await response.value.text().then(Option.some, () => Option.none());
+  const textPromise = response.success.text();
+  const text = await capturePromise({ promise: textPromise });
 
-  return Option.map(text, (replyBody) => ({ status: response.value.status, body: replyBody }));
+  if (Result.isFailure(text)) {
+    return Option.none();
+  }
+
+  return Option.some({ status: response.success.status, body: text.success });
 }

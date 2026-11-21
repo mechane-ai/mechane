@@ -2,6 +2,7 @@ import { decodePage, encodePage, managedId, ManagedStoreError, pageSize } from '
 import type { ManagedDocument, ManagedScope, StoreContext } from '@mechane/authority-store';
 import { HttpStatusCode } from '@mechane/records';
 import type { Buffer } from 'node:buffer';
+import { lockManagedResourceWork } from './work-authorization.ts';
 
 type ManagedFileMetadata = ManagedDocument & {
   readonly id: string;
@@ -25,6 +26,8 @@ type FileCreate = {
   readonly expiresAt: string | null;
   readonly scopeId?: string | null;
 };
+
+type SessionOutputCreate = Omit<FileCreate, 'scopeId'> & { readonly sessionId: string; readonly token: string };
 
 type FileTarget = { readonly scope: ManagedScope; readonly fileId: string };
 
@@ -62,6 +65,7 @@ type ManagedFileResource = {
 
 const FILE_PAGE_MAX_ROWS = 1000;
 const FILE_IDS_MAX_COUNT = 100;
+const FILE_SESSION_OUTPUTS_MAX_COUNT = 256;
 const FILE_ID_MAX_CHARS = 128;
 const FILE_FILENAME_MAX_CHARS = 500;
 const FILE_MIME_TYPE_MAX_CHARS = 255;
@@ -215,48 +219,86 @@ function fileScopeType(scopeId: string | null): string | null {
   return 'session';
 }
 
+async function insertFileRecord(context: StoreContext, input: FileCreate): Promise<ManagedFileMetadata> {
+  const { scope, filename, mimeType, sizeBytes, sha256, r2Key, content, expiresAt, scopeId = null } = input;
+
+  if (filename.length === 0 || filename.length > FILE_FILENAME_MAX_CHARS) {
+    throw new ManagedStoreError(HttpStatusCode.BadRequest, 'File name must be 1 to 500 characters');
+  }
+
+  if (mimeType.length === 0 || mimeType.length > FILE_MIME_TYPE_MAX_CHARS) {
+    throw new ManagedStoreError(HttpStatusCode.BadRequest, 'MIME type must be 1 to 255 characters');
+  }
+
+  if (!Number.isSafeInteger(sizeBytes) || sizeBytes < 0) {
+    throw new ManagedStoreError(HttpStatusCode.BadRequest, 'Invalid file size');
+  }
+
+  const id = input.id ?? managedId('file');
+  const scopeType = fileScopeType(scopeId);
+
+  const result = await context.client.query<ManagedFileMetadata>(
+    `INSERT INTO mechane.managed_files AS f
+       (id,workspace_id,creator_id,filename,mime_type,size_bytes,sha256,downloadable,r2_key,content,scope_type,scope_id,expires_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,true,$8,$9,$10,$11,$12)
+     RETURNING ${FILE_COLUMNS}`,
+    [
+      id,
+      scope.workspaceId,
+      scope.principalId,
+      filename,
+      mimeType,
+      sizeBytes,
+      sha256,
+      r2Key,
+      content,
+      scopeType,
+      scopeId,
+      expiresAt,
+    ],
+  );
+
+  return firstFile(result.rows);
+}
+
 export function createManagedFileStore(context: StoreContext) {
   return {
     async create(input: FileCreate): Promise<ManagedFileMetadata> {
-      const { scope, filename, mimeType, sizeBytes, sha256, r2Key, content, expiresAt, scopeId = null } = input;
+      return await insertFileRecord(context, input);
+    },
+    async createSessionOutput(input: SessionOutputCreate): Promise<ManagedFileMetadata> {
+      return await context.atomic(async (transaction) => {
+        await lockManagedResourceWork(transaction, {
+          workspaceId: input.scope.workspaceId,
+          sessionId: input.sessionId,
+          token: input.token,
+        });
 
-      if (filename.length === 0 || filename.length > FILE_FILENAME_MAX_CHARS) {
-        throw new ManagedStoreError(HttpStatusCode.BadRequest, 'File name must be 1 to 500 characters');
-      }
+        const session = await transaction.client.query<{ readonly id: string }>(
+          `SELECT id FROM mechane.managed_sessions
+            WHERE workspace_id=$1 AND id=$2 AND archived_at IS NULL AND status<>'terminated'
+            FOR SHARE`,
+          [input.scope.workspaceId, input.sessionId],
+        );
 
-      if (mimeType.length === 0 || mimeType.length > FILE_MIME_TYPE_MAX_CHARS) {
-        throw new ManagedStoreError(HttpStatusCode.BadRequest, 'MIME type must be 1 to 255 characters');
-      }
+        if (session.rowCount !== 1) {
+          throw new ManagedStoreError(HttpStatusCode.Forbidden, 'Session is no longer active for file output');
+        }
 
-      if (!Number.isSafeInteger(sizeBytes) || sizeBytes < 0) {
-        throw new ManagedStoreError(HttpStatusCode.BadRequest, 'Invalid file size');
-      }
+        const existing = await transaction.client.query<{ readonly count: number }>(
+          `SELECT count(*)::int AS count FROM mechane.managed_files
+            WHERE workspace_id=$1 AND scope_id=$2 AND deleted_at IS NULL`,
+          [input.scope.workspaceId, input.sessionId],
+        );
 
-      const id = input.id ?? managedId('file');
-      const scopeType = fileScopeType(scopeId);
+        const count = existing.rows[0]?.count ?? 0;
 
-      const result = await context.client.query<ManagedFileMetadata>(
-        `INSERT INTO mechane.managed_files AS f
-           (id,workspace_id,creator_id,filename,mime_type,size_bytes,sha256,downloadable,r2_key,content,scope_type,scope_id,expires_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,true,$8,$9,$10,$11,$12)
-         RETURNING ${FILE_COLUMNS}`,
-        [
-          id,
-          scope.workspaceId,
-          scope.principalId,
-          filename,
-          mimeType,
-          sizeBytes,
-          sha256,
-          r2Key,
-          content,
-          scopeType,
-          scopeId,
-          expiresAt,
-        ],
-      );
+        if (count >= FILE_SESSION_OUTPUTS_MAX_COUNT) {
+          throw new ManagedStoreError(HttpStatusCode.BadRequest, 'Session output file limit reached');
+        }
 
-      return firstFile(result.rows);
+        return await insertFileRecord(transaction, { ...input, scopeId: input.sessionId });
+      });
     },
     async get({ scope, fileId }: FileTarget): Promise<ManagedFileMetadata> {
       const result = await context.client.query<ManagedFileMetadata>(

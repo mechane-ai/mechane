@@ -1,7 +1,7 @@
 ---
 name: channel-delivery
 message: Route authenticated events to their session and address external publications through explicit tools.
-paths: ["packages/worker/runtime/**", "packages/worker/server/**", "packages/shared/protocol/src/operations/notifications/**"]
+paths: ["packages/worker/runtime/**", "packages/worker/server/**"]
 ---
 
 ## Rules

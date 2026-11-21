@@ -26,20 +26,23 @@ export const typeDeclaration = Effect.fn('typeDeclaration')(function* ({
   name,
   path,
 }: TypeDeclarationInput): Effect.fn.Return<Option.Option<TypeSite>, FileFailed> {
-  const text = yield* readText({ path });
-  const at = Array.head(declarationAts({ name, text }));
+  let currentPath: Option.Option<string> = Option.some(path);
 
-  if (Option.isSome(at)) {
-    return Option.some({ path, at: at.value });
+  while (Option.isSome(currentPath)) {
+    const activePath = currentPath.value;
+    const text = yield* readText({ path: activePath });
+    const at = Array.head(declarationAts({ name, text }));
+
+    if (Option.isSome(at)) {
+      return Option.some({ path: activePath, at: at.value });
+    }
+
+    const specifier = namedModule({ name, text });
+
+    currentPath = Option.map(specifier, (value) => join(dirname(activePath), value));
   }
 
-  const specifier = namedModule({ name, text });
-
-  if (Option.isNone(specifier)) {
-    return Option.none();
-  }
-
-  return yield* typeDeclaration({ name, path: join(dirname(path), specifier.value) });
+  return Option.none();
 });
 
 /** The specifier of the relative module that an import or a re-export of the file takes the name from. */

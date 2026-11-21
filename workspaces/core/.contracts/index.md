@@ -95,7 +95,7 @@ from 101 are Mechane's own.
 
 - [Eval run lifecycle](057-eval-run-lifecycle/CONTRACT.md): frozen plans, one writer, receipts before sends, resume.
 - [Eval grading isolation](058-eval-grading-isolation/CONTRACT.md): expectations only for the grader, on another model.
-- [Eval production path](059-eval-production-path/CONTRACT.md): the deployment through `/api/v1`, on fresh mechs.
+- [Eval production path](059-eval-production-path/CONTRACT.md): the deployment through the public Managed Agents API, on fresh sessions.
 - [Eval score accounting](060-eval-score-accounting/CONTRACT.md): distinct verdicts, and spend by role.
 - [Eval adapter boundaries](132-eval-adapter-boundaries/CONTRACT.md): application meaning, source identity, target selection, and frozen calibration reports.
 
@@ -131,14 +131,15 @@ from 101 are Mechane's own.
 - [Installation ownership](112-installation-ownership/CONTRACT.md): immutable releases, one infrastructure owner, and runtime data preserved across applies.
 
 - [Execution access](120-execution-access/CONTRACT.md): current generic grants, credential references, and honest execution receipts.
-- [Mech notifications](121-mech-notifications/CONTRACT.md): immutable admission, observed input, external outcomes, and durable self-wakes.
 - [Developer environments](122-developer-environments/CONTRACT.md): reproducible tools, independent command receipts and file checkpoints, and honest recovery.
-- [Model caching](123-model-caching/CONTRACT.md): provider cache hints, per-mech context, and conservative spend reservations.
+- [Model caching](123-model-caching/CONTRACT.md): provider cache hints, per-session thread context, and conservative spend reservations.
 
 - [Managed Agents compatibility](134-managed-agents-compatibility/CONTRACT.md): session and worker wire behavior under the published self-hosted profile.
 - [Durable Object isolation](135-durable-object-isolation/CONTRACT.md): lightweight per-agent slot arbitration separated from unprefixed per-session Pi Durable Objects.
 - [Single agent domain](136-single-agent-domain/CONTRACT.md): Managed Agents as the sole execution model without new retired mech coupling.
 - [Sandbox vendor boundary](137-sandbox-vendor-boundary/CONTRACT.md): vendor-blind agent orchestration decoupled behind the Managed Agents Worker Protocol.
+- [Managed files and mounts](138-managed-files-and-mounts/CONTRACT.md): R2-backed workspace files, safe download headers, canonical workspace mount containment, and lease-scoped session output export.
+- [PostgreSQL Hyperdrive pooling](139-postgres-hyperdrive-pooling/CONTRACT.md): uncached TLS-required Hyperdrive pooling with bounded per-isolate `pg` connection ceilings.
 - [Durable agent runtime](124-durable-agent-runtime/CONTRACT.md): one Pi execution owner, guarded tools, and metered provider attempts.
 - [Notification and communication boundaries](125-channel-delivery/CONTRACT.md): generic authenticated producers and explicit addressed communication tools.
 - [Structured presentation](126-structured-presentation/CONTRACT.md): explicit public messages with one bounded catalog and an Elements renderer.

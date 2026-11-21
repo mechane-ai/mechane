@@ -1,12 +1,12 @@
 ---
 name: single-agent-domain
 message: Keep Claude Managed Agents as the sole public agent execution domain without coupling managed modules to retired mech tables or handlers.
-paths: ["packages/worker/runtime/src/managed/**", "packages/worker/server/src/managed/**", "packages/worker/control-store/src/store/managed/**", "packages/shared/protocol/**"]
+paths: ["packages/worker/runtime/src/managed/**", "packages/worker/server/src/managed/**", "packages/worker/managed-store/src/**", "packages/shared/protocol/**"]
 ---
 
 ## Rules
 
-Managed Agents resources (`agents`, `environments`, `sessions`, `threads`, `events`, `vaults`, `memory_stores`, `skills`)
+Managed Agents resources (`agents`, `environments`, `sessions`, `threads`, `events`, `files`, `vaults`, `memory_stores`, `skills`)
 are the single public agent execution model. Managed runtime and server handlers must not import retired `actor/archive`,
 `operations/mechs`, `operations/turns`, `operations/routines`, `http/import-mech`, or `http/mech-maintenance` modules.
 Managed control-store modules and new database migrations must not introduce new foreign keys or writes to retired

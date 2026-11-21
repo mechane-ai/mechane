@@ -29,3 +29,11 @@ export type ServiceKeyId = typeof ServiceKeyId.Type;
 
 export const SessionId = RecordId.pipe(Schema.brand('SessionId'));
 export type SessionId = typeof SessionId.Type;
+
+/** The ID of an API key belonging to a principal. */
+export const KeyId = RecordId.pipe(Schema.brand('KeyId'));
+export type KeyId = typeof KeyId.Type;
+
+/** The ID of a notification record. */
+export const NotificationId = RecordId.pipe(Schema.brand('NotificationId'));
+export type NotificationId = typeof NotificationId.Type;

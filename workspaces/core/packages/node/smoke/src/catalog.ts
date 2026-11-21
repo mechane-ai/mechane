@@ -12,12 +12,14 @@ import { checkpointedFilesSurviveMachineLoss } from './compute/checkpointed-file
 import { drainCompletesBeforePendingBash } from './compute/drain-completes-before-pending-bash.ts';
 import { executionGrantIsCurrentAndTransient } from './compute/execution-grant-is-current-and-transient.ts';
 import { installedCapacityProtectsPhysicalMachines } from './compute/installed-capacity-protects-physical-machines.ts';
+import { installedWorkerMountsAndExportsFiles } from './compute/installed-worker-mounts-and-exports-files.ts';
 import { installedWorkerRecoversInterruptedCommand } from './compute/installed-worker-recovers-interrupted-command.ts';
 import { largeHomeSurvivesRestore } from './compute/large-home-survives-restore.ts';
 import { recordingFailurePreservesEnvironment } from './compute/recording-failure-preserves-environment.ts';
 import { remoteToolGrantsHonorPolicy } from './compute/remote-tool-grants-honor-policy.ts';
 import { stoppedProcessRemainsInspectable } from './compute/stopped-process-remains-inspectable.ts';
 import { consoleKeepsSessionDraftsIsolated } from './console/console-keeps-session-drafts-isolated.ts';
+import { consoleManagesWorkspaceFiles } from './console/console-manages-workspace-files.ts';
 import { consoleOpensSessionEvidence } from './console/console-opens-session-evidence.ts';
 import { consoleRetainsRecordsThroughRefreshFailure } from './console/console-retains-records-through-refresh-failure.ts';
 import { consoleRevokesDeniedSession } from './console/console-revokes-denied-session.ts';
@@ -207,6 +209,14 @@ export const CATALOG = [
     run: installedWorkerRecoversInterruptedCommand,
   },
   {
+    family: 'compute',
+    guarantee:
+      'an installed container mounts session files into /workspace and exports safe /workspace/outputs artifacts',
+    regression:
+      'mounted files fail to materialize in containers or /workspace/outputs escapes, duplicates, or fails export',
+    run: installedWorkerMountsAndExportsFiles,
+  },
+  {
     family: 'context',
     guarantee: 'queued input completes with its own session context after interruption and restart',
     regression: 'an interrupted activation strands a queued input or omits conversation history on restart',
@@ -360,6 +370,13 @@ export const CATALOG = [
     guarantee: 'Console restores durable agent and session records while refresh waits or fails',
     regression: 'a warm reload loses usable authorized records or hides refresh failure',
     run: consoleRetainsRecordsThroughRefreshFailure,
+  },
+  {
+    family: 'console',
+    guarantee:
+      'Console uploads, persists, downloads, and deletes workspace files through authenticated browser requests',
+    regression: 'Console file actions drop workspace selection, expose credentials, or leave deleted files behind',
+    run: consoleManagesWorkspaceFiles,
   },
 ] as const satisfies ReadonlyArray<Scenario>;
 

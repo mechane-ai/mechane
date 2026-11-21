@@ -30,7 +30,7 @@ export function answeredMessage({ failed, note }: AnsweredMessageInput): Failure
   return {
     status: FAMILY_EXIT_STATUS[failed.family],
     record,
-    text: `${record.code}: ${failed.message}${Option.getOrElse(Option.map(note, clause), () => '')}`,
+    text: `${record.code}: ${failed.reason}${Option.getOrElse(Option.map(note, clause), () => '')}`,
     isLabelled: true,
   };
 }

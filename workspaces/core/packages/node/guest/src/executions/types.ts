@@ -1,12 +1,13 @@
 import type { ExecutionId, ExecutionReceipt, SettledReceipt } from '@mechane/sandbox-wire';
 import type { Deferred, Effect } from 'effect';
+import type { ExecutionUnkillable } from './kill-group.ts';
 
 /** A spawned bash: its exit code once it exits, its pipes' close, the kill of its group, and its output's tail. */
 export type BashRun = {
   readonly groupId: number;
   readonly exited: Deferred.Deferred<number>;
   readonly closed: Deferred.Deferred<void>;
-  readonly kill: Effect.Effect<void>;
+  readonly kill: Effect.Effect<void, ExecutionUnkillable>;
   readonly output: () => SettledReceipt['output'];
 };
 

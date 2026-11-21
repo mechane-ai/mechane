@@ -2,7 +2,7 @@ import type { Finding } from '@mechane/checks-kernel';
 import { catalog, ServerFailure } from '@mechane/protocol';
 import type { Operation } from '@mechane/protocol';
 import { RandomId, wireKey } from '@mechane/records';
-import { Option, Record, Schema } from 'effect';
+import { Array, Option, Record, Schema } from 'effect';
 import type { JsonSchema } from 'effect';
 import { TAG_FIELD } from '../constants.ts';
 import { decodedNode } from './decoded-node.ts';
@@ -62,20 +62,40 @@ export function recordFormFindings(): ReadonlyArray<Finding> {
   return paths.filter(asksRequestForm).map(recordFormFinding);
 }
 
+type PendingNode = Pick<NodePathsInput, 'node' | 'path'>;
+
+type ChildNodesInput = { readonly node: JsonSchemaNode; readonly path: string };
+
+/** Each child node of a decoded JSON Schema node, preserving traversal order. */
+function childNodes({ node, path }: ChildNodesInput): ReadonlyArray<PendingNode> {
+  const branchNodes: ReadonlyArray<PendingNode> = node.anyOf.map((branch) => ({ node: branch, path }));
+
+  const itemNodes: ReadonlyArray<PendingNode> = Option.toArray(node.items).map((items) => ({
+    node: items,
+    path: `${path}[]`,
+  }));
+
+  const propertyNodes: ReadonlyArray<PendingNode> = Record.toEntries(node.properties).map(([key, property]) => ({
+    node: property,
+    path: `${path}.${key}`,
+  }));
+
+  return [...branchNodes, ...itemNodes, ...propertyNodes];
+}
+
 /** Each node at and under a node, by its path: a union's branches at its own, an array's items and each property. */
 function nodePaths({ node, definitions, path }: NodePathsInput): ReadonlyArray<NodePath> {
-  const decoded = decodedNode({ node, definitions });
+  return Array.unfold<ReadonlyArray<PendingNode>, NodePath>([{ node, path }], (queue) => {
+    const head = Array.head(queue);
 
-  const itemPaths: (items: unknown) => ReadonlyArray<NodePath> = (items) =>
-    nodePaths({ node: items, definitions, path: `${path}[]` });
+    if (Option.isNone(head)) {
+      return Option.none();
+    }
 
-  const propertyPaths: (property: PropertyEntry) => ReadonlyArray<NodePath> = ([key, property]) =>
-    nodePaths({ node: property, definitions, path: `${path}.${key}` });
+    const decoded = decodedNode({ node: head.value.node, definitions });
+    const children = childNodes({ node: decoded, path: head.value.path });
+    const rest = queue.slice(1);
 
-  return [
-    { node: decoded, path },
-    ...decoded.anyOf.flatMap((branch) => nodePaths({ node: branch, definitions, path })),
-    ...Option.toArray(decoded.items).flatMap(itemPaths),
-    ...Record.toEntries(decoded.properties).flatMap(propertyPaths),
-  ];
+    return Option.some([{ node: decoded, path: head.value.path }, [...children, ...rest]]);
+  });
 }

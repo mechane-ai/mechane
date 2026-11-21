@@ -1,7 +1,7 @@
 import { Bytes, MachineId, MechId, RecordId, SandboxOperationId, WorkspaceId } from '@mechane/records';
 import { evidenceOwnerKey, ExecutionStatus, FileCheckpointPurpose } from '@mechane/sandbox-store';
 import type { WorkspaceSnapshot } from '@mechane/sandbox-store';
-import { ReceiptStatus, SandboxAction, SandboxPhase } from '@mechane/sandbox-wire';
+import { ExecutionId, ReceiptStatus, SandboxAction, SandboxPhase } from '@mechane/sandbox-wire';
 import { capturePromise } from '@mechane/utilities';
 import { DateTime, Deferred, Duration, Effect, Option, Result } from 'effect';
 import assert from 'node:assert/strict';
@@ -20,8 +20,8 @@ const operationId = SandboxOperationId.make('34995087-fe48-4793-8564-eb2a3bf1d76
 const checkpointId = SandboxOperationId.make('498bf63b-1d9d-4c96-aaf2-b755c1bbf780');
 const SESSION_TEST_KEYS = 8031;
 const OUTAGE_ON_DELETE_CALL = 2;
-const terminalId = 'b65c148e-77c3-4272-bd86-5cbf58b61ea2';
-const dispatchedId = '50fb650d-7992-4f8c-9e8a-45dd8752860d';
+const terminalId = ExecutionId.make('b65c148e-77c3-4272-bd86-5cbf58b61ea2');
+const dispatchedId = ExecutionId.make('50fb650d-7992-4f8c-9e8a-45dd8752860d');
 const archive = { bytes: 1, parts: 1, sha256: 'a'.repeat(64) } as const;
 const request = { action: SandboxAction.Delete, operationId: Option.some(operationId) } as const;
 

@@ -19,7 +19,11 @@ import {
   HostMachineStatus,
   ReceiptStatus,
 } from './constants.ts';
-import { ExecutionEnvironment, ExecutionEnvironmentRequired } from './execution-environment.ts';
+import {
+  ExecutionEnvironment,
+  ExecutionEnvironmentRequired,
+  OptionalExecutionEnvironment,
+} from './execution-environment.ts';
 import { SandboxToolsVariable } from './tools/schemas.ts';
 
 /** Stable command identity survives workflow retries and never becomes a filesystem path. */
@@ -52,7 +56,18 @@ export type ExecutionWait = typeof ExecutionWait.Type;
  * Bash text that a process can start with. A process's argument ends at a NUL character, and the kernel refuses one
  * longer than its limit, so the guest would fail to start bash for either.
  */
-export const ExecutionCommand = boundedText({ maxBytes: EXECUTION_MAX_BYTES });
+export const ExecutionCommand = boundedText({ maxBytes: Bytes.make(EXECUTION_MAX_BYTES) });
+
+/** RPC input for starting or joining a single execution in a sandbox object. */
+export const RunExecutionRpcInput = Schema.Struct({
+  executionId: ExecutionId,
+  command: ExecutionCommand,
+  timeoutMs: Schema.DurationFromMillis,
+  waitMs: Schema.DurationFromMillis,
+  environment: OptionalExecutionEnvironment,
+});
+
+export type RunExecutionRpcInput = typeof RunExecutionRpcInput.Type;
 
 /** Bash text to run once from the machine's home; it and every process it starts end at its timeout. */
 export const ExecutionRequest = renamedWireStruct({

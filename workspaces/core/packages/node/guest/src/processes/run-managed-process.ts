@@ -66,7 +66,7 @@ const finishProcess = Effect.fn('finishProcess')(function* ({
   managed,
 }: Omit<RunManagedProcessInput, 'onSettled'>): Effect.fn.Return<FinishedProcess, ProcessFailed, Scope.Scope> {
   const starting = startAdmittedProcess({ request, settings, ledger, managed });
-  const run = yield* Effect.acquireRelease(starting, (child) => child.kill);
+  const run = yield* Effect.acquireRelease(starting, (child) => child.kill.pipe(Effect.orDie));
 
   yield* Deferred.succeed(managed.ready, undefined);
 

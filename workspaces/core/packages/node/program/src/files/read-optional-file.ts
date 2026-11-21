@@ -10,38 +10,46 @@ class FileReadFailed extends Schema.TaggedError<FileReadFailed>()('FileReadFaile
   reason: Schema.String,
 }) {}
 
-/** The file a read names does not exist, which `readOptionalFile` answers as none. */
-class FileMissing extends Schema.TaggedError<FileMissing>()('FileMissing', {}) {}
+/** A file read attempt failed before missing files are separated from unexpected I/O errors. */
+class ReadAttemptFailed extends Schema.TaggedError<ReadAttemptFailed>()('ReadAttemptFailed', {
+  path: Schema.String,
+  failure: Schema.Unknown,
+}) {}
 
 /** The failure with which Node reads a file that does not exist. */
 const MissingFile = Schema.Struct({ code: Schema.Literal(MISSING_FILE_CODE) });
 
-type MissingFile = typeof MissingFile.Type;
+const isMissingFile = Schema.is(MissingFile);
 
 type ReadOptionalFileInput = { readonly path: string };
-
-type ReadPresentFileInput = { readonly path: string };
 
 /** The text of the file at `path` as UTF-8, none when the file does not exist. */
 export const readOptionalFile = Effect.fn('readOptionalFile')(function* ({
   path,
 }: ReadOptionalFileInput): Effect.fn.Return<Option.Option<string>, FileReadFailed> {
-  return yield* readPresentFile({ path }).pipe(Effect.catchTags({ FileMissing: () => Effect.succeedNone }));
+  return yield* readFileAttempt({ path }).pipe(
+    Effect.catchTags({
+      ReadAttemptFailed: (attempt) => {
+        if (isMissingFile(attempt.failure)) {
+          return Effect.succeedNone;
+        }
+
+        const reason = String(attempt.failure);
+        const error = new FileReadFailed({ path: attempt.path, reason });
+
+        return Effect.fail(error);
+      },
+    }),
+  );
 });
 
-/** The text of the file at `path` as UTF-8, which fails apart as missing when the file does not exist. */
-const readPresentFile = Effect.fn('readPresentFile')(function* ({
+/** Reads a file at `path` as UTF-8, retaining the raw failure for missing-file (`ENOENT`) classification. */
+const readFileAttempt = Effect.fn('readFileAttempt')(function* ({
   path,
-}: ReadPresentFileInput): Effect.fn.Return<Option.Option<string>, FileMissing | FileReadFailed> {
+}: ReadOptionalFileInput): Effect.fn.Return<Option.Option<string>, ReadAttemptFailed> {
   const text = yield* Effect.tryPromise({
     try: () => readFile(path, 'utf8'),
-    catch: (cause) => {
-      if (Schema.is(MissingFile)(cause)) {
-        return new FileMissing();
-      }
-
-      return new FileReadFailed({ path, reason: String(cause) });
-    },
+    catch: (failure) => new ReadAttemptFailed({ path, failure }),
   });
 
   return Option.some(text);

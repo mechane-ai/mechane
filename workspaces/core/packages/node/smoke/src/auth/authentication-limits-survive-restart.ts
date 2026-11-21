@@ -4,7 +4,7 @@ import { HttpHeader, HttpMethod, HttpStatusCode, MediaType } from '@mechane/reco
 import { FIXTURE_AUTH_RATE_LIMITS } from '@mechane/stack';
 import { createAccount, formFields } from '@mechane/testing';
 import type { Account, BrowserPage, ScenarioInput } from '@mechane/testing';
-import { Effect, Schema } from 'effect';
+import { Duration, Effect, Schema } from 'effect';
 import assert from 'node:assert/strict';
 
 const LOW_AUTH_LIMITS = {
@@ -76,8 +76,11 @@ async function assertRateLimited(response: Response): Promise<void> {
   const failure = await Effect.runPromise(detailFailure({ detail: error, failures: ROUTE_FAILURES }));
 
   assert.equal(failure._tag, 'RateLimited', 'The authentication refusal is not decodable by the native client');
-  assert.ok(failure.retryAfterSeconds > 0);
-  assert.equal(response.headers.get(HttpHeader.RetryAfter), String(failure.retryAfterSeconds));
+
+  const retryAfterSeconds = Math.ceil(Duration.toSeconds(failure.retryAfterSeconds));
+
+  assert.ok(retryAfterSeconds > 0);
+  assert.equal(response.headers.get(HttpHeader.RetryAfter), String(retryAfterSeconds));
 }
 
 type AuthenticatedRequestInput = { readonly stack: ScenarioInput['stack']; readonly account: Account };

@@ -1,7 +1,9 @@
 import type { ProgramSettings } from '@mechane/cli-kernel';
 import { PROGRAM } from '@mechane/commands';
 import { RELEASE, ReleaseStamp } from '@mechane/releases';
-import { Option, Schema } from 'effect';
+import { Option, Result, Schema } from 'effect';
+
+const decodeStamp = Schema.decodeUnknownResult(Schema.OptionFromUndefinedOr(ReleaseStamp));
 
 /** What the runtime says of the running program: the stamp a release compiled into it, and its executable's path. */
 type ProgramSettingsInput = { readonly stamp: unknown; readonly executablePath: string };
@@ -11,7 +13,8 @@ type ProgramSettingsInput = { readonly stamp: unknown; readonly executablePath: 
  * defect of that release. Without one, the program reports the protocol's release and names `source` as its build.
  */
 export function programSettings({ stamp, executablePath }: ProgramSettingsInput): ProgramSettings {
-  const decoded = Schema.decodeUnknownSync(Schema.OptionFromUndefinedOr(ReleaseStamp))(stamp);
+  const decodedResult = decodeStamp(stamp);
+  const decoded = Result.getOrThrow(decodedResult);
 
   if (Option.isNone(decoded)) {
     return {

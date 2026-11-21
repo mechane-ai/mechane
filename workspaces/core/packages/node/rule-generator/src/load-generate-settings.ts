@@ -39,17 +39,20 @@ export const loadGenerateSettings = Effect.fn('loadGenerateSettings')(function* 
 
   const named = Option.fromNullishOr(subject);
 
-  if (decoded === GenerateCommand.Write || decoded === GenerateCommand.Check) {
-    return { command: decoded };
-  }
+  switch (decoded) {
+    case GenerateCommand.Write:
+    case GenerateCommand.Check:
+      return { command: decoded };
+    case GenerateCommand.Explain:
+    case GenerateCommand.For:
+      if (Option.isNone(named)) {
+        return yield* new GenerateFailed({
+          step: GenerateStep.Read,
+          path: `the command ${decoded}`,
+          reason: 'name a rule or a path, such as `boolean-names`, `EF-02` or `packages/node/checks/src/main.ts`',
+        });
+      }
 
-  if (Option.isNone(named)) {
-    return yield* new GenerateFailed({
-      step: GenerateStep.Read,
-      path: `the command ${decoded}`,
-      reason: 'name a rule or a path, such as `boolean-names`, `EF-02` or `packages/node/checks/src/main.ts`',
-    });
+      return { command: decoded, subject: named.value };
   }
-
-  return { command: decoded, subject: named.value };
 });

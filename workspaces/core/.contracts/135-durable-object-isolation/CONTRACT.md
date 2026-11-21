@@ -1,7 +1,7 @@
 ---
 name: durable-object-isolation
 message: Separate per-agent execution slot arbitration from per-session Pi Harness Durable Objects without SQLite table prefixing.
-paths: ["packages/worker/runtime/**", "packages/worker/agent-slot/**", "packages/worker/session-runtime/**", "packages/worker/server/**"]
+paths: ["packages/worker/runtime/**", "packages/worker/agent-slot/**", "packages/worker/server/**"]
 ---
 
 ## Rules
@@ -20,10 +20,9 @@ dynamic `prefix` to `openDurableObjectSqliteStorage`. Session deletion seals and
 ## Checks
 
 Verify that `AgentSlotObject` carries no imports from `@earendil-works/pi-durable`, model gateways, or catalog stores.
-Verify that no new session storage passes a `prefix` option to `openDurableObjectSqliteStorage`, and burn down the
-pre-split `session-storage.ts` ratchet to zero during the split-DO cutover. Exercise two contending sessions,
-cross-agent and self-delegation, mid-turn actor crash with lease reclaim, and O(1) session deletion through the smoke
-catalog.
+Verify that no session storage passes a `prefix` option to `openDurableObjectSqliteStorage`. Exercise two contending
+sessions, cross-agent and self-delegation, mid-turn actor crash with lease reclaim, and O(1) session deletion through
+the smoke catalog.
 
 ## Local adaptations
 

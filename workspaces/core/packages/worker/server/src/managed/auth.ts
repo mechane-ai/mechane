@@ -1,9 +1,9 @@
 import type { ControlStore, ManagedScope } from '@mechane/control-store';
-import { managedWorkspaceId } from '@mechane/managed-protocol';
+import { managedWorkspaceId, parseManagedWorkspaceId } from '@mechane/managed-protocol';
 import { HttpHeader, HttpStatusCode, RecordId } from '@mechane/records';
 import { isInstallationAdministrator, limitAuthentication } from '@mechane/runtime';
 import type { AuthenticationConfiguration } from '@mechane/runtime';
-import { Schema } from 'effect';
+import { Option, Schema } from 'effect';
 import { authenticateRequest } from '../auth/authenticate.ts';
 import { requireBrowserAuthentication } from '../auth/cookies.ts';
 import { READ_METHODS } from '../http/methods.ts';
@@ -25,14 +25,28 @@ function requireSelectedWorkspace(selected: string | null, workspaceId: string) 
   }
 }
 
+function resolveSelectedWorkspace(selected: string | null, fallbackWorkspaceId: string): string {
+  if (selected === null) {
+    return fallbackWorkspaceId;
+  }
+
+  const parsed = parseManagedWorkspaceId({ value: selected });
+
+  if (Option.isNone(parsed)) {
+    throw new ManagedHttpError(HttpStatusCode.Forbidden, 'Workspace is not accessible');
+  }
+
+  return parsed.value;
+}
+
 export function managedAuthentication({ store, configuration, managedIdentity }: Authentication) {
   return async (request: Request, peerAddress: string | null): Promise<ManagedScope> => {
     const browser = new URL(request.url).pathname.startsWith('/console-api/');
     const selected = request.headers.get('anthropic-workspace-id');
     let workspaceId = configuration.bootstrapWorkspaceId;
 
-    if (browser && selected !== null) {
-      workspaceId = selected;
+    if (browser) {
+      workspaceId = resolveSelectedWorkspace(selected, workspaceId);
     }
 
     if (!Schema.is(RecordId)(workspaceId)) {
@@ -82,8 +96,6 @@ export function managedAuthentication({ store, configuration, managedIdentity }:
         throw failure;
       }
 
-      requireSelectedWorkspace(selected, workspaceId);
-
       if (authorization !== null) {
         headers.set(HttpHeader.Authorization, authorization);
       } else if (apiKey !== null && apiKey.length > 0 && !/\s/u.test(apiKey)) {
@@ -100,6 +112,10 @@ export function managedAuthentication({ store, configuration, managedIdentity }:
 
     if (caller.principalId === null) {
       throw new ManagedHttpError(HttpStatusCode.Unauthorized, 'An authenticated principal is required');
+    }
+
+    if (!browser) {
+      workspaceId = resolveSelectedWorkspace(selected, workspaceId);
     }
 
     const membership = await store.auth.getMembership({ principalId: caller.principalId, workspaceId });

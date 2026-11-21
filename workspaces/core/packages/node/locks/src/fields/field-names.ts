@@ -98,23 +98,25 @@ export function fieldNames(): FieldNames {
  * enum of one value outside a variant's name is a member too, such as `GET /health output.service=mechane`.
  */
 function nodeNames({ node, definitions, path }: NodeNamesInput): ReadonlyArray<FieldEntry> {
-  if (node.anyOf.length > 0) {
-    const branches = node.anyOf.map((branch) => decodedNode({ node: branch, definitions }));
+  let current = node;
+  let currentPath = path;
 
-    return unionNames({ branches, definitions, path });
+  while (current.anyOf.length === 0 && current.enum.length === 0 && Option.isSome(current.items)) {
+    current = decodedNode({ node: current.items.value, definitions });
+    currentPath = `${currentPath}[]`;
   }
 
-  if (node.enum.length > 0) {
-    return memberNames({ values: node.enum, path });
+  if (current.anyOf.length > 0) {
+    const branches = current.anyOf.map((branch) => decodedNode({ node: branch, definitions }));
+
+    return unionNames({ branches, definitions, path: currentPath });
   }
 
-  if (Option.isSome(node.items)) {
-    const items = decodedNode({ node: node.items.value, definitions });
-
-    return nodeNames({ node: items, definitions, path: `${path}[]` });
+  if (current.enum.length > 0) {
+    return memberNames({ values: current.enum, path: currentPath });
   }
 
-  return propertyNames({ node, definitions, path, discriminators: [] });
+  return propertyNames({ node: current, definitions, path: currentPath, discriminators: [] });
 }
 
 /**

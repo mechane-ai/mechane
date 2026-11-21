@@ -6,20 +6,20 @@ import { browserRecords } from '../browser/browser-records.ts';
 import { ExecutionStatus, MachineStatus } from '../constants.ts';
 import { processRecords } from '../processes/process-records.ts';
 import { LiveMachineRow, MachineIdRow } from '../schemas.ts';
-import type { FailMachineInput, MachineRecords, MachineTimeInput } from '../types.ts';
+import type { FailMachineInput, MachineTimeInput } from './types.ts';
 
 const InteractiveMachineRow = Schema.Struct({ id: MachineId });
 
 /** The sandbox's machines on its object's SQL storage. */
-export function machineRecords({ sql }: RecordsInput): MachineRecords {
+export function machineRecords({ sql }: RecordsInput) {
   return {
-    liveMachine: () => liveMachine({ sql }),
-    latestMachine: () => latestMachine({ sql }),
-    latestReadyMachine: () => latestReadyMachine({ sql }),
-    openMachine: (input) => openMachine({ sql, ...input }),
-    readyMachine: (input) => readyMachine({ sql, ...input }),
-    loseMachine: (input) => loseMachine({ sql, ...input }),
-    failMachine: (input) => failMachine({ sql, ...input }),
+    liveMachine: (): Option.Option<LiveMachineRow> => liveMachine({ sql }),
+    latestMachine: (): Option.Option<MachineIdRow> => latestMachine({ sql }),
+    latestReadyMachine: (): Option.Option<MachineIdRow> => latestReadyMachine({ sql }),
+    openMachine: (input: MachineTimeInput): void => openMachine({ sql, ...input }),
+    readyMachine: (input: MachineTimeInput): void => readyMachine({ sql, ...input }),
+    loseMachine: (input: MachineTimeInput): void => loseMachine({ sql, ...input }),
+    failMachine: (input: FailMachineInput): void => failMachine({ sql, ...input }),
   };
 }
 

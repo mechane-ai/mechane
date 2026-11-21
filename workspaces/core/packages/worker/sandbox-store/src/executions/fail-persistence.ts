@@ -3,7 +3,7 @@ import type { SettledReceipt } from '@mechane/sandbox-wire';
 import type { SqlCall } from '@mechane/store';
 import { DateTime, Duration, Option, Schema } from 'effect';
 import { ExecutionStatus } from '../constants.ts';
-import type { PersistenceFailureInput } from '../types.ts';
+import type { PersistenceFailureInput } from './types.ts';
 
 /** Records a finished command whose live files could not be saved without changing prior terminal results. */
 export function failPersistence({

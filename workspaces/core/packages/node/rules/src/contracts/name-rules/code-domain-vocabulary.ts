@@ -15,7 +15,7 @@ export const codeDomainVocabulary = {
       standard: 'NM-02',
       violation: [{ 'scripts/turns.ts': 'export const legacyTurns = 3;\n' }],
       allowed: [{ 'scripts/turns.ts': 'export const activeTurns = 3;\n' }],
-      status: RuleStatus.Ratchet,
+      status: RuleStatus.Enforced,
       phase: RolloutPhase.Names,
     },
   ],

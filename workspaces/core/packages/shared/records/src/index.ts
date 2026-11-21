@@ -47,6 +47,8 @@ export {
   PrincipalId,
   ServiceKeyId,
   SessionId,
+  KeyId,
+  NotificationId,
 } from './entity.schemas.ts';
 export { ConnectionId } from './connection.schemas.ts';
 export { CreationRequestId, CreationRequestRecordId } from './creation.schemas.ts';

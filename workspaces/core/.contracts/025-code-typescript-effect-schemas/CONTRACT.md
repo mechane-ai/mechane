@@ -79,9 +79,9 @@ Values: `jsonBodies` `shared` [`Body`], `worker` [`Response`, `Request<CfHostMet
 - ast-grep `decode-or-die` (EF-16): enforced in phase D
 - ast-grep `schema-alias` (TD-12): enforced in phase D
 - ast-grep `encode-sync` (EF-16): enforced in phase D
-- ast-grep `encode-keys-outside-records` (CP-06): a ratchet until phase F2
+- ast-grep `encode-keys-outside-records` (CP-06): enforced in phase F2
 - ast-grep `store-row-decode` (TD-22): enforced in phase F2
-- ast-grep `bare-string-schema` (TD-26): a ratchet until phase F2
+- ast-grep `bare-string-schema` (TD-26): enforced in phase F2
 - ast-grep `json-type-argument` (TD-11): enforced in phase C2
 
 <!-- End of the generated block. -->

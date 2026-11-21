@@ -41,7 +41,7 @@ export const oxlintFixes = Effect.fn('oxlintFixes')(function* ({
       try: () => writeFile(FIX_CONFIGURATION, text),
       catch: (cause) => new FileUnwritable({ path: FIX_CONFIGURATION, reason: String(cause) }),
     }),
-    () => removePath({ path: FIX_CONFIGURATION }),
+    () => removePath({ path: FIX_CONFIGURATION }).pipe(Effect.orDie),
   );
 
   /** oxlint's flag that leaves the files a glob matches. */

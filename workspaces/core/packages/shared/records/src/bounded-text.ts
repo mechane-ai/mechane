@@ -1,8 +1,9 @@
 import { Schema } from 'effect';
+import type { Bytes } from './schemas.ts';
 import { isWellFormedText } from './schemas.ts';
 
 /** The most bytes a text holds in UTF-8. */
-type MaxBytesInput = { readonly maxBytes: number };
+type MaxBytesInput = { readonly maxBytes: Bytes };
 
 /**
  * A text that any process, row or file holds: not empty, of whole characters, with no NUL character, which ends a

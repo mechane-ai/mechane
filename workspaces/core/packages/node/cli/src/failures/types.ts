@@ -20,5 +20,5 @@ export type FailureMessages<F extends Failure> = {
   readonly [T in F['_tag']]: (failure: Extract<F, Readonly<Record<'_tag', T>>>) => FailureMessage;
 };
 
-/** An error a deployment answered, by the fields its report reads: its family, its message and its failure. */
-export type AnsweredFailure = Pick<OperationFailed, 'family' | 'message' | 'failure'>;
+/** An error a deployment answered, by the fields its report reads: its family, its reason and its failure. */
+export type AnsweredFailure = Pick<OperationFailed, 'family' | 'reason' | 'failure'>;

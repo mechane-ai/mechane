@@ -3,8 +3,7 @@ import type { FailureLines } from '@mechane/program';
 import { Effect, Match } from 'effect';
 import { PROGRAM, ReleaseStatus } from './constants.ts';
 import type { ReleaseFailed } from './errors.ts';
-import { loadReleaseSettings } from './load-release-settings.ts';
-import { printSourceRelease } from './print-source-release.ts';
+import { runMode } from './run-mode.ts';
 
 /** What the failed step of a run could not do, and why. */
 const FAILURE_LINES: Readonly<FailureLines<ReleaseFailed>> = { ReleaseFailed: stepLine };
@@ -23,14 +22,6 @@ async function main(): Promise<void> {
   });
 
   finish({ status });
-}
-
-function runMode(): Effect.Effect<void, ReleaseFailed> {
-  return Effect.gen(function* () {
-    const { inherited } = yield* loadReleaseSettings();
-
-    return yield* printSourceRelease({ inherited });
-  });
 }
 
 await main();

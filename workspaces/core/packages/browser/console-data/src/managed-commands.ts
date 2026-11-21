@@ -5,7 +5,7 @@ import { managedStatus } from './managed-errors.ts';
 import { admitSession } from './managed-reads.ts';
 import type { ManagedAttention, ManagedClient, ManagedHistoryPage } from './managed-reads.ts';
 import type { ManagedId } from './managed-records.ts';
-import { projectAgent, projectSession } from './managed-records.ts';
+import { projectAgent, projectFile, projectSession } from './managed-records.ts';
 import { waitForRetry } from './read-recovery.ts';
 import { readRequests } from './requests.ts';
 import type { ReadKind, ReadRequest } from './requests.ts';
@@ -118,6 +118,24 @@ export function createManagedCommands({
       void Promise.allSettled([refreshKind('managedEnvironments')]);
 
       return { id: environment.id, name: environment.name, updatedAt: environment.updated_at };
+    },
+    async uploadFile({ file }: { readonly file: File }) {
+      const uploaded = await client.beta.files.upload({ file }, { signal });
+
+      await Promise.allSettled([refreshKind('managedFiles')]);
+
+      return projectFile(uploaded);
+    },
+    async downloadFile(fileId: ManagedId): Promise<Blob> {
+      const response = await client.beta.files.download(fileId, {}, { signal });
+
+      return await response.blob();
+    },
+    async deleteFile(fileId: ManagedId): Promise<void> {
+      const filesApi = client.beta.files;
+
+      await filesApi.delete(fileId, {}, { signal });
+      await Promise.allSettled([refreshKind('managedFiles')]);
     },
     async createSession({
       agentId,

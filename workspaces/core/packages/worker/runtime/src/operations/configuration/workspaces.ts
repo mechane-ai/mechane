@@ -1,5 +1,5 @@
 import { catalog, InstallationAdministratorRequired, RequestInvalid, WorkspaceNotFound } from '@mechane/protocol';
-import { RecordId } from '@mechane/records';
+import { WorkspaceId } from '@mechane/records';
 import { requireAuthenticated, validatedOperation } from '../validated-operation.ts';
 import { memberWire, policyWire, workspaceWire } from './presentation.ts';
 import type { ConfigurationOperationsInput } from './types.ts';
@@ -138,7 +138,7 @@ export function createWorkspaceOperations({
         const allowance = await store.showAllowance({ workspaceId: input.workspaceId });
 
         if (allowance === null) {
-          throw new WorkspaceNotFound({ workspaceId: RecordId.make(input.workspaceId) });
+          throw new WorkspaceNotFound({ workspaceId: WorkspaceId.make(input.workspaceId) });
         }
 
         return {

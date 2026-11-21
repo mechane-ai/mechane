@@ -4,7 +4,7 @@ import { Navigation, NavigationLink, NavigationSection } from '@mechane-ai/eleme
 import { canRetainResult } from '@mechane/console-data';
 import type { ConsoleData } from '@mechane/console-data';
 import { createLink } from '@tanstack/react-router';
-import { Grid2X2, Settings } from 'lucide-react';
+import { FileText, Grid2X2, Settings } from 'lucide-react';
 import { useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { managedDestination } from './managed-navigation.ts';
@@ -31,10 +31,18 @@ export function WorkspaceNavigation({
         <WorkspaceLink
           to="/"
           search={{ workspace: data.workspace.id }}
-          isSelected={location.agent === undefined && location.view !== 'definition'}
+          isSelected={location.agent === undefined && location.view === undefined}
           icon={<Grid2X2 size={16} aria-hidden />}
         >
           Agents
+        </WorkspaceLink>
+        <WorkspaceLink
+          to="/"
+          search={{ workspace: data.workspace.id, view: 'files' }}
+          isSelected={location.agent === undefined && location.view === 'files'}
+          icon={<FileText size={16} aria-hidden />}
+        >
+          Files
         </WorkspaceLink>
       </NavigationSection>
       {pinned.length > 0 && (

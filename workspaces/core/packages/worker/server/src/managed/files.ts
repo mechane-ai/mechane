@@ -5,6 +5,7 @@ import { ManagedHttpError } from './http-error.ts';
 import { managedPageQuery } from './page-query.ts';
 import type { ManagedRequest } from './types.ts';
 import { readBoundedMultipartForm, sha256Hex } from './upload.ts';
+import { workerBearer } from './work-auth.ts';
 
 const FILE_UPLOAD_MAX_MEBIBYTES = 32;
 const FILE_UPLOAD_MAX_BYTES = FILE_UPLOAD_MAX_MEBIBYTES * BYTES_PER_MEBIBYTE;
@@ -287,6 +288,67 @@ function buildListOptions(query: ManagedRequest['query'], scope: ManagedRequest[
   return options;
 }
 
+type UploadRecordInput = {
+  readonly scope: ManagedRequest['scope'];
+  readonly id: string;
+  readonly filename: string;
+  readonly mimeType: string;
+  readonly sizeBytes: number;
+  readonly sha256: string;
+  readonly r2Key: string | null;
+  readonly content: Uint8Array | null;
+  readonly expiresAt: string | null;
+};
+
+type StoreUploadInput = {
+  readonly request: Request;
+  readonly scope: ManagedRequest['scope'];
+  readonly workspaceFiles: ManagedRequest['workspaceFiles'];
+  readonly persist: (record: UploadRecordInput) => Promise<unknown>;
+};
+
+async function storeUploadedFile({ request, scope, workspaceFiles, persist }: StoreUploadInput): Promise<unknown> {
+  const uploaded = await parseFileUpload(request);
+  const sha256 = await sha256Hex(uploaded.bytes);
+  const fileId = `file_${crypto.randomUUID().replaceAll('-', '')}`;
+
+  if (workspaceFiles !== undefined) {
+    const r2Key = `managed-files/${scope.workspaceId}/${fileId}`;
+
+    await workspaceFiles.put(r2Key, uploaded.bytes, { httpMetadata: { contentType: uploaded.mimeType } });
+
+    try {
+      return await persist({
+        scope,
+        id: fileId,
+        filename: uploaded.filename,
+        mimeType: uploaded.mimeType,
+        sizeBytes: uploaded.bytes.byteLength,
+        sha256,
+        r2Key,
+        content: null,
+        expiresAt: uploaded.expiresAt,
+      });
+    } catch (error) {
+      await removeBucketObject(workspaceFiles, r2Key);
+
+      throw error;
+    }
+  }
+
+  return await persist({
+    scope,
+    id: fileId,
+    filename: uploaded.filename,
+    mimeType: uploaded.mimeType,
+    sizeBytes: uploaded.bytes.byteLength,
+    sha256,
+    r2Key: null,
+    content: uploaded.bytes,
+    expiresAt: uploaded.expiresAt,
+  });
+}
+
 export async function handleFiles({
   operation,
   params,
@@ -300,13 +362,25 @@ export async function handleFiles({
   const files = store.managed.files;
 
   if (workerSession !== undefined) {
-    const fileId = pathParam(params, 'file_id');
+    if (operation === 'beta_upload_file_v1_files_post') {
+      const token = workerBearer(request);
+
+      return await storeUploadedFile({
+        request,
+        scope,
+        workspaceFiles,
+        persist: async (record) =>
+          await files.createSessionOutput({ ...record, sessionId: workerSession.sessionId, token }),
+      });
+    }
+
     const includeContent = operation === 'beta_download_file_v1_files__file_id__content_get';
 
     if (!includeContent && operation !== 'beta_get_file_metadata_v1_files__file_id__get') {
       throw new ManagedStoreError(HttpStatusCode.Forbidden, 'Worker access is limited to mounted session files');
     }
 
+    const fileId = pathParam(params, 'file_id');
     const { record, r2Key, content } = await files.sessionFile({ ...workerSession, fileId, includeContent });
 
     if (includeContent) {
@@ -325,47 +399,13 @@ export async function handleFiles({
 
   switch (operation) {
     case 'beta_upload_file_v1_files_post':
-    case 'upload_file_v1_files_post': {
-      const uploaded = await parseFileUpload(request);
-      const sha256 = await sha256Hex(uploaded.bytes);
-      const fileId = `file_${crypto.randomUUID().replaceAll('-', '')}`;
-
-      if (workspaceFiles !== undefined) {
-        const r2Key = `managed-files/${scope.workspaceId}/${fileId}`;
-
-        await workspaceFiles.put(r2Key, uploaded.bytes, { httpMetadata: { contentType: uploaded.mimeType } });
-
-        try {
-          return await files.create({
-            scope,
-            id: fileId,
-            filename: uploaded.filename,
-            mimeType: uploaded.mimeType,
-            sizeBytes: uploaded.bytes.byteLength,
-            sha256,
-            r2Key,
-            content: null,
-            expiresAt: uploaded.expiresAt,
-          });
-        } catch (error) {
-          await removeBucketObject(workspaceFiles, r2Key);
-
-          throw error;
-        }
-      }
-
-      return await files.create({
+    case 'upload_file_v1_files_post':
+      return await storeUploadedFile({
+        request,
         scope,
-        id: fileId,
-        filename: uploaded.filename,
-        mimeType: uploaded.mimeType,
-        sizeBytes: uploaded.bytes.byteLength,
-        sha256,
-        r2Key: null,
-        content: uploaded.bytes,
-        expiresAt: uploaded.expiresAt,
+        workspaceFiles,
+        persist: async (record) => await files.create(record),
       });
-    }
     case 'beta_list_files_v1_files_get':
     case 'list_files_v1_files_get':
       return await files.list(buildListOptions(query, scope));

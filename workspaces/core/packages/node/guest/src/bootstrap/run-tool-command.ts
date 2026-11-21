@@ -5,6 +5,7 @@ import { spawn } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { GuestMisconfigured } from '../errors.ts';
 import { killGroup } from '../executions/kill-group.ts';
+import type { ExecutionUnkillable } from '../executions/kill-group.ts';
 
 const SUCCESS_STATUS = 0;
 
@@ -45,7 +46,7 @@ export const runToolCommand = Effect.fn('runToolCommand')(function* ({
     catch: () => new GuestMisconfigured({ reason: `start ${name} failed during tool bootstrap` }),
   });
 
-  const child = yield* Effect.acquireRelease(opening, stopToolCommand);
+  const child = yield* Effect.acquireRelease(opening, (spawned) => stopToolCommand(spawned).pipe(Effect.orDie));
 
   const running = Effect.callback<Buffer, GuestMisconfigured>((resume) => {
     const chunks: Array<Buffer> = [];
@@ -76,7 +77,9 @@ export const runToolCommand = Effect.fn('runToolCommand')(function* ({
   return yield* running.pipe(Effect.timeoutOrElse({ duration: timeout, orElse: () => failure }));
 }, Effect.scoped);
 
-const stopToolCommand = Effect.fn('stopToolCommand')(function* ({ pid }: StopToolCommandInput): Effect.fn.Return<void> {
+const stopToolCommand = Effect.fn('stopToolCommand')(function* ({
+  pid,
+}: StopToolCommandInput): Effect.fn.Return<void, ExecutionUnkillable> {
   const group = Option.fromUndefinedOr(pid);
 
   if (Option.isNone(group)) {

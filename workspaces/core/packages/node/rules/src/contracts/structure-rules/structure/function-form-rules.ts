@@ -27,7 +27,7 @@ export const FUNCTION_FORM_RULES = [
     name: 'loop-recursion',
     maxSuppressions: 1,
     standard: 'EF-18',
-    status: RuleStatus.Ratchet,
+    status: RuleStatus.Enforced,
     phase: RolloutPhase.EffectDialect,
     violation: [
       'function walk({ node }: WalkInput): void { for (const child of node.children) { walk({ node: child }); } }',

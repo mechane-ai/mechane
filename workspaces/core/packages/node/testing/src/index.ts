@@ -16,7 +16,7 @@ export type { ManagedContext } from './managed-context.ts';
 export { formFields } from './auth/browser.ts';
 export { createAccount } from './auth/create-account.ts';
 export { withConsoleAgent } from './with-console-agent.ts';
-export { CONSOLE_STORAGE_READY_TIMEOUT_MS } from './with-console-browser.ts';
+export { CONSOLE_STORAGE_READY_TIMEOUT_MS, withConsoleBrowser } from './with-console-browser.ts';
 export { approveAndClaimKey, pollApproval, startApproval } from './auth/device-approval.ts';
 export type { Account, BrowserPage } from './auth/types.ts';
 export type { Page as ConsoleBrowserPage } from 'playwright';

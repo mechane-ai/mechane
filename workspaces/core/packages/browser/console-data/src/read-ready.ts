@@ -25,6 +25,7 @@ const readDefinitions = {
   agents: { tables: ['managedAgents'], cardinality: 'many' },
   agent: { tables: ['managedAgents'], cardinality: 'one' },
   managedEnvironments: { tables: ['managedEnvironments'], cardinality: 'many' },
+  managedFiles: { tables: ['managedFiles'], cardinality: 'many' },
   sessions: { tables: ['managedSessions'], cardinality: 'many' },
   session: { tables: ['managedSessions'], cardinality: 'one' },
   threads: { tables: ['managedThreads'], cardinality: 'many' },

@@ -8,3 +8,4 @@ export { SessionTranscript } from './managed/transcript.tsx';
 export { CreateEnvironmentForm, StartAgentForm } from './managed/setup.tsx';
 export { MechPinButton } from './mech-pin.tsx';
 export { ManagedEvidenceDetails, ManagedEvidenceList, ManagedEvidenceListPlaceholder } from './managed/evidence.tsx';
+export { ManagedFileList, ManagedFileListPlaceholder, UploadFileForm } from './managed/files.tsx';

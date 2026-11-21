@@ -60,7 +60,7 @@ export const decodeAnswer = Effect.fn('decodeAnswer')(function* <S extends Servi
 
     return yield* new OperationFailed({
       family: error.family,
-      message: error.message,
+      reason: error.message,
       failure,
       status: response.status,
       retryAfter,

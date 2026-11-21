@@ -2,6 +2,7 @@ import { HttpMethod, HttpStatusCode, MachineId, RecordId } from '@mechane/record
 import { FileCheckpointPurpose, FileCheckpointResult } from '@mechane/sandbox-store';
 import type { SandboxStore } from '@mechane/sandbox-store';
 import {
+  ExecutionId,
   guestWorkspacePath,
   SandboxRecoveryAction,
   SandboxStopOrigin,
@@ -20,7 +21,7 @@ import { sqliteStore } from './store/sqlite-store.ts';
 
 const MACHINE = MachineId.make('1cb42442-41ee-490f-b5a3-be0645ca2b27');
 const GENERATION = RecordId.make('732040d3-747e-43aa-8d0e-0c38f90b2170');
-const EXECUTION = '3126a3b3-217b-4d9f-9c53-8f6ea5781a92';
+const EXECUTION = ExecutionId.make('3126a3b3-217b-4d9f-9c53-8f6ea5781a92');
 const ARCHIVE = { bytes: 1, parts: 1, sha256: 'a'.repeat(64) } as const;
 
 function unusedBucket(): R2Bucket {

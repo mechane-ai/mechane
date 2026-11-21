@@ -1,4 +1,4 @@
-import { Bytes, MachineId, renamedWireStruct } from '@mechane/records';
+import { Bytes, MachineId, RecordText, renamedWireStruct } from '@mechane/records';
 import { ExecutionId, SandboxCommandOutcome } from '@mechane/sandbox-wire';
 import { Schema } from 'effect';
 import { ExecutionStatus, MachineStatus } from './constants.ts';
@@ -16,13 +16,13 @@ export const LiveMachineRow = renamedWireStruct({
 export type LiveMachineRow = typeof LiveMachineRow.Type;
 
 /** The request every execution holds, which a repeat of its id must match. */
-const REQUEST_FIELDS = { id: ExecutionId, command: Schema.String, timeout: Schema.DurationFromMillis } as const;
+const REQUEST_FIELDS = { id: ExecutionId, command: RecordText, timeout: Schema.DurationFromMillis } as const;
 
 /** The column of the request's timeout, which counts milliseconds. */
 const REQUEST_RENAMES = { timeout: 'timeout_ms' } as const;
 
 /** The stored output of a settled execution. */
-const OUTPUT_FIELDS = { duration: Schema.DurationFromMillis, outputText: Schema.String, omittedBytes: Bytes } as const;
+const OUTPUT_FIELDS = { duration: Schema.DurationFromMillis, outputText: RecordText, omittedBytes: Bytes } as const;
 
 /** The columns of the request's timeout and the output's duration, which count milliseconds. */
 const OUTPUT_RENAMES = { ...REQUEST_RENAMES, duration: 'duration_ms' } as const;

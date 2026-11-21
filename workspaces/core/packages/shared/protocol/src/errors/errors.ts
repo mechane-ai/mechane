@@ -1,11 +1,19 @@
-import { ConnectionId, RecordId, WorkspaceId } from '@mechane/records';
+import {
+  ConnectionId,
+  DurationFromSeconds,
+  KeyId,
+  MechId,
+  NotificationId,
+  RecordText,
+  WorkspaceId,
+} from '@mechane/records';
 import { Schema } from 'effect';
 import { UnknownFields, WireTime } from '../schemas.ts';
 
 /** No operation of the catalog serves the request's method and path. */
 export class RouteNotFound extends Schema.TaggedError<RouteNotFound>()('RouteNotFound', {
-  method: Schema.String,
-  path: Schema.String,
+  method: RecordText,
+  path: RecordText,
 }) {}
 
 /** The request's path parameters, query or body do not decode with its operation's schemas. */
@@ -28,7 +36,7 @@ export class ServiceUnavailable extends Schema.TaggedError<ServiceUnavailable>()
 
 /** No release published a file at the key the request names. */
 export class ReleaseFileNotFound extends Schema.TaggedError<ReleaseFileNotFound>()('ReleaseFileNotFound', {
-  key: Schema.String,
+  key: RecordText,
 }) {}
 
 /** A principal operation's request carries no key. */
@@ -50,30 +58,32 @@ export class DeviceApprovalNotFound extends Schema.TaggedError<DeviceApprovalNot
 ) {}
 
 /** The caller sent more requests than a policy allows in its window; `retryAfterSeconds` is when the next one fits. */
-export class RateLimited extends Schema.TaggedError<RateLimited>()('RateLimited', { retryAfterSeconds: Schema.Int }) {}
+export class RateLimited extends Schema.TaggedError<RateLimited>()('RateLimited', {
+  retryAfterSeconds: DurationFromSeconds,
+}) {}
 
 /** The caller owns no key with this id; another principal's key answers the same. */
-export class KeyNotFound extends Schema.TaggedError<KeyNotFound>()('KeyNotFound', { keyId: RecordId }) {}
+export class KeyNotFound extends Schema.TaggedError<KeyNotFound>()('KeyNotFound', { keyId: KeyId }) {}
 
 /** The caller's principal belongs to no workspace with this id; one that exists answers the same to a non-member. */
 export class WorkspaceNotFound extends Schema.TaggedError<WorkspaceNotFound>()('WorkspaceNotFound', {
-  workspaceId: RecordId,
+  workspaceId: WorkspaceId,
 }) {}
 
 /** The deployment's operator suspended the workspace, so no member's call reaches it until a deploy lifts that. */
 export class WorkspaceSuspended extends Schema.TaggedError<WorkspaceSuspended>()('WorkspaceSuspended', {
-  workspaceId: RecordId,
+  workspaceId: WorkspaceId,
 }) {}
 
 /** The workspace has no mech with this id. */
-export class MechNotFound extends Schema.TaggedError<MechNotFound>()('MechNotFound', { mechId: RecordId }) {}
+export class MechNotFound extends Schema.TaggedError<MechNotFound>()('MechNotFound', { mechId: MechId }) {}
 
 /** The mech has accepted or active work, so an idle-only operation cannot proceed. */
-export class MechBusy extends Schema.TaggedError<MechBusy>()('MechBusy', { mechId: RecordId }) {}
+export class MechBusy extends Schema.TaggedError<MechBusy>()('MechBusy', { mechId: MechId }) {}
 
 /** A stable notification identity cannot be reused for different content. */
 export class NotificationConflict extends Schema.TaggedError<NotificationConflict>()('NotificationConflict', {
-  notificationId: RecordId,
+  notificationId: NotificationId,
 }) {}
 
 /**
@@ -81,7 +91,7 @@ export class NotificationConflict extends Schema.TaggedError<NotificationConflic
  * fields the wire gave it, which a client reads by the family beside them.
  */
 export class UnknownFailure extends Schema.TaggedError<UnknownFailure>()('UnknownFailure', {
-  code: Schema.String,
+  errorCode: RecordText,
   fields: UnknownFields,
 }) {}
 

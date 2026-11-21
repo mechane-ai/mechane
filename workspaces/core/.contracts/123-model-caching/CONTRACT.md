@@ -1,7 +1,7 @@
 ---
 name: model-caching
 message: Use native provider caching and conservative reservations for every model request.
-paths: ["packages/worker/runtime/src/{models,managed,actor,views}/**", "packages/worker/control-store/src/provider-attempt.ts", "packages/worker/control-store/src/store/managed/{session-assertion,session-lifecycle}.ts", "packages/worker/control-store/src/store/{provider-attempts,managed-budget,managed-session-usage}.ts", "packages/node/smoke/src/**"]
+paths: ["packages/worker/runtime/src/{models,managed,actor,views}/**", "packages/worker/authority-store/src/store/provider-attempts.ts", "packages/worker/managed-store/src/store/managed/**", "packages/node/smoke/src/**"]
 ---
 
 ## Rules

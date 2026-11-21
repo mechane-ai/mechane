@@ -1,5 +1,5 @@
 import { RequestInvalid, WorkspaceNotFound, WorkspaceOwnerRequired } from '@mechane/protocol';
-import { RecordId, WorkspaceId } from '@mechane/records';
+import { WorkspaceId } from '@mechane/records';
 import type { StoreContext } from '../../context.ts';
 import { lockWorkspace } from '../../scope-locks.ts';
 import type { WorkspaceActor } from './types.ts';
@@ -27,7 +27,7 @@ export async function lockWorkspaceAuthority({
   const authority = result.rows[0];
 
   if (authority === undefined) {
-    throw new WorkspaceNotFound({ workspaceId: RecordId.make(workspaceId) });
+    throw new WorkspaceNotFound({ workspaceId: WorkspaceId.make(workspaceId) });
   }
 
   if (isOwnerRequired && authority.role !== 'owner') {

@@ -75,7 +75,7 @@ export async function dispatchPending({
   store.dispatchExecution({ executionId: execution.id, machineId: machine.value.id, now: DateTime.nowUnsafe() });
 
   // The claim wrote the execution's row, which nothing deletes.
-  const dispatched = Option.getOrThrow(store.execution({ executionId: execution.id }));
+  const dispatched = store.requireExecution({ executionId: execution.id });
 
   if (dispatched.status === ExecutionStatus.Dispatched) {
     const granted = Option.some(environment);

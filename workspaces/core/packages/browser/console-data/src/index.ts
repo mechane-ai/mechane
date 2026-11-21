@@ -15,6 +15,7 @@ export { canRetainResult, isSignedOut, isStorageFailure, problemMessage } from '
 export type {
   ManagedAgent,
   ManagedEnvironment,
+  ManagedFile,
   ManagedSession,
   ManagedThread,
   ManagedEvent,

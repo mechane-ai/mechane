@@ -40,7 +40,7 @@ export const FAILURE_HANDLING_RULES = [
     exemptRoles: [FileRole.NativeRuntime, FileRole.NativePresentation],
     maxSuppressions: 1,
     standard: 'ER-06',
-    status: RuleStatus.Ratchet,
+    status: RuleStatus.Enforced,
     phase: RolloutPhase.EffectDialect,
     violation: [
       'const row = Option.getOrThrow(store.mech());',

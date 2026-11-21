@@ -9,7 +9,7 @@ import {
   ServiceUnavailable,
 } from '@mechane/protocol';
 import { HttpHeader } from '@mechane/records';
-import { DateTime, Schema } from 'effect';
+import { DateTime, Duration, Schema } from 'effect';
 import { authenticationChallenge } from './authentication-challenge.ts';
 
 type FailureResponseInput = { readonly failure: unknown; readonly request: Request };
@@ -42,7 +42,9 @@ function failureMessage(failure: ServerFailure): string {
   }
 
   if (failure._tag === 'RateLimited') {
-    return `Too many requests. Try again in ${failure.retryAfterSeconds} seconds.`;
+    const seconds = Math.ceil(Duration.toSeconds(failure.retryAfterSeconds));
+
+    return `Too many requests. Try again in ${seconds} seconds.`;
   }
 
   return FAILURE_MESSAGES[failure._tag] ?? failure._tag;
@@ -74,7 +76,9 @@ export function respondFailure({ failure, request }: FailureResponseInput): Resp
   }
 
   if (reported._tag === 'RateLimited') {
-    headers.set(HttpHeader.RetryAfter, String(reported.retryAfterSeconds));
+    const seconds = Math.ceil(Duration.toSeconds(reported.retryAfterSeconds));
+
+    headers.set(HttpHeader.RetryAfter, String(seconds));
   }
 
   return Response.json(Schema.encodeSync(ErrorBody)({ error: detail }), {

@@ -1,5 +1,5 @@
 import { KeyNotFound, PersonalWorkspaceProtected, RequestInvalid } from '@mechane/protocol';
-import { RecordId, WorkspaceId } from '@mechane/records';
+import { KeyId, WorkspaceId } from '@mechane/records';
 import { randomUUID } from 'node:crypto';
 import type { StoreContext } from '../../context.ts';
 import { recordConfigurationAudit } from '../configuration/audit.ts';
@@ -139,7 +139,7 @@ export function createWorkspaceServiceStore(context: StoreContext) {
         const key = await createKeyStore(transaction).revokeKey({ principalId, keyId: service.keyId });
 
         if (key === null) {
-          throw new KeyNotFound({ keyId: RecordId.make(service.keyId) });
+          throw new KeyNotFound({ keyId: KeyId.make(service.keyId) });
         }
 
         await recordConfigurationAudit({

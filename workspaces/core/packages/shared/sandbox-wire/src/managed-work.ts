@@ -1,4 +1,4 @@
-import { boundedText, BYTES_PER_KIBIBYTE } from '@mechane/records';
+import { boundedText, Bytes, BYTES_PER_KIBIBYTE } from '@mechane/records';
 import { Duration, Schema } from 'effect';
 import { SANDBOX_SERVICE_PREFIX } from './service.ts';
 
@@ -14,7 +14,8 @@ const SessionId = Schema.String.check(sessionIdPattern);
 const environmentIdPattern = Schema.isPattern(/^env_[A-Za-z0-9_-]{1,128}$/u);
 const EnvironmentId = Schema.String.check(environmentIdPattern);
 const WORK_SECRET_MAX_BYTES = 32 * BYTES_PER_KIBIBYTE;
-const WorkSecret = boundedText({ maxBytes: WORK_SECRET_MAX_BYTES });
+const workSecretMaxBytes = Bytes.make(WORK_SECRET_MAX_BYTES);
+const WorkSecret = boundedText({ maxBytes: workSecretMaxBytes });
 const WORKER_IDLE_MIN = Duration.seconds(1);
 const WORKER_IDLE_MAX = Duration.hours(1);
 

@@ -1,23 +1,23 @@
 import { ReceiptStatus } from '@mechane/sandbox-wire';
-import { decodeFirst, decodeRows } from '@mechane/store';
+import { decodeFirst, decodeOne, decodeRows } from '@mechane/store';
 import type { RecordsInput, SqlCall } from '@mechane/store';
 import { DateTime, Duration, Option, Schema } from 'effect';
 import { ExecutionStatus } from '../constants.ts';
 import { ExecutionRow } from '../schemas.ts';
+import { failPersistence } from './fail-persistence.ts';
 import type {
   ClaimExecutionInput,
   DispatchExecutionInput,
   ExecutionIdInput,
-  ExecutionRecords,
+  PersistenceFailureInput,
   SettleExecutionInput,
-} from '../types.ts';
-import { failPersistence } from './fail-persistence.ts';
+} from './types.ts';
 
 const PendingExecution = Schema.Struct({ claimedAt: Schema.DateTimeUtcFromMillis });
 
 /** The sandbox's executions on its object's SQL storage. */
-export function executionRecords({ sql }: RecordsInput): ExecutionRecords {
-  const unfinishedExecutions: ExecutionRecords['unfinishedExecutions'] = () => {
+export function executionRecords({ sql }: RecordsInput) {
+  function unfinishedExecutions(): ReadonlyArray<ExecutionRow> {
     const cursor = sql.exec(
       'SELECT * FROM executions WHERE status IN (?, ?) ORDER BY rowid',
       ExecutionStatus.Pending,
@@ -25,34 +25,35 @@ export function executionRecords({ sql }: RecordsInput): ExecutionRecords {
     );
 
     return decodeRows({ cursor, schema: ExecutionRow });
-  };
+  }
 
-  const cancelPendingExecution: ExecutionRecords['cancelPendingExecution'] = ({ executionId }) => {
-    sql.exec('INSERT INTO execution_cancellations (id) VALUES (?) ON CONFLICT (id) DO NOTHING', executionId);
-
-    refusePendingExecution({ executionId });
-  };
-
-  const refusePendingExecution: ExecutionRecords['refusePendingExecution'] = ({ executionId }) => {
+  function refusePendingExecution({ executionId }: ExecutionIdInput): void {
     sql.exec(
       'UPDATE executions SET status = ? WHERE id = ? AND status = ?',
       ExecutionStatus.Unavailable,
       executionId,
       ExecutionStatus.Pending,
     );
-  };
+  }
+
+  function cancelPendingExecution({ executionId }: ExecutionIdInput): void {
+    sql.exec('INSERT INTO execution_cancellations (id) VALUES (?) ON CONFLICT (id) DO NOTHING', executionId);
+
+    refusePendingExecution({ executionId });
+  }
 
   return {
-    execution: (input) => execution({ sql, ...input }),
-    activeExecution: () => activeExecution({ sql }),
-    latestPendingExecutionAt: () => latestPendingExecutionAt({ sql }),
+    execution: (input: ExecutionIdInput): Option.Option<ExecutionRow> => execution({ sql, ...input }),
+    requireExecution: (input: ExecutionIdInput): ExecutionRow => requireExecution({ sql, ...input }),
+    activeExecution: (): Option.Option<ExecutionRow> => activeExecution({ sql }),
+    latestPendingExecutionAt: (): Option.Option<DateTime.Utc> => latestPendingExecutionAt({ sql }),
     unfinishedExecutions,
     cancelPendingExecution,
     refusePendingExecution,
-    claimExecution: (input) => claimExecution({ sql, ...input }),
-    dispatchExecution: (input) => dispatchExecution({ sql, ...input }),
-    settleExecution: (input) => settleExecution({ sql, ...input }),
-    failPersistence: (input) => failPersistence({ sql, ...input }),
+    claimExecution: (input: ClaimExecutionInput): void => claimExecution({ sql, ...input }),
+    dispatchExecution: (input: DispatchExecutionInput): void => dispatchExecution({ sql, ...input }),
+    settleExecution: (input: SettleExecutionInput): void => settleExecution({ sql, ...input }),
+    failPersistence: (input: PersistenceFailureInput): void => failPersistence({ sql, ...input }),
   };
 }
 
@@ -80,6 +81,12 @@ function execution({ sql, executionId }: SqlCall<ExecutionIdInput>): Option.Opti
   const cursor = sql.exec('SELECT * FROM executions WHERE id = ?', executionId);
 
   return decodeFirst({ cursor, schema: ExecutionRow });
+}
+
+function requireExecution({ sql, executionId }: SqlCall<ExecutionIdInput>): ExecutionRow {
+  const cursor = sql.exec('SELECT * FROM executions WHERE id = ?', executionId);
+
+  return decodeOne({ cursor, schema: ExecutionRow });
 }
 
 function claimExecution({ sql, request, now }: SqlCall<ClaimExecutionInput>): void {

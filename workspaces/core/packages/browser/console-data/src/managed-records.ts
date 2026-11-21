@@ -1,9 +1,11 @@
 import type { createConsoleManagedClient } from '@mechane/client/managed';
+import { Bytes } from '@mechane/records';
 import { Schema } from 'effect';
 
 type Client = ReturnType<typeof createConsoleManagedClient>;
 type SessionApi = Client['beta']['sessions'];
 type Agent = Awaited<ReturnType<Client['beta']['agents']['retrieve']>>;
+type ManagedFileWire = Awaited<ReturnType<Client['beta']['files']['retrieveMetadata']>>;
 type Session = Awaited<ReturnType<SessionApi['retrieve']>>;
 type Thread = Awaited<ReturnType<SessionApi['threads']['retrieve']>>;
 type SessionEvent = Awaited<ReturnType<SessionApi['events']['list']>>['data'][number];
@@ -41,6 +43,19 @@ export type ManagedAgent = typeof ManagedAgent.Type;
 
 export const ManagedEnvironment = Schema.Struct({ id: ManagedId, name: Schema.String, updatedAt: Schema.String });
 export type ManagedEnvironment = typeof ManagedEnvironment.Type;
+
+export const ManagedFile = Schema.Struct({
+  id: ManagedId,
+  filename: Schema.String,
+  mimeType: Schema.String,
+  sizeBytes: Bytes,
+  createdAt: Schema.String,
+  isDownloadable: Schema.Boolean,
+  expiresAt: nullableText,
+  scopeId: Schema.NullOr(ManagedId),
+});
+
+export type ManagedFile = typeof ManagedFile.Type;
 
 export const ManagedSession = Schema.Struct({
   id: ManagedId,
@@ -90,6 +105,19 @@ export function projectAgent(agent: Agent): ManagedAgent {
     model: agent.model.id,
     version: agent.version,
     updatedAt: agent.updated_at,
+  };
+}
+
+export function projectFile(file: ManagedFileWire): ManagedFile {
+  return {
+    id: file.id,
+    filename: file.filename,
+    mimeType: file.mime_type,
+    sizeBytes: Bytes.make(file.size_bytes),
+    createdAt: file.created_at,
+    isDownloadable: file.downloadable ?? true,
+    expiresAt: file.expires_at ?? null,
+    scopeId: file.scope?.id ?? null,
   };
 }
 

@@ -5,6 +5,8 @@ import type { ErrorDetail } from './schemas.ts';
 import type { ServerFailure } from './server-failure.errors.ts';
 import type { FailureCodec } from './types.ts';
 
+const TAG_FIELD = '_tag';
+
 /** An error detail, and the failures its reader expects, which a code outside them leaves unknown. */
 type DetailFailureInput = { readonly detail: ErrorDetail; readonly failures: ReadonlyArray<FailureCodec> };
 
@@ -22,7 +24,7 @@ export const detailFailure = Effect.fn('detailFailure')(function* ({
   const expected = Array.findFirst(failures, (failure) => failure.identifier === code);
 
   if (Option.isNone(expected)) {
-    return new UnknownFailure({ code, fields });
+    return new UnknownFailure({ errorCode: code, fields });
   }
 
   // Each wire key derives from its field forward, as `errorDetail` wrote it; a key the failure does not declare stays.
@@ -32,5 +34,7 @@ export const detailFailure = Effect.fn('detailFailure')(function* ({
   const fieldName: (key: string) => string = (key) =>
     Option.getOrElse(Option.fromNullishOr(fieldNames.get(key)), () => key);
 
-  return yield* Schema.decodeUnknownEffect(expected.value)({ _tag: code, ...Record.mapKeys(fields, fieldName) });
+  const decodedInput = Record.set(Record.mapKeys(fields, fieldName), TAG_FIELD, code);
+
+  return yield* Schema.decodeUnknownEffect(expected.value)(decodedInput);
 });

@@ -1,7 +1,7 @@
 import { HttpStatusCode } from '@mechane/records';
 import { ExecutionObservation, ReceiptStatus } from '@mechane/sandbox-wire';
 import type { ExecutionReceipt } from '@mechane/sandbox-wire';
-import { Option, Schema } from 'effect';
+import { Option, Result, Schema } from 'effect';
 import { GuestAnswer } from '../schemas.ts';
 import type { GuestReply } from './types.ts';
 
@@ -21,9 +21,12 @@ type GuestAnswerInput = { readonly reply: GuestReply };
 /** The receipt a guest answered for an execution. */
 type ReceiptAnswerInput = { readonly receipt: ExecutionReceipt };
 
+const decodeGuestAnswer = Schema.decodeUnknownResult(GuestAnswerBody);
+
 /** What a guest's reply answers: the machine is another one, or the guest sent the execution's receipt. */
 export function guestAnswer({ reply }: GuestAnswerInput): GuestAnswer {
-  const answered: GuestAnswerBody = Schema.decodeUnknownSync(GuestAnswerBody)(reply);
+  const decoded = decodeGuestAnswer(reply);
+  const answered: GuestAnswerBody = Result.getOrThrow(decoded);
 
   switch (answered.status) {
     case HttpStatusCode.NotFound:

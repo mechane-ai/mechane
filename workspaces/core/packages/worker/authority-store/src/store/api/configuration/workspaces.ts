@@ -8,7 +8,7 @@ import {
   WorkspaceNotFound,
   WorkspacePolicyConflict,
 } from '@mechane/protocol';
-import { PrincipalId, RecordId, WorkspaceId } from '@mechane/records';
+import { PrincipalId, WorkspaceId } from '@mechane/records';
 import { Record, Schema } from 'effect';
 import type { StoreContext } from '../../context.ts';
 import { revokePrincipalKeys } from '../auth/workspace-services.ts';
@@ -223,7 +223,7 @@ export function createWorkspaceRecords(context: StoreContext) {
       const policy = await readRuntimePolicy(context, workspaceId);
 
       if (policy === null) {
-        throw new WorkspaceNotFound({ workspaceId: RecordId.make(workspaceId) });
+        throw new WorkspaceNotFound({ workspaceId: WorkspaceId.make(workspaceId) });
       }
 
       return policy;
@@ -241,7 +241,7 @@ export function createWorkspaceRecords(context: StoreContext) {
         const row = result.rows[0];
 
         if (row === undefined) {
-          throw new WorkspaceNotFound({ workspaceId: RecordId.make(input.workspaceId) });
+          throw new WorkspaceNotFound({ workspaceId: WorkspaceId.make(input.workspaceId) });
         }
 
         if (input.isCreateOnly && Schema.is(StoredPolicy)(row.policy)) {

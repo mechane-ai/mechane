@@ -1,10 +1,10 @@
+import { renamedWireStruct } from '@mechane/records';
 import { Schema } from 'effect';
 
-const Dependency = Schema.Struct({
-  module: Schema.String,
-  resolved: Schema.String,
-  isUnresolvable: Schema.Boolean,
-}).pipe(Schema.encodeKeys({ isUnresolvable: 'couldNotResolve' }));
+const Dependency = renamedWireStruct({
+  fields: { module: Schema.String, resolved: Schema.String, isUnresolvable: Schema.Boolean },
+  renames: { isUnresolvable: 'couldNotResolve' },
+});
 
 const CruisedModule = Schema.Struct({ source: Schema.String, dependencies: Schema.Array(Dependency) });
 

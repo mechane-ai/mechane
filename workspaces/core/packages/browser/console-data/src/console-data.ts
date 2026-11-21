@@ -116,6 +116,7 @@ function readInterval(request: ReadRequest): number | false {
     case 'managedEnvironments':
       return false;
     case 'agent':
+    case 'managedFiles':
     case 'sessions':
     case 'session':
     case 'threads':
@@ -527,6 +528,7 @@ async function createData(options: CreateConsoleData, workspaceOwner: WorkspaceO
               );
             case 'agent':
             case 'managedEnvironments':
+            case 'managedFiles':
             case 'session':
             case 'sessionArtifact':
             case 'threads':

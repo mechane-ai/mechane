@@ -16,8 +16,8 @@ const SERVER_ERROR_STATUS = 500;
 
 /** The report of each way a call fails, under its tag: the deployment's error, or no answer of Mechane's. */
 export const CLIENT_FAILURE_MESSAGES: Readonly<FailureMessages<ClientFailure>> = {
-  OperationFailed: ({ family, message, failure }) =>
-    answeredMessage({ failed: { family, message, failure }, note: Option.none() }),
+  OperationFailed: ({ family, reason, failure }) =>
+    answeredMessage({ failed: { family, reason, failure }, note: Option.none() }),
   OriginUnreachable: ({ _tag, reason }: OriginUnreachable) =>
     ownMessage({
       code: _tag,

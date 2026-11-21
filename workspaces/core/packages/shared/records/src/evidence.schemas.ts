@@ -2,7 +2,7 @@ import { Schema } from 'effect';
 import { boundedText } from './bounded-text.ts';
 import { BYTES_PER_KIBIBYTE, SHA256_PATTERN } from './constants.ts';
 import { GitCommit } from './git-commit.schemas.ts';
-import { RecordId, RecordText } from './schemas.ts';
+import { Bytes, RecordId, RecordText } from './schemas.ts';
 
 /** The capture request fixes this identity before any media is produced. */
 export const EvidenceArtifactId = RecordId.pipe(Schema.brand('EvidenceArtifactId'));
@@ -17,7 +17,7 @@ export const EvidenceMachineId = RecordId.pipe(Schema.brand('EvidenceMachineId')
 export type EvidenceMachineId = typeof EvidenceMachineId.Type;
 
 const EVIDENCE_PROVENANCE_MAX_BYTES = 4 * BYTES_PER_KIBIBYTE;
-const EvidenceProvenanceText = boundedText({ maxBytes: EVIDENCE_PROVENANCE_MAX_BYTES });
+const EvidenceProvenanceText = boundedText({ maxBytes: Bytes.make(EVIDENCE_PROVENANCE_MAX_BYTES) });
 
 /** A checkout observation identifies local source, not the revision served by a remote page. */
 export const EvidenceProvenance = Schema.TaggedUnion({

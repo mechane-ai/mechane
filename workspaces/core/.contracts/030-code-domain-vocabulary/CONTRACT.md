@@ -67,6 +67,6 @@ confuse a product run, native task, preserved Workflow run, work item, or Slack 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
 Values: `historyWords` `old`, `new`, `legacy`, `deprecated`, `v2`, `temp`.
-- owned check `banned-words` (NM-02): a ratchet until phase F1
+- owned check `banned-words` (NM-02): enforced in phase F1
 
 <!-- End of the generated block. -->

@@ -1,8 +1,8 @@
-import { wireStruct } from '@mechane/records';
+import { RecordText, wireStruct } from '@mechane/records';
 import { Schema } from 'effect';
 
 /** An OAuth error GitHub reports in place of a code or a token, such as `access_denied`. */
-const GitHubErrorCode = Schema.String;
+const GitHubErrorCode = RecordText;
 
 /** GitHub's answer to the exchange, which reports a refused code with status 200 and an `error` field. */
 export const GitHubTokenAnswer = Schema.Union([
@@ -13,6 +13,6 @@ export const GitHubTokenAnswer = Schema.Union([
 export type GitHubTokenAnswer = typeof GitHubTokenAnswer.Type;
 
 /** The signed-in user; `id` is GitHub's stable numeric id, and `login` a name its owner may change. */
-export const GitHubUser = Schema.Struct({ id: Schema.Int, login: Schema.String });
+export const GitHubUser = Schema.Struct({ id: Schema.Int, login: RecordText });
 
 export type GitHubUser = typeof GitHubUser.Type;

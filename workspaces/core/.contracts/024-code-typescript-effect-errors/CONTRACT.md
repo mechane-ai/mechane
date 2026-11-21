@@ -106,26 +106,26 @@ and verify invalid inputs cannot normalize into another valid date.
 - oxlint `unicorn/throw-new-error` (ER-04): enforced in phase F3, `"off"`
 - ast-grep `untagged-errors-typescript` (ER-04): enforced in phase F3
 - ast-grep `catch-handlers-typescript` (ER-04): enforced in phase F3
-- ast-grep `promise-chains-typescript` (ER-04): a ratchet until phase F3
+- ast-grep `promise-chains-typescript` (ER-04): enforced in phase F3
 - oxlint's restricted members (ER-05): enforced in phase A: `Effect.ignore`, `Effect.option`, `Effect.result`, `Effect.either`, `Effect.orElse`, `Effect.orElseSucceed`, `Effect.orElseFail`, `Effect.catchCause`
 - oxlint's restricted members (ER-06): enforced in phase F3: `Option.getOrThrowWith`
-- ast-grep `defect-sites` (ER-06): a ratchet until phase F3
+- ast-grep `defect-sites` (ER-06): enforced in phase F3
 - ast-grep `catch-tags` (ER-07): enforced in phase D
 - oxlint's restricted members (ER-07): enforced in phase D: `Effect.catchTag`, `Effect.catchIf`, `Effect.catchFilter`, `Effect.catchSome`, `Effect.match`
 - ast-grep `catch-all-outside-boundary` (ER-08): enforced in phase F3
 - ast-grep `no-instanceof` (EF-05): enforced in phase F3
-- oxlint's restricted members (EF-01): a ratchet until phase F3: `Effect.gen`, `Effect.fnUntraced`
-- oxlint's restricted members (EF-02): a ratchet until phase F3: `Effect.map`, `Effect.flatMap`, `Effect.andThen`, `Effect.tap`, `Effect.as`, `Effect.asVoid`, `Effect.asSome`, `Effect.zip`, `Effect.zipWith`, `Effect.suspend`, `Effect.flatten`
-- oxlint's restricted members (EF-02): a ratchet until phase F3: `Effect.filterOrFail`
+- oxlint's restricted members (EF-01): enforced in phase F3: `Effect.gen`, `Effect.fnUntraced`
+- oxlint's restricted members (EF-02): enforced in phase F3: `Effect.map`, `Effect.flatMap`, `Effect.andThen`, `Effect.tap`, `Effect.as`, `Effect.asVoid`, `Effect.asSome`, `Effect.zip`, `Effect.zipWith`, `Effect.suspend`, `Effect.flatten`
+- oxlint's restricted members (EF-02): enforced in phase F3: `Effect.filterOrFail`
 - owned check `span-name` (EF-01): enforced in phase C1
 - ast-grep `effect-fn-return-type` (EF-01): enforced in phase C1
-- ast-grep `effect-function-form` (EF-01): a ratchet until phase F3
+- ast-grep `effect-function-form` (EF-01): enforced in phase F3
 - ast-grep `effect-import-form` (EF-02): enforced in phase C1
 - ast-grep `effect-run-at-entry` (EF-12): enforced
-- ast-grep `error-free-text` (ER-02): a ratchet until phase F2
+- ast-grep `error-free-text` (ER-02): enforced in phase F2
 - ast-grep `no-ok-false` (ER-04): enforced
 - ast-grep `no-throw-or-try` (ER-04): enforced
 - ast-grep `tagged-error-cause` (ER-01): enforced
-- ast-grep `try-promise-shape` (EF-06): a ratchet until phase F3
+- ast-grep `try-promise-shape` (EF-06): enforced in phase F3
 
 <!-- End of the generated block. -->

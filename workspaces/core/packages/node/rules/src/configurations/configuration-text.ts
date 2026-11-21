@@ -45,6 +45,8 @@ export function configurationText({ value, notes, expanded, syntax }: Configurat
 }
 
 /** One value's text; an array or object holds the text of each of its elements or fields. */
+// Serializing a nested configuration value walks an arbitrary tree of JSON/JS arrays and objects.
+// ast-grep-ignore: loop-recursion
 function valueText({ value, path, comments, openPaths, syntax }: ValueTextInput): string {
   if (Array.isArray(value)) {
     const elementText: (element: unknown, index: number) => string = (element, index) =>

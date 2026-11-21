@@ -142,7 +142,9 @@ export function processLedger({ settings, ledger, fibers }: ProcessLedgerInput):
 
     if (Option.isSome(current.run)) {
       MutableRef.set(managed.value.state, { ...current, isStopRequested: true });
-      yield* current.run.value.kill;
+      yield* current.run.value.kill.pipe(
+        Effect.mapError((failure) => new ProcessFailed({ processId, reason: failure.reason })),
+      );
       yield* Deferred.await(managed.value.settled).pipe(
         Effect.timeoutOrElse({
           duration: STOP_TIMEOUT,

@@ -9,6 +9,9 @@ const UNNAMED_RULE = 'oxlint';
 /** The standard rule a restricted entry's message ends with, such as `(ER-05)`. */
 const RULE_ID = /\(([A-Z]{2}-\d{2})\)$/;
 
+/** The restricted oxlint rule names whose diagnostics report a standard rule id in their help text. */
+const RESTRICTED_KEYS: ReadonlySet<string> = new Set([RestrictedKey.Properties, RestrictedKey.Imports]);
+
 type RuleKeyInput = { readonly diagnostic: OxlintDiagnostic };
 
 type CodeKeyInput = {
@@ -39,7 +42,7 @@ function codeKey({ code, help }: CodeKeyInput): string {
 
   const id = Option.flatMap(help, ruleIdMatch);
 
-  if (Option.isSome(id) && (rule === RestrictedKey.Properties || rule === RestrictedKey.Imports)) {
+  if (Option.isSome(id) && RESTRICTED_KEYS.has(rule)) {
     return id.value[0].slice(1, -1);
   }
 

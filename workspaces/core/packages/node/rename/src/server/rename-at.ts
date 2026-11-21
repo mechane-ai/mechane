@@ -1,6 +1,7 @@
 import { Effect, Option, Record, Schema } from 'effect';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import type { FileFailed, ServerExited } from '../errors.ts';
+import { ServerExited } from '../errors.ts';
+import type { FileFailed } from '../errors.ts';
 import { readText } from '../files/read-text.ts';
 import { TextEdit } from '../schemas.ts';
 import type { FileEdit, LanguageServer, Site } from '../types.ts';
@@ -41,7 +42,11 @@ export const renameAt = Effect.fn('renameAt')(function* ({
     return Option.none();
   }
 
-  return Option.map(Schema.decodeUnknownSync(RenameAnswer)(answered.result), fileEdits);
+  const answer = yield* Schema.decodeUnknownEffect(RenameAnswer)(answered.result).pipe(
+    Effect.mapError((cause) => new ServerExited({ status: String(cause) })),
+  );
+
+  return Option.map(answer, fileEdits);
 });
 
 /** Each edit of a rename's answer, by the absolute path of its file. */

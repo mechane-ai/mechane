@@ -22,7 +22,12 @@ export function useManagedPaging(location: ConsoleLocation, workspaceId: string)
     if (location.agent === undefined) {
       void navigate({
         to: '/',
-        search: { ...tableSearch(location), workspace: workspaceId, ...(cursor === null ? {} : { page: cursor }) },
+        search: {
+          ...tableSearch(location),
+          workspace: workspaceId,
+          ...(location.view === undefined ? {} : { view: location.view }),
+          ...(cursor === null ? {} : { page: cursor }),
+        },
         state,
       });
     } else {

@@ -10,7 +10,7 @@ import { RetryAfter } from './retry-after.ts';
  */
 export class OperationFailed extends Schema.TaggedError<OperationFailed>()('OperationFailed', {
   family: Schema.Enum(ErrorFamily),
-  message: Schema.String,
+  reason: Schema.String,
   failure: Schema.Union([ServerFailure, UnknownFailure]),
   status: Schema.Int,
   retryAfter: RetryAfter,

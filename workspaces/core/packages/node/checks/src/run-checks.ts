@@ -36,6 +36,9 @@ type RunChecksInput = { readonly baseBranch: string; readonly inherited: Readonl
 /** The members, and every parsed file of theirs. */
 type OwnedFindingsInput = { readonly members: ReadonlyArray<Member>; readonly sources: ReadonlyArray<ParsedSource> };
 
+/** The rule tools whose ratchet findings come from the owned and normalizer runs. */
+const OWNED_RATCHET_TOOLS: ReadonlySet<RuleTool> = new Set([RuleTool.Owned, RuleTool.Normalizer]);
+
 /** Every owned check; each enforces declared values that no installed tool checks. */
 const CHECKS: ReadonlyArray<Check> = [checkBoundaries, checkDocuments, checkPins];
 
@@ -46,7 +49,7 @@ const ownedFindings = Effect.fn('ownedFindings')(function* ({
 }: OwnedFindingsInput): Effect.fn.Return<ReadonlyArray<Finding>, InputUnreadable> {
   const owned = yield* ownedSites({ sources });
   const normalized = yield* normalizerSites({ rules: heldNormalizers(), members, sources });
-  const ratchets = ratchetRules().filter(({ tool }) => tool === RuleTool.Owned || tool === RuleTool.Normalizer);
+  const ratchets = ratchetRules().filter(({ tool }) => OWNED_RATCHET_TOOLS.has(tool));
 
   return yield* heldFindings({
     sites: [...owned, ...normalized],

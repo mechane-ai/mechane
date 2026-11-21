@@ -1,10 +1,11 @@
-import { boundedText, BYTES_PER_KIBIBYTE, EXECUTION_VARIABLE_NAME_PATTERN } from '@mechane/records';
+import { boundedText, Bytes, BYTES_PER_KIBIBYTE, EXECUTION_VARIABLE_NAME_PATTERN } from '@mechane/records';
 import { Schema } from 'effect';
 
 const VARIABLE_MAX_BYTES = 64 * BYTES_PER_KIBIBYTE;
+const variableMaxBytes = Bytes.make(VARIABLE_MAX_BYTES);
 const NamePattern = Schema.isPattern(EXECUTION_VARIABLE_NAME_PATTERN);
 const VariableName = Schema.String.check(NamePattern);
-const VariableValue = boundedText({ maxBytes: VARIABLE_MAX_BYTES });
+const VariableValue = boundedText({ maxBytes: variableMaxBytes });
 
 /** Trusted execution transport only. Values stay out of execution rows, receipts, and workspace archives. */
 export const ExecutionEnvironment = Schema.Struct({

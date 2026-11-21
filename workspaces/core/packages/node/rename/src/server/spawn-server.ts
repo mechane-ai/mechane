@@ -1,5 +1,5 @@
 import { WORKSPACE_FOLDER } from '@mechane/checks-kernel';
-import { Cause, Queue, Schema } from 'effect';
+import { Array, Cause, Option, Queue, Result, Schema } from 'effect';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { ServerExited } from '../errors.ts';
@@ -25,16 +25,32 @@ export function spawnServer({ messages }: SpawnServerInput): SpawnedServer {
 
   const unread: Array<Buffer> = [];
 
-  /** The message a frame's body holds. */
-  const decoded: (frame: string) => ServerMessage = (frame) =>
-    Schema.decodeUnknownSync(ServerMessage)(JSON.parse(frame));
+  const messageJson = Schema.fromJsonString(ServerMessage);
+  const decodeMessage = Schema.decodeUnknownResult(messageJson);
 
   /** Queues each whole message the chunk completes, and keeps the bytes of the next one. */
   const onData: (chunk: Buffer) => void = (chunk) => {
-    const { frames, rest } = splitFrames({ bytes: Buffer.concat([...unread, chunk]) });
+    const bytes = Buffer.concat([...unread, chunk]);
+    const { frames, rest } = splitFrames({ bytes });
 
     unread.splice(0, unread.length, rest);
-    Queue.offerAllUnsafe(messages, frames.map(decoded));
+
+    const decoded = frames.map((frame) => decodeMessage(frame));
+    const failed = Array.findFirst(decoded, Result.isFailure);
+
+    if (Option.isSome(failed)) {
+      const status = String(failed.value.failure);
+      const exited = new ServerExited({ status });
+      const cause = Cause.fail(exited);
+
+      Queue.failCauseUnsafe(messages, cause);
+
+      return;
+    }
+
+    const parsed = decoded.filter(Result.isSuccess).map((entry) => entry.success);
+
+    Queue.offerAllUnsafe(messages, parsed);
   };
 
   /** Fails the request that waits, once the server exits with its status. */

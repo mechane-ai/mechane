@@ -87,11 +87,11 @@ Do not wrap them in a second enum or rename an external field. Owned domain clos
 
 - asset `assets/ast-grep/rules` `http-method-literals-typescript` (SC-12): enforced in phase F2
 - asset `assets/ast-grep/rules` `http-status-literals-typescript` (SC-12): enforced in phase F2
-- asset `assets/ast-grep/rules` `member-chains-typescript` (014): a ratchet until phase F2
+- asset `assets/ast-grep/rules` `member-chains-typescript` (014): enforced in phase F2
 - asset `assets/ast-grep/rules` `membership-lists-typescript` (014): enforced in phase F2
 - ast-grep `testing-http-method-literals` (SC-12): enforced in phase F2
 - ast-grep `testing-http-status-literals` (SC-12): enforced in phase F2
-- ast-grep `hand-written-tag` (TD-20): a ratchet until phase F2
+- ast-grep `hand-written-tag` (TD-20): enforced in phase F2
 - ast-grep `literal-comparison` (TD-19): enforced
 - ast-grep `raw-literal-schema` (TD-19): enforced in phase F2
 

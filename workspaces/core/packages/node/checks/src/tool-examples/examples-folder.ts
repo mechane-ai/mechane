@@ -22,6 +22,6 @@ export const examplesFolder = Effect.fn('examplesFolder')(function* (): Effect.f
       try: () => mkdtemp(prefix),
       catch: (cause) => new FileUnwritable({ path: temporary, reason: String(cause) }),
     }),
-    (folder) => removePath({ path: folder }),
+    (folder) => removePath({ path: folder }).pipe(Effect.orDie),
   );
 });

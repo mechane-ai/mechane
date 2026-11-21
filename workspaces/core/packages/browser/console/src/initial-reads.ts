@@ -32,5 +32,13 @@ export function initialReads(location: ConsoleLocation): ReadonlyArray<ReadReque
     ];
   }
 
-  return location.view === 'definition' ? [] : [readRequests.agents(location.page ?? null, location)];
+  if (location.view === 'definition') {
+    return [];
+  }
+
+  if (location.view === 'files') {
+    return [readRequests.managedFiles(location.page ?? null)];
+  }
+
+  return [readRequests.agents(location.page ?? null, location)];
 }

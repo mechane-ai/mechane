@@ -50,7 +50,7 @@ export async function runExecution({
   const canDispatch = await advanceSandbox({ store, provider, workspace, executionId: claimed.id, deadline });
 
   // The claim wrote the execution's row, which nothing deletes.
-  const execution = Option.getOrThrow(store.execution({ executionId }));
+  const execution = store.requireExecution({ executionId });
 
   if (!canDispatch) {
     if (execution.status === ExecutionStatus.Pending) {

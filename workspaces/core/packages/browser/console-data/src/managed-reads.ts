@@ -10,7 +10,14 @@ import { upsertRows } from './collections.ts';
 import type { CanonicalCollection, CanonicalTables, CanonicalWriter } from './collections.ts';
 import { listQuery } from './list-query.ts';
 import { isManagedResourceDenied, ManagedResourceMismatch, ManagedSessionUnavailable } from './managed-errors.ts';
-import { ManagedId, projectAgent, projectEvent, projectSession, projectThread } from './managed-records.ts';
+import {
+  ManagedId,
+  projectAgent,
+  projectEvent,
+  projectFile,
+  projectSession,
+  projectThread,
+} from './managed-records.ts';
 import type { ReadReceipt, ReadRequest } from './requests.ts';
 
 export type ManagedClient = ReturnType<typeof createConsoleManagedClient>;
@@ -19,6 +26,7 @@ export type ManagedKind =
   | 'agent'
   | 'agents'
   | 'managedEnvironments'
+  | 'managedFiles'
   | 'sessions'
   | 'session'
   | 'threads'
@@ -225,6 +233,14 @@ export async function loadManagedRead({
         })),
         page.next_page,
       );
+    }
+    case 'managedFiles': {
+      const page = await client.beta.files.list(
+        { ...pagination, ...(request.scopeId === undefined ? {} : { scope_id: request.scopeId }) },
+        options,
+      );
+
+      return await save(tables.managedFiles, page.data.map(projectFile), page.next_page);
     }
     case 'sessions': {
       const page = await client.beta.sessions.list(

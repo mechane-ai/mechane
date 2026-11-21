@@ -79,7 +79,7 @@ export const dataSqlStoreBoundaries = {
       ...AST_GREP_DEFAULTS,
       name: 'records-type-inferred',
       standard: 'TD-04',
-      status: RuleStatus.Ratchet,
+      status: RuleStatus.Enforced,
       phase: RolloutPhase.DataShapes,
       violation: ['export type TurnRecords = { readonly turn: (input: TurnIdInput) => Option.Option<TurnRow> };'],
       allowed: ['export type TurnRecords = ReturnType<typeof turnRecords>;'],

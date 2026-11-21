@@ -1,5 +1,5 @@
 import { KeyName, NoFields } from '@mechane/protocol';
-import { RecordId, renamedWireStruct } from '@mechane/records';
+import { KeyId, renamedWireStruct } from '@mechane/records';
 import { Schema } from 'effect';
 import { CommandShape, FlagKind } from '../../constants.ts';
 import type { CommandDeclaration } from '../../types.ts';
@@ -34,6 +34,6 @@ export const KEY_COMMANDS = {
     operations: ['revokeKey'],
     flags: {},
     arguments: [{ name: 'key-id', summary: 'the id of the key, as mechane key list prints it' }],
-    input: renamedWireStruct({ fields: { keyId: RecordId }, renames: { keyId: 'key-id' } }),
+    input: renamedWireStruct({ fields: { keyId: KeyId }, renames: { keyId: 'key-id' } }),
   },
 } as const satisfies Readonly<Record<string, CommandDeclaration>>;

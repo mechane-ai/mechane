@@ -1,5 +1,6 @@
 export type { ExecutionRow, LiveMachineRow } from './schemas.ts';
-export type { ExecutionClaim, SandboxStore, SandboxAlarm } from './types.ts';
+export type { ExecutionClaim } from './executions/types.ts';
+export type { SandboxStore, SandboxAlarm } from './types.ts';
 export { ExecutionStatus, MachineStatus } from './constants.ts';
 export { openSandboxStore } from './open-sandbox-store.ts';
 export { sandboxAlarm } from './sandbox-alarm.ts';

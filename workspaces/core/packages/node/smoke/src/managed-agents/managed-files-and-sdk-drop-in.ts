@@ -1,5 +1,6 @@
 import Anthropic, { toFile } from '@anthropic-ai/sdk';
 import { sessionsTokenFromSecret } from '@anthropic-ai/sdk/lib/environments/worker';
+import { managedWorkspaceId } from '@mechane/managed-protocol';
 import { HttpHeader, HttpMethod, HttpStatusCode, MediaType } from '@mechane/records';
 import { createAccount, issueEnvironmentKey, requireFixtures, waitFor } from '@mechane/testing';
 import type { ScenarioInput } from '@mechane/testing';
@@ -81,6 +82,55 @@ export async function managedFilesAndSdkDropIn({ stack }: ScenarioInput): Promis
   });
 
   assert.equal(explicitBeta.status, HttpStatusCode.Ok);
+
+  // 1b. Verify API-key multi-workspace routing via anthropic-workspace-id (wrkspc_<32hex> and UUID).
+  const personalWorkspaceHeader = managedWorkspaceId({ workspaceId: ownerAccount.workspaceId });
+
+  const ownerPersonal = new Anthropic({
+    apiKey: ownerAccount.token,
+    baseURL,
+    maxRetries: 0,
+    defaultHeaders: { 'anthropic-workspace-id': personalWorkspaceHeader },
+  });
+
+  const personalBody = `personal-${marker}\n`;
+
+  const personalFile = await ownerPersonal.beta.files.upload({
+    file: await toFile(Buffer.from(personalBody, 'utf8'), 'personal.txt', { type: MediaType.PlainText }),
+  });
+
+  const personalMetadata = await ownerPersonal.beta.files.retrieveMetadata(personalFile.id);
+
+  assert.equal(personalMetadata.id, personalFile.id);
+  await assert.rejects(owner.beta.files.retrieveMetadata(personalFile.id), { status: HttpStatusCode.NotFound });
+
+  const otherPersonal = new Anthropic({
+    apiKey: memberAccount.token,
+    baseURL,
+    maxRetries: 0,
+    defaultHeaders: { 'anthropic-workspace-id': personalWorkspaceHeader },
+  });
+
+  await assert.rejects(otherPersonal.beta.files.list(), { status: HttpStatusCode.Forbidden });
+
+  const invalidWorkspaceClient = new Anthropic({
+    apiKey: ownerAccount.token,
+    baseURL,
+    maxRetries: 0,
+    defaultHeaders: { 'anthropic-workspace-id': 'wrkspc_not_a_real_workspace' },
+  });
+
+  await assert.rejects(invalidWorkspaceClient.beta.files.list(), { status: HttpStatusCode.Forbidden });
+
+  const invalidKeyClient = new Anthropic({
+    apiKey: 'mk_invalid_key',
+    baseURL,
+    maxRetries: 0,
+    defaultHeaders: { 'anthropic-workspace-id': personalWorkspaceHeader },
+  });
+
+  await assert.rejects(invalidKeyClient.beta.files.list(), { status: HttpStatusCode.Unauthorized });
+  await ownerPersonal.beta.files.delete(personalFile.id);
 
   // 2. Create an agent using an explicit bare model alias and stream a real turn via SSE.
   const environment = await owner.beta.environments.create({ name: marker, config: { type: 'self_hosted' } });
@@ -224,10 +274,42 @@ export async function managedFilesAndSdkDropIn({ stack }: ScenarioInput): Promis
   assert.equal(await workerDownload.text(), firstBody);
 
   await assert.rejects(runner.beta.files.download(secondFile.id), { status: HttpStatusCode.NotFound });
+  await assert.rejects(runner.beta.files.list(), { status: HttpStatusCode.Forbidden });
   await assert.rejects(runner.beta.files.delete(firstFile.id), { status: HttpStatusCode.Forbidden });
+
+  // Scoped worker may upload outputs strictly into its own active session scope.
+  const outputBody = `generated-${marker}\n`;
+
+  const exportedOutput = await runner.beta.files.upload({
+    file: await toFile(Buffer.from(outputBody, 'utf8'), 'report.txt', { type: MediaType.PlainText }),
+  });
+
+  assert.equal(exportedOutput.filename, 'report.txt');
+  assert.deepEqual(exportedOutput.scope, { id: session.id, type: 'session' });
+
+  const scopedOutputs = await owner.beta.files.list({ scope_id: session.id });
+
+  assert.deepEqual(
+    scopedOutputs.data.map((entry) => entry.id),
+    [exportedOutput.id],
+  );
+
+  const exportedDownload = await owner.beta.files.download(exportedOutput.id);
+
+  assert.equal(await exportedDownload.text(), outputBody);
+  await assert.rejects(runner.beta.files.delete(exportedOutput.id), { status: HttpStatusCode.Forbidden });
+
   await owner.beta.environments.work.stop(work.id, { environment_id: environment.id, force: true });
+  await assert.rejects(
+    runner.beta.files.upload({
+      file: await toFile(Buffer.from('after-stop', 'utf8'), 'late.txt', { type: MediaType.PlainText }),
+    }),
+    { status: HttpStatusCode.Unauthorized },
+  );
 
   // 6. Delete files and confirm they disappear cleanly.
+  await owner.beta.files.delete(exportedOutput.id);
+
   const deletedFirst = await owner.beta.files.delete(firstFile.id);
 
   assert.deepEqual(deletedFirst, { id: firstFile.id, type: 'file_deleted' });

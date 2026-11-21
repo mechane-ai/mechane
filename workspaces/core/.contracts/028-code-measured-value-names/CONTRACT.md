@@ -47,8 +47,8 @@ at an owned boundary without wrapping every timestamp, duration, or amount in Ef
 Values: `measureWords` `timeout`, `deadline`, `delay`, `interval`, `limit`, `size`, `budget`, `duration`, `grace`, `allowance`, `cap`, `lifetime`, `window`, `ttl`, `age`, `period`, `threshold`.
 - ast-grep `measured-value-names` (NM-08): enforced
 - ast-grep `bound-order` (NM-08): enforced in phase D
-- ast-grep `raw-money-number` (TD-15): a ratchet until phase F2
-- ast-grep `raw-time-number` (TD-16): a ratchet until phase F5
-- ast-grep `raw-time-schema` (TD-16): a ratchet until phase F5
+- ast-grep `raw-money-number` (TD-15): enforced in phase F2
+- ast-grep `raw-time-number` (TD-16): enforced in phase F5
+- ast-grep `raw-time-schema` (TD-16): enforced in phase F5
 
 <!-- End of the generated block. -->

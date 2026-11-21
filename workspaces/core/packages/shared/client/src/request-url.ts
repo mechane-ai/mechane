@@ -1,4 +1,4 @@
-import { Option, Record } from 'effect';
+import { Option } from 'effect';
 
 /** Text fields as an operation's path or query schema encodes them. */
 type TextFields = Readonly<Record<string, string>>;
@@ -31,7 +31,7 @@ function pathSegment({ segment, params }: PathSegmentInput): string {
   }
 
   // The catalog's params schema encodes every parameter its path names, so a missing one is a defect of the catalog.
-  const value = Option.getOrThrow(Record.get(params, segment.slice(1)));
+  const value = Option.getOrThrow(Option.fromNullishOr(params[segment.slice(1)]));
 
   return encodeURIComponent(value);
 }

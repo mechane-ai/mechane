@@ -62,7 +62,7 @@ const finishedBash = Effect.fn('finishedBash')(function* ({
   settings,
 }: RunExecutionInput): Effect.fn.Return<FinishedBash, ExecutionUnstarted, Scope.Scope> {
   const starting = spawnBash({ executionId, request, settings });
-  const run = yield* Effect.acquireRelease(starting, (bash) => bash.kill);
+  const run = yield* Effect.acquireRelease(starting, (bash) => bash.kill.pipe(Effect.orDie));
   const exitCode = yield* Deferred.await(run.exited).pipe(Effect.timeoutOption(request.timeout));
 
   return { run, exitCode };

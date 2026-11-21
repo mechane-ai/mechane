@@ -27,7 +27,7 @@ export const codeTypescriptEffectErrors = {
       ...AST_GREP_DEFAULTS,
       name: 'error-free-text',
       standard: 'ER-02',
-      status: RuleStatus.Ratchet,
+      status: RuleStatus.Enforced,
       phase: RolloutPhase.DataShapes,
       violation: [
         "class Missing extends Schema.TaggedError<Missing>()('Missing', { message: Schema.String }) {}",
@@ -78,7 +78,7 @@ export const codeTypescriptEffectErrors = {
       ...AST_GREP_DEFAULTS,
       name: 'try-promise-shape',
       standard: 'EF-06',
-      status: RuleStatus.Ratchet,
+      status: RuleStatus.Enforced,
       phase: RolloutPhase.EffectDialect,
       violation: [
         'Effect.tryPromise({ try: async () => { await open(); }, catch: (cause) => new Unreadable({ reason: String(cause) }) });',

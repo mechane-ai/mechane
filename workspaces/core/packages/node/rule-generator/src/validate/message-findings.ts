@@ -52,9 +52,27 @@ export function messageFindings({ ruleFiles }: MessageFindingsInput): ReadonlyAr
   ];
 }
 
+type RegisteredRule = (typeof REGISTERED_RULES)[number]['rule'];
+type RuleInput = { readonly rule: RegisteredRule };
+
+function printedFixes({ rule }: RuleInput): ReadonlyArray<PrintedFix> {
+  switch (rule.tool) {
+    case RuleTool.Restricted:
+      return [{ standard: rule.standard, message: rule.message }];
+    case RuleTool.Cruiser:
+    case RuleTool.Manifest:
+      return [{ standard: rule.standard, message: rule.comment }];
+    case RuleTool.AstGrep:
+    case RuleTool.Compiler:
+    case RuleTool.Normalizer:
+    case RuleTool.Owned:
+    case RuleTool.Oxlint:
+      return [];
+  }
+}
+
 /** Each restricted rule's message and each dependency-cruiser rule's or family's comment that lacks the form. */
 function fixFindings(): ReadonlyArray<RegistryFinding> {
-  const rules = REGISTERED_RULES.map(({ rule }) => rule);
   const isFormless: (fix: PrintedFix) => boolean = ({ message }) => !FIX_FORM.test(message);
 
   const fixFinding: (fix: PrintedFix) => RegistryFinding = ({ standard }) => ({
@@ -62,14 +80,7 @@ function fixFindings(): ReadonlyArray<RegistryFinding> {
     message: `Teach the fix of ${standard}'s rule, ${FORM_EXAMPLE}`,
   });
 
-  const fixes: ReadonlyArray<PrintedFix> = [
-    ...rules
-      .filter((rule) => rule.tool === RuleTool.Restricted)
-      .map(({ standard, message }) => ({ standard, message })),
-    ...rules
-      .filter((rule) => rule.tool === RuleTool.Cruiser || rule.tool === RuleTool.Manifest)
-      .map(({ standard, comment }) => ({ standard, message: comment })),
-  ];
+  const fixes: ReadonlyArray<PrintedFix> = REGISTERED_RULES.flatMap(({ rule }) => printedFixes({ rule }));
 
   return fixes.filter(isFormless).map(fixFinding);
 }

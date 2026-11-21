@@ -21,6 +21,7 @@ const publicAccess: ReadonlyMap<string, WorkerAccess> = new Map([
   ['BetaDeleteMemory', 'memory'],
   ['beta_get_skill_version_v1_skills__skill_id__versions__version__get', 'skill'],
   ['beta_download_skill_version_content_v1_skills__skill_id__versions__version__content_get', 'skill'],
+  ['beta_upload_file_v1_files_post', 'file'],
   ['beta_get_file_metadata_v1_files__file_id__get', 'file'],
   ['beta_download_file_v1_files__file_id__content_get', 'file'],
   ['beta_acknowledge_work_v1_environments__environment_id__work__work_id__ack_post', 'work'],

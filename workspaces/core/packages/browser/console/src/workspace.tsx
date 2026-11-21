@@ -7,6 +7,7 @@ import {
   ConversationPlaceholder,
   EvidencePagePlaceholder,
   ManagedEvidenceListPlaceholder,
+  ManagedFileListPlaceholder,
   ManagedListPlaceholder,
 } from '@mechane/console-views';
 import type { Workspace } from '@mechane/protocol';
@@ -29,6 +30,7 @@ import { NavigationPreferenceProvider } from './navigation-preferences.tsx';
 import { readReaderPositions, restoreReaderPositions } from './navigation.tsx';
 import { ResourceView } from './resource.tsx';
 import { ManagedScreen } from './screens/managed.tsx';
+import { WorkspaceFiles } from './screens/workspace-files.tsx';
 import { WorkspaceSettings } from './screens/workspace-settings.tsx';
 import type { ConsoleLocation, ConsoleNavigation, ReaderPosition } from './types.ts';
 import { useScreenLifetime } from './use-screen-lifetime.ts';
@@ -98,6 +100,10 @@ function workspacePlaceholder(selected: ConsoleLocation): ReactNode {
 
   if (selected.session !== undefined) {
     return <ConversationPlaceholder />;
+  }
+
+  if (selected.agent === undefined && selected.view === 'files') {
+    return <ManagedFileListPlaceholder />;
   }
 
   return <ManagedListPlaceholder kind={selected.agent === undefined ? 'agents' : 'sessions'} />;
@@ -503,6 +509,8 @@ function WorkspaceContent({
       )}
       {location.view === 'definition' ? (
         <WorkspaceSettings data={data} session={session} workspace={data.workspace} />
+      ) : location.view === 'files' ? (
+        <WorkspaceFiles data={data} location={location} />
       ) : (
         <ManagedScreen
           key={JSON.stringify([location.agent, location.session, location.thread])}

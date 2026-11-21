@@ -4,7 +4,7 @@ import { betaAgentToolset20260401 } from '@anthropic-ai/sdk/tools/agent-toolset/
 import type { ManagedWorkerClaim } from '@mechane/sandbox-wire';
 import { capturePromise } from '@mechane/utilities';
 import { Option, Predicate, Result } from 'effect';
-import { prepareManagedGitCheckout } from './checkout.ts';
+import { createSessionOutputExporter, prepareManagedGitCheckout } from './checkout.ts';
 import { readCommandEnvironment } from './command-environment.ts';
 import type { startComputerRelay } from './computer-relay.ts';
 import { installedBash } from './installed-bash.ts';
@@ -42,6 +42,7 @@ export function installedSessionTools({
   signal,
 }: SessionTools): InstalledTools {
   const mount = { pending: Option.none<Mount>() };
+  const exporter = createSessionOutputExporter({ origin, token, transport, workspace: workdir, signal });
 
   function access({ signal: commandSignal }: Pick<Request, 'signal'>): ReturnType<typeof readCommandEnvironment> {
     return readCommandEnvironment({ origin, sessionId, token, transport, signal: commandSignal });
@@ -58,35 +59,40 @@ export function installedSessionTools({
 
     const { session } = context;
 
-    if (
-      Predicate.isUndefined(session) ||
-      !session.resources.some((resource) => MOUNTED_RESOURCE_TYPES.has(resource.type))
-    ) {
-      return standard;
-    }
+    const hasMountedResources =
+      !Predicate.isUndefined(session) &&
+      session.resources.some((resource) => MOUNTED_RESOURCE_TYPES.has(resource.type));
 
-    const pending = Option.getOrElse(mount.pending, () => {
-      const promise = prepareManagedGitCheckout({
-        origin,
-        sessionId,
-        session,
-        token,
-        transport,
-        workspace: workdir,
-        signal,
+    let pendingMount: Option.Option<Mount> = Option.none();
+
+    if (hasMountedResources && !Predicate.isUndefined(session)) {
+      const pending = Option.getOrElse(mount.pending, () => {
+        const promise = prepareManagedGitCheckout({
+          origin,
+          sessionId,
+          session,
+          token,
+          transport,
+          workspace: workdir,
+          signal,
+        });
+
+        return capturePromise({ promise });
       });
 
-      return capturePromise({ promise });
-    });
-
-    mount.pending = Option.some(pending);
+      mount.pending = Option.some(pending);
+      pendingMount = Option.some(pending);
+    }
 
     return standard.map((tool): BetaRunnableTool => ({
       ...tool,
       async run(input: unknown, toolContext) {
-        const mounted = await pending;
+        if (Option.isSome(pendingMount)) {
+          const mounted = await pendingMount.value;
 
-        Result.getOrThrow(mounted);
+          Result.getOrThrow(mounted);
+        }
+
         signal.throwIfAborted();
 
         const invocationSignal = Option.fromNullishOr(toolContext).pipe(
@@ -97,7 +103,23 @@ export function installedSessionTools({
           invocationSignal.value.throwIfAborted();
         }
 
-        return await tool.run(input, toolContext);
+        async function invokeTool(): Promise<Awaited<ReturnType<BetaRunnableTool['run']>>> {
+          return await tool.run(input, toolContext);
+        }
+
+        const runPromise = invokeTool();
+        const result = await capturePromise({ promise: runPromise });
+
+        await exporter.flush();
+
+        return Result.getOrThrow(result);
+      },
+      async close() {
+        await exporter.flushOnce();
+
+        if (!Predicate.isUndefined(tool.close)) {
+          await tool.close();
+        }
       },
     }));
   };

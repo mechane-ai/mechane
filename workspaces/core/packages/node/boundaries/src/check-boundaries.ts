@@ -9,11 +9,27 @@ import { moduleGraph } from './module-graph.ts';
 import { packageFindings } from './package-findings.ts';
 import type { CruiseViolation } from './schemas.ts';
 
+type RegisteredRule = (typeof REGISTERED_RULES)[number]['rule'];
+type RuleInput = { readonly rule: RegisteredRule };
+
+function cruiserFixEntry({ rule }: RuleInput): ReadonlyArray<readonly [string, string]> {
+  switch (rule.tool) {
+    case RuleTool.Cruiser:
+    case RuleTool.Manifest:
+      return [[rule.name, rule.comment] as const];
+    case RuleTool.AstGrep:
+    case RuleTool.Compiler:
+    case RuleTool.Normalizer:
+    case RuleTool.Owned:
+    case RuleTool.Oxlint:
+    case RuleTool.Restricted:
+      return [];
+  }
+}
+
 /** The comment of each dependency-cruiser rule and family, which teaches its fix, by the name the registry gives it. */
 const CRUISER_FIXES: ReadonlyMap<string, string> = new Map(
-  REGISTERED_RULES.map(({ rule }) => rule)
-    .filter((rule) => rule.tool === RuleTool.Cruiser || rule.tool === RuleTool.Manifest)
-    .map(({ name, comment }) => [name, comment]),
+  REGISTERED_RULES.flatMap(({ rule }) => cruiserFixEntry({ rule })),
 );
 
 /** A dependency-cruiser rule an import breaks, by its name, and the file the import resolves to. */

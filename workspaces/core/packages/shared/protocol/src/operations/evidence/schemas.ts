@@ -19,7 +19,7 @@ import { Schema } from 'effect';
 import { WireTime } from '../../schemas.ts';
 import { EVIDENCE_ARTIFACT_MAX_BYTES, EVIDENCE_TEXT_MAX_BYTES, EvidenceKind } from './constants.ts';
 
-const EvidenceText = boundedText({ maxBytes: EVIDENCE_TEXT_MAX_BYTES });
+const EvidenceText = boundedText({ maxBytes: Bytes.make(EVIDENCE_TEXT_MAX_BYTES) });
 /** The digest identifies exact stored bytes and detects changed upload replays. */
 export const EvidenceSha256 = Schema.String.check(Schema.isPattern(SHA256_PATTERN));
 export type EvidenceSha256 = typeof EvidenceSha256.Type;

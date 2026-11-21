@@ -27,9 +27,8 @@ export function claimExecution({
       store.claimExecution({ request, now });
     }
 
-    const stored = store.execution({ executionId });
     // The claim above wrote the row when none was there, and nothing deletes one.
-    const row = Option.getOrThrow(stored);
+    const row = store.requireExecution({ executionId });
     const holdsRequest = row.command === command && Duration.equals(row.timeout, timeout);
 
     if (!holdsRequest) {

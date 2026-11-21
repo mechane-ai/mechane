@@ -1,3 +1,4 @@
+import { RecordText } from '@mechane/records';
 import { Schema } from 'effect';
 import { UnknownFields } from '../schemas.ts';
 import { ErrorFamily } from './constants.ts';
@@ -7,7 +8,7 @@ import { ErrorFamily } from './constants.ts';
  * failure's own fields under snake_case keys. A client reads a code it does not know by `family`.
  */
 export const ErrorDetail = Schema.StructWithRest(
-  Schema.Struct({ family: Schema.Enum(ErrorFamily), code: Schema.String, message: Schema.String }),
+  Schema.Struct({ family: Schema.Enum(ErrorFamily), code: RecordText, message: RecordText }),
   [UnknownFields],
 );
 

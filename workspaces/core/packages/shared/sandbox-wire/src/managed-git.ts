@@ -1,8 +1,8 @@
-import { boundedText } from '@mechane/records';
+import { boundedText, Bytes } from '@mechane/records';
 import { Schema } from 'effect';
 import type { ManagedWorkerSession } from './managed-work.ts';
 
-const GIT_AUTHOR_MAX_BYTES = 256;
+const GIT_AUTHOR_MAX_BYTES = Bytes.make(256);
 const authorCharacters = Schema.isPattern(/^[^\r\n<>]+$/u);
 const AuthorField = boundedText({ maxBytes: GIT_AUTHOR_MAX_BYTES }).check(authorCharacters);
 

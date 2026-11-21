@@ -1,19 +1,18 @@
 ---
 name: structured-presentation
 message: Publish bounded json-render presentations only through explicit communication tools without granting model-authored authority.
-paths: ["packages/shared/protocol/src/presentation/**", "packages/worker/runtime/src/{execution,tools}/**", "packages/browser/console-views/**", "packages/browser/console/src/**"]
+paths: ["packages/shared/presentation/**", "packages/shared/client/**", "packages/browser/console-views/**", "packages/browser/console/src/**"]
 ---
 
 ## Rules
 
-Declare the supported json-render catalog and complete spec validator once in `@mechane/protocol/presentation`.
+Declare the supported json-render catalog and complete spec validator once in `@mechane/presentation`.
 Derive types from that native schema. The Console's React registry consumes the validated spec. Platform renderers live
 with their integration owner and may map the catalog without introducing another Mechane spec or authority model.
 
-Render a native archive publication's recorded `presentation` only after decoding its bounded catalog spec.
-Include the stored readable fallback. Keep the owner-only archive read-only, and require current workspace ownership.
 Managed Agents session events use Anthropic's documented content blocks. Keep card fields out of those envelopes and
-render Markdown text as text content. External deliveries publish only through the integration's communication tool.
+render Markdown text as text content. External deliveries publish only through the integration's communication tool
+after decoding the bounded catalog spec and retaining a readable fallback.
 
 Bound nodes, text, nesting, collections, and media before retaining a complete presentation. Keep readable fallback text
 with each published message. Reject invalid complete specs without creating blank success or repeating agent work.

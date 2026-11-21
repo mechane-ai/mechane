@@ -1,5 +1,6 @@
 import {
   boundedText,
+  Bytes,
   BYTES_PER_KIBIBYTE,
   EXECUTION_VARIABLE_NAME_PATTERN,
   RecordText,
@@ -50,7 +51,7 @@ const EnvironmentName = Schema.String.check(
 /** Values are public configuration; secret references resolve only inside the trusted runtime. */
 export const ExecutionAccess = wireStruct({
   fields: {
-    variables: Schema.Record(EnvironmentName, boundedText({ maxBytes: VARIABLE_MAX_BYTES })),
+    variables: Schema.Record(EnvironmentName, boundedText({ maxBytes: Bytes.make(VARIABLE_MAX_BYTES) })),
     secrets: Schema.Record(EnvironmentName, IntegrationSecretReference),
   },
 });

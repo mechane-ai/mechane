@@ -16,8 +16,8 @@ export type ConsoleLocation = ListQuery & {
   readonly page?: string;
   /** Absent leaves the session gallery visible without opening one capture. */
   readonly artifact?: string;
-  /** Absent opens the managed directory; 'definition' opens Workspace Settings. */
-  readonly view?: 'definition';
+  /** Absent opens the managed directory; 'definition' opens Workspace Settings; 'files' opens Files. */
+  readonly view?: 'definition' | 'files';
 };
 
 /** The current shareable selection and its router transition. */

@@ -1,4 +1,4 @@
-import { boundedText, BYTES_PER_KIBIBYTE, WorkspaceId } from '@mechane/records';
+import { boundedText, Bytes, BYTES_PER_KIBIBYTE, WorkspaceId } from '@mechane/records';
 import { Schema } from 'effect';
 import { ManagedWorkerAllocation } from './managed-work.ts';
 
@@ -11,7 +11,7 @@ const PendingAllocation = Schema.Struct({
   ...ManagedWorkerAllocation.fields,
   workspaceId: WorkspaceId,
   phase: Schema.Enum(Phase),
-  reason: Schema.optionalKey(boundedText({ maxBytes: REASON_MAX_BYTES })),
+  reason: Schema.optionalKey(boundedText({ maxBytes: Bytes.make(REASON_MAX_BYTES) })),
 });
 
 export const InstalledDrainReport = Schema.Struct({

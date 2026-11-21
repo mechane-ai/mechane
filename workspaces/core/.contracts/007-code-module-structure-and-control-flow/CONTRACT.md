@@ -91,7 +91,7 @@ Values: `deniedIdentifiers` `common`, `data`, `endpoint`, `handler`, `helpers`, 
 - oxlint `typescript/no-unnecessary-condition` (TD-08): enforced in phase D, `["error",{"allowConstantLoopConditions":"only-allowed-literals"}]`
 - oxlint `max-params` (ST-25): enforced in phase A, `["error",{"max":3}]`
 - ast-grep `pass-through-function` (ST-28): enforced in phase D
-- ast-grep `loop-recursion` (EF-18): a ratchet until phase F3
+- ast-grep `loop-recursion` (EF-18): enforced in phase F3
 - oxlint `no-use-before-define` (ST-29): enforced in phase A, `["error",{"functions":false,"classes":true,"variables":false,"typedefs":false,"ignoreTypeReferences":true}]`
 - oxlint `new-cap` (007): enforced in phase D, `["error",{"capIsNew":false}]`
 - oxlint `no-bitwise` (007): enforced in phase D, `"error"`

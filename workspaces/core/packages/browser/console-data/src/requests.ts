@@ -10,6 +10,7 @@ const READ_KIND = {
   Agent: 'agent',
   Attention: 'attention',
   ManagedEnvironments: 'managedEnvironments',
+  ManagedFiles: 'managedFiles',
   Sessions: 'sessions',
   Session: 'session',
   Threads: 'threads',
@@ -29,6 +30,11 @@ const ReadTarget = Schema.Union([
   Schema.Struct({ kind: Schema.Literal(READ_KIND.Agent), agentId: ManagedId }),
   Schema.Struct({ kind: Schema.Literal(READ_KIND.Attention), agentId: ManagedId }),
   Schema.Struct({ kind: Schema.Literal(READ_KIND.ManagedEnvironments), page: PageCursor }),
+  Schema.Struct({
+    kind: Schema.Literal(READ_KIND.ManagedFiles),
+    page: PageCursor,
+    scopeId: Schema.optionalKey(ManagedId),
+  }),
   Schema.Struct({
     kind: Schema.Literal(READ_KIND.Sessions),
     ...listQueryFields('sessions'),
@@ -124,6 +130,8 @@ export const readRequests = {
     request({ kind: READ_KIND.Agents, page, ...listQuery('agents', query) }),
   agent: (agentId: string) => request({ kind: READ_KIND.Agent, agentId }),
   managedEnvironments: (page: string | null = null) => request({ kind: READ_KIND.ManagedEnvironments, page }),
+  managedFiles: (page: string | null = null, scopeId?: ManagedId) =>
+    request({ kind: READ_KIND.ManagedFiles, page, ...(scopeId === undefined ? {} : { scopeId }) }),
   sessions: (agentId: string, page: string | null = null, query?: ListQuery) =>
     request({ kind: READ_KIND.Sessions, agentId, page, ...listQuery('sessions', query) }),
   session: (agentId: string, sessionId: string) => request({ kind: READ_KIND.Session, agentId, sessionId }),

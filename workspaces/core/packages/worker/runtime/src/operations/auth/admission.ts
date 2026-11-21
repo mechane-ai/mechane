@@ -9,8 +9,8 @@ import {
   TokenPrefix,
   WorkspaceNotFound,
 } from '@mechane/protocol';
-import { RecordId } from '@mechane/records';
-import { Schema } from 'effect';
+import { WorkspaceId } from '@mechane/records';
+import { Duration, Schema } from 'effect';
 import type { AuthCaller } from '../types.ts';
 import { DEFAULT_AUTH_RATE_LIMITS } from './configuration.ts';
 import type { AuthenticationConfiguration, AuthenticationIdentity, AuthRateLimits } from './configuration.ts';
@@ -115,7 +115,7 @@ export async function requireWorkspaceMember({
   const role = await store.auth.getMembership({ principalId: caller.principalId, workspaceId });
 
   if (role === null) {
-    throw new WorkspaceNotFound({ workspaceId: Schema.decodeUnknownSync(RecordId)(workspaceId) });
+    throw new WorkspaceNotFound({ workspaceId: Schema.decodeUnknownSync(WorkspaceId)(workspaceId) });
   }
 
   return role;
@@ -138,6 +138,6 @@ export async function limitAuthentication({
   });
 
   if (retryAfterSeconds !== null) {
-    throw new RateLimited({ retryAfterSeconds });
+    throw new RateLimited({ retryAfterSeconds: Duration.seconds(retryAfterSeconds) });
   }
 }

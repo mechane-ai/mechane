@@ -6,9 +6,10 @@ import {
   evidenceExport,
   executionAccess,
   managedAgentsCompatibility,
+  managedFilesAndMounts,
   managedProcesses,
-  mechNotifications,
   modelCaching,
+  postgresHyperdrivePooling,
 } from './agent-runtime.ts';
 import { channelDelivery } from './channel-delivery.ts';
 import { codeStyle } from './code-style.ts';
@@ -43,7 +44,6 @@ export const MECHANE_CONTRACTS = {
   'ui-analytical-graphics': uiAnalyticalGraphics,
   'console-cache-lifecycle': consoleCacheLifecycle,
   'execution-access': executionAccess,
-  'mech-notifications': mechNotifications,
   'developer-environments': developerEnvironments,
   'model-caching': modelCaching,
   'durable-agent-runtime': durableAgentRuntime,
@@ -58,4 +58,6 @@ export const MECHANE_CONTRACTS = {
   'durable-object-isolation': durableObjectIsolation,
   'single-agent-domain': singleAgentDomain,
   'sandbox-vendor-boundary': sandboxVendorBoundary,
+  'managed-files-and-mounts': managedFilesAndMounts,
+  'postgres-hyperdrive-pooling': postgresHyperdrivePooling,
 } as const satisfies Readonly<Partial<Record<ContractName, ContractEnforcement>>>;
