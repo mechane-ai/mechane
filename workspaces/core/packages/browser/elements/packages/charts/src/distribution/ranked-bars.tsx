@@ -2,11 +2,12 @@ import * as stylex from '@stylexjs/stylex';
 import { scaleLinear } from '@visx/scale';
 import { Bar } from '@visx/shape';
 import type { ReactNode } from 'react';
-import { chartToneColors } from '../../../foundations/src/chart-tones.ts';
+import { chartToneColors, chartToneOutlines } from '../../../foundations/src/chart-tones.ts';
 import type { ChartTone } from '../../../foundations/src/chart-tones.ts';
 import { ChartDatumButton, ChartFrame } from '../chart-frame.tsx';
 import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError } from '../chart-input.tsx';
+import { chartStyles } from '../chart-theme.ts';
 import { usePlotWidth } from '../plot-width.ts';
 import { distributionInputError, distributionLimits, outsideDomain } from './distribution-input.ts';
 import type { NumericDomain } from './distribution-input.ts';
@@ -62,7 +63,8 @@ export function RankedBars({
           {items.map((item) => {
             const value = item.value === null ? 'Unavailable' : formatValue(item.value);
             const label = item.rank === undefined ? item.label : `${item.rank} · ${item.label}`;
-            const color = chartToneColors[item.tone ?? 'series1'];
+            const tone = item.tone ?? 'series1';
+            const color = chartToneColors[tone];
 
             return (
               <ChartDatumButton
@@ -102,6 +104,8 @@ export function RankedBars({
                           width={Math.abs(scale(item.value) - zero)}
                           height={8}
                           fill={color}
+                          stroke={chartToneOutlines[tone]}
+                          {...stylex.props(chartStyles.outlined)}
                         />
                       ))}
                   </svg>

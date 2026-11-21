@@ -1,6 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
-import { chartToneColors } from '../../../foundations/src/chart-tones.ts';
+import { chartToneColors, chartToneOutlines } from '../../../foundations/src/chart-tones.ts';
 import { colors, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { CategoricalValues, colorTone, validateBreakdown } from '../categorical-values.tsx';
 import type { BreakdownItem } from '../categorical-values.tsx';
@@ -19,7 +19,12 @@ const styles = stylex.create({
     borderColor: colors.line,
     marginBlockEnd: spacing.sm,
   },
-  segment: (width: number, color: string) => ({ width: `${width}%`, backgroundColor: color, height: '100%' }),
+  segment: (width: number, color: string, outline: string) => ({
+    width: `${width}%`,
+    backgroundColor: color,
+    boxShadow: `inset 0 0 0 1px ${outline}`,
+    height: '100%',
+  }),
   empty: { color: colors.muted, margin: 0, fontSize: typography.captionSize },
 });
 
@@ -76,6 +81,7 @@ export function BreakdownBar({
                     styles.segment(
                       total === 0 ? 0 : (item.value / total) * 100,
                       chartToneColors[colorTone(item.tone, index)],
+                      chartToneOutlines[colorTone(item.tone, index)],
                     ),
                   )}
                 />

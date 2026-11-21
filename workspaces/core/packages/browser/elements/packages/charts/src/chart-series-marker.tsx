@@ -1,7 +1,7 @@
 import * as stylex from '@stylexjs/stylex';
 import { Children } from 'react';
 import type { ReactNode } from 'react';
-import { chartToneColors } from '../../foundations/src/chart-tones.ts';
+import { chartToneColors, chartToneOutlines } from '../../foundations/src/chart-tones.ts';
 import type { ChartTone } from '../../foundations/src/chart-tones.ts';
 
 const styles = stylex.create({
@@ -9,6 +9,7 @@ const styles = stylex.create({
   color: (color: string) => ({ color }),
   icon: { width: 16, height: 16 },
   swatch: { width: 8, height: 8, backgroundColor: 'currentColor' },
+  edge: (outline: string) => ({ boxShadow: `inset 0 0 0 1px ${outline}` }),
   transparent: { backgroundColor: 'transparent' },
   glyph: { display: 'block', width: 8, height: 8, overflow: 'visible' },
 });
@@ -79,6 +80,7 @@ export function ChartSeriesMarker({ tone, shape = 'swatch', children }: ChartSer
         styles.color(chartToneColors[tone]),
         hasArtwork ? styles.icon : styles.swatch,
         hasGlyph && styles.transparent,
+        !hasArtwork && !hasGlyph && styles.edge(chartToneOutlines[tone]),
       )}
     >
       {artwork}

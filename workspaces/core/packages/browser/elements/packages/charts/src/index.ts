@@ -9,6 +9,6 @@ export type {
 } from './chart-frame.tsx';
 export { ChartFrame, ChartLegend } from './chart-frame.tsx';
 export type { ChartTone } from '../../foundations/src/chart-tones.ts';
-export { chartToneColors } from '../../foundations/src/chart-tones.ts';
+export { chartToneColors, chartToneOutlines } from '../../foundations/src/chart-tones.ts';
 export type { ChartMarkShape, ChartSeriesMarkerProps } from './chart-series-marker.tsx';
 export { ChartSeriesMarker } from './chart-series-marker.tsx';

@@ -1,6 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
-import { chartToneColors } from '../../../foundations/src/chart-tones.ts';
+import { chartToneColors, chartToneOutlines } from '../../../foundations/src/chart-tones.ts';
 import { motion } from '../../../foundations/src/tokens.stylex.ts';
 import { colorTone } from '../categorical-values.tsx';
 import { chartStyles } from '../chart-theme.ts';
@@ -90,7 +90,8 @@ export function CompositionBars({
             height={1}
             vectorEffect="non-scaling-stroke"
             fill={chartToneColors[colorTone(item.tone, seriesIndex)]}
-            {...stylex.props(styles.mark, isHighlighted && chartStyles.selected)}
+            stroke={chartToneOutlines[colorTone(item.tone, seriesIndex)]}
+            {...stylex.props(styles.mark, chartStyles.outlined, isHighlighted && chartStyles.selected)}
             style={{ transform: geometry(value, base), opacity: isVisible ? (isMuted ? 0.3 : 1) : 0 }}
           />
         );

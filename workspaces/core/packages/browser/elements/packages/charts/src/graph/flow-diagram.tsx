@@ -1,6 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
-import { chartToneColors } from '../../../foundations/src/chart-tones.ts';
+import { chartToneColors, chartToneOutlines } from '../../../foundations/src/chart-tones.ts';
 import { colors, controls, motion, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { ChartData } from '../chart-data.tsx';
 import { ChartFrame, ChartReadout } from '../chart-frame.tsx';
@@ -47,7 +47,7 @@ const styles = stylex.create({
   ribbon: (color: string) => ({ fill: color, fillOpacity: 0.34 }),
   thread: (color: string) => ({ fill: 'none', stroke: color, strokeWidth: 1.5, vectorEffect: 'non-scaling-stroke' }),
   unavailable: { strokeDasharray: '4 3' },
-  node: (color: string) => ({ fill: color }),
+  node: (color: string, outline: string) => ({ fill: color, stroke: outline, strokeWidth: 1 }),
   lit: { fillOpacity: 0.62 },
   dim: { opacity: 0.2 },
   transition: {
@@ -334,7 +334,7 @@ export function FlowDiagram({
                   height={placed.height}
                   {...interaction(placed.node.id)}
                   {...stylex.props(
-                    styles.node(chartToneColors[placed.tone]),
+                    styles.node(chartToneColors[placed.tone], chartToneOutlines[placed.tone]),
                     styles.transition,
                     isFocused && !isNodeLit(placed) && styles.dim,
                     selection?.selectedId === placed.node.id && styles.selected,

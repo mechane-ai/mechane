@@ -21,15 +21,15 @@ export const darkColors = stylex.defineConsts({
 });
 
 export const darkChartColors = stylex.defineConsts({
-  series1: '#6ea2e8',
-  series2: '#9bc0f0',
-  series3: '#dfa94b',
-  series4: '#5885c4',
-  series5: '#63b5a7',
-  series6: '#949eb0',
-  negative: '#e47c80',
-  positive: '#6ea2e8',
-  missing: '#2c313a',
+  series1: '#6ba7ff',
+  series2: '#62c06c',
+  series3: '#b694f8',
+  series4: '#f69552',
+  series5: '#f286bd',
+  series6: '#f2c64f',
+  negative: '#ff7a72',
+  positive: '#6ba7ff',
+  missing: '#2b2b2b',
 });
 
 export const darkAvatarColors = stylex.defineConsts({

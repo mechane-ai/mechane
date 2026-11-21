@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "program": "mechane",
-  "release": "0.33.42",
+  "release": "0.33.43",
   "flags": [
     {
       "name": "origin",

@@ -1,6 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
-import { chartToneColors } from '../../foundations/src/chart-tones.ts';
+import { chartToneColors, chartToneOutlines } from '../../foundations/src/chart-tones.ts';
 import type { ChartTone } from '../../foundations/src/chart-tones.ts';
 import { colors, spacing } from '../../foundations/src/tokens.stylex.ts';
 import { ChartDatumButton } from './chart-frame.tsx';
@@ -10,7 +10,13 @@ import { hasUniqueIds } from './chart-input.tsx';
 const styles = stylex.create({
   rows: { display: 'grid', margin: 0, padding: 0, listStyle: 'none' },
   name: { display: 'flex', alignItems: 'center', gap: spacing.sm, flex: '1 1 12ch', minWidth: 0 },
-  swatch: (color: string) => ({ width: 8, height: 8, flexShrink: 0, backgroundColor: color }),
+  swatch: (color: string, outline: string) => ({
+    width: 8,
+    height: 8,
+    flexShrink: 0,
+    backgroundColor: color,
+    boxShadow: `inset 0 0 0 1px ${outline}`,
+  }),
   value: { color: colors.muted, textAlign: 'end', minWidth: 0, maxWidth: '100%' },
 });
 
@@ -71,7 +77,10 @@ export function CategoricalValues({
             onSelect={selection === undefined ? undefined : () => selection.onSelect(item.id)}
           >
             <span {...stylex.props(styles.name)}>
-              <span aria-hidden {...stylex.props(styles.swatch(chartToneColors[item.tone]))} />
+              <span
+                aria-hidden
+                {...stylex.props(styles.swatch(chartToneColors[item.tone], chartToneOutlines[item.tone]))}
+              />
               {item.label}
             </span>
             <span {...stylex.props(styles.value)}>{item.valueLabel}</span>

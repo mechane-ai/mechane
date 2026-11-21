@@ -101,9 +101,10 @@ const styles = stylex.create({
     justifyContent: 'space-between',
     columnGap: spacing.md,
     marginBlockStart: spacing.xs,
+    fontFamily: typography.monoFamily,
     fontSize: typography.captionSize,
     lineHeight: typography.captionLineHeight,
-    color: colors.muted,
+    color: colors.ink,
     fontVariantNumeric: 'tabular-nums',
   },
   timeAxisInset: (left: number, right: number) => ({ paddingInlineStart: left, paddingInlineEnd: right }),
@@ -706,13 +707,19 @@ function TimeChart({
             >
               {yTicks.map((tick) => (
                 <g key={tick}>
-                  <line x1={left} x2={right} y1={y(tick)} y2={y(tick)} {...stylex.props(chartStyles.grid)} />
+                  <line
+                    x1={left}
+                    x2={right}
+                    y1={y(tick)}
+                    y2={y(tick)}
+                    {...stylex.props(tick === 0 ? chartStyles.baseline : chartStyles.grid)}
+                  />
                   <text
                     x={left - 8}
                     y={y(tick)}
                     textAnchor="end"
                     dominantBaseline="middle"
-                    {...stylex.props(chartStyles.label)}
+                    {...stylex.props(chartStyles.label, chartStyles.tick)}
                   >
                     {formatTick(tick)}
                   </text>

@@ -360,7 +360,7 @@ function ScatterCanvas({
             x={scaleX(tick)}
             y={PLOT_HEIGHT - BOTTOM_MARGIN + 18}
             textAnchor="middle"
-            {...stylex.props(chartStyles.label)}
+            {...stylex.props(chartStyles.label, chartStyles.tick)}
           >
             {formatX(tick)}
           </text>
@@ -375,7 +375,12 @@ function ScatterCanvas({
             y2={scaleY(tick)}
             {...stylex.props(chartStyles.grid)}
           />
-          <text x={LEFT_MARGIN - 8} y={scaleY(tick) + 4} textAnchor="end" {...stylex.props(chartStyles.label)}>
+          <text
+            x={LEFT_MARGIN - 8}
+            y={scaleY(tick) + 4}
+            textAnchor="end"
+            {...stylex.props(chartStyles.label, chartStyles.tick)}
+          >
             {formatY(tick)}
           </text>
         </g>
@@ -384,7 +389,7 @@ function ScatterCanvas({
         x={(LEFT_MARGIN + width - RIGHT_MARGIN) / 2}
         y={PLOT_HEIGHT - 4}
         textAnchor="middle"
-        {...stylex.props(chartStyles.label)}
+        {...stylex.props(chartStyles.label, chartStyles.tick)}
       >
         {xLabel}
       </text>

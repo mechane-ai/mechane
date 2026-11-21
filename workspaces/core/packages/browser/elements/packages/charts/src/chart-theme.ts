@@ -14,19 +14,23 @@ export type ChartLegendItem = {
 export const chartStyles = stylex.create({
   plot: { minWidth: 0, overflow: 'hidden' },
   svg: { display: 'block', width: '100%', overflow: 'visible' },
-  axis: { stroke: colors.line, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' },
+  axis: { stroke: colors.ink, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' },
   grid: { stroke: colors.line, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' },
-  baseline: { stroke: colors.faint, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' },
+  baseline: { stroke: colors.ink, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' },
   label: {
-    fill: colors.muted,
+    fill: colors.ink,
     fontFamily: typography.fontFamily,
     fontSize: typography.captionSize,
     fontWeight: typography.regularWeight,
     fontVariantNumeric: 'tabular-nums',
   },
+  /** Axis ticks and category labels use the mono face, so numbers and dates align like a printed figure. */
+  tick: { fontFamily: typography.monoFamily },
   strongLabel: { fill: colors.ink, fontWeight: typography.mediumWeight },
   haloLabel: { paintOrder: 'stroke', stroke: colors.surface, strokeWidth: 3, strokeLinejoin: 'round' },
-  mark: { strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', vectorEffect: 'non-scaling-stroke' },
+  mark: { strokeWidth: 1.75, strokeLinecap: 'round', strokeLinejoin: 'round', vectorEffect: 'non-scaling-stroke' },
+  /** A one-pixel edge for filled marks; pair it with the tone's outline color. */
+  outlined: { strokeWidth: 1, vectorEffect: 'non-scaling-stroke' },
   selected: { stroke: colors.ink, strokeWidth: 2, vectorEffect: 'non-scaling-stroke' },
   inspectable: { outlineStyle: 'none' },
   emphasis: {

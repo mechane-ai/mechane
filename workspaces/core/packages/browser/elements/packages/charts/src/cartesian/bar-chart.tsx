@@ -4,7 +4,7 @@ import { Bar } from '@visx/shape';
 import { useEffect, useId, useState } from 'react';
 import type { PointerEvent, ReactNode } from 'react';
 import { Skeleton } from '../../../feedback/src/index.ts';
-import { chartToneColors } from '../../../foundations/src/chart-tones.ts';
+import { chartToneColors, chartToneOutlines } from '../../../foundations/src/chart-tones.ts';
 import { colors, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { categoricalLimits, colorTone } from '../categorical-values.tsx';
 import { ChartCursor } from '../chart-cursor.tsx';
@@ -601,13 +601,19 @@ export function BarChart({
             )}
             {y.ticks(3).map((tick) => (
               <g key={tick}>
-                <line x1={left} x2={right} y1={y(tick)} y2={y(tick)} {...stylex.props(chartStyles.grid)} />
+                <line
+                  x1={left}
+                  x2={right}
+                  y1={y(tick)}
+                  y2={y(tick)}
+                  {...stylex.props(tick === 0 ? chartStyles.baseline : chartStyles.grid)}
+                />
                 <text
                   x={left - 8}
                   y={y(tick)}
                   textAnchor="end"
                   dominantBaseline="middle"
-                  {...stylex.props(chartStyles.label)}
+                  {...stylex.props(chartStyles.label, chartStyles.tick)}
                 >
                   {formatTick(tick)}
                 </text>
@@ -657,7 +663,9 @@ export function BarChart({
                             width={mode === 'stacked' ? x.bandwidth() : grouped.bandwidth()}
                             height={Math.max(value === 0 ? 1 : 0, Math.abs(end - start))}
                             fill={chartToneColors[colorTone(item.tone, seriesIndex)]}
+                            stroke={chartToneOutlines[colorTone(item.tone, seriesIndex)]}
                             {...stylex.props(
+                              chartStyles.outlined,
                               isHighlighted && chartStyles.selected,
                               highlightedSeriesId !== undefined && highlightedSeriesId !== item.id && styles.mutedMark,
                             )}
@@ -683,7 +691,7 @@ export function BarChart({
                       x={(x(category.id) ?? left) + x.bandwidth() / 2}
                       y={height - 4}
                       textAnchor="middle"
-                      {...stylex.props(chartStyles.label)}
+                      {...stylex.props(chartStyles.label, chartStyles.tick)}
                     >
                       {axisLabel.length > labelCharacters ? `${axisLabel.slice(0, labelCharacters - 1)}…` : axisLabel}
                     </text>

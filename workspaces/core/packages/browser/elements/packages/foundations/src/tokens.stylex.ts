@@ -21,15 +21,15 @@ export const colors = stylex.defineVars({
 });
 
 export const chartColors = stylex.defineVars({
-  series1: '#1d4f91',
-  series2: '#3f76c3',
-  series3: '#9c6d1a',
-  series4: '#5f8bc6',
-  series5: '#2d7a6e',
-  series6: '#6e7889',
-  negative: '#b13838',
-  positive: '#1d4f91',
-  missing: '#e5e8ee',
+  series1: '#3f86ec',
+  series2: '#3d9f4a',
+  series3: '#9a6ee9',
+  series4: '#e8762e',
+  series5: '#e0619f',
+  series6: '#c9921a',
+  negative: '#d9443f',
+  positive: '#3f86ec',
+  missing: '#ececec',
 });
 
 export const avatarColors = stylex.defineVars({

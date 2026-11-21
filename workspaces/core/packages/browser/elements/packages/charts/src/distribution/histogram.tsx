@@ -2,7 +2,7 @@ import * as stylex from '@stylexjs/stylex';
 import { scaleLinear } from '@visx/scale';
 import { Bar } from '@visx/shape';
 import type { ReactNode } from 'react';
-import { chartToneColors } from '../../../foundations/src/chart-tones.ts';
+import { chartToneColors, chartToneOutlines } from '../../../foundations/src/chart-tones.ts';
 import type { ChartTone } from '../../../foundations/src/chart-tones.ts';
 import { ChartData } from '../chart-data.tsx';
 import { ChartFrame, ChartReadout } from '../chart-frame.tsx';
@@ -133,7 +133,8 @@ export function Histogram({
                     width={width - gap}
                     height={distributionGeometry.height - top}
                     fill={chartToneColors[tone]}
-                    {...stylex.props(isSelected && chartStyles.selected)}
+                    stroke={chartToneOutlines[tone]}
+                    {...stylex.props(chartStyles.outlined, isSelected && chartStyles.selected)}
                     opacity={selection?.selectedId === undefined || isSelected ? 1 : 0.45}
                   />
                 );

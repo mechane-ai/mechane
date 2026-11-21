@@ -2,7 +2,7 @@ import * as stylex from '@stylexjs/stylex';
 import { scaleBand, scaleLinear } from '@visx/scale';
 import { useEffect, useId, useState } from 'react';
 import type { PointerEvent, ReactNode } from 'react';
-import { chartToneColors } from '../../../foundations/src/chart-tones.ts';
+import { chartToneColors, chartToneOutlines } from '../../../foundations/src/chart-tones.ts';
 import { colors, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { ChartCursor } from '../chart-cursor.tsx';
 import { ChartData } from '../chart-data.tsx';
@@ -44,7 +44,7 @@ const styles = stylex.create({
   plot: { marginBlock: spacing.md },
   empty: { color: colors.muted, margin: 0, fontSize: typography.captionSize },
   guide: { fill: colors.canvas },
-  bar: (color: string) => ({ fill: color }),
+  bar: (color: string, outline: string) => ({ fill: color, stroke: outline, strokeWidth: 1 }),
   connector: { stroke: colors.faint, strokeWidth: 1, strokeDasharray: '3 2', vectorEffect: 'non-scaling-stroke' },
   unknown: {
     fill: 'none',
@@ -349,7 +349,7 @@ export function BridgeChart({
                   y={y(tick)}
                   textAnchor="end"
                   dominantBaseline="middle"
-                  {...stylex.props(chartStyles.label)}
+                  {...stylex.props(chartStyles.label, chartStyles.tick)}
                 >
                   {formatTick(tick)}
                 </text>
@@ -438,7 +438,7 @@ function BridgeColumn({
   const center = x + width / 2;
 
   const axisText = (
-    <text x={center} y={height - 4} textAnchor="middle" {...stylex.props(chartStyles.label)}>
+    <text x={center} y={height - 4} textAnchor="middle" {...stylex.props(chartStyles.label, chartStyles.tick)}>
       {axisLabel}
     </text>
   );
@@ -472,7 +472,10 @@ function BridgeColumn({
         y={top}
         width={width}
         height={barHeight}
-        {...stylex.props(styles.bar(chartToneColors[level.tone]), isHighlighted && chartStyles.selected)}
+        {...stylex.props(
+          styles.bar(chartToneColors[level.tone], chartToneOutlines[level.tone]),
+          isHighlighted && chartStyles.selected,
+        )}
       />
       <text
         x={center}

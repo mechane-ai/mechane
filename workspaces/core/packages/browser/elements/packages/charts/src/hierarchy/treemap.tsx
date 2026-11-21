@@ -102,7 +102,7 @@ export function Treemap({
                         width={node.x1 - node.x0}
                         height={node.y1 - node.y0}
                         fill={chartToneColors[node.data.tone]}
-                        fillOpacity={0.18}
+                        fillOpacity={0.24}
                         {...stylex.props(
                           styles.treeRect,
                           selection?.selectedId === node.data.id && chartStyles.selected,
