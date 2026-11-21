@@ -10,11 +10,10 @@ export function createInstalledEnvironmentStore(context: StoreContext) {
     drainInventory: (input: PendingWorkInput) => installedDrainInventory(context, input),
     async pending({ maxRows }: PendingWorkInput): Promise<ReadonlyArray<InstalledSession>> {
       const result = await context.client.query<InstalledSession>(
-        `WITH held AS (
-           SELECT workspace_id FROM mechane.sandbox_capacity WHERE state='held'
-           UNION ALL SELECT workspace_id FROM mechane.managed_installed_allocations WHERE released_at IS NULL
-         ), occupancy AS (
-           SELECT workspace_id, count(*) AS machines FROM held GROUP BY workspace_id
+        `WITH occupancy AS (
+           SELECT workspace_id, count(*) AS machines
+           FROM mechane.managed_installed_allocations WHERE released_at IS NULL
+           GROUP BY workspace_id
          ), candidates AS (
            SELECT w.workspace_id, w.environment_id, w.session_id, w.created_at, w.id,
                   row_number() OVER (PARTITION BY w.workspace_id ORDER BY w.created_at,w.id) AS position

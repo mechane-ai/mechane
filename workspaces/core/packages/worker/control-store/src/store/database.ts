@@ -3,7 +3,6 @@ import {
   createConfigurationRecords,
   createCredentialStore,
   createProviderAttemptStore,
-  createSandboxCapacityStore,
   openPool,
   poolContext,
   StoredText,
@@ -31,7 +30,6 @@ function createControlRecords(context: StoreContext, keyring: CredentialKeyring)
     ...createConfigurationRecords(context),
     ...createProviderAttemptStore(context),
     ...createCredentialStore(context, keyring),
-    ...createSandboxCapacityStore(context),
     checkHealth: async (): Promise<void> => {
       await context.client.query('SELECT id FROM mechane.workspaces LIMIT 1');
     },

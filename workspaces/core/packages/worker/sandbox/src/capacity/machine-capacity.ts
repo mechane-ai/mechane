@@ -1,12 +1,11 @@
 import { ReservationPhase } from '@mechane/sandbox-store';
 import type { MachineReservation, SandboxStore } from '@mechane/sandbox-store';
-import { SandboxCapacityIdentity, SandboxCapacityRefusalReason, SandboxCapacityStatus } from '@mechane/sandbox-wire';
+import { SandboxCapacityRefusalReason } from '@mechane/sandbox-wire';
 import type { SandboxOwner } from '@mechane/sandbox-wire';
-import { capturePromise, serialCalls } from '@mechane/utilities';
-import { DateTime, Option, Result, Schema } from 'effect';
+import { serialCalls } from '@mechane/utilities';
+import { Option, Schema } from 'effect';
 import { observeNativeSnapshot } from '../machines/observe-native-snapshot.ts';
 import type { MachineProvider, MachineStartInput, MachineStopInput } from '../types.ts';
-import type { CapacityClient } from './capacity-client.ts';
 
 class InvalidSandboxOwner extends Schema.TaggedError<InvalidSandboxOwner>()('InvalidSandboxOwner', {}) {}
 
@@ -14,16 +13,12 @@ export class CapacityRefused extends Schema.TaggedError<CapacityRefused>()('Capa
   reason: SandboxCapacityRefusalReason,
 }) {}
 
-class CapacityReleaseFailed extends Schema.TaggedError<CapacityReleaseFailed>()('CapacityReleaseFailed', {}) {}
-
 class MachineStopUnconfirmed extends Schema.TaggedError<MachineStopUnconfirmed>()('MachineStopUnconfirmed', {}) {}
 
 type MachineCapacityInput = {
   readonly store: SandboxStore;
   readonly provider: MachineProvider;
-  readonly client: CapacityClient;
   readonly isAdmittingInstalled: () => boolean;
-  readonly scheduleStopRetry: () => Promise<void>;
 };
 
 type BindOwnerInput = { readonly owner: SandboxOwner; readonly isInstalled: boolean };
@@ -37,13 +32,7 @@ type MachineCapacity = {
   readonly reservation: () => Option.Option<MachineReservation>;
 };
 
-export function machineCapacity({
-  store,
-  provider,
-  client,
-  isAdmittingInstalled,
-  scheduleStopRetry,
-}: MachineCapacityInput): MachineCapacity {
+export function machineCapacity({ store, provider, isAdmittingInstalled }: MachineCapacityInput): MachineCapacity {
   const calls = serialCalls();
 
   function requireOwner(): SandboxOwner {
@@ -80,22 +69,6 @@ export function machineCapacity({
     const savedReservation = Option.some(held);
 
     store.saveReservation({ reservation: savedReservation });
-  }
-
-  function identity({ held }: HeldInput): SandboxCapacityIdentity {
-    const capacity = store.capacity();
-
-    if (Option.isNone(capacity)) {
-      throw new InvalidSandboxOwner({});
-    }
-
-    const decoded = Schema.decodeUnknownResult(SandboxCapacityIdentity)({
-      ...capacity.value.owner,
-      reservationId: held.reservationId,
-      machineId: held.machineId,
-    });
-
-    return Result.getOrThrow(decoded);
   }
 
   async function bindOwner({ owner, isInstalled: installed }: BindOwnerInput): Promise<void> {
@@ -148,54 +121,15 @@ export function machineCapacity({
       throw new MachineStopUnconfirmed({});
     }
 
-    if (!isInstalled()) {
-      const allocation = identity({ held });
-      const released = await client.release(allocation);
-
-      if (released.status !== SandboxCapacityStatus.Released) {
-        throw new CapacityReleaseFailed({});
-      }
-    }
-
     const clearedReservation = Option.none();
 
     store.saveReservation({ reservation: clearedReservation });
-  }
-
-  async function acquireNative({ held }: HeldInput): Promise<void> {
-    const allocation = identity({ held });
-    const admitted = await client.acquire(allocation);
-
-    if (admitted.status === SandboxCapacityStatus.Refused) {
-      const now = DateTime.nowUnsafe();
-
-      store.failMachine({ machineId: held.machineId, startupDeadline: now, now });
-
-      const cacheCheckpoint = Option.none();
-      const cleanup = stopReservation({ held, checkpoint: cacheCheckpoint });
-      const stopped = await capturePromise({ promise: cleanup });
-
-      if (Result.isFailure(stopped)) {
-        // Durable Stopping intent owns cleanup after a refused start; the command itself never ran.
-        await scheduleStopRetry();
-      }
-
-      throw new CapacityRefused({ reason: admitted.reason });
-    }
-
-    if (admitted.status !== SandboxCapacityStatus.Acquired) {
-      throw new InvalidSandboxOwner({});
-    }
   }
 
   async function startReservation({
     held,
     checkpoint,
   }: HeldInput & Pick<MachineStartInput, 'checkpoint'>): Promise<void> {
-    if (!isInstalled()) {
-      await acquireNative({ held });
-    }
-
     const cache = physicalCheckpoint({ checkpoint });
 
     await provider.start({ machineId: held.machineId, checkpoint: cache });

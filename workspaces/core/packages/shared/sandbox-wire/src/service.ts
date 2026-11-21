@@ -54,27 +54,3 @@ export type SandboxExecutionRefusal = typeof SandboxExecutionRefusal.Type;
 
 export const SandboxExecutionResult = Schema.Union([ExecutionAttempt, SandboxExecutionRefusal]);
 export type SandboxExecutionResult = typeof SandboxExecutionResult.Type;
-
-function sandboxServicePath({ workspaceId, mechId }: SandboxServiceIdentity): string {
-  return `${SANDBOX_SERVICE_PREFIX}/${encodeURIComponent(workspaceId)}/${encodeURIComponent(mechId)}`;
-}
-
-export function sandboxWorkspacePath({ workspaceId, mechId }: SandboxServiceIdentity): string {
-  const path = sandboxServicePath({ workspaceId, mechId });
-
-  return `${path}/workspace`;
-}
-
-/** A stop request attaches to the environment's current retirement identity. */
-export function sandboxStopPath({ workspaceId, mechId }: SandboxServiceIdentity): string {
-  const path = sandboxServicePath({ workspaceId, mechId });
-
-  return `${path}/stop`;
-}
-
-/** Receipt inspection addresses the original stop without changing its machine lifetime. */
-export function sandboxStopReadPath({ operationId, ...identity }: SandboxStopIdentity): string {
-  const path = sandboxStopPath(identity);
-
-  return `${path}/${encodeURIComponent(operationId)}`;
-}

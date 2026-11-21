@@ -36,7 +36,6 @@ export { openPool } from './store/postgres.ts';
 export type { DatabaseInput } from './store/postgres.ts';
 export { createProviderAttemptStore } from './store/provider-attempts.ts';
 export { StoredChecksum, StoredText, StoredTimestamp } from './store/row-values.ts';
-export { createSandboxCapacityStore } from './store/sandbox-capacity.ts';
 export { lockWorkspace } from './store/scope-locks.ts';
 export { decryptCredential, encryptCredential } from './store/vault-envelope.ts';
 export { heartbeatConflict } from './store/work-heartbeat.ts';

@@ -5,20 +5,14 @@ import type { SandboxVariables } from './schemas.ts';
 
 type SandboxSettingsInput = { readonly store: SandboxStore; readonly environment: SandboxEnvironment };
 
-type SandboxSettings = {
-  readonly variables: SandboxVariables;
-  readonly workspaceBucket: R2Bucket;
-  readonly runtime: SandboxRuntimeSettings;
-};
+type SandboxSettings = { readonly variables: SandboxVariables; readonly workspaceBucket: R2Bucket };
 
 export function sandboxSettings({ store, environment }: SandboxSettingsInput): SandboxSettings {
   const variables = readSandboxSettings({ variables: environment });
 
   store.replaceProvider({ provider: variables.provider });
 
-  const runtime = sandboxRuntimeSettings({ environment });
-
-  return { variables, workspaceBucket: environment.WORKSPACE_FILES, runtime };
+  return { variables, workspaceBucket: environment.WORKSPACE_FILES };
 }
 
 /** The only binding read for the runtime callback and public proxy transport. */

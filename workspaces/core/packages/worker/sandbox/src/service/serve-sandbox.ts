@@ -12,10 +12,9 @@ import {
   SandboxRecoveryCheckpointRequest,
   SandboxRequest,
   SandboxRestoreRequest,
-  SandboxServiceIdentity,
   SandboxStopIdentity,
 } from '@mechane/sandbox-wire';
-import type { SandboxExecutionResult } from '@mechane/sandbox-wire';
+import type { SandboxExecutionResult, SandboxServiceIdentity } from '@mechane/sandbox-wire';
 import { Schema } from 'effect';
 import type { SandboxObject } from '../sandbox-object.ts';
 import { authenticate } from './authenticate.ts';
@@ -26,12 +25,10 @@ import { boundManagedSandbox, InstalledSession } from './managed-sandbox.ts';
 import { serveManagedWork } from './managed-work.ts';
 import { InvalidSandboxRequestError, readBody } from './read-body.ts';
 import { recoveryCheckpointResponse } from './recovery-checkpoint-response.ts';
-import { sandboxStub } from './settings.ts';
 import type { SandboxServiceEnvironment } from './settings.ts';
 
 type ServeInput = { readonly request: Request; readonly environment: SandboxServiceEnvironment };
 type Stub = DurableObjectStub<SandboxObject>;
-const ROUTE_PREFIX_SEGMENTS = 3;
 const INTERACTIVE_RESOURCES: ReadonlySet<string> = new Set(['processes', 'browser', 'runs']);
 
 type ExecutionRoute = {
@@ -91,13 +88,7 @@ async function routeSandbox({ request, environment }: ServeInput): Promise<Respo
     return await routeResources({ request, url, identity: owner, stub, segments });
   }
 
-  const [workspaceId, mechId, ...segments] = url.pathname.split('/').slice(ROUTE_PREFIX_SEGMENTS);
-  const identity = Schema.decodeUnknownSync(SandboxServiceIdentity)({ workspaceId, mechId });
-  const stub = sandboxStub({ environment, identity });
-
-  await stub.bindOwner({ owner: identity });
-
-  return await routeResources({ request, url, identity, stub, segments });
+  return Response.json({ error: 'NotFound' }, { status: HttpStatusCode.NotFound });
 }
 
 type BoundResources = {

@@ -3,8 +3,6 @@ import { Schema } from 'effect';
 import { SandboxOwner } from './sandbox-owner.ts';
 import { ExecutionId } from './schemas.ts';
 
-export const SANDBOX_COMPLETION_PATH = '/internal/sandboxes/completions';
-
 /** The persisted environment receipt whose terminal outcome is being delivered. */
 export const SandboxCompletionKind = { Sandbox: 'sandbox', Process: 'process' } as const;
 
@@ -30,10 +28,5 @@ export const SandboxCompletionReceipt = Schema.Struct({
 });
 
 export type SandboxCompletionReceipt = typeof SandboxCompletionReceipt.Type;
-
-export const SandboxCompletion = Schema.Struct({ ...SandboxOwner.fields, ...SandboxCompletionReceipt.fields });
-export type SandboxCompletion = typeof SandboxCompletion.Type;
-
-export const SandboxCompletionAccepted = Schema.Struct({ accepted: Schema.Literal(true) });
 
 export const SandboxCompletionIdentity = Schema.Struct({ ...SandboxOwner.fields, executionId: ExecutionId });

@@ -12,6 +12,7 @@ import {
 import { agentMigrationSql } from './migrations/agent-schema.ts';
 import { decoupleManagedAgentsMigrationSql } from './migrations/decouple-managed-agents-schema.ts';
 import { managedFilesAndCleanupMigrationSql } from './migrations/managed-files-and-cleanup.ts';
+import { retireFinalMechTablesMigrationSql } from './migrations/retire-final-mech-tables.ts';
 import { retireMechTablesMigrationSql } from './migrations/retire-mech-tables.ts';
 import { sessionMigrationSql } from './migrations/session-schema.ts';
 
@@ -508,4 +509,5 @@ $policy$;
   { version: 16, sql: decoupleManagedAgentsMigrationSql },
   { version: 17, sql: retireMechTablesMigrationSql },
   { version: 18, sql: managedFilesAndCleanupMigrationSql },
+  { version: 19, sql: retireFinalMechTablesMigrationSql },
 ] as const;

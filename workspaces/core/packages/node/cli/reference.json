@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "program": "mechane",
-  "release": "0.33.38",
+  "release": "0.33.39",
   "flags": [
     {
       "name": "origin",
@@ -591,10 +591,6 @@
     {
       "name": "MECHANE_API_KEY",
       "summary": "a key from mechane key create, used in place of the saved login, such as by an agent or CI"
-    },
-    {
-      "name": "MECHANE_SELF_TOKEN",
-      "summary": "a short-lived credential injected by the environment for commands scoped to the current mech"
     },
     {
       "name": "XDG_CONFIG_HOME",

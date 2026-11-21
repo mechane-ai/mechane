@@ -72,13 +72,11 @@ import { browserProgress } from './browser/browser-progress.ts';
 import { observeBrowser } from './browser/observe-browser.ts';
 import { readBrowserArtifact } from './browser/read-browser-artifact.ts';
 import { runBrowser } from './browser/run-browser.ts';
-import { capacityClient } from './capacity/capacity-client.ts';
 import { CapacityRefused, machineCapacity } from './capacity/machine-capacity.ts';
 import { advanceCheckpoint } from './checkpoints/advance-checkpoint.ts';
 import { prepareAutomaticCheckpoint } from './checkpoints/automatic-checkpoint.ts';
 import { runFileCheckpoint } from './checkpoints/run-file-checkpoint.ts';
 import { resumeRecoveryCheckpoint } from './checkpoints/run-recovery-checkpoint.ts';
-import { deliverCompletions } from './completions/deliver-completions.ts';
 import { observeBackgroundWork } from './completions/observe-background-work.ts';
 import {
   AUTOMATIC_CHECKPOINT_QUIET,
@@ -88,7 +86,7 @@ import {
   SANDBOX_IDLE,
   STOP_RETRY,
 } from './constants.ts';
-import type { SandboxEnvironment, SandboxRuntimeSettings } from './environment.ts';
+import type { SandboxEnvironment } from './environment.ts';
 import { RecoveryCheckpointRefused } from './errors.ts';
 import { runBrowserWithEvidence } from './evidence/browser-evidence.ts';
 import { encodeBrowserReceipt, encodeEvidencePage, encodeEvidenceReceipt } from './evidence/browser-origin.ts';
@@ -206,7 +204,6 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
   readonly #providerName: string;
   readonly #managed: ReturnType<typeof createManagedMachineController>;
   readonly #workspace: WorkspaceFiles;
-  readonly #runtimeSettings: SandboxRuntimeSettings;
   readonly #calls = sandboxCalls();
   readonly #stops = new Set<Promise<void>>();
   readonly #files = { pending: Option.none<Promise<void>>() };
@@ -236,18 +233,10 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
 
     this.#workspace = { bucket: settings.workspaceBucket, owner: state.id.toString() };
     this.#providerName = settings.variables.provider;
-    this.#runtimeSettings = settings.runtime;
-    const client = capacityClient({ settings: settings.runtime });
 
     const admission = { isActive: false };
 
-    this.#capacity = machineCapacity({
-      store: this.#store,
-      provider,
-      client,
-      scheduleStopRetry: () => this.#armRetry(),
-      isAdmittingInstalled: () => admission.isActive,
-    });
+    this.#capacity = machineCapacity({ store: this.#store, provider, isAdmittingInstalled: () => admission.isActive });
 
     this.#provider = this.#capacity.provider;
     const resources = { store: this.#store, provider: this.#provider, workspace: this.#workspace };
@@ -1286,27 +1275,12 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
   }
 
   async #advanceAlarm(): Promise<void> {
-    if (this.#capacity.isInstalled()) {
-      await this.#calls.run({
-        run: async () => {
-          await this.#onAlarm();
-          await this.#advanceFiles();
-        },
-      });
-
-      return;
-    }
-
-    const promise = this.#calls.run({ run: () => this.#onAlarm() });
-    const advanced = await capturePromise({ promise });
-    const owner = this.#owner();
-
-    await deliverCompletions({ store: this.#store, settings: this.#runtimeSettings, owner });
-
-    const files = this.#advanceFiles();
-
-    this.ctx.waitUntil(files);
-    Result.getOrThrow(advanced);
+    await this.#calls.run({
+      run: async () => {
+        await this.#onAlarm();
+        await this.#advanceFiles();
+      },
+    });
   }
 
   async #advanceFiles(): Promise<void> {

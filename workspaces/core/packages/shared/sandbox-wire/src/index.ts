@@ -41,15 +41,7 @@ export {
   SandboxStopObservation,
   SANDBOX_FAILURE_MAX_CHARS,
 } from './environment-state.ts';
-export {
-  SANDBOX_CAPACITY_PATH,
-  SandboxCapacityAction,
-  SandboxCapacityStatus,
-  SandboxCapacityIdentity,
-  SandboxCapacityRequest,
-  SandboxCapacityRefusalReason,
-  SandboxCapacityResult,
-} from './capacity.ts';
+export { SandboxCapacityRefusalReason } from './capacity.ts';
 export {
   ExecutionEnvironment,
   ExecutionEnvironmentRequired,
@@ -65,9 +57,6 @@ export {
   SandboxExecutionObservation,
   SandboxExecutionResult,
   SandboxExecutionRefusal,
-  sandboxWorkspacePath,
-  sandboxStopPath,
-  sandboxStopReadPath,
 } from './service.ts';
 
 export {
@@ -162,13 +151,7 @@ export {
   EvidenceExportResult,
   guestEvidenceExportPath,
 } from './evidence-export.ts';
-export {
-  SANDBOX_COMPLETION_PATH,
-  SandboxCompletionReceipt,
-  SandboxCompletion,
-  SandboxCompletionAccepted,
-  SandboxCompletionIdentity,
-} from './completion.ts';
+export { SandboxCompletionReceipt, SandboxCompletionIdentity } from './completion.ts';
 
 export {
   IMAGE_STARTUP_SECONDS,

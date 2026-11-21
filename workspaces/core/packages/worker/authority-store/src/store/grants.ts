@@ -21,7 +21,7 @@ BEGIN
   EXECUTE format('GRANT USAGE ON SCHEMA mechane TO %I',role_name);
   EXECUTE format('REVOKE INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA mechane FROM %I',role_name);
   EXECUTE format('GRANT SELECT ON ALL TABLES IN SCHEMA mechane TO %I',role_name);
-  EXECUTE format('GRANT INSERT,UPDATE,DELETE ON mechane.principals,mechane.identities,mechane.workspaces,mechane.memberships,mechane.oauth_states,mechane.browser_sessions,mechane.api_keys,mechane.device_approvals,mechane.auth_attempts,mechane.mechs,mechane.credentials,mechane.sandbox_capacity TO %I',role_name);
+  EXECUTE format('GRANT INSERT,UPDATE,DELETE ON mechane.principals,mechane.identities,mechane.workspaces,mechane.memberships,mechane.oauth_states,mechane.browser_sessions,mechane.api_keys,mechane.device_approvals,mechane.auth_attempts,mechane.credentials TO %I',role_name);
   EXECUTE format('GRANT INSERT,UPDATE,DELETE ON mechane.managed_command_grants TO %I',role_name);
   EXECUTE format('GRANT INSERT ON mechane.audit_events TO %I',role_name);
   EXECUTE format('GRANT INSERT,UPDATE ON mechane.provider_attempts TO %I',role_name);

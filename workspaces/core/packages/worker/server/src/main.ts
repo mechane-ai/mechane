@@ -8,7 +8,7 @@ import {
   resolveRuntimeEnvironment,
 } from '@mechane/runtime';
 import { serveSandbox } from '@mechane/sandbox';
-import { SANDBOX_COMPLETION_PATH, SANDBOX_SERVICE_PREFIX } from '@mechane/sandbox-wire';
+import { SANDBOX_SERVICE_PREFIX } from '@mechane/sandbox-wire';
 import { DurableObject } from 'cloudflare:workers';
 import { expireSignOutCookies } from './auth/sign-out.ts';
 import { createConsoleHandler } from './console/handler.ts';
@@ -87,7 +87,7 @@ const worker: Readonly<ExportedHandler<WorkerEnvironment>> = {
     const url = new URL(request.url);
 
     try {
-      if (url.pathname !== SANDBOX_COMPLETION_PATH && url.pathname.startsWith(`${SANDBOX_SERVICE_PREFIX}/`)) {
+      if (url.pathname.startsWith(`${SANDBOX_SERVICE_PREFIX}/`)) {
         return await serveSandbox({ request, environment });
       }
 

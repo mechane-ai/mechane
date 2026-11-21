@@ -14,8 +14,6 @@ import { createManagedGitHandler } from './managed/git.ts';
 import { createManagedHandler } from './managed/handler.ts';
 import type { ManagedRequest } from './managed/types.ts';
 import { createReleaseHandler } from './releases/handler.ts';
-import { createSandboxCapacityHandler } from './sandboxes/capacity.ts';
-import { createSandboxCompletionHandler } from './sandboxes/completion.ts';
 import { createSandboxOwnersHandler } from './sandboxes/owners.ts';
 import { destroyExternalSandboxSession } from './sandboxes/reconcile-installed.ts';
 import type { ServerSettings } from './settings/server.ts';
@@ -108,21 +106,13 @@ export function createServer({
       await limitPublicRequest({ name, peerAddress, store, configuration: authentication }),
   });
 
-  const capacity = createSandboxCapacityHandler({
-    bearer: configuration.sandbox.bearer,
-    maximumMachines: configuration.maxMachines,
-    acquire: async (input) => await store.acquireSandboxCapacity(input),
-    release: async (input) => await store.releaseSandboxCapacity(input),
-  });
-
   const owners = createSandboxOwnersHandler({ store, configuration });
-  const completion = createSandboxCompletionHandler({ configuration });
   const auth = createAuthHandler({ store, configuration: authentication });
   const releases = createReleaseHandler({ origin: authentication.origin });
 
   const application = createApplication({
     isTrustedProxy: settings.isTrustedProxy,
-    handlers: [git, managed, capacity, owners, completion, auth, protocol, releases],
+    handlers: [git, managed, owners, auth, protocol, releases],
     checkHealth: async () => await store.checkHealth(),
   });
 

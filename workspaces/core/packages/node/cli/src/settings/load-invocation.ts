@@ -13,7 +13,6 @@ import {
 } from '@mechane/commands';
 import type { OutputMode } from '@mechane/commands';
 import { ORIGIN_VARIABLE } from '@mechane/deployment';
-import { SELF_TOKEN_VARIABLE } from '@mechane/protocol';
 import { renamedWireStruct } from '@mechane/records';
 import { Effect, Option, Record, Schema } from 'effect';
 import { homedir } from 'node:os';
@@ -23,7 +22,6 @@ import { decodeCommand } from './decode-command.ts';
 import { decodeCredentials } from './decode-credentials.ts';
 import { decodeOrigin } from './decode-origin.ts';
 import { decodeOutput } from './decode-output.ts';
-import { decodeSelfCredentials } from './decode-self-credentials.ts';
 import { decodeWorkspace } from './decode-workspace.ts';
 import { defaultOutput } from './default-output.ts';
 import { parseOptions } from './parse-options.ts';
@@ -155,36 +153,10 @@ const commandInvocation = Effect.fn('commandInvocation')(function* ({
   const workspaceText = Option.orElse(flags.workspace, () => Option.fromNullishOr(process.env[WORKSPACE_VARIABLE]));
   const selectedWorkspaceId = yield* decodeWorkspace({ text: workspaceText, output });
 
-  const environmentApiKey = Option.fromNullishOr(process.env[API_KEY_VARIABLE]);
-  const apiKey = credentialVariable({ command: selected.command, value: environmentApiKey });
+  const apiKey = Option.fromNullishOr(process.env[API_KEY_VARIABLE]);
   const configHome = Option.fromNullishOr(process.env[CONFIG_HOME_VARIABLE]);
   const home = homedir();
   const credentials = yield* decodeCredentials({ apiKey, configHome, home, output });
 
-  if (selected.command.startsWith('self ')) {
-    const token = Option.fromNullishOr(process.env[SELF_TOKEN_VARIABLE]);
-    const selfCredentials = yield* decodeSelfCredentials({ command: selected.command, token, credentials, output });
-
-    return {
-      kind: InvocationKind.Command,
-      ...selected,
-      origin,
-      output,
-      credentials: selfCredentials,
-      selectedWorkspaceId,
-      program,
-    };
-  }
-
   return { kind: InvocationKind.Command, ...selected, origin, output, credentials, selectedWorkspaceId, program };
 });
-
-type CredentialVariableInput = { readonly command: string; readonly value: Option.Option<string> };
-
-function credentialVariable({ command, value }: CredentialVariableInput): Option.Option<string> {
-  if (command.startsWith('self ')) {
-    return Option.none();
-  }
-
-  return value;
-}

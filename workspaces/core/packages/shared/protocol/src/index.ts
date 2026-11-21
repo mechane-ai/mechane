@@ -166,11 +166,3 @@ export { BYTES_PER_MEBIBYTE as EVIDENCE_CHUNK_MAX_BYTES } from '@mechane/records
 export { BrowserEvidenceProgress } from './operations/evidence/browser-evidence-progress.ts';
 
 export { sandboxEvidenceContentPath } from './operations/evidence/evidence-service-paths.ts';
-
-export { SELF_TOKEN_VARIABLE } from './operations/self/schemas.ts';
-
-export {
-  SANDBOX_OWNERS_PATH,
-  SandboxOwnerQuery,
-  SandboxOwnerPage,
-} from './operations/environment/sandbox-owner.schemas.ts';
