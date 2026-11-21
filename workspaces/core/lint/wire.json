@@ -1,5 +1,10 @@
 {
   "operations": [
+    "POST /v1/files",
+    "GET /v1/files",
+    "GET /v1/files/{file_id}",
+    "DELETE /v1/files/{file_id}",
+    "GET /v1/files/{file_id}/content",
     "POST /v1/skills",
     "GET /v1/skills",
     "GET /v1/skills/{skill_id}",

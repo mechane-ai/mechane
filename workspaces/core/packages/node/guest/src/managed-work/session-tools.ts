@@ -11,7 +11,7 @@ import { installedBash } from './installed-bash.ts';
 import type { RunInstalledCommand } from './installed-bash.ts';
 
 const BASH = 'bash';
-const GIT_REPOSITORY = 'github_repository';
+const MOUNTED_RESOURCE_TYPES: ReadonlySet<string> = new Set(['github_repository', 'file']);
 
 type SessionTools = {
   readonly workdir: string;
@@ -58,12 +58,23 @@ export function installedSessionTools({
 
     const { session } = context;
 
-    if (Predicate.isUndefined(session) || !session.resources.some((resource) => resource.type === GIT_REPOSITORY)) {
+    if (
+      Predicate.isUndefined(session) ||
+      !session.resources.some((resource) => MOUNTED_RESOURCE_TYPES.has(resource.type))
+    ) {
       return standard;
     }
 
     const pending = Option.getOrElse(mount.pending, () => {
-      const promise = prepareManagedGitCheckout({ origin, sessionId, session, token, workspace: workdir, signal });
+      const promise = prepareManagedGitCheckout({
+        origin,
+        sessionId,
+        session,
+        token,
+        transport,
+        workspace: workdir,
+        signal,
+      });
 
       return capturePromise({ promise });
     });

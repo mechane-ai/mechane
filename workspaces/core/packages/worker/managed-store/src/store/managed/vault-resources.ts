@@ -3,6 +3,7 @@ import type { CredentialKeyring, ManagedDocument, ManagedScope, StoreContext } f
 import { HttpStatusCode } from '@mechane/records';
 import { Redacted, Schema } from 'effect';
 import { posix } from 'node:path';
+import { canonicalMountKey, resolveFileMount } from './files.ts';
 import { resolveMemoryMount } from './memory-stores.ts';
 import { requireVault } from './vault-fields.ts';
 
@@ -218,12 +219,13 @@ export async function prepareSessionResources(input: PrepareResources): Promise<
 
   for (const body of input.resources) {
     const resolved = await prepareMount(input, body);
+    const key = canonicalMountKey(resolved.mount_path);
 
-    if (mounts.has(resolved.mount_path)) {
+    if (mounts.has(key)) {
       throw new ManagedStoreError(HttpStatusCode.BadRequest, 'Duplicate resource mount path');
     }
 
-    mounts.add(resolved.mount_path);
+    mounts.add(key);
     result.push(resolved);
   }
 
@@ -233,6 +235,15 @@ export async function prepareSessionResources(input: PrepareResources): Promise<
 async function prepareMount(input: PrepareResources, body: ManagedDocument) {
   if (body['type'] === 'github_repository') {
     return await prepareRepository(input, body);
+  }
+
+  if (body['type'] === 'file') {
+    return await resolveFileMount({
+      context: input.context,
+      scope: input.scope,
+      fileId: body['file_id'],
+      mountPath: body['mount_path'],
+    });
   }
 
   if (body['type'] !== 'memory_store') {
@@ -251,6 +262,121 @@ async function prepareMount(input: PrepareResources, body: ManagedDocument) {
     storeId,
     access: body['access'],
     instructions: body['instructions'],
+  });
+}
+
+type SessionResourceMutation = { readonly scope: ManagedScope; readonly sessionId: string };
+
+const MutableSessionResources = Schema.Struct({
+  status: StoredText,
+  archived_at: Schema.NullOr(StoredText),
+  resources: Schema.Array(ResourceDocument),
+});
+
+async function lockMutableSessionResources(transaction: StoreContext, { scope, sessionId }: SessionResourceMutation) {
+  const result = await transaction.client.query(
+    `SELECT status,archived_at,configuration->'resources' AS resources FROM mechane.managed_sessions
+     WHERE workspace_id=$1 AND (creator_id=$2 OR $3) AND id=$4 FOR UPDATE`,
+    [scope.workspaceId, scope.principalId, scope.isAdmin, sessionId],
+  );
+
+  if (result.rowCount === 0) {
+    throw new ManagedStoreError(HttpStatusCode.NotFound, 'Session not found');
+  }
+
+  const row = Schema.decodeUnknownSync(MutableSessionResources)(result.rows[0]);
+
+  if (row.archived_at !== null || row.status === 'terminated') {
+    throw new ManagedStoreError(
+      HttpStatusCode.Conflict,
+      'Cannot modify resources on an archived or terminated session',
+    );
+  }
+
+  return row.resources;
+}
+
+async function replaceSessionResources(
+  transaction: StoreContext,
+  target: { readonly workspaceId: string; readonly sessionId: string },
+  resources: ReadonlyArray<ManagedDocument>,
+): Promise<void> {
+  await transaction.client.query(
+    `UPDATE mechane.managed_sessions
+        SET configuration=jsonb_set(configuration,'{resources}',$3::jsonb),updated_at=now()
+      WHERE workspace_id=$1 AND id=$2`,
+    [target.workspaceId, target.sessionId, JSON.stringify(resources)],
+  );
+}
+
+export async function addSessionFileResource(
+  context: StoreContext,
+  { scope, sessionId, body }: SessionResourceMutation & { readonly body: ManagedDocument },
+) {
+  return await context.atomic(async (transaction) => {
+    const resources = await lockMutableSessionResources(transaction, { scope, sessionId });
+
+    if (body['type'] !== 'file') {
+      throw new ManagedStoreError(HttpStatusCode.BadRequest, 'Only file resources can be added to an existing session');
+    }
+
+    const resolved = await resolveFileMount({
+      context: transaction,
+      scope,
+      fileId: body['file_id'],
+      mountPath: body['mount_path'],
+    });
+
+    const targetKey = canonicalMountKey(resolved.mount_path);
+
+    for (const existing of resources) {
+      const mountPath = existing['mount_path'];
+
+      if (typeof mountPath === 'string' && canonicalMountKey(mountPath) === targetKey) {
+        throw new ManagedStoreError(HttpStatusCode.BadRequest, 'Duplicate resource mount path');
+      }
+    }
+
+    await replaceSessionResources(transaction, { workspaceId: scope.workspaceId, sessionId }, [...resources, resolved]);
+
+    return resolved;
+  });
+}
+
+function findSessionResource(resources: ReadonlyArray<ManagedDocument>, resourceId: string) {
+  const position = resources.findIndex(
+    (attachment) => attachment['id'] === resourceId || attachment['memory_store_id'] === resourceId,
+  );
+
+  const resource = resources[position];
+
+  if (resource === undefined) {
+    throw new ManagedStoreError(HttpStatusCode.NotFound, 'Session resource not found');
+  }
+
+  return { position, resource };
+}
+
+export async function deleteSessionFileResource(
+  context: StoreContext,
+  { scope, sessionId, resourceId }: SessionResourceMutation & { readonly resourceId: string },
+) {
+  return await context.atomic(async (transaction) => {
+    const resources = await lockMutableSessionResources(transaction, { scope, sessionId });
+    const { position, resource } = findSessionResource(resources, resourceId);
+
+    if (resource['type'] !== 'file') {
+      throw new ManagedStoreError(
+        HttpStatusCode.BadRequest,
+        'Repository and memory resources are mounted for the session lifetime',
+      );
+    }
+
+    const remaining = [...resources.slice(0, position), ...resources.slice(position + 1)];
+
+    await replaceSessionResources(transaction, { workspaceId: scope.workspaceId, sessionId }, remaining);
+
+    return { type: 'session_resource_deleted' as const, id: resourceId };
   });
 }
 
@@ -281,15 +407,7 @@ export async function rotateGitResourceCredential(
       result.rows[0],
     );
 
-    const position = resources.findIndex(
-      (attachment) => attachment['id'] === resourceId || attachment['memory_store_id'] === resourceId,
-    );
-
-    const resource = resources[position];
-
-    if (resource === undefined) {
-      throw new ManagedStoreError(HttpStatusCode.NotFound, 'Session resource not found');
-    }
+    const { position, resource } = findSessionResource(resources, resourceId);
 
     const url = resource['url'];
 

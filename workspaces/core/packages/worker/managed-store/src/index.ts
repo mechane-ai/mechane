@@ -1,5 +1,6 @@
 export { createManagedCatalog } from './store/managed/catalog.ts';
 export { pluggableSandboxMigrationSql } from './store/managed/evidence-schema.ts';
+export { managedFilesMigrationSql } from './store/managed/file-schema.ts';
 export { openGitTransfer } from './store/managed/git-transfer.ts';
 export { installedAllocationMigrationSql } from './store/managed/installed-allocations-schema.ts';
 export { installedEnvironmentMigrationSql } from './store/managed/installed-environment-schema.ts';

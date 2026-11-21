@@ -10,6 +10,7 @@ import { applySessionMutation } from './session-mutations.ts';
 import type { MutationInput } from './session-mutations.ts';
 import { openDescriptor, readSession, reopenDescriptor, sessionDocument } from './session-records.ts';
 import type { SessionIdentity, SessionStatus } from './session-records.ts';
+import { addSessionFileResource, deleteSessionFileResource } from './vault-resources.ts';
 import { closeSessionWork } from './work-records.ts';
 
 const PENDING_OPEN_MAX_ROWS = 100;
@@ -42,6 +43,9 @@ async function projectStatus(context: StoreContext, input: Projection): Promise<
 
 export function createManagedSessionStore(context: StoreContext, keyring: CredentialKeyring) {
   return {
+    addFileResource: (input: Parameters<typeof addSessionFileResource>[1]) => addSessionFileResource(context, input),
+    deleteFileResource: (input: Parameters<typeof deleteSessionFileResource>[1]) =>
+      deleteSessionFileResource(context, input),
     assertionContext: (scope: Parameters<typeof sessionAssertionContext>[1]) => sessionAssertionContext(context, scope),
     applyMutation: (input: MutationInput) => context.atomic((transaction) => applySessionMutation(transaction, input)),
     create: (input: Parameters<typeof createSession>[2]) =>

@@ -11,6 +11,7 @@ import {
 } from '@mechane/managed-store';
 import { agentMigrationSql } from './migrations/agent-schema.ts';
 import { decoupleManagedAgentsMigrationSql } from './migrations/decouple-managed-agents-schema.ts';
+import { managedFilesAndCleanupMigrationSql } from './migrations/managed-files-and-cleanup.ts';
 import { retireMechTablesMigrationSql } from './migrations/retire-mech-tables.ts';
 import { sessionMigrationSql } from './migrations/session-schema.ts';
 
@@ -506,4 +507,5 @@ $policy$;
   { version: 15, sql: pluggableSandboxMigrationSql },
   { version: 16, sql: decoupleManagedAgentsMigrationSql },
   { version: 17, sql: retireMechTablesMigrationSql },
+  { version: 18, sql: managedFilesAndCleanupMigrationSql },
 ] as const;

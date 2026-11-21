@@ -2,6 +2,7 @@ import type { BetaManagedAgentsSession } from '@anthropic-ai/sdk/resources/beta/
 import { HttpHeader } from '@mechane/records';
 import { ManagedGitIdentity, managedGitIdentityPath } from '@mechane/sandbox-wire';
 import { Effect, Exit, Schema } from 'effect';
+import { mountSessionFile } from './file-mount.ts';
 import { GitMountFailed, mountGitRepository } from './git-mount.ts';
 import { gitMountRoute, startGitRelay } from './git-relay.ts';
 
@@ -10,6 +11,7 @@ type ManagedGitCheckout = {
   readonly sessionId: BetaManagedAgentsSession['id'];
   readonly session: Pick<BetaManagedAgentsSession, 'resources'>;
   readonly token: string;
+  readonly transport: typeof fetch;
   readonly workspace: string;
   readonly signal: AbortSignal;
 };
@@ -17,6 +19,7 @@ type ManagedGitCheckout = {
 type MountedGitCheckout = { readonly close: () => Promise<void> | void };
 type GitSession = Pick<ManagedGitCheckout, 'origin' | 'sessionId' | 'signal' | 'token'>;
 const GIT_REPOSITORY = 'github_repository';
+const FILE_RESOURCE = 'file';
 
 const gitIdentity = Effect.fn('gitIdentity')(function* ({
   origin,
@@ -52,10 +55,23 @@ export async function prepareManagedGitCheckout({
   origin,
   sessionId,
   token,
+  transport,
   workspace,
   session,
   signal,
 }: ManagedGitCheckout): Promise<MountedGitCheckout> {
+  const files = session.resources.filter((resource) => resource.type === FILE_RESOURCE);
+
+  if (files.length > 0) {
+    const fileMounts = Effect.forEach(
+      files,
+      (resource) => mountSessionFile({ origin, resource, token, transport, workspace, signal }),
+      { concurrency: 1, discard: true },
+    );
+
+    await Effect.runPromise(fileMounts);
+  }
+
   const repositories = session.resources.filter((resource) => resource.type === GIT_REPOSITORY);
 
   if (repositories.length === 0) {

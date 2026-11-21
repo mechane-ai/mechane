@@ -11,13 +11,12 @@ import {
 import { SANDBOX_EVIDENCE_HEADERS, SandboxEvidenceKind, SandboxEvidenceMetadata } from '@mechane/sandbox-provider';
 import { Schema } from 'effect';
 import { ManagedHttpError } from './http-error.ts';
+import { sha256Hex } from './upload.ts';
 import { requireWorkerWorkspace, workerBearer } from './work-auth.ts';
 
 const EVIDENCE_UPLOAD_PATH = /^\/internal\/managed\/sessions\/(sesn_[A-Za-z0-9_-]{1,128})\/evidence\/([^/]+)$/u;
 const EVIDENCE_MAX_MEBIBYTES = 100;
 const EVIDENCE_MAX_BYTES = EVIDENCE_MAX_MEBIBYTES * BYTES_PER_MEBIBYTE;
-const HEX_RADIX = 16;
-const HEX_BYTE_WIDTH = 2;
 const ALLOWED_MEDIA_TYPES: ReadonlySet<string> = new Set([MediaType.Png, MediaType.Jpeg, MediaType.Mp4]);
 
 type UploadRoute = { readonly sessionId: string; readonly artifactId: string };
@@ -53,16 +52,6 @@ function optionalHeaderInteger(headers: Headers, name: string): number | null {
   }
 
   return parsed;
-}
-
-async function sha256Hex(bytes: Uint8Array): Promise<string> {
-  const buffer = new ArrayBuffer(bytes.byteLength);
-
-  new Uint8Array(buffer).set(bytes);
-
-  const digest = await crypto.subtle.digest('SHA-256', buffer);
-
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(HEX_RADIX).padStart(HEX_BYTE_WIDTH, '0')).join('');
 }
 
 /** Handles direct worker-to-R2 screenshot and recording uploads without a Cloudflare SandboxObject hop. */

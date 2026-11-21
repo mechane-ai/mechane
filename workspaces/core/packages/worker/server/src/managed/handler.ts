@@ -11,6 +11,7 @@ import { handleEnvironmentOperation, handleManagedEnvironmentKeys } from './envi
 import { handleEvents } from './events.ts';
 import { handleDirectEvidenceUpload, matchDirectEvidenceUpload } from './evidence-upload.ts';
 import { managedFailure } from './failure.ts';
+import { handleFiles } from './files.ts';
 import { ManagedHttpError } from './http-error.ts';
 import { installedCommandEnvironment } from './installed-command-environment.ts';
 import { handleInstalledComputer, matchInstalledComputer } from './installed-computer.ts';
@@ -56,6 +57,10 @@ async function execute(path: string, input: ManagedRequest): Promise<unknown> {
 
   if (path.startsWith('/v1/skills')) {
     return await handleSkills(input);
+  }
+
+  if (path.startsWith('/v1/files')) {
+    return await handleFiles(input);
   }
 
   if (path.includes('/events') || path.includes('/threads')) {

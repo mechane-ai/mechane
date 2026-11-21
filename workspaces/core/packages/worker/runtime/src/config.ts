@@ -31,6 +31,7 @@ const PricedOffer = Schema.Struct({ ...TokenRates.fields, listPrice: Schema.opti
 const ModelOfferSchema = Schema.Struct({
   ...PricedOffer.fields,
   id: Schema.NonEmptyString,
+  aliases: Schema.optionalKey(Schema.Array(Schema.NonEmptyString)),
   contextWindowTokens: PositiveInteger,
   maxOutputTokens: PositiveInteger,
   supportsImages: Schema.optionalKey(Schema.Boolean),
@@ -336,6 +337,20 @@ function optionalInteger(environment: RuntimeEnvironment, name: string, defaultV
   return parsed;
 }
 
+function assertDistinctModelIdentifiers(offers: ReadonlyArray<ModelOffer>): void {
+  const modelIds = new Set(offers.map((offer) => offer.id));
+
+  if (modelIds.size !== offers.length) {
+    throw new Error('Model offers must have distinct IDs');
+  }
+
+  const allIdentifiers = offers.flatMap((offer) => [offer.id, ...(offer.aliases ?? [])]);
+
+  if (new Set(allIdentifiers).size !== allIdentifiers.length) {
+    throw new Error('Model offer aliases must be distinct from all model IDs and aliases');
+  }
+}
+
 export function loadRuntimeConfiguration({
   environment = process.env,
 }: { readonly environment?: RuntimeEnvironment } = {}): RuntimeConfiguration {
@@ -343,11 +358,7 @@ export function loadRuntimeConfiguration({
     JSON.parse(requiredEnvironment(environment, 'MECHANE_MODEL_OFFERS')),
   );
 
-  const modelIds = new Set(offers.map((offer) => offer.id));
-
-  if (modelIds.size !== offers.length) {
-    throw new Error('Model offers must have distinct IDs');
-  }
+  assertDistinctModelIdentifiers(offers);
 
   const keyring = parseKeyring(environment);
 

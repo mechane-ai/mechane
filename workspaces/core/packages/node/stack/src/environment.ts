@@ -49,7 +49,7 @@ function fixtureModelSelection(): Environment {
 
   const offers = [
     { ...defaults, id: FIXTURE_MODEL, efforts: ['medium', 'high'], defaultEffort: 'medium' },
-    { ...defaults, id: 'claude-haiku-5-5' },
+    { ...defaults, id: 'claude-haiku-5-5', aliases: ['claude-haiku-4-5'] },
     {
       ...defaults,
       id: 'claude-opus-5-5',

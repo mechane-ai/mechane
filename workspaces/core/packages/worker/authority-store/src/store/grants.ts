@@ -31,7 +31,7 @@ BEGIN
   EXECUTE format('GRANT INSERT,DELETE ON mechane.managed_session_mutations,mechane.managed_memory_versions TO %I',role_name);
   EXECUTE format('GRANT UPDATE(path,content,content_sha256,content_size_bytes,redacted_at,redacted_by) ON mechane.managed_memory_versions TO %I',role_name);
   EXECUTE format('GRANT UPDATE(deleted_at) ON mechane.managed_skill_versions TO %I',role_name);
-  EXECUTE format('GRANT INSERT,UPDATE,DELETE ON mechane.managed_environments,mechane.managed_environment_keys,mechane.managed_work,mechane.managed_worker_polls,mechane.managed_git_transfers,mechane.managed_sessions,mechane.managed_session_evidence,mechane.managed_memory_stores,mechane.managed_memories,mechane.managed_vaults,mechane.managed_vault_credentials,mechane.managed_session_git_tokens TO %I',role_name);
+  EXECUTE format('GRANT INSERT,UPDATE,DELETE ON mechane.managed_environments,mechane.managed_environment_keys,mechane.managed_work,mechane.managed_worker_polls,mechane.managed_git_transfers,mechane.managed_sessions,mechane.managed_session_evidence,mechane.managed_files,mechane.managed_memory_stores,mechane.managed_memories,mechane.managed_vaults,mechane.managed_vault_credentials,mechane.managed_session_git_tokens TO %I',role_name);
   EXECUTE format('REVOKE ALL ON ALL SEQUENCES IN SCHEMA mechane FROM %I',role_name);
   EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA mechane REVOKE INSERT,UPDATE,DELETE ON TABLES FROM %I',role_name);
   EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA mechane GRANT SELECT ON TABLES TO %I',role_name);

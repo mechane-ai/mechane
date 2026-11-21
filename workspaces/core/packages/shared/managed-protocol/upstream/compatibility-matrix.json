@@ -775,8 +775,8 @@
       "path": "/v1/files/{file_id}",
       "beta": true,
       "operation": "beta_delete_file_v1_files__file_id__delete",
-      "status": "excluded_self_hosted",
-      "reason": "Files API is hosted-only and excluded from Anthropic self-hosted Managed Agents."
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
     },
     {
       "method": "DELETE",
@@ -799,8 +799,8 @@
       "path": "/v1/files/{file_id}/content",
       "beta": true,
       "operation": "beta_download_file_v1_files__file_id__content_get",
-      "status": "excluded_self_hosted",
-      "reason": "Files API is hosted-only and excluded from Anthropic self-hosted Managed Agents."
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
     },
     {
       "method": "GET",
@@ -831,8 +831,8 @@
       "path": "/v1/files/{file_id}",
       "beta": true,
       "operation": "beta_get_file_metadata_v1_files__file_id__get",
-      "status": "excluded_self_hosted",
-      "reason": "Files API is hosted-only and excluded from Anthropic self-hosted Managed Agents."
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
     },
     {
       "method": "GET",
@@ -871,8 +871,8 @@
       "path": "/v1/files",
       "beta": true,
       "operation": "beta_list_files_v1_files_get",
-      "status": "excluded_self_hosted",
-      "reason": "Files API is hosted-only and excluded from Anthropic self-hosted Managed Agents."
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
     },
     {
       "method": "GET",
@@ -943,8 +943,8 @@
       "path": "/v1/files",
       "beta": true,
       "operation": "beta_upload_file_v1_files_post",
-      "status": "excluded_self_hosted",
-      "reason": "Files API is hosted-only and excluded from Anthropic self-hosted Managed Agents."
+      "status": "implemented",
+      "reason": "Implemented in the published self-hosted Managed Agents profile."
     },
     {
       "method": "POST",
@@ -968,7 +968,7 @@
       "beta": false,
       "operation": "delete_file_v1_files__file_id__delete",
       "status": "excluded_self_hosted",
-      "reason": "Files API is hosted-only and excluded from Anthropic self-hosted Managed Agents."
+      "reason": "Managed Agents serves files through the beta routes with the files-api or managed-agents beta header."
     },
     {
       "method": "DELETE",
@@ -992,7 +992,7 @@
       "beta": false,
       "operation": "download_file_v1_files__file_id__content_get",
       "status": "excluded_self_hosted",
-      "reason": "Files API is hosted-only and excluded from Anthropic self-hosted Managed Agents."
+      "reason": "Managed Agents serves files through the beta routes with the files-api or managed-agents beta header."
     },
     {
       "method": "GET",
@@ -1000,7 +1000,7 @@
       "beta": false,
       "operation": "get_file_metadata_v1_files__file_id__get",
       "status": "excluded_self_hosted",
-      "reason": "Files API is hosted-only and excluded from Anthropic self-hosted Managed Agents."
+      "reason": "Managed Agents serves files through the beta routes with the files-api or managed-agents beta header."
     },
     {
       "method": "GET",
@@ -1024,7 +1024,7 @@
       "beta": false,
       "operation": "list_files_v1_files_get",
       "status": "excluded_self_hosted",
-      "reason": "Files API is hosted-only and excluded from Anthropic self-hosted Managed Agents."
+      "reason": "Managed Agents serves files through the beta routes with the files-api or managed-agents beta header."
     },
     {
       "method": "GET",
@@ -1048,7 +1048,7 @@
       "beta": false,
       "operation": "upload_file_v1_files_post",
       "status": "excluded_self_hosted",
-      "reason": "Files API is hosted-only and excluded from Anthropic self-hosted Managed Agents."
+      "reason": "Managed Agents serves files through the beta routes with the files-api or managed-agents beta header."
     }
   ]
 }

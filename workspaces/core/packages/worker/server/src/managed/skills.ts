@@ -2,6 +2,7 @@ import { ManagedStoreError } from '@mechane/control-store';
 import { HttpHeader, HttpStatusCode, MediaType } from '@mechane/records';
 import { managedPageQuery } from './page-query.ts';
 import type { ManagedRequest } from './types.ts';
+import { readBoundedMultipartForm } from './upload.ts';
 
 const MULTIPART_MAX_BYTES = 32_505_856;
 
@@ -13,36 +14,12 @@ type Upload = {
 };
 
 async function skillUpload(request: Request, allowDisplayName: boolean): Promise<Upload> {
-  const contentType = request.headers.get(HttpHeader.ContentType);
-
-  if (
-    contentType === null ||
-    !contentType.toLowerCase().startsWith(`${MediaType.MultipartFormData};`) ||
-    request.body === null
-  ) {
-    throw new ManagedStoreError(HttpStatusCode.BadRequest, 'Upload skill files as multipart/form-data');
-  }
-
-  const progress = { bytes: 0 };
-
-  const bounded = request.body.pipeThrough(
-    new TransformStream<Uint8Array, Uint8Array>({
-      transform(chunk, controller) {
-        progress.bytes += chunk.byteLength;
-
-        if (progress.bytes > MULTIPART_MAX_BYTES) {
-          throw new ManagedStoreError(HttpStatusCode.BadRequest, 'Skill upload exceeds the allowed size');
-        }
-
-        controller.enqueue(chunk);
-      },
-    }),
-  );
-
-  const payload = new Response(bounded, { headers: { [HttpHeader.ContentType]: contentType } });
-
-  const form = await payload.formData().catch(() => {
-    throw new ManagedStoreError(HttpStatusCode.BadRequest, 'Malformed or oversized multipart skill upload');
+  const form = await readBoundedMultipartForm({
+    request,
+    maxBytes: MULTIPART_MAX_BYTES,
+    missingMessage: 'Upload skill files as multipart/form-data',
+    oversizedMessage: 'Skill upload exceeds the allowed size',
+    malformedMessage: 'Malformed or oversized multipart skill upload',
   });
 
   const files: Array<Upload['files'][number]> = [];

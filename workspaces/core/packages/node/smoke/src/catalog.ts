@@ -30,6 +30,7 @@ import { coordinatorRevisitsSelf } from './managed-agents/coordinator-revisits-s
 import { gitResourceCredentialsStayPrivate } from './managed-agents/git-resource-credentials-stay-private.ts';
 import { largeEventReplays } from './managed-agents/large-event-replays.ts';
 import { managedAgentLifecycle } from './managed-agents/managed-agent-lifecycle.ts';
+import { managedFilesAndSdkDropIn } from './managed-agents/managed-files-and-sdk-drop-in.ts';
 import { managedOidcRolesScopeResources } from './managed-agents/managed-oidc-roles-scope-resources.ts';
 import { messagePreviewsReconcile } from './managed-agents/message-previews-reconcile.ts';
 import { nativeGatewayConfirmsFastUsage } from './managed-agents/native-gateway-confirms-fast-usage.ts';
@@ -102,6 +103,13 @@ export const CATALOG = [
     guarantee: 'official SDK clients see resource versions, creator visibility and archive conflicts',
     regression: 'SDK requests return a generic success envelope or disclose another creator’s agent',
     run: managedAgentLifecycle,
+  },
+  {
+    family: 'managed',
+    canUseRetainedStack: true,
+    guarantee: 'official SDK clients upload, mount and isolate files and invoke agents by configured model aliases',
+    regression: 'files escape creator or session scope, mount paths traverse the workspace, or aliased models fail',
+    run: managedFilesAndSdkDropIn,
   },
   {
     family: 'managed',

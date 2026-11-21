@@ -26,6 +26,9 @@ export const MediaType = {
   HtmlDocument: 'text/html',
   PlainText: 'text/plain',
   Utf8PlainText: 'text/plain; charset=utf-8',
+  Csv: 'text/csv',
+  Markdown: 'text/markdown',
+  Xml: 'application/xml',
 } as const;
 
 export type MediaType = (typeof MediaType)[keyof typeof MediaType];

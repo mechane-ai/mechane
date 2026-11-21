@@ -1,6 +1,7 @@
 import type { CredentialKeyring, StoreContext } from '@mechane/authority-store';
 import { createManagedAgentStore } from './agents.ts';
 import { createManagedEvidenceStore } from './evidence-store.ts';
+import { createManagedFileStore } from './files.ts';
 import { createInstalledCommandAccess } from './installed-command-access.ts';
 import { createInstalledEnvironmentStore } from './installed-environment.ts';
 import { createManagedMemoryStore } from './memory.ts';
@@ -17,6 +18,7 @@ export function createManagedCatalog(context: StoreContext, keyring: CredentialK
     },
     agents: createManagedAgentStore(context),
     evidence: createManagedEvidenceStore(context),
+    files: createManagedFileStore(context),
     sessions: createManagedSessionStore(context, keyring),
     worker: createManagedWorkerStore(context),
     memory: createManagedMemoryStore(context),

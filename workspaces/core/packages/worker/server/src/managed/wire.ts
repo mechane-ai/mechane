@@ -9,6 +9,7 @@ const EXECUTION_REQUEST_MAX_BYTES = 33_554_432;
 const MANAGED_BETA = 'managed-agents-2026-04-01';
 const MEMORY_BETA = 'agent-memory-2026-07-22';
 const SKILLS_BETA = 'skills-2025-10-02';
+const FILES_BETA = 'files-api-2025-04-14';
 const supportedVersions: ReadonlySet<string> = new Set(['2026-10-21', '2023-06-01']);
 
 export function requireManagedHeaders(request: Request, path: string): void {
@@ -22,6 +23,17 @@ export function requireManagedHeaders(request: Request, path: string): void {
     .split(',')
     .map((beta) => beta.trim())
     .filter(Boolean);
+
+  if (path.startsWith('/v1/files')) {
+    if (betas.length === 0 || betas.includes(FILES_BETA) || betas.includes(MANAGED_BETA)) {
+      return;
+    }
+
+    throw new ManagedHttpError(
+      HttpStatusCode.BadRequest,
+      'This endpoint requires no beta or the files-api-2025-04-14 or managed-agents-2026-04-01 beta',
+    );
+  }
 
   if (path.startsWith('/v1/skills')) {
     if (betas.length === 0 || betas.includes(SKILLS_BETA) || betas.includes(MANAGED_BETA)) {

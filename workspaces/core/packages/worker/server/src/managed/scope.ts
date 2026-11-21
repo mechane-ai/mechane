@@ -39,6 +39,7 @@ export async function scopedManagedRequest({ base, route, authenticate }: Scoped
           break;
         case 'memory':
         case 'skill':
+        case 'file':
           break;
         case 'work':
         case 'denied':

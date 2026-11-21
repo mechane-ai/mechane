@@ -18,6 +18,12 @@ export function resolveManagedModel(offers: ReadonlyArray<ModelOffer>, requested
     return exact;
   }
 
+  const aliased = offers.filter((offer) => offer.aliases?.includes(requestedId) === true);
+
+  if (aliased.length === 1) {
+    return aliased[0];
+  }
+
   const matches = offers.filter((offer) => publicClaudeId(offer.id) === requestedId);
 
   if (matches.length === 1) {
@@ -27,13 +33,26 @@ export function resolveManagedModel(offers: ReadonlyArray<ModelOffer>, requested
   return undefined;
 }
 
+function candidateOfferAliases(offer: ModelOffer): ReadonlyArray<string> {
+  const explicit = offer.aliases ?? [];
+  const publicId = publicClaudeId(offer.id);
+
+  if (publicId === undefined) {
+    return explicit;
+  }
+
+  return [...explicit, publicId];
+}
+
 export function managedModelDefinitions(offers: ReadonlyArray<ModelOffer>): ReadonlyArray<ModelOffer> {
   const definitions = [...offers];
+  const registered = new Set(offers.map((offer) => offer.id));
 
-  for (const offer of offers) {
-    const id = publicClaudeId(offer.id);
+  const extra = offers.flatMap((offer) => candidateOfferAliases(offer).map((id) => ({ offer, id })));
 
-    if (id !== undefined && resolveManagedModel(offers, id) === offer) {
+  for (const { offer, id } of extra) {
+    if (!registered.has(id) && resolveManagedModel(offers, id) === offer) {
+      registered.add(id);
       definitions.push({ ...offer, id });
     }
   }

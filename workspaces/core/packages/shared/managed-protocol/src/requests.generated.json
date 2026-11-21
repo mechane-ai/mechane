@@ -2,6 +2,51 @@
   "routes": [
     {
       "method": "POST",
+      "path": "/v1/files",
+      "operation": "beta_upload_file_v1_files_post",
+      "query": {},
+      "body": null,
+      "multipart": true
+    },
+    {
+      "method": "GET",
+      "path": "/v1/files",
+      "operation": "beta_list_files_v1_files_get",
+      "query": {
+        "page": { "anyOf": [{ "type": "string" }, { "type": "null" }] },
+        "ids[]": { "anyOf": [{ "type": "array", "items": { "type": "string" } }, { "type": "null" }] },
+        "limit": { "type": "integer", "maximum": 1000, "minimum": 1 },
+        "scope_id": { "type": "string" }
+      },
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/files/{file_id}",
+      "operation": "beta_get_file_metadata_v1_files__file_id__get",
+      "query": {},
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/files/{file_id}",
+      "operation": "beta_delete_file_v1_files__file_id__delete",
+      "query": {},
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/files/{file_id}/content",
+      "operation": "beta_download_file_v1_files__file_id__content_get",
+      "query": {},
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "POST",
       "path": "/v1/skills",
       "operation": "beta_create_skill_v1_skills_post",
       "query": {},

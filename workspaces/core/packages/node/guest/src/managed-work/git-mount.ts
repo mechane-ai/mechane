@@ -5,9 +5,10 @@ import type { Scope } from 'effect';
 import { execFile } from 'node:child_process';
 import { lstatSync } from 'node:fs';
 import type { Stats } from 'node:fs';
-import { mkdir, mkdtemp, readFile, realpath, rename, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, realpath, rename, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { promisify } from 'node:util';
+import { acquireStagedDirectory } from './mount-stage.ts';
 
 const git = promisify(execFile);
 const METADATA = '.git';
@@ -258,23 +259,10 @@ export const mountGitRepository = Effect.fn('mountGitRepository')(function* ({
   }
 
   const parent = dirname(target);
-  const prefix = join(parent, '.mechane-git-');
+  const staged = acquireStagedDirectory({ parent, prefix: '.mechane-git-' });
 
-  const opening = Effect.tryPromise({
-    try: () => mkdtemp(prefix),
-    catch: (cause) => new GitMountFailed({ reason: String(cause) }),
-  });
+  const stage = yield* Effect.mapError(staged, (cause) => new GitMountFailed({ reason: cause.reason }));
 
-  const release: (stage: string) => Effect.Effect<void> = (stage) => {
-    const removal = Effect.tryPromise({
-      try: () => rm(stage, { recursive: true, force: true }),
-      catch: (cause) => new GitMountFailed({ reason: String(cause) }),
-    });
-
-    return removal.pipe(Effect.orDie);
-  };
-
-  const stage = yield* Effect.acquireRelease(opening, release);
   const checkout = Option.fromNullishOr(resource.checkout);
   const clone = ['clone', '--no-local', '--no-recurse-submodules', '--template='];
 

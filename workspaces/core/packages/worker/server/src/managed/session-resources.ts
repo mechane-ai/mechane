@@ -46,15 +46,26 @@ function listResources(resources: ReadonlyArray<Resource>, query: ManagedRequest
 
 export async function sessionResources(input: ManagedRequest, sessionId: string): Promise<unknown> {
   const { store, scope, operation, params, query, body } = input;
+
+  if (operation === 'BetaAddResource') {
+    return await store.managed.sessions.addFileResource({ scope, sessionId, body });
+  }
+
+  if (operation === 'BetaDeleteResource') {
+    const targetId = params['resource_id'];
+
+    if (targetId === undefined || targetId.length === 0) {
+      throw new ManagedHttpError(HttpStatusCode.NotFound, 'Session resource not found');
+    }
+
+    return await store.managed.sessions.deleteFileResource({ scope, sessionId, resourceId: targetId });
+  }
+
   const session = await store.managed.sessions.get({ scope, id: sessionId });
   const resources = Schema.decodeUnknownSync(ResourceList)(session['resources']);
 
   if (operation === 'BetaListResources') {
     return listResources(resources, query);
-  }
-
-  if (operation === 'BetaAddResource') {
-    throw new ManagedHttpError(HttpStatusCode.BadRequest, 'Self-hosted sessions do not support file resources');
   }
 
   const id = params['resource_id'];
@@ -69,11 +80,6 @@ export async function sessionResources(input: ManagedRequest, sessionId: string)
       return resource;
     case 'BetaUpdateResource':
       return await store.managed.vaults.rotateGitResourceToken({ scope, sessionId, resourceId: id, body });
-    case 'BetaDeleteResource':
-      throw new ManagedHttpError(
-        HttpStatusCode.BadRequest,
-        'Repository and memory resources are mounted for the session lifetime',
-      );
     default:
       throw new ManagedHttpError(HttpStatusCode.NotFound, 'Unknown session resource operation');
   }
