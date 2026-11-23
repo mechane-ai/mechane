@@ -8,7 +8,6 @@ import { ChartHeading } from './chart-heading.tsx';
 import { ChartSeriesMarker } from './chart-series-marker.tsx';
 import { ChartSeriesSummary } from './chart-series-summary.tsx';
 import type { ChartLegendItem } from './chart-theme.ts';
-import type { ChartSelectDetails } from './chart.tsx';
 
 type ChartReportHeading = { readonly meta?: ReactNode; readonly actions?: ReactNode };
 
@@ -21,12 +20,6 @@ export type ChartSeriesReport =
       readonly seriesValues: Readonly<Record<string, string | undefined>>;
     });
 
-export type ChartSelection = {
-  readonly selectedId: string | undefined;
-  /** The details say why and how: a press, a key or an agent's step. */
-  readonly onSelect: (id: string, details: ChartSelectDetails) => void;
-};
-
 export type ChartFrameProps = {
   readonly title: ReactNode;
   readonly description?: ReactNode;
@@ -37,6 +30,13 @@ export type ChartFrameProps = {
   readonly series?: ReadonlyArray<ChartLegendItem> | undefined;
   /** The chart part's own props, when this figure is the root of an interactive chart. */
   readonly figure?: ComponentProps<'figure'> | undefined;
+  /**
+   * The legend that names what the plot draws, such as series, models or classes. It sits above the plot, directly
+   * under the title block, with the frame's standard gap.
+   */
+  readonly seriesLegend?: ReactNode;
+  /** The legend that explains a color or size scale. It sits directly below the plot, above the readout and notes. */
+  readonly scaleLegend?: ReactNode;
 };
 
 export type { ChartLegendItem } from './chart-theme.ts';
@@ -83,6 +83,10 @@ const styles = stylex.create({
     fontSize: typography.captionSize,
     lineHeight: typography.captionLineHeight,
   },
+  /** The named legend's slot: the same gap to the plot in every chart. */
+  legendSlot: { minWidth: 0, marginBlockEnd: spacing.sm },
+  /** The scale legend's slot, under the plot. */
+  scaleSlot: { minWidth: 0, marginBlockStart: spacing.sm },
   footer: {
     marginBlockStart: spacing.md,
     minWidth: 0,
@@ -126,6 +130,10 @@ const styles = stylex.create({
   },
 });
 
+/**
+ * The figure every chart draws in: the title block, the named legend, the plot, the scale legend, then the footer with
+ * the readout and notes. Use `FigureFrame`, which builds it, in a chart.
+ */
 export function ChartFrame({
   title,
   description,
@@ -135,8 +143,19 @@ export function ChartFrame({
   report,
   series = [],
   figure = {},
+  seriesLegend,
+  scaleLegend,
 }: ChartFrameProps): ReactNode {
   const titleId = useId();
+
+  const body = (
+    <>
+      {seriesLegend !== undefined && <div {...stylex.props(styles.legendSlot)}>{seriesLegend}</div>}
+      {children}
+      {scaleLegend !== undefined && <div {...stylex.props(styles.scaleSlot)}>{scaleLegend}</div>}
+      {footer !== undefined && <div {...stylex.props(styles.footer)}>{footer}</div>}
+    </>
+  );
 
   if (report !== undefined) {
     const summary =
@@ -164,8 +183,7 @@ export function ChartFrame({
         <div {...stylex.props(styles.reportBody)}>
           {hasSummary && <div {...stylex.props(styles.summary)}>{summary}</div>}
           {description !== undefined && <p {...stylex.props(styles.description)}>{description}</p>}
-          {children}
-          {footer !== undefined && <div {...stylex.props(styles.footer)}>{footer}</div>}
+          {body}
         </div>
       </figure>
     );
@@ -182,12 +200,12 @@ export function ChartFrame({
         </div>
         {actions !== undefined && <div {...stylex.props(headerStyles.actions)}>{actions}</div>}
       </figcaption>
-      {children}
-      {footer !== undefined && <div {...stylex.props(styles.footer)}>{footer}</div>}
+      {body}
     </figure>
   );
 }
 
+/** The legend that names a chart's series or groups, each with its mark. Hand it to the frame's `seriesLegend` slot. */
 export function ChartLegend({ items, label = 'Legend', isScrollable = false }: ChartLegendProps): ReactNode {
   return (
     <ul aria-label={label} {...stylex.props(styles.legend, isScrollable && styles.scrollLegend)}>
@@ -201,6 +219,7 @@ export function ChartLegend({ items, label = 'Legend', isScrollable = false }: C
   );
 }
 
+/** The line that states the inspected mark's exact values. A plot names it with `aria-describedby`. */
 export function ChartReadout({ children, id }: { readonly children: ReactNode; readonly id?: string }): ReactNode {
   return (
     <p id={id} {...stylex.props(styles.readout)}>

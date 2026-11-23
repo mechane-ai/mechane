@@ -97,8 +97,11 @@ const compactDollars = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 1,
 });
 
-function formatYear(timestamp: number): string {
-  return String(Math.floor(timestamp / YEAR_SECONDS) + 1970);
+const MILLISECONDS_PER_SECOND = 1000;
+
+/** Writes the projection year of an instant, which the chart passes in milliseconds. */
+function yearText(milliseconds: number): string {
+  return String(Math.floor(milliseconds / MILLISECONDS_PER_SECOND / YEAR_SECONDS) + 1970);
 }
 
 function formatThousands(value: number): string {
@@ -120,10 +123,11 @@ export const ProjectionRange: Story = {
         markers={events}
         crossings={crossings}
         timestampUnit="seconds"
-        formatTimestamp={formatYear}
-        formatValue={formatThousands}
-        formatTick={formatCompact}
-        height={280}
+        timeFormat={yearText}
+        valueFormat={formatThousands}
+        tickFormat={formatCompact}
+        locale="en-US"
+        height="regular"
       />
     </Panel>
   ),
@@ -143,8 +147,8 @@ const capacity: TimeSeriesBand = {
   })),
 };
 
-function formatDay(timestamp: number): string {
-  return `Day ${Math.round(timestamp / 86_400)}`;
+function dayText(milliseconds: number): string {
+  return `Day ${Math.round(milliseconds / MILLISECONDS_PER_SECOND / 86_400)}`;
 }
 
 function formatNodes(value: number): string {
@@ -163,8 +167,9 @@ export const GapsAndUnreached: Story = {
           markers={[{ id: 'review', kind: 'event', timestamp: 200 * 86_400, label: 'Budget review' }]}
           crossings={[{ id: 'limit', seriesId: 'capacity', value: 80, label: 'Reaches the 80-node limit' }]}
           timestampUnit="seconds"
-          formatTimestamp={formatDay}
-          formatValue={formatNodes}
+          timeFormat={dayText}
+          valueFormat={formatNodes}
+          locale="en-US"
         />
       </Panel>
     </Stack>

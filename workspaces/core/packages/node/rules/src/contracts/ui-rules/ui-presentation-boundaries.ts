@@ -49,12 +49,25 @@ const MODULES: ReadonlyArray<ModuleBoundary> = [
   { name: 'content', dependencies: ['foundations', 'core', 'forms'] },
   { name: 'ai', dependencies: ['foundations', 'core', 'forms', 'overlays', 'content', 'feedback'] },
   { name: 'charts', dependencies: ['foundations', 'core', 'forms', 'overlays', 'feedback'] },
+  {
+    name: 'kits',
+    dependencies: [
+      'foundations',
+      'core',
+      'forms',
+      'overlays',
+      'feedback',
+      'layout',
+      'collections',
+      'content',
+      'charts',
+    ],
+  },
 ];
 
 const VENDORS = [
   { name: 'tables', owner: 'collections', packages: '@tanstack/react-table' },
   { name: 'content', owner: 'content', packages: '(?:@pierre/|streamdown|strip-ansi)' },
-  { name: 'charts', owner: 'charts', packages: '@visx/' },
 ] as const;
 
 /** Each area exposes its own entry; heavier presentation capabilities cannot enter its dependencies. */

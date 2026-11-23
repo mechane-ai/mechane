@@ -111,6 +111,8 @@ export const CONTRACT_NAMES = [
   'sandbox-vendor-boundary',
   'managed-files-and-mounts',
   'postgres-hyperdrive-pooling',
+  'ui-data-display',
+  'ui-domain-kits',
   'test-curation',
   'test-assertion-integrity',
   'ci-reproducible-checks',

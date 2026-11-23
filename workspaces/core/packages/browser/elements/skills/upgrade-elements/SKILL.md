@@ -27,7 +27,9 @@ is large.
    ```
 
 5. Search the app for what the type check cannot see: agent component names in an `allow` function, role or Tab-order
-   assumptions in tests, and CSS that targets Elements internals.
+   assumptions in tests, and CSS that targets Elements internals. After 0.47, also search for `MAX_` limit constants,
+   `selection={` and `ChartSelection`, `@visx` imports your app relied on Elements to install, chart `height` numbers,
+   and `format` function props or missing `locale` props passed through spread objects.
 6. Review each changed page with the `review-elements` skill. Behavior changes show in the browser, not in types.
 
 Do not pin an old behavior back with a wrapper or a patch. Move the call site to the new API, and report anything the

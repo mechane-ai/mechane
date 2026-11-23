@@ -181,18 +181,25 @@ function RecordReport({
 
   const summary = hasSummary ? (
     isPending ? (
-      <BarChartPlaceholder title="Requests by service" report={report} series={series} height={180} />
+      <BarChartPlaceholder
+        title="Requests by service"
+        locale="en-US"
+        report={report}
+        series={series}
+        height="compact"
+      />
     ) : (
       <BarChart
         title="Requests by service"
+        locale="en-US"
         report={report}
         categories={categories}
         series={series}
         mode="stacked"
         domain={[0, 50]}
-        formatValue={(value) => `${value} requests`}
-        highlightedSeriesId={highlightedId}
-        height={180}
+        valueFormat={(value) => `${value} requests`}
+        highlighted={highlightedId}
+        height="compact"
       />
     )
   ) : undefined;

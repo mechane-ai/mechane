@@ -8,6 +8,8 @@ import { BarChart, BarChartPlaceholder } from './cartesian/index.ts';
 import type { BarSeries } from './cartesian/index.ts';
 import { ChartFrame } from './chart-frame.tsx';
 import type { ChartSeriesReport } from './chart-frame.tsx';
+import { formatValue } from './figure/figure-format.ts';
+import type { ValueFormat } from './figure/figure-format.ts';
 
 const meta = {
   title: 'Charts/Report captions',
@@ -38,8 +40,16 @@ const scopes = [
 
 type ReportCaptionExampleProps = { readonly isPending?: boolean; readonly hasLongLabels?: boolean };
 
-function formatTokens(value: number): string {
+const LOCALE = 'en-US';
+
+function tokenFormat(value: number): string {
   return `${value} tokens`;
+}
+
+const TOKEN_FORMAT: ValueFormat = tokenFormat;
+
+function formatTokens(value: number): string {
+  return formatValue({ value, locale: LOCALE, format: TOKEN_FORMAT });
 }
 
 function ReportCaptionExample({ isPending = false, hasLongLabels = false }: ReportCaptionExampleProps): ReactNode {
@@ -78,7 +88,7 @@ function ReportCaptionExample({ isPending = false, hasLongLabels = false }: Repo
     ),
   };
 
-  const placeholder = <BarChartPlaceholder title={title} report={report} series={series} height={180} />;
+  const placeholder = <BarChartPlaceholder title={title} report={report} series={series} locale={LOCALE} />;
 
   return (
     <Stack isCompact>
@@ -93,8 +103,8 @@ function ReportCaptionExample({ isPending = false, hasLongLabels = false }: Repo
             categories={selected}
             series={series}
             domain={[0, 100]}
-            formatValue={formatTokens}
-            height={180}
+            valueFormat={TOKEN_FORMAT}
+            locale={LOCALE}
           />
         </AsyncRegion>
       )}

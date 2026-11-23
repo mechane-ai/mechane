@@ -5,6 +5,7 @@ import { expect } from 'storybook/test';
 import { Details } from '../../../collections/src/index.ts';
 import { Panel, Stack, Text } from '../../../core/src/index.ts';
 import { createAgent } from '../../../foundations/src/agent/index.ts';
+import type { PlotAxis } from '../plot/plot-layout.ts';
 import { ScatterPlot } from './scatter-plot.tsx';
 import type { ScatterPoint, ScatterRange } from './scatter-plot.tsx';
 
@@ -15,7 +16,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'ScatterPlot displays supplied coordinates without computing an embedding or interpreting distance. Applications declare axis meanings, units, domains, and formatters. Inspecting a point exposes its formatted axis readout while selected tracks the selection accepted by the application. Arrow keys move to the nearest point in their direction. Agents read every point with its exact values, inspect one, and select it when the plot supplies selection. Point selection and range selection are controlled independently. Drag an empty area with a mouse to select a rectangle; the two range sliders provide the same coordinate selection with keyboard and touch. Touch gestures on the plot scroll the page. The data disclosure preserves every supplied label and coordinate. Supply no more than 1,000 points. Invalid or out-of-domain coordinates produce an explicit error rather than a clamped mark. Windowing or sampling belongs to the application and must be described beside the plot.',
+          'ScatterPlot displays supplied coordinates without computing an embedding or interpreting distance. Applications declare each axis as a label with its unit, a format, an optional domain and a linear, log or symlog scale. Inspecting a point exposes its formatted axis readout while selected tracks the selection accepted by the application. Arrow keys move to the nearest point in their direction. Agents read every point with its exact values, inspect one, and select it when the plot supplies selection. Point selection and range selection are controlled independently. Drag an empty area with a mouse to select a rectangle; the two range sliders provide the same coordinate selection with keyboard and touch. Touch gestures on the plot scroll the page. The data disclosure preserves every supplied label and coordinate. Supply no more than 1,000 points. Invalid or out-of-domain coordinates produce an explicit error rather than a clamped mark. Windowing or sampling belongs to the application and must be described beside the plot.',
       },
     },
   },
@@ -24,11 +25,12 @@ const meta = {
 export default meta;
 type Story = StoryObj;
 
-const numberFormat = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
+const coordinate = { maximumFractionDigits: 2 } as const;
 
-function formatCoordinate(value: number): string {
-  return numberFormat.format(value);
-}
+const projection = {
+  x: { label: 'Projection 1 (unitless)', domain: [-3, 3], format: coordinate },
+  y: { label: 'Projection 2 (unitless)', domain: [-3, 3], format: coordinate },
+} as const satisfies Record<string, PlotAxis>;
 
 const points: ReadonlyArray<ScatterPoint> = [
   { id: 'sample-river', label: 'River passage', x: -2.4, y: 1.8, tone: 'series1' },
@@ -46,10 +48,10 @@ const points: ReadonlyArray<ScatterPoint> = [
 ];
 
 function Embedding(): ReactNode {
-  const [selectedId, setSelectedId] = useState<string>();
+  const [selected, setSelected] = useState<string | null>(null);
   const [range, setRange] = useState<ScatterRange | null>(null);
 
-  const selectedPoint = points.find((point) => point.id === selectedId);
+  const selectedPoint = points.find((point) => point.id === selected);
 
   const selectedCount =
     range === null
@@ -66,16 +68,16 @@ function Embedding(): ReactNode {
       <Stack>
         <ScatterPlot
           title="Embedding inspection"
+          locale="en-US"
           description="Twelve synthetic samples with supplied projection coordinates. Colors identify source categories. This view does not estimate similarity or a causal relationship."
           points={points}
-          xDomain={[-3, 3]}
-          yDomain={[-3, 3]}
-          xLabel="Projection 1 (unitless)"
-          yLabel="Projection 2 (unitless)"
-          formatX={formatCoordinate}
-          formatY={formatCoordinate}
-          selection={{ selectedId, onSelect: setSelectedId }}
-          rangeSelection={{ value: range, onChange: setRange, xStep: 0.1, yStep: 0.1, locale: 'en-US' }}
+          x={projection.x}
+          y={projection.y}
+          selected={selected}
+          onSelectedChange={setSelected}
+          range={range}
+          onRangeChange={setRange}
+          rangeStep={{ x: 0.1, y: 0.1 }}
           emptyLabel="No projected points were supplied."
         />
         {selectedPoint !== undefined && (
@@ -135,14 +137,11 @@ export const ReadOnly: Story = {
     <Panel>
       <ScatterPlot
         title="Projected samples"
+        locale="en-US"
         description="The complete twelve-record synthetic input, with no selection controls."
         points={points}
-        xDomain={[-3, 3]}
-        yDomain={[-3, 3]}
-        xLabel="Projection 1 (unitless)"
-        yLabel="Projection 2 (unitless)"
-        formatX={formatCoordinate}
-        formatY={formatCoordinate}
+        x={projection.x}
+        y={projection.y}
         emptyLabel="No projected points were supplied."
       />
     </Panel>
@@ -153,14 +152,11 @@ export const Empty: Story = {
   render: () => (
     <ScatterPlot
       title="Projected samples"
+      locale="en-US"
       description="No records have been supplied."
       points={[]}
-      xDomain={[-3, 3]}
-      yDomain={[-3, 3]}
-      xLabel="Projection 1 (unitless)"
-      yLabel="Projection 2 (unitless)"
-      formatX={formatCoordinate}
-      formatY={formatCoordinate}
+      x={projection.x}
+      y={projection.y}
       emptyLabel="No projected points were supplied."
     />
   ),
@@ -170,14 +166,11 @@ export const OutOfDomain: Story = {
   render: () => (
     <ScatterPlot
       title="Invalid projection domain"
+      locale="en-US"
       description="The supplied point falls outside the stated domain and is not moved to the edge."
       points={[{ id: 'outside', label: 'Outside the visible domain', x: 6, y: 0, tone: 'series1' }]}
-      xDomain={[-3, 3]}
-      yDomain={[-3, 3]}
-      xLabel="Projection 1 (unitless)"
-      yLabel="Projection 2 (unitless)"
-      formatX={formatCoordinate}
-      formatY={formatCoordinate}
+      x={projection.x}
+      y={projection.y}
       emptyLabel="No projected points were supplied."
     />
   ),
@@ -186,4 +179,45 @@ export const OutOfDomain: Story = {
 export const Narrow: Story = {
   globals: { viewport: { value: 'narrow', isRotated: false } },
   render: () => <Embedding />,
+};
+
+const sizes = [0.12, 0.35, 1.3, 2.7, 6.9, 13, 34, 70];
+
+const models: ReadonlyArray<ScatterPoint> = sizes.map((billions, index) => ({
+  id: `model-${index}`,
+  label: `Model ${index + 1}`,
+  x: billions * 1e9,
+  y: 0.31 + 0.07 * Math.log10(billions * 10),
+  tone: 'series1',
+}));
+
+export const LogAxis: Story = {
+  render: () => (
+    <Panel>
+      <ScatterPlot
+        title="Evaluation score by model size"
+        locale="en-US"
+        description="Eight synthetic checkpoints. Parameter counts span three orders of magnitude, so the x axis is a log scale."
+        points={models}
+        x={{ label: 'Parameters', scale: 'log', format: { notation: 'compact' } }}
+        y={{ label: 'Accuracy', domain: [0, 0.6], format: { style: 'percent', maximumFractionDigits: 1 } }}
+      />
+    </Panel>
+  ),
+};
+
+export const States: Story = {
+  render: () => (
+    <Stack>
+      <ScatterPlot title="Loading projection" locale="en-US" status="loading" points={[]} {...projection} />
+      <ScatterPlot
+        title="Sampled projection"
+        locale="en-US"
+        description="A labelled sample of the synthetic projection."
+        coverage={{ shown: points.length, total: 4800, unit: 'points' }}
+        points={points}
+        {...projection}
+      />
+    </Stack>
+  ),
 };

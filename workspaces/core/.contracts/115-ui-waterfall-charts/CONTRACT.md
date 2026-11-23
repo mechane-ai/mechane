@@ -12,7 +12,7 @@ Use one time domain and scale for every row, and preserve the supplied row order
 Keep record identity stable across refreshes. Receive selection and its callback from the consumer, and report the
 selected record without owning navigation or a resource request.
 
-Keep labels, units, formatting, and evidence meaning with the consumer. Keep visx types and geometry inside `ui/charts`.
+Keep labels, units, formatting, and evidence meaning with the consumer. Keep geometry inside `ui/charts`.
 Make the same values available as readable text. Distinguish unavailable evidence from a zero duration and a point.
 Support keyboard selection with an accessible name and visible focus. Keep labels and values readable in narrow layouts.
 The rows are one Tab stop on the UI SDK `waterfall`; give it no start or duration for a row without timing.

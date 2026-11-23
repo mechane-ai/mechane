@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 
 const INITIAL_WIDTH_PX = 640;
 
-export function usePlotWidth() {
+/** The width a plot's container gives it, measured as it resizes. Attach `ref` to the element that sets the width. */
+export function usePlotWidth(): { readonly ref: (element: HTMLDivElement | null) => void; readonly width: number } {
   const [element, ref] = useState<HTMLDivElement | null>(null);
   const [width, setWidth] = useState(INITIAL_WIDTH_PX);
 

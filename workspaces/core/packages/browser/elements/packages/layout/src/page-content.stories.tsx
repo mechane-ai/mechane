@@ -112,8 +112,9 @@ function ActivityReport({ isLoading = false }: { readonly isLoading?: boolean })
           {isLoading ? (
             <BarChartPlaceholder
               title="Daily completed operations"
+              locale="en-US"
               report={report}
-              height={180}
+              height="compact"
               series={[
                 { id: 'build', label: 'Build', tone: 'series1' },
                 { id: 'publish', label: 'Publish', tone: 'series2' },
@@ -122,8 +123,9 @@ function ActivityReport({ isLoading = false }: { readonly isLoading?: boolean })
           ) : (
             <BarChart
               title="Daily completed operations"
+              locale="en-US"
               report={report}
-              height={180}
+              height="compact"
               categories={[
                 { id: 'day-1', label: 'November 1' },
                 { id: 'day-2', label: 'November 2' },
@@ -135,7 +137,7 @@ function ActivityReport({ isLoading = false }: { readonly isLoading?: boolean })
               ]}
               mode="stacked"
               domain={[0, 200]}
-              formatValue={(value) => value.toLocaleString()}
+              valueFormat={{}}
             />
           )}
         </>

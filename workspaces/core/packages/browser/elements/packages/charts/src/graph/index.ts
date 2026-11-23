@@ -1,10 +1,17 @@
 export type { FlowDiagramProps, FlowLink, FlowNode } from './flow-diagram.tsx';
-export { FlowDiagram, MAX_FLOW_LINKS, MAX_FLOW_NODES } from './flow-diagram.tsx';
+export { FlowDiagram, flowLimits } from './flow-diagram.tsx';
 export type { RelationNode, RelationEdge, RelationGroup, RelationGraphProps } from './relation-graph.tsx';
-export {
-  MAX_RELATION_NODES,
-  MAX_RELATION_EDGES,
-  MAX_RELATION_GROUPS,
-  MAX_RELATION_DIMENSION,
-  RelationGraph,
-} from './relation-graph.tsx';
+export { RelationGraph, relationGraphLimits } from './relation-graph.tsx';
+export type {
+  AttributionDirection,
+  AttributionEdge,
+  AttributionGraphProps,
+  AttributionLayer,
+  AttributionNode,
+  AttributionNodeKind,
+  AttributionPinDetails,
+  AttributionPinReason,
+} from './attribution-graph.tsx';
+export { AttributionGraph, attributionLimits } from './attribution-graph.tsx';
+export type { TreeDiagramProps, TreeDirection, TreeNode } from './tree-diagram.tsx';
+export { TreeDiagram, treeLimits } from './tree-diagram.tsx';

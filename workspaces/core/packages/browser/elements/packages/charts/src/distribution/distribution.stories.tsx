@@ -18,7 +18,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Supported. Applications prepare histogram bins, cumulative probabilities, interval estimates, and ranked values. Charts preserve that order and never estimate missing measurements, aggregate samples, or infer a confidence level. Supply finite increasing domains, units, and formatters. View data exposes each plotted value and supports keyboard or touch selection. A null value remains unavailable; an actual zero retains its label and baseline position. Histogram accepts at most 200 bins, ECDF 2,000 points, and interval/ranked plots 200 rows. Invalid or oversized data produces an error instead of a partial chart. The application owns windowing and aggregation.',
+          'Supported. Applications prepare histogram bins, cumulative probabilities, interval estimates, and ranked values. Charts preserve that order and never estimate missing measurements, aggregate samples, or infer a confidence level. Declare each axis with its label and unit, a format and an optional domain; Histogram fits its count axis from zero and ECDF uses zero to one when no domain is given. View data exposes each plotted value and supports keyboard or touch selection. A null value remains unavailable; an actual zero retains its label and baseline position. Histogram accepts at most 200 bins, ECDF 2,000 points, and interval/ranked plots 200 rows. Invalid or oversized data produces an error instead of a partial chart. The application owns windowing and aggregation.',
       },
     },
   },
@@ -53,25 +53,19 @@ const rankedItems: ReadonlyArray<RankedBarDatum> = [
   { id: 'bracket', rank: '1', label: 'Closing bracket feature', value: 1.7, tone: 'series1' },
   { id: 'separator', rank: '2', label: 'Separator feature', value: -1.1, tone: 'series4' },
   { id: 'indent', rank: '3', label: 'Indentation feature', value: 0.6, tone: 'series1' },
-  { id: 'zero', rank: '4', label: 'Measured zero', value: 0 },
+  { id: 'zero', rank: '4', label: 'Measured zero', value: 0, tone: 'series1' },
   { id: 'missing', label: 'Feature with no recorded score in the selected analysis window', value: null },
 ];
 
-function formatNumber(value: number): string {
-  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }).format(value);
-}
-
-function formatMilliseconds(value: number): string {
-  return `${formatNumber(value)} ms`;
-}
-
-function formatProbability(value: number): string {
-  return new Intl.NumberFormat('en-US', { style: 'percent', maximumFractionDigits: 0 }).format(value);
-}
+const latency = { label: 'Latency (ms)', domain: [0, 500], format: { maximumFractionDigits: 1 } } as const;
+const requests = { label: 'Requests', domain: [0, 60], format: { maximumFractionDigits: 0 } } as const;
+const percent = { style: 'percent', maximumFractionDigits: 0 } as const;
+const accuracy = { label: 'Accuracy', domain: [0.6, 0.9], format: percent } as const;
+const contribution = { label: 'Contribution score', domain: [-2, 2], format: { maximumFractionDigits: 1 } } as const;
 
 function DistributionExamples(): ReactNode {
-  const [selectedBin, setSelectedBin] = useState<string>();
-  const [selectedInterval, setSelectedInterval] = useState<string>();
+  const [selectedBin, setSelectedBin] = useState<string | null>(null);
+  const [selectedInterval, setSelectedInterval] = useState<string | null>(null);
 
   return (
     <Columns>
@@ -79,26 +73,24 @@ function DistributionExamples(): ReactNode {
         <Histogram
           title="Request latency"
           description="Recorded counts by declared latency bin · synthetic sample"
+          locale="en-US"
           bins={bins}
-          domain={[0, 500]}
-          maximumCount={60}
-          valueLabel="Latency"
-          countLabel="Requests"
-          formatValue={formatMilliseconds}
-          formatCount={formatNumber}
-          selection={{ selectedId: selectedBin, onSelect: setSelectedBin }}
+          value={latency}
+          count={requests}
+          selected={selectedBin}
+          onSelectedChange={setSelectedBin}
         />
       </Panel>
       <Panel>
         <IntervalPlot
           title="Evaluation estimates"
           description="Intervals are supplied by the evaluation, not calculated by the chart."
+          locale="en-US"
           items={intervalItems}
-          domain={[0.6, 0.9]}
-          valueLabel="Accuracy"
+          value={accuracy}
           intervalLabel="95% bootstrap interval"
-          formatValue={formatProbability}
-          selection={{ selectedId: selectedInterval, onSelect: setSelectedInterval }}
+          selected={selectedInterval}
+          onSelectedChange={setSelectedInterval}
         />
       </Panel>
     </Columns>
@@ -106,31 +98,40 @@ function DistributionExamples(): ReactNode {
 }
 
 function SignedExamples(): ReactNode {
-  const [selectedId, onSelect] = useState<string>();
+  const [selected, setSelected] = useState<string | null>(null);
 
   return (
     <Panel>
       <RankedBars
         title="Feature contributions"
         description="Supplied attribution scores, ordered by the analysis owner."
+        locale="en-US"
         items={rankedItems}
-        domain={[-2, 2]}
-        valueLabel="Contribution score"
-        formatValue={formatNumber}
-        selection={{ selectedId, onSelect }}
+        value={contribution}
+        selected={selected}
+        onSelectedChange={setSelected}
+      />
+      <RankedBars
+        title="Compact ranked list"
+        description="A short list for a card: height compact keeps each row tight."
+        locale="en-US"
+        height="compact"
+        items={rankedItems.slice(0, 3)}
+        value={contribution}
       />
     </Panel>
   );
 }
 
 function CumulativeExample(): ReactNode {
-  const [selectedId, onSelect] = useState<string>();
+  const [selected, setSelected] = useState<string | null>(null);
 
   return (
     <Panel>
       <ECDF
         title="Cumulative request latency"
         description="Prepared empirical probabilities. The missing sample creates a visible gap."
+        locale="en-US"
         points={[
           { id: 'start', value: 0, probability: 0 },
           { id: 'one', value: 70, probability: 0.14 },
@@ -139,12 +140,10 @@ function CumulativeExample(): ReactNode {
           { id: 'four', value: 240, probability: 0.8 },
           { id: 'five', value: 400, probability: 1 },
         ]}
-        domain={[0, 500]}
-        valueLabel="Latency"
-        probabilityLabel="Requests at or below latency"
-        formatValue={formatMilliseconds}
-        formatProbability={formatProbability}
-        selection={{ selectedId, onSelect }}
+        value={latency}
+        probability={{ label: 'Requests at or below latency', format: percent }}
+        selected={selected}
+        onSelectedChange={setSelected}
       />
     </Panel>
   );
@@ -169,19 +168,10 @@ export const Empty: Story = {
   render: () => (
     <Columns>
       <Panel>
-        <Histogram
-          title="Request latency"
-          bins={[]}
-          domain={[0, 500]}
-          maximumCount={60}
-          valueLabel="Latency"
-          countLabel="Requests"
-          formatValue={formatMilliseconds}
-          formatCount={formatNumber}
-        />
+        <Histogram title="Request latency" locale="en-US" bins={[]} value={latency} count={requests} />
       </Panel>
       <Panel>
-        <RankedBars title="Feature scores" items={[]} domain={[-2, 2]} valueLabel="Score" formatValue={formatNumber} />
+        <RankedBars title="Feature scores" locale="en-US" items={[]} value={{ ...contribution, label: 'Score' }} />
       </Panel>
     </Columns>
   ),
@@ -197,12 +187,9 @@ export const ZeroIsNotUnavailable: Story = {
           { id: 'zero', label: 'Recorded', lowerBound: 0, upperBound: 100, count: 0 },
           { id: 'unknown', label: 'Unavailable', lowerBound: 100, upperBound: 200, count: null },
         ]}
-        domain={[0, 200]}
-        maximumCount={1}
-        valueLabel="Latency"
-        countLabel="Requests"
-        formatValue={formatMilliseconds}
-        formatCount={formatNumber}
+        locale="en-US"
+        value={{ ...latency, domain: [0, 200] }}
+        count={{ ...requests, domain: [0, 1] }}
       />
     </Panel>
   ),
@@ -218,22 +205,18 @@ export const InvalidEvidence: Story = {
             { id: 'first', label: 'First range', lowerBound: 0, upperBound: 200, count: 12 },
             { id: 'overlap', label: 'Overlapping range', lowerBound: 100, upperBound: 300, count: 8 },
           ]}
-          domain={[0, 500]}
-          maximumCount={20}
-          valueLabel="Latency"
-          countLabel="Requests"
-          formatValue={formatMilliseconds}
-          formatCount={formatNumber}
+          locale="en-US"
+          value={latency}
+          count={{ ...requests, domain: [0, 20] }}
         />
       </Panel>
       <Panel>
         <IntervalPlot
           title="Reversed interval"
           items={[{ id: 'reversed', label: 'Invalid estimate', lower: 0.9, estimate: 0.8, upper: 0.7 }]}
-          domain={[0, 1]}
-          valueLabel="Accuracy"
+          locale="en-US"
+          value={{ ...accuracy, domain: [0, 1] }}
           intervalLabel="95% bootstrap interval"
-          formatValue={formatProbability}
         />
       </Panel>
     </Columns>
@@ -251,10 +234,32 @@ export const ExplicitRenderLimit: Story = {
           label: `Feature ${index}`,
           value: index,
         }))}
-        domain={[0, 201]}
-        valueLabel="Activation magnitude"
-        formatValue={formatNumber}
+        locale="en-US"
+        value={{ label: 'Activation magnitude', domain: [0, 201], format: { maximumFractionDigits: 0 } }}
       />
     </Panel>
+  ),
+};
+
+export const States: Story = {
+  render: () => (
+    <Columns>
+      <Panel>
+        <Histogram title="Request latency" locale="en-US" status="loading" bins={[]} value={latency} count={requests} />
+      </Panel>
+      <Panel>
+        <Histogram
+          title="Request latency"
+          description="Counts from a sampled window · synthetic sample"
+          locale="en-US"
+          bins={bins}
+          value={latency}
+          count={{ label: 'Requests', format: { maximumFractionDigits: 0 } }}
+          coverage={{ shown: 94, total: 1200, unit: 'requests' }}
+          source="Synthetic latency sample"
+          transforms={['Binned at 100 ms']}
+        />
+      </Panel>
+    </Columns>
   ),
 };

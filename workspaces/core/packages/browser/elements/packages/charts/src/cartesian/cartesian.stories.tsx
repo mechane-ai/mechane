@@ -38,7 +38,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Choose LineChart for trends, AreaChart for magnitude or explicit stacking, BarChart for category comparison, and BreakdownBar for nonnegative parts of a whole. Sparkline is a passive inline trend with a supplied summary and domain. Use SmallMultiples when readers compare the same timestamps across panels with independent units and populations. Its placeholder preserves the group layout and bottom date axis. A local selector can present alternate analytical questions. Stack related report sections. Use report for a self-contained analytical boundary, report.summary for mixed metrics, or report.seriesValues for period values keyed by the chart series. Embedded charts can use their ordinary frame inside an existing region. Full charts own their title, legend and inspection. ChartFrame supplies title, summary, action and footer layout for custom plots, whose renderers compose geometry, legend and inspection. Pointer, touch and keyboard users can inspect exact values. Escape dismisses details, and the heading’s accessible exact-value table returns focus when closed. Use formatTick for compact axes and formatValue for exact values. Applications own observations, scope, units and formatting. Supply the same title, metadata, series identity and height to the pending chart through AsyncRegion. Unknown bar-series identity uses a neutral legend skeleton.',
+          'Choose LineChart for trends, AreaChart for magnitude or explicit stacking, BarChart for category comparison, and BreakdownBar for nonnegative parts of a whole. Sparkline is a passive inline trend with a supplied summary and domain. Use SmallMultiples when readers compare the same timestamps across panels with independent units and populations. Its placeholder preserves the group layout and bottom date axis. A local selector can present alternate analytical questions. Stack related report sections. Use report for a self-contained analytical boundary, report.summary for mixed metrics, or report.seriesValues for period values keyed by the chart series. Embedded charts can use their ordinary frame inside an existing region. Full charts own their title, legend and inspection. ChartFrame supplies title, summary, action and footer layout for custom plots, whose renderers compose geometry, legend and inspection. Pointer, touch and keyboard users can inspect exact values. Escape dismisses details, and the heading’s accessible exact-value table returns focus when closed. Values use valueFormat and instants use timeFormat, in the figure’s locale; tickFormat overrides the compact axis form. Applications own observations, scope, units and formats. Supply the same title, metadata, series identity and height to the pending chart through AsyncRegion. Unknown bar-series identity uses a neutral legend skeleton.',
       },
     },
   },
@@ -63,13 +63,22 @@ const candidate: TimeSeries = {
   points: times.map((timestamp, index) => ({ timestamp, value: [9, 13, 15, 12, 16, 18, 16][index] ?? null })),
 };
 
-function formatTime(value: number): string {
-  return `${value} s`;
+const MILLISECONDS_PER_SECOND = 1000;
+
+/** Writes an elapsed time, which the chart passes in milliseconds, in seconds. */
+function secondsText(milliseconds: number): string {
+  return `${milliseconds / MILLISECONDS_PER_SECOND} s`;
 }
 
-function formatLatency(value: number): string {
-  return `${value} ms`;
+/** Writes an elapsed time as a full clock time in the synthetic session that starts at 09:00 UTC. */
+function clockText(milliseconds: number): string {
+  const seconds = milliseconds / MILLISECONDS_PER_SECOND;
+  const minute = String(Math.floor(seconds / 60)).padStart(2, '0');
+
+  return `2026-11-05 09:${minute}:${String(seconds % 60).padStart(2, '0')} UTC`;
 }
+
+const latency = { style: 'unit', unit: 'millisecond' } as const;
 
 function formatTokens(value: number): string {
   return `${new Intl.NumberFormat('en-US').format(value)} tokens`;
@@ -87,11 +96,13 @@ export const Observations: Story = {
     <Panel>
       <LineChart
         title="Request latency"
+        locale="en-US"
         description="Synthetic observations. The baseline has a missing sample at 90 seconds; elapsed-time spacing remains visible."
         series={[baseline, candidate]}
         timestampUnit="seconds"
-        formatTimestamp={formatTime}
-        formatValue={formatLatency}
+        timeFormat={secondsText}
+        valueFormat={latency}
+        valueLabel="Latency (ms)"
         markers={[
           { id: 'partial', kind: 'time', timestamp: 360, label: 'Partial period' },
           {
@@ -117,12 +128,15 @@ function SelectTimeRange(): ReactNode {
       <Stack>
         <LineChart
           title="Request latency"
+          locale="en-US"
           description="Drag on the plot to select a range of time. Drag the range to move it, or an edge to resize it. With the keyboard, Tab to the range, then use the arrow keys, Shift with an arrow, and Delete."
           series={[baseline, candidate]}
           timestampUnit="seconds"
-          formatTimestamp={formatTime}
-          formatValue={formatLatency}
-          rangeSelection={{ value: range, onChange: setRange, step: 30 }}
+          timeFormat={secondsText}
+          valueFormat={latency}
+          range={range}
+          onRangeChange={setRange}
+          rangeStep={30}
         />
         <Text tone="muted">
           The application owns the range. Here it counts {selected.length} of {times.length} observations.
@@ -140,7 +154,7 @@ export const TimeSeriesLoading: Story = {
     <AsyncRegion
       state="pending"
       label="Loading request latency"
-      placeholder={<TimeSeriesChartPlaceholder title="Request latency" series={[baseline, candidate]} />}
+      placeholder={<TimeSeriesChartPlaceholder title="Request latency" locale="en-US" series={[baseline, candidate]} />}
     />
   ),
 };
@@ -182,10 +196,11 @@ function ReplaceObservations(): ReactNode {
       </Text>
       <LineChart
         title="Inspection ownership"
+        locale="en-US"
         series={series}
         timestampUnit="seconds"
-        formatTimestamp={formatTime}
-        formatValue={formatLatency}
+        timeFormat={secondsText}
+        valueFormat={latency}
         actions={actions}
       />
     </Stack>
@@ -199,14 +214,18 @@ export const AreasAndSparklines: Story = {
     <Stack>
       <AreaChart
         title="Recorded tokens"
+        locale="en-US"
         description="Each area begins at zero. Values are supplied observations, not inferred samples."
         series={[candidate]}
         timestampUnit="seconds"
-        formatTimestamp={formatTime}
-        formatValue={formatTokens}
+        timeFormat={secondsText}
+        valueFormat={formatTokens}
+        tickFormat={{ maximumFractionDigits: 0 }}
+        valueLabel="Tokens"
       />
       <AreaChart
         title="Additive token counts"
+        locale="en-US"
         series={[
           candidate,
           {
@@ -219,8 +238,8 @@ export const AreasAndSparklines: Story = {
         ]}
         isStacked
         timestampUnit="seconds"
-        formatTimestamp={formatTime}
-        formatValue={formatTokens}
+        timeFormat={secondsText}
+        valueFormat={formatTokens}
       />
       <Row>
         <Text>Candidate latency · 16 ms</Text>
@@ -233,6 +252,16 @@ export const AreasAndSparklines: Story = {
           valueDomain={[0, 24]}
         />
       </Row>
+      <Sparkline
+        title="Candidate latency"
+        summary="Seven synthetic observations over six minutes range from 9 to 18 milliseconds, ending at 16."
+        unit="milliseconds"
+        series={candidate}
+        timestampUnit="seconds"
+        valueDomain={[0, 24]}
+        markedPoints={['minimum', 'maximum', 'last']}
+        layout="figure"
+      />
     </Stack>
   ),
 };
@@ -241,12 +270,43 @@ export const AlignedMetrics: Story = {
   render: () => (
     <SmallMultiples
       charts={[
-        { id: 'request', title: 'Request latency', series: [baseline], formatValue: formatLatency },
-        { id: 'processing', title: 'Processing latency', series: [candidate], formatValue: formatLatency },
+        {
+          id: 'request',
+          title: 'Request latency',
+          series: [baseline],
+          valueFormat: latency,
+          valueLabel: 'Latency (ms)',
+          bands: [
+            {
+              id: 'request-range',
+              label: 'Expected',
+              rangeLabel: 'Seed range',
+              tone: 'series1',
+              points: times.map((timestamp, index) => {
+                const center = [12, 15, 16, 15, 18, 20, 21][index] ?? null;
+
+                return {
+                  timestamp,
+                  center,
+                  lower: center === null ? null : center - 2,
+                  upper: center === null ? null : center + 2,
+                };
+              }),
+            },
+          ],
+        },
+        {
+          id: 'processing',
+          title: 'Processing latency',
+          series: [candidate],
+          valueFormat: latency,
+          valueLabel: 'Latency (ms)',
+        },
       ]}
       timestampUnit="seconds"
-      formatTimestamp={formatTime}
-      height={128}
+      timeFormat={secondsText}
+      locale="en-US"
+      height="compact"
     />
   ),
 };
@@ -257,7 +317,7 @@ function AlignedReportsExample({ isPending = false }: { readonly isPending?: boo
       id: 'latency',
       title: 'Request latency',
       series: [baseline, candidate],
-      formatValue: formatLatency,
+      valueFormat: latency,
       report: {
         meta: 'Period mean · baseline 6/7, candidate 7/7 observations · 6 minutes',
         seriesValues: { baseline: isPending ? undefined : '17.3 ms', candidate: isPending ? undefined : '14.1 ms' },
@@ -278,7 +338,7 @@ function AlignedReportsExample({ isPending = false }: { readonly isPending?: boo
           })),
         },
       ] as const,
-      formatValue: formatTokens,
+      valueFormat: formatTokens,
       report: {
         meta: 'Period mean · 7/7 output observations · 6 minutes',
         seriesValues: { output: isPending ? undefined : '141 tokens' },
@@ -286,7 +346,7 @@ function AlignedReportsExample({ isPending = false }: { readonly isPending?: boo
     },
   ];
 
-  const placeholder = <SmallMultiplesPlaceholder charts={charts} height={148} />;
+  const placeholder = <SmallMultiplesPlaceholder charts={charts} height="compact" locale="en-US" />;
 
   if (isPending) {
     return <AsyncRegion state="pending" label="Loading analytical reports" placeholder={placeholder} />;
@@ -294,7 +354,13 @@ function AlignedReportsExample({ isPending = false }: { readonly isPending?: boo
 
   return (
     <AsyncRegion state="ready" label="Loading analytical reports" placeholder={placeholder}>
-      <SmallMultiples charts={charts} timestampUnit="seconds" formatTimestamp={formatTime} height={148} />
+      <SmallMultiples
+        charts={charts}
+        timestampUnit="seconds"
+        timeFormat={secondsText}
+        locale="en-US"
+        height="compact"
+      />
     </AsyncRegion>
   );
 }
@@ -307,6 +373,7 @@ export const CategoricalSeries: Story = {
     <Stack>
       <BarChart
         title="Tokens by operation"
+        locale="en-US"
         categories={[
           { id: 'assemble', label: 'Assemble' },
           { id: 'review', label: 'Review' },
@@ -317,10 +384,13 @@ export const CategoricalSeries: Story = {
           { id: 'output', label: 'Output', tone: 'series2', values: [25, null, 0] },
         ]}
         domain={[0, 100]}
-        formatValue={formatTokens}
+        valueFormat={formatTokens}
+        tickFormat={{ maximumFractionDigits: 0 }}
+        valueLabel="Tokens"
       />
       <BarChart
         title="Additive tokens by operation"
+        locale="en-US"
         mode="stacked"
         categories={[
           { id: 'assemble', label: 'Assemble' },
@@ -331,7 +401,7 @@ export const CategoricalSeries: Story = {
           { id: 'output', label: 'Output', tone: 'series2', values: [25, 10] },
         ]}
         domain={[0, 100]}
-        formatValue={formatTokens}
+        valueFormat={formatTokens}
       />
     </Stack>
   ),
@@ -342,26 +412,29 @@ export const MissingSingleAndEmpty: Story = {
     <Stack>
       <LineChart
         title="One observation"
+        locale="en-US"
         series={[{ id: 'single', label: 'Recorded latency', points: [{ timestamp: 30, value: 0 }] }]}
         timestampUnit="seconds"
-        formatTimestamp={formatTime}
-        formatValue={formatLatency}
+        timeFormat={secondsText}
+        valueFormat={latency}
       />
       <LineChart
         title="No observations"
+        locale="en-US"
         series={[]}
         timestampUnit="seconds"
-        formatTimestamp={formatTime}
-        formatValue={formatLatency}
+        timeFormat={secondsText}
+        valueFormat={latency}
       />
       <BreakdownBar
         title="Unavailable usage"
+        locale="en-US"
         items={[
           { id: 'input', label: 'Input', value: null },
           { id: 'output', label: 'Output', value: 0 },
         ]}
         total={0}
-        formatValue={formatTokens}
+        valueFormat={formatTokens}
       />
     </Stack>
   ),
@@ -372,14 +445,16 @@ export const InvalidEvidence: Story = {
     <Stack>
       <LineChart
         title="Mismatched period values"
+        locale="en-US"
         report={{ seriesValues: { misspelled: '17 ms' } }}
         series={[baseline]}
         timestampUnit="seconds"
-        formatTimestamp={formatTime}
-        formatValue={formatLatency}
+        timeFormat={secondsText}
+        valueFormat={latency}
       />
       <LineChart
         title="Unsorted timestamps"
+        locale="en-US"
         series={[
           {
             id: 'invalid',
@@ -391,10 +466,16 @@ export const InvalidEvidence: Story = {
           },
         ]}
         timestampUnit="seconds"
-        formatTimestamp={formatTime}
-        formatValue={formatLatency}
+        timeFormat={secondsText}
+        valueFormat={latency}
       />
-      <BreakdownBar title="Inconsistent total" items={allocation} total={1000} formatValue={formatTokens} />
+      <BreakdownBar
+        title="Inconsistent total"
+        locale="en-US"
+        items={allocation}
+        total={1000}
+        valueFormat={formatTokens}
+      />
     </Stack>
   ),
 };
@@ -406,19 +487,19 @@ function NarrowInspection(): ReactNode {
     <Stack>
       <LineChart
         title="Latency across the complete validation and review sequence"
+        locale="en-US"
         description="Synthetic observations with full timestamps and long series labels."
         series={[
           { ...baseline, label: 'Baseline across the complete validation sequence' },
           { ...candidate, label: 'Candidate across the complete validation sequence' },
         ]}
         timestampUnit="seconds"
-        formatTimestamp={(value) =>
-          `2026-11-05 09:${String(Math.floor(value / 60)).padStart(2, '0')}:${String(value % 60).padStart(2, '0')} UTC`
-        }
-        formatValue={formatLatency}
+        timeFormat={clockText}
+        valueFormat={latency}
       />
       <BarChart
         title="Recorded tokens by operation"
+        locale="en-US"
         categories={[
           { id: 'assemble', label: 'Assemble all source references for the review', axisLabel: 'Assemble' },
           { id: 'review', label: 'Review the complete collection of supplied references', axisLabel: 'Review' },
@@ -429,8 +510,9 @@ function NarrowInspection(): ReactNode {
           { id: 'output', label: 'Recorded output tokens', values: [25, null, 0] },
         ]}
         domain={[0, 100]}
-        formatValue={formatTokens}
-        selection={{ selectedId, onSelect }}
+        valueFormat={formatTokens}
+        selected={selectedId}
+        onSelectedChange={onSelect}
       />
     </Stack>
   );
@@ -468,6 +550,16 @@ export const PassiveTrendStates: Story = {
           valueDomain={[0, 24]}
         />
       </Row>
+      <Sparkline
+        title="Candidate latency"
+        summary="Seven synthetic observations over six minutes range from 9 to 18 milliseconds, ending at 16."
+        unit="milliseconds"
+        series={candidate}
+        timestampUnit="seconds"
+        valueDomain={[0, 24]}
+        markedPoints={['minimum', 'maximum', 'last']}
+        layout="figure"
+      />
       <Row>
         <Text>One observation</Text>
         <Sparkline
@@ -479,6 +571,16 @@ export const PassiveTrendStates: Story = {
           valueDomain={[0, 24]}
         />
       </Row>
+      <Sparkline
+        title="Candidate latency"
+        summary="Seven synthetic observations over six minutes range from 9 to 18 milliseconds, ending at 16."
+        unit="milliseconds"
+        series={candidate}
+        timestampUnit="seconds"
+        valueDomain={[0, 24]}
+        markedPoints={['minimum', 'maximum', 'last']}
+        layout="figure"
+      />
       <Row>
         <Text>No observations</Text>
         <Sparkline
@@ -490,6 +592,16 @@ export const PassiveTrendStates: Story = {
           valueDomain={[0, 24]}
         />
       </Row>
+      <Sparkline
+        title="Candidate latency"
+        summary="Seven synthetic observations over six minutes range from 9 to 18 milliseconds, ending at 16."
+        unit="milliseconds"
+        series={candidate}
+        timestampUnit="seconds"
+        valueDomain={[0, 24]}
+        markedPoints={['minimum', 'maximum', 'last']}
+        layout="figure"
+      />
       <Row>
         <Text>Invalid domain</Text>
         <Sparkline
@@ -527,7 +639,13 @@ function BarLoadingGeometry(): ReactNode {
             state="pending"
             label="Loading recorded token values"
             placeholder={
-              <BarChartPlaceholder title={title} description={description} series={knownSeries} height={180} />
+              <BarChartPlaceholder
+                title={title}
+                locale="en-US"
+                description={description}
+                series={knownSeries}
+                height="compact"
+              />
             }
           />
         ) : (
@@ -535,11 +653,18 @@ function BarLoadingGeometry(): ReactNode {
             state="ready"
             label="Loading recorded token values"
             placeholder={
-              <BarChartPlaceholder title={title} description={description} series={knownSeries} height={180} />
+              <BarChartPlaceholder
+                title={title}
+                locale="en-US"
+                description={description}
+                series={knownSeries}
+                height="compact"
+              />
             }
           >
             <BarChart
               title={title}
+              locale="en-US"
               description={description}
               categories={[
                 { id: 'assemble', label: 'Assemble' },
@@ -548,8 +673,8 @@ function BarLoadingGeometry(): ReactNode {
               ]}
               series={loadingSeries}
               domain={[0, 100]}
-              formatValue={formatTokens}
-              height={180}
+              valueFormat={formatTokens}
+              height="compact"
             />
           </AsyncRegion>
         )}
@@ -569,7 +694,7 @@ export const NarrowLoadingGeometry: Story = {
 };
 
 export const UnknownSeriesLoading: Story = {
-  render: () => <BarChartPlaceholder title="Daily spend" report={{}} height={240} />,
+  render: () => <BarChartPlaceholder title="Daily spend" locale="en-US" report={{}} height="regular" />,
 };
 
 function CompositionExample(): ReactNode {
@@ -602,13 +727,15 @@ function CompositionExample(): ReactNode {
       </Row>
       <BarChart
         title="Reported daily usage"
+        locale="en-US"
         categories={['1', '2', '3', '4', '5'].map((id) => ({ id, label: `Day ${id}` }))}
         series={series}
         domain={[-10, 110]}
-        formatValue={(value) => `$${value.toFixed(2)}`}
-        formatTick={(value) => `$${value}`}
-        highlightedSeriesId={highlighted}
-        selection={{ selectedId: selected ?? '', onSelect: setSelected }}
+        valueFormat={{ style: 'currency', currency: 'USD' }}
+        tickFormat={{ style: 'currency', currency: 'USD', maximumFractionDigits: 0 }}
+        highlighted={highlighted ?? null}
+        selected={selected ?? null}
+        onSelectedChange={setSelected}
         composition={{
           contextLabel: 'Account total',
           focusedSeries: focus,

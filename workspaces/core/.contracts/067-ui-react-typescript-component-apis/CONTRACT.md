@@ -37,7 +37,7 @@ Ordinary React composition and inferred framework return types remain allowed un
 
 The upstream clause "Export the package's own prop and value types, and keep third-party component, chart,
 positioning, and animation library types out of exported props." is replaced by this boundary: public props may
-describe supported Elements behavior and extend React native attributes. Keep SDK-specific types behind the Elements entry when callers only need a value or an action. Keep query, database, transport, and visx
+describe supported Elements behavior and extend React native attributes. Keep SDK-specific types behind the Elements entry when callers only need a value or an action. Keep query, database, transport, and renderer
 implementation types private. Preserve upstream refs, event details, and generic record types.
 
 The upstream clause "Type catalogued choices such as icon names as a finite union of stable names, and keep the

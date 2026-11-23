@@ -32,8 +32,9 @@ Inspect long labels and values in a narrow container for wrapping and clipping.
 ## Local adaptations
 
 Mechane display formatting belongs to `packages/browser/console-views/src/format.ts` and the resource adapters.
-Generic value displays receive strings or explicit formatting callbacks. Keep any declared locale, time zone,
-precision, and reference time with that owner, and never rely on a browser or server default.
+Generic value displays receive strings, explicit formatting callbacks, or a declared `Intl` format together with an
+explicit locale and, for instants, a time zone. Figures take that form under contract 140. Keep any declared locale,
+time zone, precision, and reference time with that owner, and never rely on a browser or server default.
 
 Civil-date and billing-month pickers use Gregorian calendar components, rather than instants. Preserve those
 components when formatting in the supplied locale; a fixed UTC formatting proxy does not change the chosen date.

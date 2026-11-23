@@ -1,3 +1,4 @@
+export { distributionLimits } from './distribution-input.ts';
 export type { ECDFPoint, ECDFProps } from './ecdf.tsx';
 export { ECDF } from './ecdf.tsx';
 export type { HistogramBin, HistogramProps } from './histogram.tsx';
@@ -6,3 +7,13 @@ export type { IntervalDatum, IntervalPlotProps } from './interval-plot.tsx';
 export { IntervalPlot } from './interval-plot.tsx';
 export type { RankedBarDatum, RankedBarsProps } from './ranked-bars.tsx';
 export { RankedBars } from './ranked-bars.tsx';
+export type { BoxGroup, BoxPlotProps } from './box-plot.tsx';
+export { BoxPlot, boxLimits } from './box-plot.tsx';
+export type { DensityPoint } from './group-plot-input.ts';
+export type { GroupDirection } from './group-plot-layout.ts';
+export type { RidgeRow, RidgelineProps } from './ridgeline.tsx';
+export { Ridgeline, ridgelineLimits } from './ridgeline.tsx';
+export type { StripGroup, StripPlotProps, StripPoint } from './strip-plot.tsx';
+export { StripPlot, stripLimits } from './strip-plot.tsx';
+export type { ViolinGroup, ViolinPlotProps } from './violin-plot.tsx';
+export { ViolinPlot, violinLimits } from './violin-plot.tsx';

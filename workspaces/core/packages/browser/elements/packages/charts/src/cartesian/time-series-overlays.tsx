@@ -1,9 +1,6 @@
-import * as stylex from '@stylexjs/stylex';
-import { Area, LinePath } from '@visx/shape';
 import type { ReactNode } from 'react';
-import { chartToneColors } from '../../../foundations/src/chart-tones.ts';
-import { colors } from '../../../foundations/src/tokens.stylex.ts';
-import { chartStyles } from '../chart-theme.ts';
+import { areaPath, linePath } from '../plot/path.ts';
+import { BandMark, GuideMark, LabelMark, LineMark, RingMark } from '../plot/plot-marks.tsx';
 import type { PlotBand, TimeSeriesBandPoint } from './time-series-bands.ts';
 
 /** An instant labelled on the plot: a supplied event marker or a found crossing, which also has a value. */
@@ -16,23 +13,11 @@ export type TimeLabelledInstant = {
 
 export type PlacedInstant = TimeLabelledInstant & { readonly lane: number; readonly anchor: 'start' | 'end' };
 
-const styles = stylex.create({
-  bandEdge: (color: string) => ({ stroke: color, strokeOpacity: 0.45, strokeWidth: 1, fill: 'none' }),
-  bandFill: (color: string) => ({ fill: color, fillOpacity: 0.16 }),
-  center: (color: string) => ({ stroke: color, strokeWidth: 2, fill: 'none', vectorEffect: 'non-scaling-stroke' }),
-  guide: { stroke: colors.muted, strokeWidth: 1, strokeDasharray: '2 3', vectorEffect: 'non-scaling-stroke' },
-  ring: { fill: colors.surface, stroke: colors.ink, strokeWidth: 2, vectorEffect: 'non-scaling-stroke' },
-  flag: { fill: colors.ink },
-});
-
 const LANE_HEIGHT_PX = 16;
 const LANES_MAX = 2;
 const LABEL_GAP_PX = 6;
 const CHARACTER_WIDTH_PX = 6.5;
-const FLAG_RADIUS_PX = 2.5;
-const RING_RADIUS_PX = 4;
-
-const PLOT_TOP_PX = 12;
+const LABEL_BASELINE_PX = 4;
 
 type LaneInput = {
   readonly instants: ReadonlyArray<TimeLabelledInstant>;
@@ -73,56 +58,44 @@ export function placeInstants({ instants, x, right }: LaneInput): ReadonlyArray<
   return placeInLanes({ instants: ordered, x, right, ends: [] });
 }
 
-export function instantsTop(placed: ReadonlyArray<PlacedInstant>): number {
+/** The room the instants' label lanes take above the plot. */
+export function instantsInset(placed: ReadonlyArray<PlacedInstant>): number {
   const lanes = Math.max(0, ...placed.map((instant) => instant.lane + 1));
 
-  return PLOT_TOP_PX + lanes * LANE_HEIGHT_PX;
+  return lanes * LANE_HEIGHT_PX;
 }
 
 type Scales = { readonly x: (timestamp: number) => number; readonly y: (value: number) => number };
 
-function isBounded(point: TimeSeriesBandPoint): boolean {
-  return point.lower !== null && point.upper !== null;
-}
-
-/** Shades each band between its bounds, outlines the bounds faintly, and draws its center line over the shade. */
+/** Shades each band between its bounds and draws its center line over the shade. */
 export function TimeSeriesBands({ bands, x, y }: Scales & { readonly bands: ReadonlyArray<PlotBand> }): ReactNode {
   return (
     <g>
       {bands.map((band) => {
-        const color = chartToneColors[band.tone];
-        const points = [...band.points];
+        function edge(value: (point: TimeSeriesBandPoint) => number | null): ReadonlyArray<number | null> {
+          return band.points.map((point) => {
+            const level = value(point);
+
+            return level === null ? null : y(level);
+          });
+        }
+
+        const lower = edge((point) => point.lower);
+        const upper = edge((point) => point.upper);
+        const center = edge((point) => point.center);
+        const xs = band.points.map((point) => x(point.timestamp));
 
         return (
           <g key={band.id}>
-            <Area<TimeSeriesBandPoint>
-              data={points}
-              defined={isBounded}
-              x={(point) => x(point.timestamp)}
-              y0={(point) => y(point.lower ?? 0)}
-              y1={(point) => y(point.upper ?? 0)}
-              {...stylex.props(styles.bandFill(color))}
+            <BandMark
+              d={areaPath(
+                xs.map((position, index) => ({ x: position, y0: lower[index] ?? null, y1: upper[index] ?? null })),
+              )}
+              tone={band.tone}
             />
-            <LinePath<TimeSeriesBandPoint>
-              data={points}
-              defined={isBounded}
-              x={(point) => x(point.timestamp)}
-              y={(point) => y(point.upper ?? 0)}
-              {...stylex.props(styles.bandEdge(color))}
-            />
-            <LinePath<TimeSeriesBandPoint>
-              data={points}
-              defined={isBounded}
-              x={(point) => x(point.timestamp)}
-              y={(point) => y(point.lower ?? 0)}
-              {...stylex.props(styles.bandEdge(color))}
-            />
-            <LinePath<TimeSeriesBandPoint>
-              data={points}
-              defined={(point) => point.center !== null}
-              x={(point) => x(point.timestamp)}
-              y={(point) => y(point.center ?? 0)}
-              {...stylex.props(styles.center(color))}
+            <LineMark
+              d={linePath(xs.map((position, index) => ({ x: position, y: center[index] ?? null })))}
+              tone={band.tone}
             />
           </g>
         );
@@ -131,36 +104,34 @@ export function TimeSeriesBands({ bands, x, y }: Scales & { readonly bands: Read
   );
 }
 
-/** Draws each instant's guide from its label lane to the axis, with a ring where a crossing lands. */
+/** Draws each instant's guide from its label lane above the plot to the axis, with a ring where a crossing lands. */
 export function TimeInstants({
   placed,
   x,
   y,
+  top,
   bottom,
-}: Scales & { readonly placed: ReadonlyArray<PlacedInstant>; readonly bottom: number }): ReactNode {
+}: Scales & {
+  readonly placed: ReadonlyArray<PlacedInstant>;
+  readonly top: number;
+  readonly bottom: number;
+}): ReactNode {
+  const laneTop = top - instantsInset(placed);
+
   return (
     <g aria-hidden>
       {placed.map((instant) => {
         const position = x(instant.timestamp);
-        const laneY = PLOT_TOP_PX + instant.lane * LANE_HEIGHT_PX;
+        const laneY = laneTop + (instant.lane + 1 / 2) * LANE_HEIGHT_PX;
         const textX = instant.anchor === 'start' ? position + LABEL_GAP_PX : position - LABEL_GAP_PX;
 
         return (
           <g key={instant.id}>
-            <line x1={position} x2={position} y1={laneY} y2={bottom} {...stylex.props(styles.guide)} />
-            <circle cx={position} cy={laneY} r={FLAG_RADIUS_PX} {...stylex.props(styles.flag)} />
-            <text
-              x={textX}
-              y={laneY}
-              textAnchor={instant.anchor}
-              dominantBaseline="middle"
-              {...stylex.props(chartStyles.label, chartStyles.strongLabel, chartStyles.haloLabel)}
-            >
+            <GuideMark x={position} top={laneY} bottom={bottom} />
+            <LabelMark x={textX} y={laneY + LABEL_BASELINE_PX} anchor={instant.anchor}>
               {instant.label}
-            </text>
-            {instant.value !== undefined && (
-              <circle cx={position} cy={y(instant.value)} r={RING_RADIUS_PX} {...stylex.props(styles.ring)} />
-            )}
+            </LabelMark>
+            {instant.value !== undefined && <RingMark x={position} y={y(instant.value)} />}
           </g>
         );
       })}

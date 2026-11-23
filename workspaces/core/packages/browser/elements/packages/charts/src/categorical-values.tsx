@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { chartToneColors, chartToneOutlines } from '../../foundations/src/chart-tones.ts';
 import type { ChartTone } from '../../foundations/src/chart-tones.ts';
 import { colors, spacing } from '../../foundations/src/tokens.stylex.ts';
-import { hasUniqueIds } from './chart-input.tsx';
+import { hasUniqueIds } from './chart-input.ts';
 import { ChartDatum, ChartRows } from './chart-rows.tsx';
 import type { ChartItem, ChartView } from './chart.tsx';
 
@@ -27,13 +27,8 @@ export type BreakdownItem = {
   readonly tone?: ChartTone | undefined;
 };
 
+/** The most categories, steps or parts, and the most series, a bar, bridge, breakdown or treemap chart draws. */
 export const categoricalLimits = { items: 200, series: 12 } as const;
-
-const TONES: ReadonlyArray<ChartTone> = ['series1', 'series2', 'series3', 'series4', 'series5', 'series6'];
-
-export function colorTone(tone: ChartTone | undefined, index: number): ChartTone {
-  return tone ?? TONES[index % TONES.length] ?? 'series1';
-}
 
 export function validateBreakdown(items: ReadonlyArray<BreakdownItem>): string | undefined {
   if (items.length > categoricalLimits.items) {

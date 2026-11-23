@@ -50,19 +50,21 @@ persistence and every asynchronous operation.
 
 ## Pick the component
 
-| The page needs                                    | Use                                                                                | Read                                         |
-| ------------------------------------------------- | ---------------------------------------------------------------------------------- | -------------------------------------------- |
-| An app frame, a page, sections, a record page     | `AppShell`, `PageLayout`, `PageSection`, `RecordPage`                              | [workspace](references/workspace.md)         |
-| Records compared across columns, search, filters  | `DataTable` with a `query`                                                         | [collections](references/collections.md)     |
-| A selected record's fields beside its list        | `Inspector`, `Details`                                                             | [collections](references/collections.md)     |
-| Fields, choices, dates, files, a save             | `Field`, the `/forms` controls, `FormActions`, `ConfirmButton`                     | [forms](references/forms.md)                 |
-| A trend, comparison, distribution or relationship | One chart from a `/charts/*` entry                                                 | [charts](references/charts.md)               |
-| A first read, a refresh, an empty or failed read  | `AsyncRegion`, `LoadingScope`, `EmptyState`, `Notice`                              | [reports](references/reports.md)             |
-| A command menu, a decision, an anchored panel     | `Menu`, `AlertDialog`, `Dialog`, `Drawer`, `Popover`, `Tooltip`                    | the catalog                                  |
-| Route destinations or panels inside one view      | `PageNavigation` for links, `Tabs` or `ContentTabs` for panels                     | [workspace](references/workspace.md)         |
-| A transcript, a prompt, tool activity, approvals  | `Conversation`, `Message`, `PromptInput`, `Approval`                               | [conversations](references/conversations.md) |
-| Markdown, source, a diff, a file tree, a log      | `/content/markdown`, `/content/code`, `/content/diff`, `/content/tree`, `/content` | the catalog                                  |
-| A model or browser agent that reads and acts      | `createAgent` and `registerTools` from `/agent`                                    | [agent access](references/agent.md)          |
+| The page needs                                    | Use                                                                                                               | Read                                         |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| An app frame, a page, sections, a record page     | `AppShell`, `PageLayout`, `PageSection`, `RecordPage`                                                             | [workspace](references/workspace.md)         |
+| Records compared across columns, search, filters  | `DataTable` with a `query`                                                                                        | [collections](references/collections.md)     |
+| A selected record's fields beside its list        | `Inspector`, `Details`                                                                                            | [collections](references/collections.md)     |
+| Fields, choices, dates, files, a save             | `Field`, the `/forms` controls, `FormActions`, `ConfirmButton`                                                    | [forms](references/forms.md)                 |
+| A trend, comparison, distribution or relationship | One chart from a `/charts/*` entry                                                                                | [charts](references/charts.md)               |
+| A figure an agent or a server writes as JSON      | `Figure`, `validateFigureSpec`, `describeFigure` and `chartGuide` from `/charts/figure`                           | [figures](references/figures.md)             |
+| A run, evaluation, service, feature or explainer  | A kit from `/kits/training`, `/kits/evaluation`, `/kits/operations`, `/kits/explainers`, `/kits/interpretability` | [kits](references/kits.md)                   |
+| A first read, a refresh, an empty or failed read  | `AsyncRegion`, `LoadingScope`, `EmptyState`, `Notice`                                                             | [reports](references/reports.md)             |
+| A command menu, a decision, an anchored panel     | `Menu`, `AlertDialog`, `Dialog`, `Drawer`, `Popover`, `Tooltip`                                                   | the catalog                                  |
+| Route destinations or panels inside one view      | `PageNavigation` for links, `Tabs` or `ContentTabs` for panels                                                    | [workspace](references/workspace.md)         |
+| A transcript, a prompt, tool activity, approvals  | `Conversation`, `Message`, `PromptInput`, `Approval`                                                              | [conversations](references/conversations.md) |
+| Markdown, source, a diff, a file tree, a log      | `/content/markdown`, `/content/code`, `/content/diff`, `/content/tree`, `/content`                                | the catalog                                  |
+| A model or browser agent that reads and acts      | `createAgent` and `registerTools` from `/agent`                                                                   | [agent access](references/agent.md)          |
 
 ## Start from a recipe
 
@@ -71,6 +73,10 @@ persistence and every asynchronous operation.
   need to return to the same results.
 - **Sectioned report.** Mount the shell around the router outlet. Put each heading and its body in a sibling
   `PageSection`. The shell and sections own the sticky geometry.
+- **Linked figures.** Give each model, run or series one id. Wrap the figures in `ToneScope` and `ChartLink` so a thing
+  keeps one hue and inspecting it in one figure marks it in the others.
+- **A chart you cannot name.** Read `chartGuide` from `/charts/figure`, or the chooser in
+  [charts](references/charts.md). It lists all 50 registered charts by family, with when to use each one.
 - **Allocation report.** Show how one total divides with a parts strip above one explanatory chart. Give each part one
   tone everywhere.
 - **Tabbed workspace.** Put page-wide navigation and its actions in the page navigation slot. Use links for route

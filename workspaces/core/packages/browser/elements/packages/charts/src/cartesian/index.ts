@@ -1,6 +1,7 @@
 export type {
   BarSeries,
   BarBucket,
+  BarCategory,
   BarComposition,
   BarChartProps,
   BarChartPlaceholderProps,
@@ -13,15 +14,9 @@ export { BreakdownBar } from './breakdown-bar.tsx';
 export type { BridgeChartProps, BridgeStep } from './bridge-chart.tsx';
 export { BridgeChart } from './bridge-chart.tsx';
 export type { ChartReferenceLine } from './reference-lines.tsx';
-export type {
-  ScatterPoint,
-  ScatterRange,
-  ScatterRangeDetails,
-  ScatterRangeSelection,
-  ScatterPlotProps,
-} from './scatter-plot.tsx';
-export { MAX_SCATTER_POINTS, ScatterPlot } from './scatter-plot.tsx';
-export type { SparklineProps, SparklinePoint } from './sparkline.tsx';
+export type { ScatterPoint, ScatterRange, ScatterRangeDetails, ScatterPlotProps } from './scatter-plot.tsx';
+export { ScatterPlot, scatterLimits } from './scatter-plot.tsx';
+export type { SparklineLayout, SparklineProps, SparklinePoint } from './sparkline.tsx';
 export { Sparkline } from './sparkline.tsx';
 export type { TimeSeriesPoint, TimeSeries, TimeSeriesMarker } from './time-series-data.ts';
 export { timeSeriesLimits } from './time-series-data.ts';
@@ -33,7 +28,8 @@ export type {
   AreaChartProps,
   SmallMultiplesProps,
   SmallMultiplesPlaceholderProps,
-  TimeRangeSelection,
+  SmallMultiplesPanel,
+  TimestampUnit,
 } from './time-series.tsx';
 export type { ChartRangeDetails, ChartRangeValue } from '../chart-range.tsx';
 export {

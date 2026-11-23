@@ -1,11 +1,12 @@
 import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
-import { chartToneColors, chartToneOutlines } from '../../../foundations/src/chart-tones.ts';
+import type { ChartTone } from '../../../foundations/src/chart-tones.ts';
 import { motion } from '../../../foundations/src/tokens.stylex.ts';
-import { colorTone } from '../categorical-values.tsx';
-import { chartStyles } from '../chart-theme.ts';
+import { BarMark } from '../plot/plot-marks.tsx';
+import type { MarkState } from '../plot/plot-marks.tsx';
 import type { BarBucket, BarSeries } from './bar-data.ts';
 
+/** Bars draw at unit height and scale into place, so focusing a series moves them with an interruptible transition. */
 const styles = stylex.create({
   mark: {
     transformOrigin: '0 0',
@@ -13,9 +14,13 @@ const styles = stylex.create({
     transitionDuration: { 'default': motion.duration, '@media (prefers-reduced-motion: reduce)': '0ms' },
     transitionTimingFunction: motion.easing,
   },
+  geometry: (transform: string, opacity: number) => ({ transform, opacity }),
 });
 
-type CompositionBarsProps = {
+const CONTEXT_OPACITY = 0.18;
+const MUTED_OPACITY = 0.3;
+
+type CompositionBarsProps = MarkState & {
   readonly bucket: BarBucket;
   readonly series: ReadonlyArray<BarSeries>;
   readonly focusedSeries: BarSeries | undefined;
@@ -23,10 +28,12 @@ type CompositionBarsProps = {
   readonly x: number;
   readonly width: number;
   readonly y: (value: number) => number;
-  readonly isSelected: boolean;
-  readonly highlightedSeriesId?: string | undefined;
+  readonly highlighted?: string | null | undefined;
+  /** The resolved tone of a series. */
+  readonly toneOf: (id: string) => ChartTone;
 };
 
+/** One composition bucket: its supplied total as gray context and its parts or focused series over it. */
 export function CompositionBars({
   bucket,
   series,
@@ -36,7 +43,9 @@ export function CompositionBars({
   width,
   y,
   isSelected,
-  highlightedSeriesId,
+  isInspected,
+  highlighted,
+  toneOf,
 }: CompositionBarsProps): ReactNode {
   const hasFocus = focusedSeries !== undefined;
   const extra = focusedSeries !== undefined && !series.some((item) => item.id === focusedSeries.id);
@@ -51,19 +60,22 @@ export function CompositionBars({
     return `translateY(${top}px) scaleY(${height})`;
   }
 
+  const totalOpacity = hasFocus ? CONTEXT_OPACITY : bucket.kind === 'total' ? 1 : 0;
+
   return (
     <>
       {bucket.kind !== 'gap' && (
-        <rect
-          x={x}
-          y={0}
-          width={width}
-          height={1}
-          vectorEffect="non-scaling-stroke"
-          fill={chartToneColors.neutral}
-          {...stylex.props(styles.mark, isSelected && chartStyles.selected)}
-          style={{ transform: geometry(bucket.total, 0), opacity: hasFocus ? 0.18 : bucket.kind === 'total' ? 1 : 0 }}
-        />
+        <g {...stylex.props(styles.mark, styles.geometry(geometry(bucket.total, 0), totalOpacity))}>
+          <BarMark
+            x={x}
+            y={0}
+            width={width}
+            height={1}
+            tone="neutral"
+            isSelected={isSelected}
+            isInspected={isInspected}
+          />
+        </g>
       )}
       {marks.map((item, seriesIndex) => {
         const value = item.values[index];
@@ -72,28 +84,27 @@ export function CompositionBars({
           return null;
         }
 
-        const isFocused = focusedSeries?.id === item.id;
-
         const base = hasFocus
           ? 0
           : series.slice(0, seriesIndex).reduce((amount, previous) => amount + (previous.values[index] ?? 0), 0);
 
-        const isVisible = hasFocus ? isFocused : bucket.kind === 'parts';
-        const isMuted = !hasFocus && highlightedSeriesId !== undefined && highlightedSeriesId !== item.id;
+        const isVisible = hasFocus ? focusedSeries.id === item.id : bucket.kind === 'parts';
+        const isOtherHighlighted = highlighted !== undefined && highlighted !== null && highlighted !== item.id;
+        const isMuted = !hasFocus && isOtherHighlighted;
+        const opacity = isVisible ? (isMuted ? MUTED_OPACITY : 1) : 0;
 
         return (
-          <rect
-            key={item.id}
-            x={x}
-            y={0}
-            width={width}
-            height={1}
-            vectorEffect="non-scaling-stroke"
-            fill={chartToneColors[colorTone(item.tone, seriesIndex)]}
-            stroke={chartToneOutlines[colorTone(item.tone, seriesIndex)]}
-            {...stylex.props(styles.mark, chartStyles.outlined, isSelected && chartStyles.selected)}
-            style={{ transform: geometry(value, base), opacity: isVisible ? (isMuted ? 0.3 : 1) : 0 }}
-          />
+          <g key={item.id} {...stylex.props(styles.mark, styles.geometry(geometry(value, base), opacity))}>
+            <BarMark
+              x={x}
+              y={0}
+              width={width}
+              height={1}
+              tone={toneOf(item.id)}
+              isSelected={isSelected}
+              isInspected={isInspected}
+            />
+          </g>
         );
       })}
     </>

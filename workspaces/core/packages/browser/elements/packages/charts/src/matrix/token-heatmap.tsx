@@ -4,32 +4,36 @@ import type { ReactNode } from 'react';
 import { conditions } from '../../../foundations/src/constants.stylex.ts';
 import { colors, controls, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { ChartData } from '../chart-data.tsx';
-import { ChartFrame, ChartReadout } from '../chart-frame.tsx';
-import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
-import { ChartInputError, hasUniqueIds } from '../chart-input.tsx';
+import { ChartReadout } from '../chart-frame.tsx';
+import { hasUniqueIds } from '../chart-input.ts';
+import { useLinkedInspection } from '../chart-link.tsx';
 import { chartStyles } from '../chart-theme.ts';
 import { Chart, ChartMark, ChartTextPlot, inspectedLabel, plotLabel } from '../chart.tsx';
+import { formatValue } from '../figure/figure-format.ts';
+import type { ValueFormat } from '../figure/figure-format.ts';
+import { FigureEmpty, FigureFrame, FigureInvalid, FigureLoading } from '../figure/figure-frame.tsx';
+import type { FigureProps, FigureSelectionProps } from '../figure/figure-props.ts';
 import { ColorLegend } from './color-legend.tsx';
 import { heatmapColor, heatmapScaleProblem, isHeatmapValueInDomain } from './heatmap-scale.ts';
 import type { HeatmapScale } from './heatmap-scale.ts';
 
+/** One token of a supplied text window, with its index in the full sequence and its score. */
 export type HeatmapToken = {
   readonly id: string;
   readonly index: number;
   readonly text: string;
+  /** The score, or null where none was computed. Null draws a dotted underline, never zero. */
   readonly score: number | null;
 };
 
-export type TokenHeatmapProps = HeatmapScale & {
-  readonly title: string;
-  readonly report?: ChartReport | undefined;
-  readonly description: string;
-  readonly tokens: ReadonlyArray<HeatmapToken>;
-  readonly valueLabel: string;
-  readonly formatValue: (value: number) => string;
-  readonly selection?: ChartSelection;
-  readonly emptyLabel: string;
-};
+export type TokenHeatmapProps = FigureProps &
+  FigureSelectionProps &
+  HeatmapScale & {
+    readonly tokens: ReadonlyArray<HeatmapToken>;
+    /** What the score measures, with its unit. */
+    readonly valueLabel: string;
+    readonly valueFormat: ValueFormat;
+  };
 
 const styles = stylex.create({
   text: {
@@ -90,66 +94,76 @@ const styles = stylex.create({
   },
   literal: { fontFamily: typography.monoFamily, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' },
   index: { minWidth: controls.coarseTarget },
-  footer: { display: 'grid', gap: spacing.md },
-  empty: { margin: 0, color: colors.muted, fontSize: typography.bodySize, lineHeight: typography.bodyLineHeight },
 });
 
-export const MAX_HEATMAP_TOKENS = 2048;
+/** The render limit. A longer window shows an explicit error; the application supplies a labelled window. */
+export const tokenHeatmapLimits = { tokens: 2048 } as const;
 
-export function TokenHeatmap({
-  title,
-  report,
-  description,
-  tokens,
-  domain,
-  palette,
-  valueLabel,
-  formatValue,
-  selection,
-  emptyLabel,
-}: TokenHeatmapProps): ReactNode {
+/**
+ * A text window with each token's score as a colored underline: attributions, surprisal, probe outputs. The text stays
+ * exact, whitespace included, and each token keeps its supplied index. Scores come from the application.
+ */
+export function TokenHeatmap(props: TokenHeatmapProps): ReactNode {
+  const { tokens, domain, palette, valueLabel, valueFormat, selected, onSelectedChange, ...figure } = props;
+  const { emptyLabel = 'No tokens were supplied.', ...frame } = figure;
+  const { locale, title } = frame;
+
+  function scoreText(token: HeatmapToken): string {
+    return tokenScoreText({ token, domain, locale, format: valueFormat });
+  }
+
   const items = tokens.map((token) => ({
     id: token.id,
-    label: `Token ${token.index}, ${JSON.stringify(token.text)}, ${valueLabel}: ${tokenScoreText(token, domain, formatValue)}`,
+    label: `Token ${token.index}, ${JSON.stringify(token.text)}, ${valueLabel}: ${scoreText(token)}`,
   }));
 
   const readoutId = useId();
+  const link = useLinkedInspection();
+
+  if (frame.status === 'loading') {
+    return <FigureLoading {...frame} height="compact" />;
+  }
+
   const problem = tokenProblem({ tokens, domain, palette });
 
   if (problem !== null) {
-    return <ChartInputError title={title} report={report} description={description} message={problem} />;
+    return <FigureInvalid {...frame} message={problem} />;
   }
 
   return (
     <Chart
+      {...link}
       items={items}
       arrows="both"
-      selected={selection?.selectedId ?? null}
-      onSelect={selection?.onSelect}
-      render={(figure, { inspected, cursor }) => (
-        <ChartFrame
-          figure={figure}
-          title={title}
-          report={report}
-          description={description}
-          footer={
-            <div {...stylex.props(styles.footer)}>
-              <ColorLegend label={valueLabel} domain={domain} palette={palette} formatValue={formatValue} />
-              <ChartReadout id={readoutId}>{inspectedLabel(items, inspected)}</ChartReadout>
-            </div>
+      selected={selected ?? null}
+      onSelect={onSelectedChange}
+      render={(figureProps, { inspected, cursor }) => (
+        <FigureFrame
+          {...frame}
+          figure={figureProps}
+          scaleLegend={
+            <ColorLegend
+              label={valueLabel}
+              domain={domain}
+              palette={palette}
+              valueFormat={valueFormat}
+              locale={locale}
+            />
           }
+          footer={<ChartReadout id={readoutId}>{inspectedLabel(items, inspected)}</ChartReadout>}
         >
           {tokens.length === 0 ? (
-            <p {...stylex.props(styles.empty)}>{emptyLabel}</p>
+            <FigureEmpty>{emptyLabel}</FigureEmpty>
           ) : (
             <ChartTextPlot
               role="group"
-              aria-label={plotLabel({ title, isSelectable: selection !== undefined })}
+              aria-label={plotLabel({ title, isSelectable: onSelectedChange !== undefined })}
               aria-describedby={readoutId}
               {...stylex.props(styles.text, stylex.defaultMarker())}
             >
               {tokens.map((token, index) => {
-                const isMarked = selection?.selectedId === token.id || inspected === token.id;
+                const isSelected = selected === token.id;
+                const isMarked = isSelected || inspected === token.id;
                 const isOutsideDomain = token.score !== null && !isHeatmapValueInDomain(token.score, domain);
                 const label = items[index]?.label;
 
@@ -158,24 +172,19 @@ export function TokenHeatmap({
                     key={token.id}
                     value={token.id}
                     render={
-                      selection === undefined ? (
+                      onSelectedChange === undefined ? (
                         <span />
                       ) : (
-                        <button
-                          type="button"
-                          tabIndex={-1}
-                          aria-label={label}
-                          aria-pressed={selection.selectedId === token.id}
-                        />
+                        <button type="button" tabIndex={-1} aria-label={label} aria-pressed={isSelected} />
                       )
                     }
-                    title={selection === undefined ? label : undefined}
+                    title={onSelectedChange === undefined ? label : undefined}
                     {...stylex.props(
                       styles.token,
                       token.score === null || isOutsideDomain
                         ? styles.missing
                         : styles.color(heatmapColor(token.score, { domain, palette })),
-                      selection !== undefined && styles.interactive,
+                      onSelectedChange !== undefined && styles.interactive,
                       isMarked && styles.selected,
                       !isMarked && cursor === token.id && chartStyles.cursor,
                     )}
@@ -195,25 +204,28 @@ export function TokenHeatmap({
             ]}
             rows={tokens.map((token) => ({
               id: token.id,
-              values: [String(token.index), JSON.stringify(token.text), tokenScoreText(token, domain, formatValue)],
+              values: [String(token.index), JSON.stringify(token.text), scoreText(token)],
             }))}
           />
-        </ChartFrame>
+        </FigureFrame>
       )}
     />
   );
 }
 
-function tokenScoreText(
-  token: HeatmapToken,
-  domain: HeatmapScale['domain'],
-  formatValue: (value: number) => string,
-): string {
-  if (token.score === null) {
-    return 'Unavailable';
-  }
+function tokenScoreText({
+  token,
+  domain,
+  locale,
+  format,
+}: Pick<HeatmapScale, 'domain'> & {
+  readonly token: HeatmapToken;
+  readonly locale: string;
+  readonly format: ValueFormat;
+}): string {
+  const text = formatValue({ value: token.score, locale, format });
 
-  return `${formatValue(token.score)}${isHeatmapValueInDomain(token.score, domain) ? '' : ' (outside domain)'}`;
+  return token.score === null || isHeatmapValueInDomain(token.score, domain) ? text : `${text} (outside domain)`;
 }
 
 function tokenProblem({
@@ -227,8 +239,8 @@ function tokenProblem({
     return scaleProblem;
   }
 
-  if (tokens.length > MAX_HEATMAP_TOKENS) {
-    return `This token view exceeds the ${MAX_HEATMAP_TOKENS}-token render limit. Supply a smaller, labelled window.`;
+  if (tokens.length > tokenHeatmapLimits.tokens) {
+    return `This token view exceeds the ${tokenHeatmapLimits.tokens}-token render limit. Supply a smaller, labelled window.`;
   }
 
   if (!hasUniqueIds(tokens) || new Set(tokens.map((token) => token.index)).size !== tokens.length) {

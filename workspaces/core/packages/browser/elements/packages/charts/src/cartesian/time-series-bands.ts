@@ -1,6 +1,6 @@
 import type { ChartTone } from '../../../foundations/src/chart-tones.ts';
-import { hasUniqueIds } from '../chart-input.tsx';
-import type { TimeSeries, TimeSeriesPoint } from './time-series-data.ts';
+import { hasUniqueIds } from '../chart-input.ts';
+import type { TimeSeries, TimeSeriesPoint, ToneResolver } from './time-series-data.ts';
 
 /** One observation of a band. Both bounds are present or both are missing; a missing center draws no line there. */
 export type TimeSeriesBandPoint = {
@@ -45,8 +45,6 @@ export type PlotBand = Omit<TimeSeriesBand, 'tone'> & { readonly tone: ChartTone
 export type FoundCrossing = { readonly crossing: TimeSeriesCrossing; readonly timestamp: number | undefined };
 
 export const timeSeriesBandLimits = { bands: 4, crossings: 4 } as const;
-
-const AUTOMATIC_TONES: ReadonlyArray<ChartTone> = ['series1', 'series2', 'series3', 'series4', 'series5', 'series6'];
 
 function bandPointProblem(point: TimeSeriesBandPoint): string | undefined {
   const values = [point.lower, point.center, point.upper].filter((value) => value !== null);
@@ -113,9 +111,11 @@ export function validateBands({
 export function prepareBands({
   series,
   bands,
+  tones,
 }: {
   readonly series: ReadonlyArray<TimeSeries>;
   readonly bands: ReadonlyArray<TimeSeriesBand>;
+  readonly tones: ToneResolver;
 }): ReadonlyArray<PlotBand> {
   const automaticSeries = series.filter((item) => item.tone === undefined).length;
   const automaticBands = bands.filter((band) => band.tone === undefined);
@@ -123,7 +123,7 @@ export function prepareBands({
   return bands.map((band) => {
     const slot = automaticSeries + automaticBands.findIndex((candidate) => candidate.id === band.id);
 
-    return { ...band, tone: band.tone ?? AUTOMATIC_TONES[slot % AUTOMATIC_TONES.length] ?? 'series1' };
+    return { ...band, tone: tones({ id: band.id, tone: band.tone, index: slot }) };
   });
 }
 

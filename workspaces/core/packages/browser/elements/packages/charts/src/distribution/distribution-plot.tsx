@@ -1,179 +1,85 @@
-import * as stylex from '@stylexjs/stylex';
-import type { ReactNode } from 'react';
-import { chartColors, colors, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
-import { ChartPlot } from '../chart.tsx';
-import { usePlotWidth } from '../plot-width.ts';
-import type { NumericDomain } from './distribution-input.ts';
+import { useId } from 'react';
+import type { ComponentProps, ReactNode, Ref } from 'react';
+import { ChartData } from '../chart-data.tsx';
+import { ChartReadout } from '../chart-frame.tsx';
+import { inspectedLabel, plotLabel } from '../chart.tsx';
+import type { ChartItem } from '../chart.tsx';
+import { FigureEmpty, FigureFrame } from '../figure/figure-frame.tsx';
+import type { FigureFrameInput } from '../figure/figure-props.ts';
+import { PlotAxes } from '../plot/plot-axes.tsx';
+import { axisTitle } from '../plot/plot-layout.ts';
+import type { NumericPlotLayout, PlotAxis } from '../plot/plot-layout.ts';
+import { PlotClip, PlotSurface } from '../plot/plot-surface.tsx';
 
-export const distributionGeometry = { height: 160 } as const;
-
-const tickFractions = [0, 0.5, 1] as const;
-const NARROW_ROW = '@container (max-width:420px)';
-
-export const distributionStyles = stylex.create({
-  plot: { minWidth: 0, display: 'grid', gridTemplateColumns: 'minmax(0, max-content) minmax(0, 1fr)', gap: spacing.sm },
-  yAxis: {
-    height: distributionGeometry.height,
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-    textAlign: 'end',
-    color: colors.ink,
-    fontFamily: typography.monoFamily,
-    fontSize: typography.captionSize,
-    lineHeight: typography.captionLineHeight,
-    fontVariantNumeric: 'tabular-nums',
-    maxWidth: 120,
-    overflowWrap: 'anywhere',
-  },
-  plotArea: { minWidth: 0 },
-  svg: { display: 'block', width: '100%', height: distributionGeometry.height, overflow: 'hidden' },
-  grid: { stroke: colors.line, vectorEffect: 'non-scaling-stroke' },
-  axis: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    gap: spacing.sm,
-    color: colors.ink,
-    fontFamily: typography.monoFamily,
-    fontSize: typography.captionSize,
-    lineHeight: typography.captionLineHeight,
-    fontVariantNumeric: 'tabular-nums',
-  },
-  tick: { flex: '1 1 0', minWidth: 0, overflowWrap: 'anywhere' },
-  middleTick: { textAlign: 'center' },
-  endTick: { textAlign: 'end' },
-  axisNames: { gridColumn: '1 / -1', display: 'flex', justifyContent: 'space-between', gap: spacing.md },
-  label: {
-    color: colors.muted,
-    fontSize: typography.captionSize,
-    lineHeight: typography.captionLineHeight,
-    overflowWrap: 'anywhere',
-  },
-  values: { display: 'grid', minWidth: 0, containerType: 'inline-size' },
-  value: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    columnGap: spacing.lg,
-    rowGap: spacing.xs,
-    minWidth: 0,
-    width: '100%',
-  },
-  summary: { minWidth: 0, fontVariantNumeric: 'tabular-nums', overflowWrap: 'anywhere', textAlign: 'end' },
-  row: {
-    display: 'grid',
-    gridTemplateColumns: { default: 'minmax(100px, 1fr) minmax(120px, 2fr)', [NARROW_ROW]: 'minmax(0, 1fr)' },
-    gap: spacing.md,
-    alignItems: 'center',
-    minWidth: 0,
-    width: '100%',
-  },
-  rowAxis: { boxSizing: 'border-box', paddingInline: spacing.sm },
-  axisSpacer: { display: { default: 'block', [NARROW_ROW]: 'none' } },
-  rowLabel: { minWidth: 0, display: 'grid', gap: spacing.xxs, overflowWrap: 'anywhere' },
-  rowValue: { color: colors.muted, fontVariantNumeric: 'tabular-nums' },
-  rowSvg: { display: 'block', width: '100%', height: 28, overflow: 'hidden' },
-  empty: { margin: 0, color: colors.muted, fontSize: typography.bodySize, lineHeight: typography.bodyLineHeight },
-  baseline: { stroke: colors.line, vectorEffect: 'non-scaling-stroke' },
-  track: { fill: chartColors.missing },
-  missing: { fill: colors.canvas, stroke: colors.muted, strokeDasharray: '3 3', vectorEffect: 'non-scaling-stroke' },
-});
-
-type NumericPlotProps = {
-  /** The plot's accessible name and the id of the readout that describes it. */
-  readonly label: string;
-  readonly readoutId: string;
-  readonly xDomain: NumericDomain;
-  readonly yDomain: NumericDomain;
-  readonly xLabel: string;
-  readonly yLabel: string;
-  readonly formatX: (value: number) => string;
-  readonly formatY: (value: number) => string;
-  readonly children: (width: number) => ReactNode;
+export type DistributionFigureProps = {
+  readonly frame: FigureFrameInput;
+  /** The chart part's own props, from `Chart`'s render. */
+  readonly figure: ComponentProps<'figure'>;
+  readonly items: ReadonlyArray<ChartItem>;
+  readonly inspected: string | null;
+  readonly plotRef: Ref<HTMLDivElement>;
+  readonly plot: NumericPlotLayout;
+  readonly x: PlotAxis;
+  readonly y: PlotAxis;
+  readonly isSelectable: boolean;
+  readonly emptyLabel: string;
+  /** The marks, drawn inside the axes. */
+  readonly children: ReactNode;
+  /**
+   * Marks drawn over the axes without the clip: dots that may sit on the plot's edge, and the keyboard cursor, whose
+   * underline sits below the plot.
+   */
+  readonly overlay: ReactNode;
 };
 
-export function NumericPlot({
-  label,
-  readoutId,
-  xDomain,
-  yDomain,
-  xLabel,
-  yLabel,
-  formatX,
-  formatY,
+/**
+ * The frame, axes, readout and exact-value table that a histogram and a cumulative distribution share. Each chart
+ * supplies its own marks.
+ */
+export function DistributionFigure({
+  frame,
+  figure,
+  items,
+  inspected,
+  plotRef,
+  plot,
+  x,
+  y,
+  isSelectable,
+  emptyLabel,
   children,
-}: NumericPlotProps): ReactNode {
-  const { ref, width } = usePlotWidth();
-  const xTicks = tickFractions.map((fraction) => xDomain[0] + fraction * (xDomain[1] - xDomain[0]));
-  const yTicks = tickFractions.map((fraction) => yDomain[1] - fraction * (yDomain[1] - yDomain[0]));
+  overlay,
+}: DistributionFigureProps): ReactNode {
+  const readoutId = useId();
+  const { box } = plot;
 
   return (
-    <div {...stylex.props(distributionStyles.plot)}>
-      <div {...stylex.props(distributionStyles.axisNames)}>
-        <span {...stylex.props(distributionStyles.label)}>{yLabel}</span>
-        <span {...stylex.props(distributionStyles.label)}>{xLabel}</span>
-      </div>
-      <div aria-hidden {...stylex.props(distributionStyles.yAxis)}>
-        {yTicks.map((tick) => (
-          <span key={tick}>{formatY(tick)}</span>
-        ))}
-      </div>
-      <ChartPlot
-        ref={ref}
-        role="group"
-        aria-label={label}
-        aria-describedby={readoutId}
-        {...stylex.props(distributionStyles.plotArea, stylex.defaultMarker())}
-      >
-        <svg
-          aria-hidden
-          viewBox={`0 0 ${width} ${distributionGeometry.height}`}
-          preserveAspectRatio="none"
-          {...stylex.props(distributionStyles.svg)}
-        >
-          {tickFractions.map((fraction) => (
-            <line
-              key={fraction}
-              x1={0}
-              x2={width}
-              y1={distributionGeometry.height * fraction}
-              y2={distributionGeometry.height * fraction}
-              {...stylex.props(distributionStyles.grid)}
-            />
-          ))}
-          {children(width)}
-        </svg>
-      </ChartPlot>
-      <span />
-      <div aria-hidden {...stylex.props(distributionStyles.axis)}>
-        {xTicks.map((tick, index) => (
-          <span
-            key={tick}
-            {...stylex.props(
-              distributionStyles.tick,
-              index === 1 && distributionStyles.middleTick,
-              index === 2 && distributionStyles.endTick,
-            )}
+    <FigureFrame
+      {...frame}
+      figure={figure}
+      footer={<ChartReadout id={readoutId}>{inspectedLabel(items, inspected)}</ChartReadout>}
+    >
+      {items.length === 0 ? (
+        <FigureEmpty>{emptyLabel}</FigureEmpty>
+      ) : (
+        <>
+          <PlotSurface
+            plotRef={plotRef}
+            box={box}
+            label={plotLabel({ title: frame.title, isSelectable })}
+            readoutId={readoutId}
           >
-            {formatX(tick)}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-export function DomainLabels({
-  domain,
-  formatValue,
-}: {
-  readonly domain: NumericDomain;
-  readonly formatValue: (value: number) => string;
-}): ReactNode {
-  return (
-    <div {...stylex.props(distributionStyles.axis)}>
-      <span {...stylex.props(distributionStyles.tick)}>{formatValue(domain[0])}</span>
-      <span {...stylex.props(distributionStyles.tick, distributionStyles.endTick)}>{formatValue(domain[1])}</span>
-    </div>
+            <PlotAxes box={box} xTicks={plot.xTicks} yTicks={plot.yTicks} xTitle={axisTitle(x)} yTitle={axisTitle(y)} />
+            <PlotClip box={box}>{children}</PlotClip>
+            {overlay}
+          </PlotSurface>
+          <ChartData
+            label={`${frame.title} observations`}
+            columns={[{ id: 'observation', label: 'Observation' }]}
+            rows={items.map((item) => ({ id: item.id, values: [item.label] }))}
+          />
+        </>
+      )}
+    </FigureFrame>
   );
 }

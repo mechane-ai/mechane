@@ -27,6 +27,8 @@ import { structuredPresentation } from './structured-presentation.ts';
 import { uiAnalyticalGraphics } from './ui-analytical-graphics.ts';
 import { uiContentRendering } from './ui-content-rendering.ts';
 import { uiConversationState } from './ui-conversation-state.ts';
+import { uiDataDisplay } from './ui-data-display.ts';
+import { uiDomainKits } from './ui-domain-kits.ts';
 import { uiStylexComposition } from './ui-stylex-composition.ts';
 import { uiWaterfallCharts } from './ui-waterfall-charts.ts';
 
@@ -60,4 +62,6 @@ export const MECHANE_CONTRACTS = {
   'sandbox-vendor-boundary': sandboxVendorBoundary,
   'managed-files-and-mounts': managedFilesAndMounts,
   'postgres-hyperdrive-pooling': postgresHyperdrivePooling,
+  'ui-data-display': uiDataDisplay,
+  'ui-domain-kits': uiDomainKits,
 } as const satisfies Readonly<Partial<Record<ContractName, ContractEnforcement>>>;

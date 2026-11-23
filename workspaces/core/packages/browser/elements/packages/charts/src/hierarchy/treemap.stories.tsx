@@ -34,23 +34,29 @@ const allocation: ReadonlyArray<BreakdownItem> = [
 ];
 
 function UsageAllocation(): ReactNode {
-  const [selectedId, setSelectedId] = useState<string>();
-  const selection = { selectedId, onSelect: setSelectedId };
+  const [selected, setSelected] = useState<string | null>(null);
 
   return (
     <Stack>
       <BreakdownBar
         title="Token usage"
+        locale="en-US"
         description="Synthetic completed request. Input excludes cached tokens."
         items={allocation}
         total={1600}
-        formatValue={formatTokens}
-        selection={selection}
+        valueFormat={formatTokens}
+        selected={selected}
+        onSelectedChange={setSelected}
       />
-      <Treemap title="Token allocation" items={allocation} formatValue={formatTokens} selection={selection} />
-      <Text>
-        {selectedId === undefined ? 'Select a category to link the two views.' : `Selected category: ${selectedId}`}
-      </Text>
+      <Treemap
+        title="Token allocation"
+        locale="en-US"
+        items={allocation}
+        valueFormat={formatTokens}
+        selected={selected}
+        onSelectedChange={setSelected}
+      />
+      <Text>{selected === null ? 'Select a category to link the two views.' : `Selected category: ${selected}`}</Text>
     </Stack>
   );
 }
@@ -62,6 +68,7 @@ export const NarrowLongLabels: Story = {
   render: () => (
     <Treemap
       title="Supplied allocation with complete category labels"
+      locale="en-US"
       description="Synthetic values. Missing and zero categories keep their text without receiving an area."
       items={[
         { id: 'input', label: 'Input for the complete validation and review sequence', value: 840 },
@@ -69,11 +76,29 @@ export const NarrowLongLabels: Story = {
         { id: 'zero', label: 'Measured zero for the unused category', value: 0 },
         { id: 'missing', label: 'Category without recorded evidence', value: null },
       ]}
-      formatValue={formatTokens}
+      valueFormat={formatTokens}
     />
   ),
 };
 
-export const Empty: Story = {
-  render: () => <Treemap title="No allocation records" items={[]} formatValue={formatTokens} />,
+export const States: Story = {
+  render: () => (
+    <Stack>
+      <Treemap title="Loading allocation" locale="en-US" status="loading" items={[]} valueFormat={formatTokens} />
+      <Treemap title="No allocation records" locale="en-US" items={[]} valueFormat={formatTokens} />
+      <Treemap
+        title="Allocation for sampled requests"
+        locale="en-US"
+        coverage={{ shown: 120, total: 2400, unit: 'requests' }}
+        items={allocation}
+        valueFormat={formatTokens}
+      />
+      <Treemap
+        title="Negative allocation"
+        locale="en-US"
+        items={[{ id: 'refund', label: 'Refunded tokens', value: -40 }]}
+        valueFormat={formatTokens}
+      />
+    </Stack>
+  ),
 };

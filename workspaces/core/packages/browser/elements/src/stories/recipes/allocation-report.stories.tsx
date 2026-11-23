@@ -10,8 +10,6 @@ const meta = {
 
 export default meta;
 
-const dollars = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
-
 const commitments = [
   { id: 'housing', label: 'Housing', amount: 1850, tone: 'series3' },
   {
@@ -37,7 +35,8 @@ export const Example: StoryObj<typeof meta> = {
     remainderLabel: 'Left to save',
     target: { id: 'goal', label: 'Saving goal', value: 2500, tone: 'positive' },
     explanation: 'bridge',
-    formatValue: (value) => dollars.format(value),
+    valueFormat: { style: 'currency', currency: 'USD', maximumFractionDigits: 0 },
+    locale: 'en-US',
   },
 };
 

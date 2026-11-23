@@ -9,48 +9,60 @@ import {
   WaterfallRowHeader,
 } from '@ui-sdk/react/waterfall';
 import type { WaterfallProps as SpansProps } from '@ui-sdk/react/waterfall';
-import { scaleLinear } from '@visx/scale';
-import { Bar } from '@visx/shape';
 import type { ReactNode, Ref } from 'react';
 import { Text } from '../../../core/src/index.ts';
+import type { ChartTone } from '../../../foundations/src/chart-tones.ts';
 import { conditions } from '../../../foundations/src/constants.stylex.ts';
 import { colors, controls, shadows, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
-import { ChartFrame } from '../chart-frame.tsx';
-import type { ChartReport } from '../chart-frame.tsx';
-import { ChartInputError, hasUniqueIds } from '../chart-input.tsx';
+import { hasUniqueIds } from '../chart-input.ts';
+import { formatValue } from '../figure/figure-format.ts';
+import type { ValueFormat } from '../figure/figure-format.ts';
+import { FigureFrame, FigureInvalid } from '../figure/figure-frame.tsx';
+import type { FigureProps } from '../figure/figure-props.ts';
+import { continuousScale } from '../plot/scale.ts';
+import type { ContinuousScale } from '../plot/scale.ts';
 
-type WaterfallGeometry =
+/** A row's timing: two recorded endpoints, one recorded instant, or none. Nothing is drawn from a missing endpoint. */
+export type WaterfallGeometry =
   | { readonly kind: 'interval'; readonly start: number; readonly end: number }
   | { readonly kind: 'point'; readonly at: number; readonly marker: 'filled' | 'hollow' | 'diamond' }
   | { readonly kind: 'unavailable' };
 
+/** The tones a waterfall row takes: neutral evidence, a success, or a failure. */
+export type WaterfallTone = Extract<ChartTone, 'neutral' | 'positive' | 'negative'>;
+
+/** One timed row. Rows keep the supplied order and share one scale. */
 export type WaterfallItem = {
   readonly id: string;
   readonly label: string;
   readonly detail: string;
   readonly summary: string;
-  readonly tone: 'neutral' | 'positive' | 'negative';
+  /** Neutral when left out. */
+  readonly tone?: WaterfallTone | undefined;
   readonly geometry: WaterfallGeometry;
-  readonly controls?: string;
+  /** The id of the region this row updates when selected, exposed as `aria-controls`. */
+  readonly controls?: string | undefined;
 };
 
 /** Why the selection wants to change: a press or Enter on a row, or a call such as an agent's step. */
 export type WaterfallSelectDetails = Parameters<NonNullable<SpansProps['onValueChange']>>[1];
 
-type WaterfallProps = {
+export type WaterfallProps = Pick<
+  FigureProps,
+  'title' | 'description' | 'report' | 'actions' | 'locale' | 'source' | 'transforms' | 'emptyLabel'
+> & {
   readonly items: ReadonlyArray<WaterfallItem>;
+  /** The time domain every row shares, in the unit of `offsetFormat`. */
   readonly start: number;
   readonly end: number;
-  readonly label: string;
-  readonly report?: ChartReport | undefined;
   readonly rowLabel: string;
   readonly summaryLabel: string;
-  readonly emptyLabel: string;
-  readonly selectedId: string | undefined;
+  readonly selected?: string | null | undefined;
   /** The selected row, which takes focus, so an owner can return focus to it. */
   readonly selectedRef?: Ref<HTMLDivElement> | undefined;
-  readonly onSelect: (id: string, details: WaterfallSelectDetails) => void;
-  readonly formatOffset: (offset: number) => string;
+  readonly onSelectedChange: (id: string, details: WaterfallSelectDetails) => void;
+  /** How a time from the start of the domain is written, with its unit. */
+  readonly offsetFormat: ValueFormat;
 };
 
 const NARROW_LAYOUT = '@container (max-width:650px)';
@@ -150,41 +162,48 @@ const styles = stylex.create({
 });
 
 const toneStyles = { neutral: styles.neutral, positive: styles.positive, negative: styles.negative } satisfies Record<
-  WaterfallItem['tone'],
+  WaterfallTone,
   stylex.StyleXStyles
 >;
 
 const TICKS = [0, 0.5, 1] as const;
 const PERCENT = 100;
 
+/**
+ * Recorded intervals and instants of many rows on one time scale, such as the steps of a request or a run. Each row
+ * states its exact timing as text, a row without timing says so, and the rows are one Tab stop the application selects
+ * from.
+ */
 export function Waterfall({
   items,
   start,
   end,
-  label,
-  report,
   rowLabel,
   summaryLabel,
-  emptyLabel,
-  selectedId,
+  emptyLabel = 'No timing records are available.',
+  selected,
   selectedRef,
-  onSelect,
-  formatOffset,
+  onSelectedChange,
+  offsetFormat,
+  ...frame
 }: WaterfallProps): ReactNode {
+  const { title, locale } = frame;
   const problem = waterfallProblem({ items, start, end });
 
   if (problem !== undefined) {
-    return <ChartInputError title={label} report={report} message={problem} />;
+    return <FigureInvalid {...frame} message={problem} />;
   }
 
   const span = end - start;
-  const scale = scaleLinear({ domain: [start, end], range: [0, span === 0 ? 0 : PERCENT] });
+  const scale = continuousScale({ domain: [start, end], range: [0, PERCENT] });
   const ticks = span > 0 ? TICKS : [0];
   const hasTiming = items.some((item) => item.geometry.kind !== 'unavailable');
 
-  const timings = new Map(
-    items.map((item) => [item.id, formatGeometry({ geometry: item.geometry, start, formatOffset })]),
-  );
+  function offset(value: number): string {
+    return formatValue({ value, locale, format: offsetFormat });
+  }
+
+  const timings = new Map(items.map((item) => [item.id, formatGeometry({ geometry: item.geometry, start, offset })]));
 
   // The label starts with the row's name for typeahead and carries its exact values for an agent.
   const spans = items.map((item) => ({
@@ -195,7 +214,7 @@ export function Waterfall({
 
   const rows =
     items.length === 0 ? (
-      <div role="group" aria-label={label} {...stylex.props(styles.frame)}>
+      <div role="group" aria-label={title} {...stylex.props(styles.frame)}>
         <p {...stylex.props(styles.empty)}>
           <Text tone="muted">{emptyLabel}</Text>
         </p>
@@ -204,14 +223,14 @@ export function Waterfall({
       <Spans
         items={spans}
         range={[start, end]}
-        value={selectedId ?? null}
+        value={selected ?? null}
         onValueChange={(id, details) => {
           if (id !== null) {
-            onSelect(id, details);
+            onSelectedChange(id, details);
           }
         }}
         getBarLabel={(row) => timings.get(row.value) ?? ''}
-        aria-label={label}
+        aria-label={title}
         {...stylex.props(styles.frame)}
       >
         <WaterfallHeaderRow {...stylex.props(styles.grid, styles.head)}>
@@ -222,7 +241,7 @@ export function Waterfall({
           </WaterfallColumnHeader>
           <WaterfallColumnHeader aria-label="Timing" {...stylex.props(styles.plot, styles.axis)}>
             {hasTiming ? (
-              ticks.map((tick) => <span key={tick}>{formatOffset(span * tick)}</span>)
+              ticks.map((tick) => <span key={tick}>{offset(span * tick)}</span>)
             ) : (
               <span>Timing unavailable</span>
             )}
@@ -235,7 +254,7 @@ export function Waterfall({
         </WaterfallHeaderRow>
         {items.map((item) => {
           const timing = timings.get(item.id);
-          const isSelected = selectedId === item.id;
+          const isSelected = selected === item.id;
 
           return (
             <WaterfallRow
@@ -253,7 +272,10 @@ export function Waterfall({
                   </Text>
                 </span>
               </WaterfallRowHeader>
-              <WaterfallBar title={timing} {...stylex.props(styles.plot, styles.cell, toneStyles[item.tone])}>
+              <WaterfallBar
+                title={timing}
+                {...stylex.props(styles.plot, styles.cell, toneStyles[item.tone ?? 'neutral'])}
+              >
                 {item.geometry.kind === 'unavailable' ? (
                   <Text variant="caption" tone="muted">
                     {timing}
@@ -290,13 +312,7 @@ export function Waterfall({
       </Spans>
     );
 
-  return report === undefined ? (
-    rows
-  ) : (
-    <ChartFrame title={label} report={report}>
-      {rows}
-    </ChartFrame>
-  );
+  return <FigureFrame {...frame}>{rows}</FigureFrame>;
 }
 
 function waterfallProblem({ items, start, end }: Pick<WaterfallProps, 'items' | 'start' | 'end'>): string | undefined {
@@ -340,23 +356,23 @@ function WaterfallMark({
   scale,
 }: {
   readonly geometry: WaterfallGeometry;
-  readonly scale: (value: number) => number;
+  readonly scale: ContinuousScale;
 }): ReactNode {
   switch (geometry.kind) {
     case 'unavailable':
       return null;
     case 'interval': {
-      const x = scale(geometry.start);
-      const width = scale(geometry.end) - x;
+      const x = scale.position(geometry.start);
+      const width = scale.position(geometry.end) - x;
 
       return width === 0 ? (
         <circle cx={`${x}%`} cy={9} r={3} {...stylex.props(styles.filled)} />
       ) : (
-        <Bar x={`${x}%`} y={6} width={`${width}%`} height={6} rx={2} {...stylex.props(styles.filled)} />
+        <rect x={`${x}%`} y={6} width={`${width}%`} height={6} rx={2} {...stylex.props(styles.filled)} />
       );
     }
     case 'point': {
-      const x = scale(geometry.at);
+      const x = scale.position(geometry.at);
 
       switch (geometry.marker) {
         case 'filled':
@@ -395,13 +411,16 @@ function spanTime(geometry: WaterfallGeometry): { readonly start: number; readon
 function formatGeometry({
   geometry,
   start,
-  formatOffset,
-}: Pick<WaterfallProps, 'start' | 'formatOffset'> & { readonly geometry: WaterfallGeometry }): string {
+  offset,
+}: Pick<WaterfallProps, 'start'> & {
+  readonly geometry: WaterfallGeometry;
+  readonly offset: (value: number) => string;
+}): string {
   switch (geometry.kind) {
     case 'interval':
-      return `Start ${formatOffset(geometry.start - start)}, end ${formatOffset(geometry.end - start)}, duration ${formatOffset(geometry.end - geometry.start)}`;
+      return `Start ${offset(geometry.start - start)}, end ${offset(geometry.end - start)}, duration ${offset(geometry.end - geometry.start)}`;
     case 'point':
-      return `At ${formatOffset(geometry.at - start)}`;
+      return `At ${offset(geometry.at - start)}`;
     case 'unavailable':
       return 'Timing unavailable';
   }

@@ -16,7 +16,7 @@ Align every annotation marker with an observation timestamp, and make each point
 Space observations by elapsed time, not by index.
 Start stacked areas at zero, and fit line charts to the observed values, including context series.
 Use linear interpolation, and add smoothing, animation, or other scale options only for a stated consumer requirement.
-Format timestamps and values with caller-supplied formatters.
+Format timestamps and values with the caller's declared formats in the figure's locale, under contract 140.
 Keep supplied partial-period markers visible, including during inspection.
 Render a single observation visibly, and show an explicit empty state when no observations exist.
 
@@ -62,7 +62,7 @@ panel geometry, independent value units, and one source-panel inspector with lin
 
 This adoption governs the public time-series family. Contract 115 owns Waterfall intervals and contract 118 owns
 prepared distributions, matrices, token values, scatter coordinates, and graph relationships.
-Timestamp units and value meaning remain explicit in the public inputs and consumer formatters.
+Timestamp units and value meaning remain explicit in the public inputs and declared formats.
 
 The compact inline `Sparkline` in `cartesian/sparkline.tsx` is a passive summary. The inspection, focus, and idle-legend
 requirements above apply to interactive charts, not this representation. Sparkline must instead expose the supplied
@@ -70,7 +70,7 @@ title, readable summary, value unit and timestamp unit as an accessible image. I
 or touch gesture. Use LineChart when a reader needs to inspect individual observations.
 
 For this passive representation, an application-written summary and declared units replace timestamp and value
-formatters. An explicit finite, increasing `valueDomain` replaces fitting the vertical scale to observed values, so
+formats. An explicit finite, increasing `valueDomain` replaces fitting the vertical scale to observed values, so
 metric rows can share a comparable domain. Reject observations outside that domain rather than clipping or expanding
 it silently. All input validation, elapsed-time spacing, linear geometry, missing-value gaps, isolated observations,
 shared colors, and explicit empty or invalid states remain required.

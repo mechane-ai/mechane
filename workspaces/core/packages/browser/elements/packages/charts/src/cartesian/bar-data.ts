@@ -1,5 +1,7 @@
 import type { ChartTone } from '../../../foundations/src/chart-tones.ts';
+import type { NumericDomain } from '../plot/scale.ts';
 
+/** One series of bars: a value per category, in category order, or null where none was recorded. */
 export type BarSeries = {
   readonly id: string;
   readonly label: string;
@@ -7,8 +9,13 @@ export type BarSeries = {
   readonly tone?: ChartTone | undefined;
 };
 
+/**
+ * One category of a composition: `parts` stacks the series under a supplied total, `total` draws only the total, and
+ * `gap` draws nothing.
+ */
 export type BarBucket = { readonly kind: 'parts' | 'total'; readonly total: number } | { readonly kind: 'gap' };
 
+/** Supplied totals drawn as gray context behind the series, with an optional focused series. */
 export type BarComposition = {
   readonly buckets: ReadonlyArray<BarBucket>;
   readonly contextLabel: string;
@@ -20,9 +27,10 @@ type CompositionInput = {
   readonly composition: BarComposition | undefined;
   readonly series: ReadonlyArray<BarSeries>;
   readonly categoryIds: ReadonlyArray<string>;
-  readonly domain: readonly [number, number];
+  readonly domain: NumericDomain;
 };
 
+/** Why a composition cannot be drawn on the value domain, or undefined when it can. */
 export function validateComposition({
   composition,
   series,
@@ -109,12 +117,12 @@ type OverlayInput = {
   readonly emphasizedCategoryIds: ReadonlyArray<string>;
   readonly seriesIds: ReadonlyArray<string>;
   readonly categoryIds: ReadonlyArray<string>;
-  readonly domain: readonly [number, number];
+  readonly domain: NumericDomain;
 };
 
 const BAR_MARKERS_MAX = 6;
 
-function isMarkedValue(value: number | null | undefined, domain: readonly [number, number]): boolean {
+function isMarkedValue(value: number | null | undefined, domain: NumericDomain): boolean {
   if (value === null) {
     return true;
   }
@@ -133,7 +141,7 @@ function markerProblem({
 }: {
   readonly marker: BarMarker;
   readonly categoryCount: number;
-  readonly domain: readonly [number, number];
+  readonly domain: NumericDomain;
 }): string | undefined {
   const columns = marker.kind === 'tick' ? [marker.values] : [marker.lower, marker.upper];
 
@@ -160,6 +168,7 @@ function markerProblem({
   return undefined;
 }
 
+/** Why bar markers, annotations or emphasis cannot be drawn, or undefined when they can. */
 export function validateBarOverlays({
   markers,
   annotations,
@@ -221,25 +230,25 @@ export function validateBarOverlays({
   return undefined;
 }
 
+/** A marker's exact value at one category, as the readout and the table write it. */
 export function markerValueLabel({
   marker,
   index,
-  formatValue,
+  valueText,
 }: {
   readonly marker: BarMarker;
   readonly index: number;
-  readonly formatValue: (value: number) => string;
+  /** Writes one value exactly, and a missing one as unavailable. */
+  readonly valueText: (value: number | null) => string;
 }): string {
   if (marker.kind === 'tick') {
-    const value = marker.values[index] ?? null;
-
-    return value === null ? 'Unavailable' : formatValue(value);
+    return valueText(marker.values[index] ?? null);
   }
 
   const lower = marker.lower[index] ?? null;
   const upper = marker.upper[index] ?? null;
 
-  return lower === null || upper === null ? 'Unavailable' : `${formatValue(lower)} – ${formatValue(upper)}`;
+  return lower === null || upper === null ? valueText(null) : `${valueText(lower)} – ${valueText(upper)}`;
 }
 
 /** The highest value a marker draws at one category, so an annotation can clear it. */

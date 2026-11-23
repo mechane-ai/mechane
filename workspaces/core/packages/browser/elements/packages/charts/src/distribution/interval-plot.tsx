@@ -1,143 +1,49 @@
-import * as stylex from '@stylexjs/stylex';
-import { scaleLinear } from '@visx/scale';
 import type { ReactNode } from 'react';
-import { chartToneColors } from '../../../foundations/src/chart-tones.ts';
 import type { ChartTone } from '../../../foundations/src/chart-tones.ts';
-import { ChartFrame } from '../chart-frame.tsx';
-import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
-import { ChartInputError } from '../chart-input.tsx';
-import { ChartDatum, ChartRows } from '../chart-rows.tsx';
-import { Chart } from '../chart.tsx';
+import { formatValue } from '../figure/figure-format.ts';
+import { FigureInvalid, FigureLoading } from '../figure/figure-frame.tsx';
+import type { FigureProps, FigureSelectionProps } from '../figure/figure-props.ts';
 import { usePlotWidth } from '../plot-width.ts';
-import { distributionInputError, distributionLimits, outsideDomain } from './distribution-input.ts';
-import type { NumericDomain } from './distribution-input.ts';
-import { distributionStyles, DomainLabels } from './distribution-plot.tsx';
+import { fitDomain } from '../plot/plot-layout.ts';
+import type { PlotAxis, PlotHeight } from '../plot/plot-layout.ts';
+import { DotMark, IntervalMark } from '../plot/plot-marks.tsx';
+import { outsideDomain } from '../plot/scale.ts';
+import type { NumericDomain } from '../plot/scale.ts';
+import { distributionInputError, distributionLimits } from './distribution-input.ts';
+import { groupLayout, rowsPlotHeight, segmentBetween } from './group-plot-layout.ts';
+import type { Vertex } from './group-plot-layout.ts';
+import { BandCursor, GroupFigure, useToned } from './group-plot.tsx';
 
+/** One prepared estimate with its interval. A null bound or estimate stays unavailable and is not drawn. */
 export type IntervalDatum = {
   readonly id: string;
   readonly label: string;
   readonly lower: number | null;
   readonly estimate: number | null;
   readonly upper: number | null;
-  readonly tone?: ChartTone;
+  readonly tone?: ChartTone | undefined;
 };
 
-export type IntervalPlotProps = {
-  readonly title: string;
-  readonly report?: ChartReport | undefined;
-  readonly description?: string;
-  readonly items: ReadonlyArray<IntervalDatum>;
-  readonly domain: NumericDomain;
-  readonly valueLabel: string;
-  readonly intervalLabel: string;
-  readonly formatValue: (value: number) => string;
-  readonly selection?: ChartSelection;
-  readonly emptyLabel?: string;
-};
+export type IntervalPlotProps = FigureProps &
+  FigureSelectionProps & {
+    readonly items: ReadonlyArray<IntervalDatum>;
+    /** The estimated quantity, with its unit. */
+    readonly value: PlotAxis;
+    /** What the interval is, as the application computed it: "95% bootstrap interval". */
+    readonly intervalLabel: string;
+    /** The room each row gets: `compact` fits a short list in a card. */
+    readonly height?: PlotHeight | undefined;
+  };
 
-export function IntervalPlot({
-  title,
-  report,
-  description,
+const CAP_HALF = 5;
+const DOT_RADIUS = 4;
+
+function intervalInputError({
   items,
+  value,
   domain,
-  valueLabel,
-  intervalLabel,
-  formatValue,
-  selection,
-  emptyLabel = 'No interval estimates are available.',
-}: IntervalPlotProps): ReactNode {
-  const { ref, width } = usePlotWidth();
-  const inputError = intervalInputError({ items, domain });
-
-  if (inputError !== undefined) {
-    return <ChartInputError title={title} report={report} description={description} message={inputError} />;
-  }
-
-  const scale = scaleLinear({ domain: [...domain], range: [0, width] });
-
-  const rows = items.map((item) => {
-    const estimate = item.estimate === null ? 'Estimate unavailable' : formatValue(item.estimate);
-    const lower = item.lower === null ? 'Unavailable' : formatValue(item.lower);
-    const upper = item.upper === null ? 'Unavailable' : formatValue(item.upper);
-    const interval = `${intervalLabel}: ${lower} – ${upper}`;
-
-    return { item, estimate, interval, readout: `${item.label}, ${valueLabel}: ${estimate}, ${interval}` };
-  });
-
-  const chartItems = rows.map((row) => ({ id: row.item.id, label: row.readout }));
-
-  return (
-    <Chart
-      items={chartItems}
-      arrows="both"
-      selected={selection?.selectedId ?? null}
-      onSelect={selection?.onSelect}
-      render={(figure, chart) => {
-        const view = selection === undefined ? undefined : chart;
-
-        return (
-          <ChartFrame
-            figure={figure}
-            title={title}
-            report={report}
-            description={description}
-            footer={`${valueLabel} · ${intervalLabel}`}
-          >
-            {items.length === 0 ? (
-              <p {...stylex.props(distributionStyles.empty)}>{emptyLabel}</p>
-            ) : (
-              <ChartRows title={title} items={chartItems} view={view}>
-                <div {...stylex.props(distributionStyles.values)}>
-                  {rows.map(({ item, estimate, interval, readout }) => {
-                    const color = chartToneColors[item.tone ?? 'series1'];
-
-                    return (
-                      <ChartDatum key={item.id} id={item.id} label={readout} view={view}>
-                        <span {...stylex.props(distributionStyles.row)}>
-                          <span {...stylex.props(distributionStyles.rowLabel)}>
-                            <span>{item.label}</span>
-                            <span {...stylex.props(distributionStyles.rowValue)}>{estimate}</span>
-                            <span {...stylex.props(distributionStyles.label)}>{interval}</span>
-                          </span>
-                          <svg
-                            aria-hidden
-                            viewBox={`0 0 ${width} 28`}
-                            preserveAspectRatio="none"
-                            {...stylex.props(distributionStyles.rowSvg)}
-                          >
-                            <line x1={0} x2={width} y1={14} y2={14} {...stylex.props(distributionStyles.baseline)} />
-                            {item.lower !== null && item.upper !== null && (
-                              <g stroke={color} strokeWidth={2} vectorEffect="non-scaling-stroke">
-                                <line x1={scale(item.lower)} x2={scale(item.upper)} y1={14} y2={14} />
-                                <line x1={scale(item.lower)} x2={scale(item.lower)} y1={9} y2={19} />
-                                <line x1={scale(item.upper)} x2={scale(item.upper)} y1={9} y2={19} />
-                              </g>
-                            )}
-                            {item.estimate !== null && <circle cx={scale(item.estimate)} cy={14} r={4} fill={color} />}
-                          </svg>
-                        </span>
-                      </ChartDatum>
-                    );
-                  })}
-                  <div {...stylex.props(distributionStyles.row, distributionStyles.rowAxis)}>
-                    <span {...stylex.props(distributionStyles.axisSpacer)} />
-                    <div ref={ref}>
-                      <DomainLabels domain={domain} formatValue={formatValue} />
-                    </div>
-                  </div>
-                </div>
-              </ChartRows>
-            )}
-          </ChartFrame>
-        );
-      }}
-    />
-  );
-}
-
-function intervalInputError({ items, domain }: Pick<IntervalPlotProps, 'items' | 'domain'>): string | undefined {
-  const error = distributionInputError({ items, domain, maxEntries: distributionLimits.rows });
+}: Pick<IntervalPlotProps, 'items' | 'value'> & { readonly domain: NumericDomain }): string | undefined {
+  const error = distributionInputError({ items, domain, scale: value.scale, maxEntries: distributionLimits.rows });
 
   if (error !== undefined) {
     return error;
@@ -146,7 +52,7 @@ function intervalInputError({ items, domain }: Pick<IntervalPlotProps, 'items' |
   for (const item of items) {
     const values = [item.lower, item.estimate, item.upper];
 
-    if (values.some((value) => value !== null && outsideDomain(value, domain))) {
+    if (values.some((amount) => amount !== null && outsideDomain(amount, domain))) {
       return `Interval ${item.id} has a non-finite value or lies outside the declared domain.`;
     }
 
@@ -166,4 +72,105 @@ function intervalInputError({ items, domain }: Pick<IntervalPlotProps, 'items' |
   }
 
   return undefined;
+}
+
+/**
+ * Prepared estimates with their intervals, one row each: model accuracy with a bootstrap interval, an effect with its
+ * confidence bounds. The rows keep the supplied order, and the readout states the exact values of the row being
+ * inspected.
+ */
+export function IntervalPlot(props: IntervalPlotProps): ReactNode {
+  const { items, value, intervalLabel, height = 'regular', selected, onSelectedChange, ...figure } = props;
+  const { emptyLabel = 'No interval estimates are available.', ...frame } = figure;
+  const { locale } = frame;
+  const { ref, width } = usePlotWidth();
+  const drawn = useToned(items);
+
+  if (frame.status === 'loading') {
+    return <FigureLoading {...frame} height={height} />;
+  }
+
+  const observed = items.flatMap((item) => [item.lower, item.estimate, item.upper]);
+  const domain = value.domain ?? fitDomain({ values: observed, scale: value.scale });
+  const inputError = intervalInputError({ items, value, domain });
+
+  if (inputError !== undefined) {
+    return <FigureInvalid {...frame} message={inputError} />;
+  }
+
+  const layout = groupLayout({
+    width,
+    height: rowsPlotHeight({ height, count: items.length }),
+    direction: 'rows',
+    groups: drawn,
+    value,
+    valueDomain: domain,
+    locale,
+  });
+
+  const { orient, placed } = layout;
+
+  function at(across: number, amount: number): Vertex {
+    return orient.point(across, layout.value.position(amount));
+  }
+
+  function text(amount: number | null): string {
+    return formatValue({ value: amount, locale, format: value.format });
+  }
+
+  const chartItems = placed.map((item) => {
+    const estimate = item.estimate === null ? 'Estimate unavailable' : text(item.estimate);
+
+    return {
+      id: item.id,
+      label: `${item.label}, ${value.label}: ${estimate}, ${intervalLabel}: ${text(item.lower)} – ${text(item.upper)}`,
+    };
+  });
+
+  return (
+    <GroupFigure
+      frame={frame}
+      emptyLabel={emptyLabel}
+      size={{ ref, width, height: layout.box.height }}
+      axes={layout}
+      items={chartItems}
+      locate={layout.locate}
+      marksLabel="estimates"
+      selected={selected}
+      onSelectedChange={onSelectedChange}
+      note={`The dot is the estimate. The line is the ${intervalLabel}.`}
+      cursor={(id) => {
+        const target = placed.find((item) => item.id === id);
+
+        return target === undefined ? null : <BandCursor {...layout.slot(target.center)} />;
+      }}
+      marks={(view) =>
+        placed.map((item) => {
+          const { center } = item;
+          const state = { isInspected: view.inspected === item.id, isSelected: view.selected === item.id };
+
+          return (
+            <g key={item.id}>
+              {item.lower !== null && item.upper !== null && (
+                <>
+                  <IntervalMark {...segmentBetween(at(center, item.lower), at(center, item.upper))} tone={item.tone} />
+                  <IntervalMark
+                    {...segmentBetween(at(center - CAP_HALF, item.lower), at(center + CAP_HALF, item.lower))}
+                    tone={item.tone}
+                  />
+                  <IntervalMark
+                    {...segmentBetween(at(center - CAP_HALF, item.upper), at(center + CAP_HALF, item.upper))}
+                    tone={item.tone}
+                  />
+                </>
+              )}
+              {item.estimate !== null && (
+                <DotMark {...at(center, item.estimate)} tone={item.tone} radius={DOT_RADIUS} {...state} />
+              )}
+            </g>
+          );
+        })
+      }
+    />
+  );
 }

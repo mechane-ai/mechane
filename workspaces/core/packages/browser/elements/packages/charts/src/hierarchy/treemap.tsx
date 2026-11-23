@@ -1,94 +1,83 @@
 import * as stylex from '@stylexjs/stylex';
-import { hierarchy, Treemap as VisxTreemap } from '@visx/hierarchy';
 import type { ReactNode } from 'react';
-import { chartToneColors } from '../../../foundations/src/chart-tones.ts';
-import type { ChartTone } from '../../../foundations/src/chart-tones.ts';
 import { colors, typography } from '../../../foundations/src/tokens.stylex.ts';
-import { categoricalItems, CategoricalValues, colorTone, validateBreakdown } from '../categorical-values.tsx';
+import { categoricalItems, CategoricalValues, validateBreakdown } from '../categorical-values.tsx';
 import type { BreakdownItem } from '../categorical-values.tsx';
-import { ChartFrame } from '../chart-frame.tsx';
-import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
-import { ChartInputError } from '../chart-input.tsx';
 import { chartStyles } from '../chart-theme.ts';
 import { Chart } from '../chart.tsx';
-import { usePlotWidth } from '../plot-width.ts';
+import { formatValue } from '../figure/figure-format.ts';
+import type { ValueFormat } from '../figure/figure-format.ts';
+import { FigureEmpty, FigureFrame, FigureInvalid, FigureLoading } from '../figure/figure-frame.tsx';
+import type { FigureProps, FigureSelectionProps } from '../figure/figure-props.ts';
+import { useTones } from '../figure/tone-scope.tsx';
+import type { PlotHeight } from '../plot/plot-layout.ts';
+import { usePlotSize } from '../plot/plot-surface.tsx';
+import { AreaMark } from './area-mark.tsx';
+import { treemapLayout } from './treemap-layout.ts';
 
-const styles = stylex.create({
-  empty: { color: colors.muted, margin: 0, fontSize: typography.captionSize },
-  treeLabel: { fill: colors.ink, fontFamily: typography.fontFamily, fontSize: typography.captionSize },
-  treeRect: { stroke: colors.surface, strokeWidth: 1 },
-});
+const styles = stylex.create({ note: { color: colors.muted, margin: 0, fontSize: typography.captionSize } });
 
-export type TreemapProps = {
-  readonly title: string;
-  readonly report?: ChartReport | undefined;
-  readonly description?: string | undefined;
-  readonly items: ReadonlyArray<BreakdownItem>;
-  readonly formatValue: (value: number) => string;
-  readonly selection?: ChartSelection | undefined;
-  readonly height?: number | undefined;
-};
+const GAP = 2;
+const LABEL_WIDTH = 96;
 
-type TreemapDatum = {
-  readonly id: string;
-  readonly label: string;
-  readonly value: number;
-  readonly tone: ChartTone;
-  readonly children?: ReadonlyArray<TreemapDatum>;
-};
+export type TreemapProps = FigureProps &
+  FigureSelectionProps & {
+    readonly items: ReadonlyArray<BreakdownItem>;
+    readonly valueFormat: ValueFormat;
+    readonly height?: PlotHeight | undefined;
+  };
 
+/**
+ * Supplied nonnegative categories as areas proportional to their recorded values, with a row per category below.
+ * Missing and zero values have no area. Use BreakdownBar when a declared total and an unassigned portion matter.
+ */
 export function Treemap({
-  title,
-  report,
-  description,
   items,
-  formatValue,
-  selection,
-  height = 180,
+  valueFormat,
+  selected,
+  onSelectedChange,
+  height: plotHeight = 'compact',
+  ...figure
 }: TreemapProps): ReactNode {
-  const issue = validateBreakdown(items);
-  const total = items.reduce((sum, item) => sum + (item.value ?? 0), 0);
-  const { ref, width } = usePlotWidth();
+  const { emptyLabel = 'No positive values to size the areas', ...frame } = figure;
+  const { locale, title } = frame;
+  const { ref, width, height } = usePlotSize(plotHeight);
+  const tones = useTones();
 
-  if (issue !== undefined || !Number.isFinite(height) || height < 48) {
-    return (
-      <ChartInputError
-        title={title}
-        report={report}
-        description={description}
-        message={issue ?? 'Chart height must be at least 48 pixels.'}
-      />
-    );
+  if (frame.status === 'loading') {
+    return <FigureLoading {...frame} height={plotHeight} />;
   }
 
-  const children = items.flatMap((item, index) =>
-    item.value === null || item.value === 0
-      ? []
-      : [{ id: item.id, label: item.label, value: item.value, tone: colorTone(item.tone, index) }],
-  );
+  const issue = validateBreakdown(items);
 
-  const root = hierarchy<TreemapDatum>({ id: 'root', label: title, value: 0, tone: 'neutral', children }, (datum) =>
-    datum.children === undefined ? undefined : [...datum.children],
-  ).sum((datum) => datum.value);
+  if (issue !== undefined) {
+    return <FigureInvalid {...frame} message={issue} />;
+  }
 
   const values = items.map((item, index) => ({
     id: item.id,
     label: item.label,
-    valueLabel: item.value === null ? 'Unavailable' : formatValue(item.value),
-    tone: colorTone(item.tone, index),
+    valueLabel: formatValue({ value: item.value, locale, format: valueFormat }),
+    tone: tones({ id: item.id, tone: item.tone, index }),
   }));
+
+  const sized = items.flatMap((item) =>
+    item.value === null || item.value === 0 ? [] : [{ id: item.id, value: item.value }],
+  );
+
+  const cells = treemapLayout({ items: sized, width, height, gap: GAP });
 
   return (
     <Chart
       items={categoricalItems(values)}
       arrows="both"
-      selected={selection?.selectedId ?? null}
-      onSelect={selection?.onSelect}
-      render={(figure, view) => (
-        <ChartFrame figure={figure} title={title} report={report} description={description}>
+      selected={selected ?? null}
+      onSelect={onSelectedChange}
+      render={(figureProps, view) => (
+        <FigureFrame {...frame} figure={figureProps}>
           <div ref={ref} {...stylex.props(chartStyles.plot)}>
-            {total === 0 ? (
-              <p {...stylex.props(styles.empty)}>No positive values to size the areas</p>
+            {sized.length === 0 ? (
+              <FigureEmpty>{emptyLabel}</FigureEmpty>
             ) : (
               <svg
                 role="img"
@@ -97,66 +86,30 @@ export function Treemap({
                 height={height}
                 {...stylex.props(chartStyles.svg)}
               >
-                <VisxTreemap root={root} size={[width, height]} paddingInner={2}>
-                  {(tree) =>
-                    tree.leaves().map((node) => {
-                      const hasLabelRoom = node.x1 - node.x0 > 96 && node.y1 - node.y0 > 40;
-                      const labelCharacters = Math.max(1, Math.floor((node.x1 - node.x0 - 16) / 7));
+                {cells.map((cell) => {
+                  const value = values.find((candidate) => candidate.id === cell.id);
 
-                      const label =
-                        node.data.label.length > labelCharacters
-                          ? `${node.data.label.slice(0, labelCharacters - 1)}…`
-                          : node.data.label;
-
-                      return (
-                        <g key={node.data.id}>
-                          <rect
-                            x={node.x0}
-                            y={node.y0}
-                            width={node.x1 - node.x0}
-                            height={node.y1 - node.y0}
-                            fill={chartToneColors[node.data.tone]}
-                            fillOpacity={0.24}
-                            {...stylex.props(
-                              styles.treeRect,
-                              view.inspected === node.data.id && chartStyles.inspected,
-                              view.selected === node.data.id && chartStyles.selected,
-                            )}
-                          />
-                          <title>
-                            {node.data.label}: {formatValue(node.data.value)}
-                          </title>
-                          {hasLabelRoom && (
-                            <svg
-                              x={node.x0}
-                              y={node.y0}
-                              width={node.x1 - node.x0}
-                              height={node.y1 - node.y0}
-                              overflow="hidden"
-                            >
-                              <text x={8} y={18} {...stylex.props(styles.treeLabel)}>
-                                {label}
-                              </text>
-                              {formatValue(node.data.value).length * 12 < node.x1 - node.x0 - 16 && (
-                                <text x={8} y={34} {...stylex.props(styles.treeLabel)}>
-                                  {formatValue(node.data.value)}
-                                </text>
-                              )}
-                            </svg>
-                          )}
-                        </g>
-                      );
-                    })
-                  }
-                </VisxTreemap>
+                  return value === undefined ? null : (
+                    <AreaMark
+                      key={cell.id}
+                      cell={cell}
+                      tone={value.tone}
+                      label={value.label}
+                      valueLabel={value.valueLabel}
+                      labelWidth={LABEL_WIDTH}
+                      isInspected={view.inspected === cell.id}
+                      isSelected={view.selected === cell.id}
+                    />
+                  );
+                })}
               </svg>
             )}
           </div>
-          <CategoricalValues title={title} items={values} view={selection === undefined ? undefined : view} />
+          <CategoricalValues title={title} items={values} view={onSelectedChange === undefined ? undefined : view} />
           {items.some((item) => item.value === null) && (
-            <p {...stylex.props(styles.empty)}>Unavailable values have no area.</p>
+            <p {...stylex.props(styles.note)}>Unavailable values have no area.</p>
           )}
-        </ChartFrame>
+        </FigureFrame>
       )}
     />
   );

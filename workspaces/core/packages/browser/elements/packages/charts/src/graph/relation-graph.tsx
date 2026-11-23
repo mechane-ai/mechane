@@ -6,12 +6,19 @@ import type { ChartTone } from '../../../foundations/src/chart-tones.ts';
 import { conditions } from '../../../foundations/src/constants.stylex.ts';
 import { colors, controls, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { ChartData } from '../chart-data.tsx';
-import { ChartFrame, ChartReadout } from '../chart-frame.tsx';
-import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
-import { ChartInputError, hasUniqueIds } from '../chart-input.tsx';
+import { ChartReadout } from '../chart-frame.tsx';
+import { hasUniqueIds } from '../chart-input.ts';
+import { useLinkedInspection } from '../chart-link.tsx';
 import { chartStyles } from '../chart-theme.ts';
 import { Chart, ChartMark, ChartPlot, inspectedLabel, plotLabel } from '../chart.tsx';
+import { FigureEmpty, FigureFrame, FigureInvalid, FigureLoading } from '../figure/figure-frame.tsx';
+import type { FigureProps, FigureSelectionProps } from '../figure/figure-props.ts';
+import { useTones } from '../figure/tone-scope.tsx';
+import { usePlotWidth } from '../plot-width.ts';
+import { plotHeights } from '../plot/plot-layout.ts';
+import type { PlotHeight } from '../plot/plot-layout.ts';
 
+/** A node at a supplied position, in the graph's own coordinates. Position never implies a relationship. */
 export type RelationNode = {
   readonly id: string;
   readonly label: string;
@@ -20,9 +27,11 @@ export type RelationNode = {
   readonly y: number;
   readonly width: number;
   readonly height: number;
-  readonly tone: ChartTone;
+  /** Absent takes the next automatic series tone in node order, or the tone a `ToneScope` gives its id. */
+  readonly tone?: ChartTone | undefined;
 };
 
+/** A supplied relationship between two nodes. The graph draws only these, never one inferred from position. */
 export type RelationEdge = {
   readonly id: string;
   readonly sourceId: string;
@@ -31,6 +40,7 @@ export type RelationEdge = {
   readonly direction: 'directed' | 'undirected';
 };
 
+/** A labelled box around supplied nodes, such as a module or a cluster. */
 export type RelationGroup = {
   readonly id: string;
   readonly label: string;
@@ -41,22 +51,35 @@ export type RelationGroup = {
   readonly nodeIds: ReadonlyArray<string>;
 };
 
-export type RelationGraphProps = {
-  readonly title: string;
-  readonly report?: ChartReport | undefined;
-  readonly description: string;
-  readonly nodes: ReadonlyArray<RelationNode>;
-  readonly edges: ReadonlyArray<RelationEdge>;
-  readonly groups?: ReadonlyArray<RelationGroup> | undefined;
-  readonly width: number;
-  readonly height: number;
-  readonly selection?: ChartSelection | undefined;
-  readonly emptyLabel: string;
-};
+export type RelationGraphProps = FigureProps &
+  FigureSelectionProps & {
+    readonly nodes: ReadonlyArray<RelationNode>;
+    readonly edges: ReadonlyArray<RelationEdge>;
+    readonly groups?: ReadonlyArray<RelationGroup> | undefined;
+    /**
+     * The coordinate extent of the supplied positions, in pixels. The graph stretches or narrows across to fill its
+     * space, keeping text at its size. Every node stays at least 80 pixels wide, or its supplied width when that is
+     * less, and below that the graph scrolls inside its frame.
+     */
+    readonly width: number;
+    readonly height: number;
+  };
 
 type LinkedRelation = { readonly edge: RelationEdge; readonly source: RelationNode; readonly target: RelationNode };
 
+const VIEWPORT_BORDER_PX = 2;
+/** The narrowest a node gets as the graph narrows to fit, so its label stays readable. Below it the graph scrolls. */
+const NODE_WIDTH_MIN_PX = 80;
+
+/** A box moved across by the fit: its center keeps its share of the width, and it narrows but never widens. */
+function fitAcross<T extends { readonly x: number; readonly width: number }>(box: T, scale: number): T {
+  const width = box.width * Math.min(1, scale);
+
+  return { ...box, x: (box.x + box.width / 2) * scale - width / 2, width };
+}
+
 const styles = stylex.create({
+  measure: { minWidth: 0, contain: 'inline-size' },
   viewport: {
     'overflow': 'auto',
     'maxHeight': 520,
@@ -134,26 +157,32 @@ const styles = stylex.create({
   data: { margin: 0, padding: 0, listStyle: 'none' },
   record: { display: 'grid', gap: spacing.xxs, minWidth: 0, width: '100%' },
   recordDetail: { color: colors.muted, fontSize: typography.captionSize, lineHeight: typography.captionLineHeight },
-  empty: { margin: 0, color: colors.muted },
 });
 
-export const MAX_RELATION_NODES = 256;
-export const MAX_RELATION_EDGES = 1024;
-export const MAX_RELATION_GROUPS = 256;
-export const MAX_RELATION_DIMENSION = 8192;
+/** The render limits, and the largest coordinate extent, in pixels. Larger input shows an explicit error. */
+export const relationGraphLimits = { nodes: 256, edges: 1024, groups: 256, dimension: 8192 } as const;
 
-export function RelationGraph({
-  title,
-  report,
-  description,
-  nodes,
-  edges,
-  groups = [],
-  width,
-  height,
-  selection,
-  emptyLabel,
-}: RelationGraphProps): ReactNode {
+/** The named plot height nearest a pixel height, for the loading placeholder. */
+function nearestHeight(pixels: number): PlotHeight {
+  const names: ReadonlyArray<PlotHeight> = ['compact', 'regular', 'tall'];
+
+  return (
+    names.toSorted(
+      (first, second) => Math.abs(plotHeights[first] - pixels) - Math.abs(plotHeights[second] - pixels),
+    )[0] ?? 'regular'
+  );
+}
+
+/**
+ * Supplied nodes at supplied positions with the supplied relationships between them: a dependency graph, a pipeline, a
+ * module map. Position and proximity never imply an edge. Use FlowDiagram when the relationships carry amounts.
+ */
+export function RelationGraph(props: RelationGraphProps): ReactNode {
+  const { nodes, edges, groups = [], width, height, selected, onSelectedChange, ...figure } = props;
+  const { emptyLabel = 'No nodes were supplied.', ...frame } = figure;
+  const { title } = frame;
+  const tones = useTones();
+
   const items = nodes.map((node) => ({
     id: node.id,
     label: [node.label, node.description].filter((part) => part !== undefined).join(', '),
@@ -161,29 +190,35 @@ export function RelationGraph({
 
   const readoutId = useId();
   const markerId = useId();
+  const size = usePlotWidth();
+  const linked = useLinkedInspection();
+
+  if (frame.status === 'loading') {
+    return <FigureLoading {...frame} height={nearestHeight(height)} />;
+  }
+
   const problem = graphProblem({ nodes, edges, groups, width, height });
 
   if (problem !== null) {
-    return <ChartInputError title={title} report={report} description={description} message={problem} />;
+    return <FigureInvalid {...frame} message={problem} />;
   }
 
-  const nodeMap = new Map(nodes.map((node) => [node.id, node]));
+  const narrowest = Math.min(...nodes.map((node) => node.width));
+  const scale = Math.max((size.width - VIEWPORT_BORDER_PX) / width, Math.min(1, NODE_WIDTH_MIN_PX / narrowest));
+  const canvasWidth = width * scale;
+  const placed = nodes.map((node) => fitAcross(node, scale));
+  const placedGroups = groups.map((group) => ({ ...group, x: group.x * scale, width: group.width * scale }));
+  const nodeMap = new Map(placed.map((node) => [node.id, node]));
   const links = resolveRelationships(edges, nodeMap);
   const hasNodes = nodes.length > 0;
 
   if (links === null) {
-    return (
-      <ChartInputError
-        title={title}
-        report={report}
-        description={description}
-        message="Every relationship must refer to two supplied nodes."
-      />
-    );
+    return <FigureInvalid {...frame} message="Every relationship must refer to two supplied nodes." />;
   }
 
   return (
     <Chart
+      {...linked}
       items={items}
       place={(id) => {
         const node = nodeMap.get(id);
@@ -192,125 +227,126 @@ export function RelationGraph({
           ? undefined
           : { left: node.x, top: node.y, right: node.x + node.width, bottom: node.y + node.height };
       }}
-      selected={selection?.selectedId ?? null}
-      onSelect={selection?.onSelect}
-      render={(figure, { inspected, cursor }) => (
-        <ChartFrame
-          figure={figure}
-          title={title}
-          report={report}
-          description={description}
+      selected={selected ?? null}
+      onSelect={onSelectedChange}
+      render={(figureProps, { inspected, cursor }) => (
+        <FigureFrame
+          {...frame}
+          figure={figureProps}
           footer={<ChartReadout id={readoutId}>{inspectedLabel(items, inspected)}</ChartReadout>}
         >
           {hasNodes ? (
-            <ChartPlot
-              role="group"
-              aria-label={plotLabel({ title, isSelectable: selection !== undefined })}
-              aria-describedby={readoutId}
-              {...stylex.props(styles.viewport, stylex.defaultMarker())}
-            >
-              <div {...stylex.props(styles.canvas(width, height))}>
-                <svg width={width} height={height} aria-hidden {...stylex.props(styles.svg)}>
-                  <defs>
-                    <marker
-                      id={markerId}
-                      markerWidth={8}
-                      markerHeight={8}
-                      refX={7}
-                      refY={4}
-                      orient="auto"
-                      markerUnits="userSpaceOnUse"
-                    >
-                      <path d="M0,0 L8,4 L0,8 Z" {...stylex.props(styles.arrow)} />
-                    </marker>
-                  </defs>
-                  {groups.map((group) => (
-                    <g key={group.id}>
-                      <rect
-                        x={group.x}
-                        y={group.y}
-                        width={group.width}
-                        height={group.height}
-                        {...stylex.props(styles.group)}
-                      />
-                      <svg x={group.x} y={group.y} width={group.width} height={group.height} overflow="hidden">
-                        <text x={12} y={20} {...stylex.props(styles.groupLabel)}>
-                          {group.label}
-                        </text>
-                      </svg>
-                    </g>
-                  ))}
-                  {links.map(({ edge, source, target }) => {
-                    const isForward = source.x < target.x;
-                    const startX = source.x + (isForward ? source.width : 0);
-                    const endX = target.x + (isForward ? 0 : target.width);
-                    const startY = source.y + source.height / 2;
-                    const endY = target.y + target.height / 2;
-                    const middleX = (startX + endX) / 2;
-                    const loopX = source.x + source.width / 2;
+            <div ref={size.ref} {...stylex.props(styles.measure)}>
+              <ChartPlot
+                role="group"
+                aria-label={plotLabel({ title, isSelectable: onSelectedChange !== undefined })}
+                aria-describedby={readoutId}
+                {...stylex.props(styles.viewport, stylex.defaultMarker())}
+              >
+                <div {...stylex.props(styles.canvas(canvasWidth, height))}>
+                  <svg width={canvasWidth} height={height} aria-hidden {...stylex.props(styles.svg)}>
+                    <defs>
+                      <marker
+                        id={markerId}
+                        markerWidth={8}
+                        markerHeight={8}
+                        refX={7}
+                        refY={4}
+                        orient="auto"
+                        markerUnits="userSpaceOnUse"
+                      >
+                        <path d="M0,0 L8,4 L0,8 Z" {...stylex.props(styles.arrow)} />
+                      </marker>
+                    </defs>
+                    {placedGroups.map((group) => (
+                      <g key={group.id}>
+                        <rect
+                          x={group.x}
+                          y={group.y}
+                          width={group.width}
+                          height={group.height}
+                          {...stylex.props(styles.group)}
+                        />
+                        <svg x={group.x} y={group.y} width={group.width} height={group.height} overflow="hidden">
+                          <text x={12} y={20} {...stylex.props(styles.groupLabel)}>
+                            {group.label}
+                          </text>
+                        </svg>
+                      </g>
+                    ))}
+                    {links.map(({ edge, source, target }) => {
+                      const isForward = source.x < target.x;
+                      const startX = source.x + (isForward ? source.width : 0);
+                      const endX = target.x + (isForward ? 0 : target.width);
+                      const startY = source.y + source.height / 2;
+                      const endY = target.y + target.height / 2;
+                      const middleX = (startX + endX) / 2;
+                      const loopX = source.x + source.width / 2;
 
-                    const path =
-                      source.id === target.id
-                        ? `M${loopX - 12},${source.y} C${loopX - 48},${source.y - 36} ${loopX + 48},${source.y - 36} ${loopX + 12},${source.y}`
-                        : `M${startX},${startY} C${middleX},${startY} ${middleX},${endY} ${endX},${endY}`;
+                      const path =
+                        source.id === target.id
+                          ? `M${loopX - 12},${source.y} C${loopX - 48},${source.y - 36} ${loopX + 48},${source.y - 36} ${loopX + 12},${source.y}`
+                          : `M${startX},${startY} C${middleX},${startY} ${middleX},${endY} ${endX},${endY}`;
+
+                      return (
+                        <path
+                          key={edge.id}
+                          d={path}
+                          markerEnd={edge.direction === 'directed' ? `url(#${markerId})` : undefined}
+                          {...stylex.props(styles.edge)}
+                        >
+                          <title>{edge.label}</title>
+                        </path>
+                      );
+                    })}
+                  </svg>
+                  {placed.map((node, index) => {
+                    const isSelected = selected === node.id;
+                    const isMarked = isSelected || inspected === node.id;
+
+                    const groupLabels = groups
+                      .filter((group) => group.nodeIds.includes(node.id))
+                      .map((group) => group.label);
+
+                    const accessibleLabel = [...groupLabels, node.label, node.description]
+                      .filter((part) => part !== undefined)
+                      .join(', ');
 
                     return (
-                      <path
-                        key={edge.id}
-                        d={path}
-                        markerEnd={edge.direction === 'directed' ? `url(#${markerId})` : undefined}
-                        {...stylex.props(styles.edge)}
+                      <ChartMark
+                        key={node.id}
+                        value={node.id}
+                        render={
+                          onSelectedChange === undefined ? (
+                            <div role="group" />
+                          ) : (
+                            <button type="button" tabIndex={-1} aria-pressed={isSelected} />
+                          )
+                        }
+                        aria-label={accessibleLabel}
+                        title={accessibleLabel}
+                        {...stylex.props(
+                          styles.node,
+                          styles.position(node.x, node.y),
+                          styles.size(node.width, node.height),
+                          styles.tone(chartToneColors[tones({ id: node.id, tone: node.tone, index })]),
+                          onSelectedChange !== undefined && styles.action,
+                          isMarked && styles.selected,
+                          !isMarked && cursor === node.id && chartStyles.cursor,
+                        )}
                       >
-                        <title>{edge.label}</title>
-                      </path>
+                        <span {...stylex.props(styles.label)}>{node.label}</span>
+                        {node.description !== undefined && node.height >= 56 && (
+                          <span {...stylex.props(styles.detail)}>{node.description}</span>
+                        )}
+                      </ChartMark>
                     );
                   })}
-                </svg>
-                {nodes.map((node) => {
-                  const isMarked = selection?.selectedId === node.id || inspected === node.id;
-
-                  const groupLabels = groups
-                    .filter((group) => group.nodeIds.includes(node.id))
-                    .map((group) => group.label);
-
-                  const accessibleLabel = [...groupLabels, node.label, node.description]
-                    .filter((part) => part !== undefined)
-                    .join(', ');
-
-                  return (
-                    <ChartMark
-                      key={node.id}
-                      value={node.id}
-                      render={
-                        selection === undefined ? (
-                          <div role="group" />
-                        ) : (
-                          <button type="button" tabIndex={-1} aria-pressed={selection.selectedId === node.id} />
-                        )
-                      }
-                      aria-label={accessibleLabel}
-                      title={accessibleLabel}
-                      {...stylex.props(
-                        styles.node,
-                        styles.position(node.x, node.y),
-                        styles.size(node.width, node.height),
-                        styles.tone(chartToneColors[node.tone]),
-                        selection !== undefined && styles.action,
-                        isMarked && styles.selected,
-                        !isMarked && cursor === node.id && chartStyles.cursor,
-                      )}
-                    >
-                      <span {...stylex.props(styles.label)}>{node.label}</span>
-                      {node.description !== undefined && node.height >= 56 && (
-                        <span {...stylex.props(styles.detail)}>{node.description}</span>
-                      )}
-                    </ChartMark>
-                  );
-                })}
-              </div>
-            </ChartPlot>
+                </div>
+              </ChartPlot>
+            </div>
           ) : (
-            <p {...stylex.props(styles.empty)}>{emptyLabel}</p>
+            <FigureEmpty>{emptyLabel}</FigureEmpty>
           )}
           <ChartData
             label={`${title} graph data`}
@@ -339,7 +375,7 @@ export function RelationGraph({
               })),
             ]}
           />
-        </ChartFrame>
+        </FigureFrame>
       )}
     />
   );
@@ -351,18 +387,24 @@ function graphProblem({
   groups,
   width,
   height,
-}: Required<Pick<RelationGraphProps, 'nodes' | 'edges' | 'width' | 'height'>> & {
+}: Pick<RelationGraphProps, 'nodes' | 'edges' | 'width' | 'height'> & {
   readonly groups: ReadonlyArray<RelationGroup>;
 }): string | null {
-  const hasInvalidWidth = !Number.isFinite(width) || width <= 0 || width > MAX_RELATION_DIMENSION;
-  const hasInvalidHeight = !Number.isFinite(height) || height <= 0 || height > MAX_RELATION_DIMENSION;
+  const { dimension } = relationGraphLimits;
+  const hasInvalidWidth = !Number.isFinite(width) || width <= 0 || width > dimension;
+  const hasInvalidHeight = !Number.isFinite(height) || height <= 0 || height > dimension;
 
   if (hasInvalidWidth || hasInvalidHeight) {
-    return `Graph dimensions must be finite, positive, and at most ${MAX_RELATION_DIMENSION} pixels.`;
+    return `Graph dimensions must be finite, positive, and at most ${dimension} pixels.`;
   }
 
-  if (nodes.length > MAX_RELATION_NODES || edges.length > MAX_RELATION_EDGES || groups.length > MAX_RELATION_GROUPS) {
-    return `This graph exceeds the render limit of ${MAX_RELATION_NODES} nodes, ${MAX_RELATION_EDGES} relationships, or ${MAX_RELATION_GROUPS} groups. Supply a smaller, labelled neighborhood.`;
+  const isTooLarge =
+    nodes.length > relationGraphLimits.nodes ||
+    edges.length > relationGraphLimits.edges ||
+    groups.length > relationGraphLimits.groups;
+
+  if (isTooLarge) {
+    return `This graph exceeds the render limit of ${relationGraphLimits.nodes} nodes, ${relationGraphLimits.edges} relationships, or ${relationGraphLimits.groups} groups. Supply a smaller, labelled neighborhood.`;
   }
 
   const nodeIds = new Set(nodes.map((node) => node.id));

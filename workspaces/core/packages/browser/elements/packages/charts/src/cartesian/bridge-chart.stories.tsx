@@ -21,11 +21,7 @@ const meta = {
 export default meta;
 type Story = StoryObj;
 
-const dollars = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
-
-function formatDollars(value: number): string {
-  return dollars.format(value);
-}
+const dollars = { style: 'currency', currency: 'USD', maximumFractionDigits: 0 } as const;
 
 const monthly: ReadonlyArray<BridgeStep> = [
   { id: 'income', label: 'Monthly income after tax', axisLabel: 'Income', kind: 'start', value: 6200, tone: 'series1' },
@@ -44,17 +40,19 @@ const monthly: ReadonlyArray<BridgeStep> = [
 ];
 
 function MonthlyBridge(): ReactNode {
-  const [selectedId, setSelectedId] = useState<string>();
+  const [selected, setSelected] = useState<string | null>(null);
 
   return (
     <BridgeChart
       title="Where a month's income goes"
+      locale="en-US"
       description="Synthetic plan in US dollars. The refund is a one-time increase this month."
       steps={monthly}
-      formatValue={formatDollars}
-      formatTick={(value) => `$${value / 1000}k`}
+      valueFormat={dollars}
+      valueLabel="Amount (USD)"
       referenceLines={[{ id: 'goal', label: 'Saving goal', value: 2500, tone: 'positive' }]}
-      selection={{ selectedId, onSelect: setSelectedId }}
+      selected={selected}
+      onSelectedChange={setSelected}
     />
   );
 }
@@ -75,19 +73,51 @@ function formatRequests(value: number): string {
   return `${new Intl.NumberFormat('en-US').format(value)} requests`;
 }
 
+const requestTicks = { maximumFractionDigits: 0 } as const;
+
 export const SubtotalsAndMissing: Story = {
   render: () => (
     <Stack>
       <Panel>
         <BridgeChart
           title="Request backlog"
+          locale="en-US"
           description="Synthetic counts. The imported count was not recorded, so the closing backlog is unknown."
           steps={quarter}
-          formatValue={formatRequests}
-          formatTick={String}
-          height={220}
+          valueFormat={formatRequests}
+          tickFormat={requestTicks}
+          height="regular"
         />
       </Panel>
+    </Stack>
+  ),
+};
+
+export const States: Story = {
+  render: () => (
+    <Stack>
+      <BridgeChart
+        title="Loading backlog"
+        locale="en-US"
+        status="loading"
+        steps={quarter}
+        valueFormat={formatRequests}
+      />
+      <BridgeChart title="No backlog steps" locale="en-US" steps={[]} valueFormat={formatRequests} />
+      <BridgeChart
+        title="Backlog for the first month"
+        locale="en-US"
+        coverage={{ shown: 4, total: 7, unit: 'steps' }}
+        steps={quarter.slice(0, 4)}
+        valueFormat={formatRequests}
+        tickFormat={requestTicks}
+      />
+      <BridgeChart
+        title="Backlog without a start"
+        locale="en-US"
+        steps={quarter.slice(1, 3)}
+        valueFormat={formatRequests}
+      />
     </Stack>
   ),
 };

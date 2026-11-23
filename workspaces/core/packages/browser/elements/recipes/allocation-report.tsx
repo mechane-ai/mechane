@@ -1,5 +1,6 @@
 import { Stack, Text } from '@mechane-ai/elements';
-import type { ChartTone } from '@mechane-ai/elements/charts';
+import { formatValue } from '@mechane-ai/elements/charts';
+import type { ChartTone, ValueFormat } from '@mechane-ai/elements/charts';
 import { BreakdownBar, BridgeChart } from '@mechane-ai/elements/charts/cartesian';
 import type { BridgeStep, ChartReferenceLine } from '@mechane-ai/elements/charts/cartesian';
 import { FlowDiagram } from '@mechane-ai/elements/charts/graph';
@@ -19,7 +20,10 @@ type AllocationProps = {
   readonly remainderLabel: string;
   readonly target?: ChartReferenceLine;
   readonly explanation: 'bridge' | 'flow';
-  readonly formatValue: (value: number) => string;
+  /** How every amount is written, such as `{ style: 'currency', currency: 'USD' }`. */
+  readonly valueFormat: ValueFormat;
+  /** The locale every amount is written in. */
+  readonly locale: string;
 };
 
 const REMAINDER_ID = 'remainder';
@@ -39,7 +43,8 @@ export function AllocationReport({
   remainderLabel,
   target,
   explanation,
-  formatValue,
+  valueFormat,
+  locale,
 }: AllocationProps) {
   const remainder = total - commitments.reduce((sum, commitment) => sum + commitment.amount, 0);
   const report = { summary: <Text>{headline}</Text> };
@@ -83,29 +88,32 @@ export function AllocationReport({
       <PageContent>
         <Stack>
           <BreakdownBar
-            title={`${totalLabel}: ${formatValue(total)}`}
+            title={`${totalLabel}: ${formatValue({ value: total, locale, format: valueFormat })}`}
+            locale={locale}
             items={[
               ...commitments.map(({ id, label, amount, tone }) => ({ id, label, value: amount, tone })),
               { id: REMAINDER_ID, label: remainderLabel, value: remainder, tone: REMAINDER_TONE },
             ]}
             total={total}
-            formatValue={formatValue}
+            valueFormat={valueFormat}
           />
           {explanation === 'bridge' ? (
             <BridgeChart
               title={`From ${totalLabel.toLowerCase()} to ${remainderLabel.toLowerCase()}`}
+              locale={locale}
               report={report}
               steps={steps}
-              formatValue={formatValue}
+              valueFormat={valueFormat}
               referenceLines={target === undefined ? [] : [target]}
             />
           ) : (
             <FlowDiagram
               title={`Where ${totalLabel.toLowerCase()} goes`}
+              locale={locale}
               report={report}
               nodes={nodes}
               links={links}
-              formatValue={formatValue}
+              valueFormat={valueFormat}
             />
           )}
         </Stack>

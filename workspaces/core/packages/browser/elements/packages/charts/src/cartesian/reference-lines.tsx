@@ -1,10 +1,14 @@
-import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
-import { chartToneColors } from '../../../foundations/src/chart-tones.ts';
 import type { ChartTone } from '../../../foundations/src/chart-tones.ts';
-import { hasUniqueIds } from '../chart-input.tsx';
-import { chartStyles } from '../chart-theme.ts';
+import { hasUniqueIds } from '../chart-input.ts';
 import { spreadPositions } from '../label-spacing.ts';
+import { freeLabelSpot, labelBox } from '../plot/label-place.ts';
+import type { LabelBox, LabelObstacle } from '../plot/label-place.ts';
+import type { PlotBox } from '../plot/plot-layout.ts';
+import { LabelMark, RuleMark } from '../plot/plot-marks.tsx';
+import { outsideDomain } from '../plot/scale.ts';
+import type { NumericDomain } from '../plot/scale.ts';
+import type { PlacedLabel } from './value-labels.ts';
 
 /**
  * A labelled value drawn across the plot, such as a target or a period average. The application supplies the value and
@@ -14,37 +18,24 @@ export type ChartReferenceLine = {
   readonly id: string;
   readonly label: string;
   readonly value: number;
-  /** Colors the line. Absent means the neutral tone; the label always uses text colors. */
+  /** Colors the line. Absent means ink; the label always uses text colors. */
   readonly tone?: ChartTone | undefined;
 };
 
-const styles = stylex.create({
-  line: (color: string) => ({
-    stroke: color,
-    strokeWidth: 1.5,
-    strokeDasharray: '5 4',
-    vectorEffect: 'non-scaling-stroke',
-  }),
-  leader: (color: string) => ({ stroke: color, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' }),
-});
-
-const LABEL_BLOCK_PX = 30;
-const LABEL_LINE_PX = 13;
-const LABEL_INSET_PX = 8;
-const LEADER_PX = 4;
-const CHARACTER_WIDTH_PX = 6.5;
-const GUTTER_MIN_PX = 40;
-const GUTTER_MAX_PX = 112;
-const LABEL_CHARACTERS_MAX = 16;
-
 const REFERENCE_LINES_MAX = 8;
+const LABEL_LIFT = 6;
+const LABEL_INSET = 6;
+const LABEL_LINE = 14;
+/** Where along its line a label may also sit, as shares of the plot width, when neither end is clear. */
+const ALONG_SHARES = [0.75, 0.25, 0.5, 0.875, 0.125, 0.625, 0.375] as const;
 
+/** Why reference lines cannot be drawn on a value axis, or undefined when they can. */
 export function validateReferenceLines({
   lines,
   domain,
 }: {
   readonly lines: ReadonlyArray<ChartReferenceLine>;
-  readonly domain: readonly [number, number];
+  readonly domain: NumericDomain;
 }): string | undefined {
   if (lines.length > REFERENCE_LINES_MAX) {
     return `Supply at most ${REFERENCE_LINES_MAX} reference lines.`;
@@ -55,9 +46,7 @@ export function validateReferenceLines({
   }
 
   for (const line of lines) {
-    const isInside = Number.isFinite(line.value) && line.value >= domain[0] && line.value <= domain[1];
-
-    if (!isInside || line.label.trim() === '') {
+    if (outsideDomain(line.value, domain) || line.label.trim() === '') {
       return 'Each reference line needs a label and a finite value inside the value domain.';
     }
   }
@@ -65,84 +54,76 @@ export function validateReferenceLines({
   return undefined;
 }
 
-function shortLabel(label: string): string {
-  return label.length > LABEL_CHARACTERS_MAX ? `${label.slice(0, LABEL_CHARACTERS_MAX - 1)}…` : label;
-}
-
-/** The right gutter that holds reference labels, or zero when the plot has none. */
-export function referenceGutterWidth({
+/**
+ * Dashed reference lines across a plot, each named with its exact value. A label sits above its line at the plot's
+ * right end, or else at the left end, or else further along the line, then below it. It takes the first place that
+ * clears the chart's own value labels and the marks it is given, and labels that would touch are spread apart
+ * vertically, never dropped.
+ */
+export function ReferenceMarks({
   lines,
-  formatValue,
+  box,
+  position,
+  valueText,
+  avoid = [],
+  marks = [],
+  obstacles = [],
 }: {
   readonly lines: ReadonlyArray<ChartReferenceLine>;
-  readonly formatValue: (value: number) => string;
-}): number {
-  if (lines.length === 0) {
-    return 0;
-  }
-
-  const characters = Math.max(
-    ...lines.map((line) => Math.max(shortLabel(line.label).length, formatValue(line.value).length)),
-  );
-
-  return Math.min(GUTTER_MAX_PX, Math.max(GUTTER_MIN_PX, characters * CHARACTER_WIDTH_PX)) + LABEL_INSET_PX;
-}
-
-type ReferenceLinesProps = {
-  readonly lines: ReadonlyArray<ChartReferenceLine>;
-  readonly y: (value: number) => number;
-  readonly left: number;
-  readonly right: number;
-  readonly top: number;
-  readonly bottom: number;
-  readonly formatValue: (value: number) => string;
-};
-
-type PlacedLabel = { readonly line: ChartReferenceLine; readonly position: number; readonly center: number };
-
-/** Spaces label blocks at least one block apart, nearest their lines, inside the plot's vertical bounds. */
-function placeLabels({
-  lines,
-  y,
-  top,
-  bottom,
-}: Pick<ReferenceLinesProps, 'lines' | 'y' | 'top' | 'bottom'>): ReadonlyArray<PlacedLabel> {
+  readonly box: PlotBox;
+  /** Where a value sits on the plot's value axis. */
+  readonly position: (value: number) => number;
+  readonly valueText: (value: number) => string;
+  /** Labels the chart draws in the plot, such as a column's value, that a reference label must not cover. */
+  readonly avoid?: ReadonlyArray<PlacedLabel> | undefined;
+  /** The boxes of marks a reference label must not sit on, such as the columns of a bridge. */
+  readonly marks?: ReadonlyArray<LabelBox> | undefined;
+  /** The lines a reference label must not sit on, such as a chart's series, as pixel polylines. */
+  readonly obstacles?: ReadonlyArray<ReadonlyArray<LabelObstacle>> | undefined;
+}): ReactNode {
   const ordered = lines
-    .map((line) => ({ line, position: y(line.value) }))
-    .toSorted((first, second) => first.position - second.position);
+    .map((line) => ({ line, y: position(line.value) }))
+    .toSorted((first, second) => first.y - second.y);
 
-  const centers = spreadPositions({
-    positions: ordered.map((item) => item.position),
-    gap: LABEL_BLOCK_PX,
-    start: top + LABEL_BLOCK_PX / 2,
-    end: bottom - LABEL_BLOCK_PX / 2,
+  const baselines = spreadPositions({
+    positions: ordered.map((item) => item.y - LABEL_LIFT),
+    gap: LABEL_LINE,
+    start: box.top,
+    end: box.bottom,
   });
 
-  return ordered.map((item, index) => ({ ...item, center: centers[index] ?? item.position }));
-}
+  const taken = [
+    ...avoid.map((label) => labelBox({ x: label.x, y: label.y, anchor: 'middle', text: label.text })),
+    ...marks,
+  ];
 
-/** Draws dashed reference lines across the plot and names each one in the right gutter beside its line. */
-export function ReferenceLines({ lines, y, left, right, top, bottom, formatValue }: ReferenceLinesProps): ReactNode {
   return (
     <g>
-      {placeLabels({ lines, y, top, bottom }).map(({ line, position, center }) => {
-        const color = chartToneColors[line.tone ?? 'neutral'];
-        const labelX = right + LABEL_INSET_PX;
+      {ordered.map(({ line, y }, index) => {
+        const text = `${line.label} ${valueText(line.value)}`;
+        const baseline = baselines[index] ?? y - LABEL_LIFT;
+        const below = y + LABEL_LINE;
+        const right = box.right - LABEL_INSET;
+        const left = box.left + LABEL_INSET;
+
+        const along = ALONG_SHARES.map((share) => box.left + box.innerWidth * share);
+
+        const spot = freeLabelSpot({
+          spots: [baseline, below].flatMap((level) => [
+            { x: right, y: level, anchor: 'end' as const, text },
+            { x: left, y: level, anchor: 'start' as const, text },
+            ...along.map((x) => ({ x, y: level, anchor: 'middle' as const, text })),
+          ]),
+          lines: obstacles,
+          taken,
+        }) ?? { x: right, y: baseline, anchor: 'end', text };
 
         return (
           <g key={line.id}>
-            <line x1={left} x2={right} y1={position} y2={position} {...stylex.props(styles.line(color))} />
-            <path
-              d={`M${right},${position} L${right + LEADER_PX},${center} H${right + LEADER_PX + 1}`}
-              fill="none"
-              {...stylex.props(styles.leader(color))}
-            />
-            <text x={labelX} y={center - 2} {...stylex.props(chartStyles.label, chartStyles.strongLabel)}>
-              {shortLabel(line.label)}
-            </text>
-            <text x={labelX} y={center + LABEL_LINE_PX - 2} {...stylex.props(chartStyles.label)}>
-              {formatValue(line.value)}
-            </text>
+            <RuleMark x1={box.left} x2={box.right} y1={y} y2={y} stroke="dashed" tone={line.tone} />
+            <LabelMark x={spot.x} y={spot.y} anchor={spot.anchor}>
+              {text}
+            </LabelMark>
           </g>
         );
       })}

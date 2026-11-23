@@ -94,11 +94,12 @@ const groups: ReadonlyArray<RelationGroup> = [
 ];
 
 function Lineage(): ReactNode {
-  const [selectedId, setSelectedId] = useState<string>();
+  const [selected, setSelected] = useState<string | null>(null);
 
   return (
     <Panel>
       <RelationGraph
+        locale="en-US"
         title="Checkpoint lineage"
         description="Five synthetic artifacts with recorded initialization and evaluation relationships. Positions are supplied by the application."
         nodes={nodes}
@@ -106,7 +107,8 @@ function Lineage(): ReactNode {
         groups={groups}
         width={784}
         height={356}
-        selection={{ selectedId, onSelect: setSelectedId }}
+        selected={selected}
+        onSelectedChange={setSelected}
         emptyLabel="No related artifacts were supplied."
       />
     </Panel>
@@ -118,6 +120,7 @@ export const CheckpointLineage: Story = { render: () => <Lineage /> };
 export const IsolatedNode: Story = {
   render: () => (
     <RelationGraph
+      locale="en-US"
       title="Observed feature"
       description="An isolated record has no inferred relationships."
       nodes={[
@@ -143,6 +146,7 @@ export const IsolatedNode: Story = {
 export const Empty: Story = {
   render: () => (
     <RelationGraph
+      locale="en-US"
       title="Checkpoint lineage"
       description="No records have been supplied."
       nodes={[]}
@@ -157,6 +161,7 @@ export const Empty: Story = {
 export const InvalidRelationship: Story = {
   render: () => (
     <RelationGraph
+      locale="en-US"
       title="Invalid lineage input"
       description="Missing nodes produce an error rather than a partial graph."
       nodes={nodes}
@@ -177,10 +182,11 @@ export const Narrow: Story = {
 };
 
 function LongNodeLabel(): ReactNode {
-  const [selectedId, onSelect] = useState<string>();
+  const [selected, setSelected] = useState<string | null>(null);
 
   return (
     <RelationGraph
+      locale="en-US"
       title="Full records in compact node boxes"
       description="Synthetic isolated nodes keep the supplied size. Graph data retains each full label and description."
       nodes={[
@@ -209,7 +215,8 @@ function LongNodeLabel(): ReactNode {
       edges={[]}
       width={288}
       height={192}
-      selection={{ selectedId, onSelect }}
+      selected={selected}
+      onSelectedChange={setSelected}
       emptyLabel="No records were supplied."
     />
   );

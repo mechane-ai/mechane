@@ -1,206 +1,204 @@
 import * as stylex from '@stylexjs/stylex';
-import { scaleBand, scaleLinear } from '@visx/scale';
-import { Bar } from '@visx/shape';
 import { useId } from 'react';
-import type { ComponentProps, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Skeleton } from '../../../feedback/src/index.ts';
-import { chartToneColors, chartToneOutlines } from '../../../foundations/src/chart-tones.ts';
-import { colors, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
-import { categoricalLimits, colorTone } from '../categorical-values.tsx';
+import type { ChartTone } from '../../../foundations/src/chart-tones.ts';
+import { spacing } from '../../../foundations/src/tokens.stylex.ts';
+import { categoricalLimits } from '../categorical-values.tsx';
 import { ChartCursor } from '../chart-cursor.tsx';
 import { ChartData } from '../chart-data.tsx';
 import type { ChartDataProps } from '../chart-data.tsx';
-import { ChartFrame } from '../chart-frame.tsx';
-import type { ChartSelection, ChartSeriesReport } from '../chart-frame.tsx';
-import { ChartInputError, hasUniqueIds, isFiniteDomain } from '../chart-input.tsx';
-import { ChartInspection, ChartInspectionTitle, ChartLegendLoading, inspectionReadout } from '../chart-inspection.tsx';
+import { hasUniqueIds } from '../chart-input.ts';
+import { ChartInspection, ChartLegendLoading, inspectionReadout } from '../chart-inspection.tsx';
 import type { ChartInspectionRow } from '../chart-inspection.tsx';
 import { chartStyles } from '../chart-theme.ts';
 import type { ChartLegendItem } from '../chart-theme.ts';
-import { Chart, ChartSvgPlot, locateBand, plotLabel } from '../chart.tsx';
-import { usePlotWidth } from '../plot-width.ts';
+import { Chart, plotLabel } from '../chart.tsx';
+import { formatValue } from '../figure/figure-format.ts';
+import type { ValueFormat } from '../figure/figure-format.ts';
+import { FigureEmpty, FigureFrame, FigureInvalid } from '../figure/figure-frame.tsx';
+import type { FigureFrameProps } from '../figure/figure-frame.tsx';
+import type { FigureFrameInput, FigureSelectionProps, SeriesFigureProps } from '../figure/figure-props.ts';
+import { useTones } from '../figure/tone-scope.tsx';
+import { PlotAxes } from '../plot/plot-axes.tsx';
+import { categoryPlot, fitDomain, plotHeights } from '../plot/plot-layout.ts';
+import type { PlotHeight } from '../plot/plot-layout.ts';
+import { BarMark, RuleMark } from '../plot/plot-marks.tsx';
+import { PlotClip, PlotSurface, usePlotSize } from '../plot/plot-surface.tsx';
+import { bandScale, outsideDomain, scaleDomainError } from '../plot/scale.ts';
+import type { NumericDomain } from '../plot/scale.ts';
 import { markerPeak, markerValueLabel, validateBarOverlays, validateComposition } from './bar-data.ts';
 import type { BarAnnotation, BarComposition, BarMarker, BarSeries } from './bar-data.ts';
 import { BarAnnotations, BarMarkers } from './bar-overlays.tsx';
-import type { BarSpan } from './bar-overlays.tsx';
+import type { BarSpan, PlacedAnnotation } from './bar-overlays.tsx';
 import { CompositionBars } from './composition-bars.tsx';
-import { referenceGutterWidth, ReferenceLines, validateReferenceLines } from './reference-lines.tsx';
+import { ReferenceMarks, validateReferenceLines } from './reference-lines.tsx';
 import type { ChartReferenceLine } from './reference-lines.tsx';
+import { clearLabels } from './value-labels.ts';
 
 export type { BarSeries, BarBucket, BarComposition, BarMarker, BarAnnotation } from './bar-data.ts';
 
-const styles = stylex.create({
-  empty: { color: colors.muted, margin: 0, fontSize: typography.captionSize },
-  plot: { marginBlock: spacing.md },
-  guide: { fill: colors.canvas },
-  mutedMark: { opacity: 0.3 },
-});
+const styles = stylex.create({ placeholder: { marginBlock: spacing.md } });
 
-const DEFAULT_HEIGHT = 200;
-const PLOT_TOP_PX = 12;
-const ANNOTATED_PLOT_TOP_PX = 30;
-const ANNOTATION_GAP_PX = 8;
-const ANNOTATION_BASELINE_PX = 14;
+/** Room above the tallest bar for its note, in pixels. */
+const ANNOTATION_INSET = 18;
+const ANNOTATION_GAP = 8;
+const ANNOTATION_BASELINE = 14;
+const GROUP_PADDING = 0.08;
+const CURSOR_MIN = 8;
+const INSPECTOR_OFFSET = 8;
+const HALF = 0.5;
 
-export type BarChartProps = {
-  readonly title: string;
-  readonly description?: ReactNode;
-  readonly report?: ChartSeriesReport | undefined;
-  readonly categories: ReadonlyArray<{
-    readonly id: string;
-    readonly label: string;
-    readonly axisLabel?: string | undefined;
-  }>;
-  readonly series: ReadonlyArray<BarSeries>;
-  readonly domain: readonly [number, number];
-  readonly mode?: 'grouped' | 'stacked' | undefined;
-  readonly composition?: BarComposition | undefined;
-  readonly formatValue: (value: number) => string;
-  readonly formatTick?: ((value: number) => string) | undefined;
-  readonly highlightedSeriesId?: string | undefined;
-  readonly selection?: ChartSelection | undefined;
-  readonly height?: number | undefined;
-  /** Labelled values drawn across the plot, such as a target or an average. They join every category's readout. */
-  readonly referenceLines?: ReadonlyArray<ChartReferenceLine> | undefined;
-  /** Ticks or whiskers drawn on each bar of a series, listed in the legend and the readout. */
-  readonly markers?: ReadonlyArray<BarMarker> | undefined;
-  /** Short notes above chosen bars. Notes for a category also join its readout and exact values. */
-  readonly annotations?: ReadonlyArray<BarAnnotation> | undefined;
-  /**
-   * Recedes every other category so these stand out, without changing selection or inspection. Emphasis is visual only;
-   * explain it with an annotation or the description.
-   */
-  readonly emphasizedCategoryIds?: ReadonlyArray<string> | undefined;
+export type BarCategory = {
+  readonly id: string;
+  readonly label: string;
+  /** A short name for the axis, such as "Jan". The readout uses the full label. */
+  readonly axisLabel?: string | undefined;
 };
 
-export type BarChartPlaceholderProps = Pick<BarChartProps, 'description' | 'height' | 'report'> & {
+export type BarChartProps = SeriesFigureProps &
+  FigureSelectionProps & {
+    readonly categories: ReadonlyArray<BarCategory>;
+    readonly series: ReadonlyArray<BarSeries>;
+    /** The value axis. Leave it out to fit zero and every drawn value on round bounds. */
+    readonly domain?: NumericDomain | undefined;
+    readonly mode?: 'grouped' | 'stacked' | undefined;
+    readonly composition?: BarComposition | undefined;
+    /** How the readout and the table write a value. */
+    readonly valueFormat: ValueFormat;
+    /** How the value axis writes its ticks. Absent uses the compact form of `valueFormat`. */
+    readonly tickFormat?: ValueFormat | undefined;
+    /**
+     * The value axis title, with its unit: "Cost (USD)". With a title the ticks leave a `unit` style out, so the unit
+     * is written once. Absent draws no title.
+     */
+    readonly valueLabel?: string | undefined;
+    /** The series drawn at full strength while the others fade. Emphasis only; selection is unchanged. */
+    readonly highlighted?: string | null | undefined;
+    readonly height?: PlotHeight | undefined;
+    /** Labelled values drawn across the plot, such as a target or an average. They join every category's readout. */
+    readonly referenceLines?: ReadonlyArray<ChartReferenceLine> | undefined;
+    /** Ticks or whiskers drawn on each bar of a series, listed in the legend and the readout. */
+    readonly markers?: ReadonlyArray<BarMarker> | undefined;
+    /** Short notes above chosen bars. Notes for a category also join its readout and exact values. */
+    readonly annotations?: ReadonlyArray<BarAnnotation> | undefined;
+    /**
+     * Recedes every other category so these stand out, without changing selection or inspection. Emphasis is visual
+     * only; explain it with an annotation or the description.
+     */
+    readonly emphasizedCategoryIds?: ReadonlyArray<string> | undefined;
+  };
+
+export type BarChartPlaceholderProps = Omit<FigureFrameInput, 'title' | 'status'> & {
   readonly title?: string | undefined;
   readonly series?: ReadonlyArray<Pick<BarSeries, 'id' | 'label' | 'tone'>> | undefined;
+  readonly height?: PlotHeight | undefined;
 };
 
-type BarChartFrameProps = Pick<BarChartProps, 'title' | 'description' | 'report'> & {
-  readonly series: ReadonlyArray<Pick<BarSeries, 'id' | 'label' | 'tone'>>;
-  readonly layoutSeries?: ReadonlyArray<Pick<BarSeries, 'id' | 'label' | 'tone'>> | undefined;
-  readonly markerLegend?: ReadonlyArray<ChartLegendItem> | undefined;
+type LegendSeries = Pick<BarSeries, 'id' | 'label' | 'tone'>;
+
+type BarChartFrameProps = Omit<FigureFrameProps, 'series'> & {
+  readonly legend: ReadonlyArray<ChartLegendItem>;
+  readonly layoutLegend?: ReadonlyArray<ChartLegendItem> | undefined;
   readonly notes?: ReadonlyArray<string> | undefined;
   readonly inspectionId: string;
   readonly label?: string | undefined;
-  readonly detail?: string | undefined;
   readonly summary?: string | undefined;
   readonly rows?: ReadonlyArray<ChartInspectionRow> | undefined;
   readonly x?: number | undefined;
   readonly width?: number | undefined;
   readonly offset?: number | undefined;
-  readonly figure?: ComponentProps<'figure'> | undefined;
   readonly data?: ChartDataProps;
   readonly isLoading?: boolean | undefined;
-  readonly children: ReactNode;
 };
 
 function BarChartFrame({
-  title,
-  description,
-  report,
-  series,
-  layoutSeries,
-  markerLegend = [],
+  legend,
+  layoutLegend,
   notes,
   children,
   inspectionId,
   label,
-  detail,
   summary,
   rows = [],
   x = 0,
   width = 0,
   offset,
-  figure,
   data,
   isLoading = false,
+  ...frame
 }: BarChartFrameProps): ReactNode {
-  const legend = series.map((item, seriesIndex) => ({
-    id: item.id,
-    label: item.label,
-    tone: colorTone(item.tone, seriesIndex),
-  }));
-
-  const layoutLegend = layoutSeries?.map((item, seriesIndex) => ({
-    id: item.id,
-    label: item.label,
-    tone: colorTone(item.tone, seriesIndex),
-  }));
-
-  const hasUnknownLegend = isLoading && series.length === 0 && report?.seriesValues === undefined;
+  const hasUnknownLegend = isLoading && legend.length === 0 && frame.report?.seriesValues === undefined;
 
   return (
-    <ChartFrame
-      figure={figure}
-      title={<ChartInspectionTitle title={title} detail={detail} />}
-      description={description}
-      report={report}
+    <FigureFrame
+      {...frame}
       series={legend}
+      seriesLegend={
+        hasUnknownLegend ? (
+          <ChartLegendLoading />
+        ) : (
+          <ChartInspection
+            id={inspectionId}
+            label={label}
+            summary={summary}
+            legend={legend}
+            hasSeriesSummary={frame.report?.seriesValues !== undefined}
+            layoutLegend={layoutLegend}
+            rows={rows}
+            notes={notes}
+            x={x}
+            width={width}
+            offset={offset}
+          />
+        )
+      }
     >
       {data !== undefined && <ChartData {...data} />}
-      {hasUnknownLegend ? (
-        <ChartLegendLoading />
-      ) : (
-        <ChartInspection
-          id={inspectionId}
-          label={label}
-          summary={summary}
-          legend={[...legend, ...markerLegend]}
-          hasSeriesSummary={report?.seriesValues !== undefined}
-          layoutLegend={layoutLegend === undefined ? undefined : [...layoutLegend, ...markerLegend]}
-          rows={rows}
-          notes={notes}
-          x={x}
-          width={width}
-          offset={offset}
-        />
-      )}
       {children}
-    </ChartFrame>
+    </FigureFrame>
   );
 }
 
+function useSeriesLegend(): (series: ReadonlyArray<LegendSeries>) => ReadonlyArray<ChartLegendItem> {
+  const tones = useTones();
+
+  return (series) =>
+    series.map((item, index) => ({
+      id: item.id,
+      label: item.label,
+      tone: tones({ id: item.id, tone: item.tone, index }),
+    }));
+}
+
+/**
+ * The loading state of a bar chart: its heading, its legend for known series and the plot footprint, with no invented
+ * bars. The enclosing async region owns the announcement.
+ */
 export function BarChartPlaceholder({
   title = 'Loading chart',
-  description,
-  report,
   series = [],
-  height = DEFAULT_HEIGHT,
+  height = 'compact',
+  ...frame
 }: BarChartPlaceholderProps): ReactNode {
-  const issue = barHeightError(height);
   const inspectionId = useId();
-
-  if (issue !== undefined) {
-    return <ChartInputError title={title} description={description} report={report} message={issue} />;
-  }
+  const legend = useSeriesLegend()(series);
 
   return (
     <div aria-hidden inert>
-      <BarChartFrame
-        title={title}
-        description={description}
-        report={report}
-        series={series}
-        inspectionId={inspectionId}
-        isLoading
-      >
-        <div {...stylex.props(chartStyles.plot, styles.plot)}>
-          <Skeleton height={height} />
+      <BarChartFrame {...frame} title={title} status="loading" legend={legend} inspectionId={inspectionId} isLoading>
+        <div {...stylex.props(chartStyles.plot, styles.placeholder)}>
+          <Skeleton height={plotHeights[height]} />
         </div>
       </BarChartFrame>
     </div>
   );
 }
 
-function barHeightError(height: number): string | undefined {
-  if (!Number.isFinite(height) || height < 48) {
-    return 'Chart height must be at least 48 pixels.';
-  }
-
-  return undefined;
+function stackTotals(series: ReadonlyArray<BarSeries>, count: number): ReadonlyArray<number> {
+  return Array.from({ length: count }, (_, index) =>
+    series.reduce((sum, item) => sum + Math.max(0, item.values[index] ?? 0), 0),
+  );
 }
 
 function validateBars({
@@ -208,12 +206,12 @@ function validateBars({
   series,
   domain,
   mode,
-}: Pick<BarChartProps, 'categories' | 'series' | 'domain' | 'mode'>): string | undefined {
+}: Pick<BarChartProps, 'categories' | 'series' | 'mode'> & { readonly domain: NumericDomain }): string | undefined {
   if (categories.length > categoricalLimits.items || series.length > categoricalLimits.series) {
     return `Choose a window with at most ${categoricalLimits.items} categories and ${categoricalLimits.series} series.`;
   }
 
-  if (!isFiniteDomain(domain) || domain[0] > 0 || domain[1] < 0) {
+  if (scaleDomainError(domain) !== undefined || domain[0] > 0 || domain[1] < 0) {
     return 'The bar domain must be finite, increasing, and include zero.';
   }
 
@@ -226,58 +224,104 @@ function validateBars({
       return 'Every series requires one explicit value per category.';
     }
 
-    for (const value of item.values) {
-      if (value !== null) {
-        if (!Number.isFinite(value) || value < domain[0] || value > domain[1]) {
-          return 'Bar values must be finite and within the supplied domain.';
-        }
-      }
+    if (item.values.some((value) => value !== null && outsideDomain(value, domain))) {
+      return 'Bar values must be finite and within the supplied domain.';
+    }
 
-      if (mode === 'stacked' && (value === null || value < 0)) {
-        return 'Stacked bars require present nonnegative values.';
-      }
+    if (mode === 'stacked' && item.values.some((value) => value === null || value < 0)) {
+      return 'Stacked bars require present nonnegative values.';
     }
   }
 
-  if (
-    mode === 'stacked' &&
-    categories.some((_, index) => series.reduce((sum, item) => sum + (item.values[index] ?? 0), 0) > domain[1])
-  ) {
+  if (mode === 'stacked' && stackTotals(series, categories.length).some((total) => total > domain[1])) {
     return 'Stacked bar totals must fit the supplied domain.';
   }
 
   return undefined;
 }
 
+/** Every value the plot draws, so a fitted domain holds each bar, marker, line and note. */
+function drawnValues({
+  categories,
+  series,
+  mode,
+  composition,
+  referenceLines,
+  markers,
+}: Pick<BarChartProps, 'categories' | 'series' | 'mode' | 'composition'> & {
+  readonly referenceLines: ReadonlyArray<ChartReferenceLine>;
+  readonly markers: ReadonlyArray<BarMarker>;
+}): ReadonlyArray<number | null> {
+  const isStacked = mode === 'stacked' || composition !== undefined;
+  const bars = series.flatMap((item) => item.values);
+  const stacks = isStacked ? stackTotals(series, categories.length) : [];
+  const focused = composition?.focusedSeries?.values ?? [];
+  const buckets = composition?.buckets.map((bucket) => (bucket.kind === 'gap' ? null : bucket.total)) ?? [];
+
+  const marked = markers.flatMap((marker) =>
+    marker.kind === 'tick' ? marker.values : [...marker.lower, ...marker.upper],
+  );
+
+  return [
+    ...bars,
+    ...stacks,
+    ...focused,
+    ...buckets,
+    ...marked,
+    ...referenceLines.map((line) => line.value),
+    ...(composition?.annotation === undefined ? [] : [composition.annotation.value]),
+  ];
+}
+
+/**
+ * Bars that compare an amount across named categories, grouped or stacked by series from a zero baseline. It also draws
+ * prepared composition buckets, reference lines, markers and short notes the application supplies.
+ */
 export function BarChart({
-  title,
-  description,
-  report,
   categories,
   series,
   domain,
   mode = 'grouped',
-  formatValue,
-  formatTick = formatValue,
-  highlightedSeriesId,
-  selection,
-  height = DEFAULT_HEIGHT,
+  valueFormat,
+  tickFormat,
+  valueLabel,
+  highlighted,
+  selected,
+  onSelectedChange,
+  height: plotHeight = 'compact',
   composition,
   referenceLines = [],
   markers = [],
   annotations = [],
   emphasizedCategoryIds = [],
+  ...figure
 }: BarChartProps): ReactNode {
+  const { emptyLabel = 'No categories', ...frame } = figure;
+  const { locale, title } = frame;
   const focusSeries = composition?.focusedSeries;
   const contextId = useId();
+  const inspectionId = useId();
+  const { ref, width, height } = usePlotSize(plotHeight);
+  const tones = useTones();
+  const legendOf = useSeriesLegend();
+
+  if (frame.status === 'loading') {
+    return <BarChartPlaceholder {...frame} series={series} height={plotHeight} />;
+  }
+
+  const valueDomain =
+    domain ??
+    fitDomain({
+      values: drawnValues({ categories, series, mode, composition, referenceLines, markers }),
+      isZeroBased: true,
+    });
 
   const focusIssue =
     focusSeries === undefined
       ? undefined
-      : validateBars({ categories, series: [focusSeries], domain, mode: 'grouped' });
+      : validateBars({ categories, series: [focusSeries], domain: valueDomain, mode: 'grouped' });
 
-  const inputIssue = validateBars({ categories, series, domain, mode }) ?? focusIssue;
-
+  const inputIssue = validateBars({ categories, series, domain: valueDomain, mode }) ?? focusIssue;
   const categoryIds = categories.map((category) => category.id);
   const markedSeriesIds = [...series, ...(focusSeries === undefined ? [] : [focusSeries])].map((item) => item.id);
 
@@ -288,13 +332,30 @@ export function BarChart({
       emphasizedCategoryIds,
       seriesIds: markedSeriesIds,
       categoryIds,
-      domain,
-    }) ?? validateReferenceLines({ lines: referenceLines, domain });
+      domain: valueDomain,
+    }) ?? validateReferenceLines({ lines: referenceLines, domain: valueDomain });
 
-  const frameIssue =
-    validateComposition({ composition, series, categoryIds, domain }) ?? overlayIssue ?? barHeightError(height);
+  const issue =
+    inputIssue ?? validateComposition({ composition, series, categoryIds, domain: valueDomain }) ?? overlayIssue;
 
-  const issue = inputIssue ?? frameIssue;
+  if (issue !== undefined) {
+    return <FigureInvalid {...frame} message={issue} />;
+  }
+
+  function text(value: number | null): string {
+    return formatValue({ value, locale, format: valueFormat });
+  }
+
+  const extraFocus = focusSeries !== undefined && !series.some((item) => item.id === focusSeries.id);
+  const toned = [...series, ...(extraFocus ? [focusSeries] : [])];
+
+  const seriesTones: ReadonlyMap<string, ChartTone> = new Map(
+    toned.map((item, index) => [item.id, tones({ id: item.id, tone: item.tone, index })]),
+  );
+
+  function toneOf(id: string): ChartTone {
+    return seriesTones.get(id) ?? 'neutral';
+  }
 
   const context: BarSeries | undefined =
     composition === undefined
@@ -306,22 +367,22 @@ export function BarChart({
           values: composition.buckets.map((bucket) => (bucket.kind === 'gap' ? null : bucket.total)),
         };
 
-  const disclosedSeries =
-    context === undefined
-      ? series
-      : [
-          context,
-          ...series,
-          ...(focusSeries === undefined || series.some((item) => item.id === focusSeries.id) ? [] : [focusSeries]),
-        ];
+  const disclosedSeries = context === undefined ? series : [context, ...toned];
 
-  const legend = focusSeries !== undefined && context !== undefined ? [focusSeries, context] : series;
-  const { ref, width } = usePlotWidth();
-  const inspectionId = useId();
+  const legendSeries = focusSeries !== undefined && context !== undefined ? [focusSeries, context] : series;
 
-  if (issue !== undefined) {
-    return <ChartInputError title={title} description={description} report={report} message={issue} />;
-  }
+  const legend = legendSeries.map((item) => ({
+    id: item.id,
+    label: item.label,
+    tone: item.id === contextId ? ('neutral' as const) : toneOf(item.id),
+  }));
+
+  const markerLegend: ReadonlyArray<ChartLegendItem> = markers.map((marker) => ({
+    id: marker.id,
+    label: marker.label,
+    tone: marker.tone ?? 'neutral',
+    shape: marker.kind,
+  }));
 
   function reading(index: number) {
     const category = categories[index];
@@ -334,26 +395,21 @@ export function BarChart({
           ? series
           : [];
 
-    const summary =
-      bucket === undefined ? undefined : bucket.kind === 'gap' ? 'No reported value' : formatValue(bucket.total);
+    const summary = bucket === undefined ? undefined : bucket.kind === 'gap' ? 'No reported value' : text(bucket.total);
 
-    const seriesRows = inspectedSeries.map((item, seriesIndex) => {
-      const value = item.values[index];
-
-      return {
-        id: item.id,
-        label: item.label,
-        tone: colorTone(item.tone, seriesIndex),
-        value: value === null || value === undefined ? 'Unavailable' : formatValue(value),
-      };
-    });
+    const seriesRows = inspectedSeries.map((item) => ({
+      id: item.id,
+      label: item.label,
+      tone: item.id === contextId ? ('neutral' as const) : toneOf(item.id),
+      value: text(item.values[index] ?? null),
+    }));
 
     const markerRows: ReadonlyArray<ChartInspectionRow> = markers.map((marker) => ({
       id: marker.id,
       label: marker.label,
       tone: marker.tone ?? 'neutral',
       shape: marker.kind,
-      value: markerValueLabel({ marker, index, formatValue }),
+      value: markerValueLabel({ marker, index, valueText: text }),
     }));
 
     const referenceRows: ReadonlyArray<ChartInspectionRow> = referenceLines.map((line) => ({
@@ -361,7 +417,7 @@ export function BarChart({
       label: line.label,
       tone: line.tone ?? 'neutral',
       shape: 'dashed',
-      value: formatValue(line.value),
+      value: text(line.value),
     }));
 
     return {
@@ -375,38 +431,42 @@ export function BarChart({
     };
   }
 
-  const markerLegend: ReadonlyArray<ChartLegendItem> = markers.map((marker) => ({
-    id: marker.id,
-    label: marker.label,
-    tone: marker.tone ?? 'neutral',
-    shape: marker.kind,
-  }));
+  const compositionNote = composition?.annotation;
+  const hasNotes = annotations.length > 0 || compositionNote !== undefined;
 
-  const top = annotations.length > 0 ? ANNOTATED_PLOT_TOP_PX : PLOT_TOP_PX;
-  const bottom = height - 28;
-  const y = scaleLinear({ domain: [...domain], range: [bottom, top] });
-  const left = Math.max(44, ...y.ticks(3).map((tick) => formatTick(tick).length * 7 + 12));
-  const gutter = referenceGutterWidth({ lines: referenceLines, formatValue: formatTick });
-  const right = Math.max(left + 1, width - 16 - gutter);
-  const x = scaleBand({ domain: categories.map((category) => category.id), range: [left, right], padding: 0.3 });
-  const grouped = scaleBand({ domain: series.map((item) => item.id), range: [0, x.bandwidth()], padding: 0.08 });
+  const plot = categoryPlot({
+    width,
+    height,
+    direction: 'columns',
+    categories: categories.map((category) => ({ id: category.id, label: category.axisLabel ?? category.label })),
+    value: { label: valueLabel ?? '', format: valueFormat, tickFormat },
+    valueDomain,
+    locale,
+    topInset: hasNotes ? ANNOTATION_INSET : 0,
+    hasValueTitle: valueLabel !== undefined,
+  });
 
-  const labelWidth = Math.min(
-    120,
-    Math.max(40, ...categories.map((category) => (category.axisLabel ?? category.label).length * 7)),
-  );
-
-  const labelEvery = Math.max(1, Math.ceil((labelWidth + 16) / x.step()));
+  const { box, band } = plot;
+  const y = plot.value.position;
+  const grouped = bandScale({ ids: series.map((item) => item.id), range: [0, band.bandwidth], padding: GROUP_PADDING });
   const isStackedGeometry = mode === 'stacked' || composition !== undefined;
 
+  function categoryStart(id: string): number {
+    return band.start(id) ?? box.left;
+  }
+
+  function categoryCenter(id: string): number {
+    return categoryStart(id) + band.bandwidth * HALF;
+  }
+
   function span(categoryId: string, seriesId: string): BarSpan {
-    const start = x(categoryId) ?? left;
+    const start = categoryStart(categoryId);
 
     if (isStackedGeometry) {
-      return { x: start, width: x.bandwidth() };
+      return { x: start, width: band.bandwidth };
     }
 
-    return { x: start + (grouped(seriesId) ?? 0), width: grouped.bandwidth() };
+    return { x: start + (grouped.start(seriesId) ?? 0), width: grouped.bandwidth };
   }
 
   function barTop(categoryIndex: number, seriesId: string): number | null {
@@ -437,16 +497,42 @@ export function BarChart({
     return Math.max(0, stackTop, bucketTop, ...markerTops);
   }
 
-  const labelCharacters = Math.max(1, Math.floor((x.step() * labelEvery - 16) / 7));
+  function noteBaseline(value: number): number {
+    return Math.max(ANNOTATION_BASELINE, y(value) - ANNOTATION_GAP);
+  }
+
+  const data: ChartDataProps = {
+    label: `${title} observations`,
+    columns: [
+      { id: 'category', label: 'Category' },
+      { id: 'value', label: 'Value' },
+    ],
+    rows: [
+      ...categories.map((category, index) => ({
+        id: category.id,
+        values: [
+          category.label,
+          [
+            ...disclosedSeries.map((item) => `${item.label}: ${text(item.values[index] ?? null)}`),
+            ...markers.map((marker) => `${marker.label}: ${markerValueLabel({ marker, index, valueText: text })}`),
+            ...annotations
+              .filter((annotation) => annotation.categoryId === category.id)
+              .map((annotation) => annotation.label),
+          ].join(' · '),
+        ],
+      })),
+      ...referenceLines.map((line) => ({ id: `reference:${line.id}`, values: [line.label, text(line.value)] })),
+    ],
+  };
 
   return (
     <Chart
       items={categories}
       readout={(id) => inspectionReadout(reading(categoryIds.indexOf(id)))}
-      locate={locateBand({ ids: categoryIds, start: left, step: x.step(), width })}
-      selected={selection?.selectedId ?? null}
-      onSelect={selection?.onSelect}
-      render={(figure, { inspected, cursor }) => {
+      locate={(point) => band.idAt((point.x / point.width) * box.width)}
+      selected={selected ?? null}
+      onSelect={onSelectedChange}
+      render={(figureProps, { inspected, cursor }) => {
         const active = reading(categoryIds.indexOf(inspected ?? ''));
 
         function isReceded(categoryId: string): boolean {
@@ -455,209 +541,128 @@ export function BarChart({
           return emphasizedCategoryIds.length > 0 && !isEmphasized && inspected !== categoryId;
         }
 
-        const placedAnnotations = annotations.map((annotation) => {
-          const index = categoryIds.indexOf(annotation.categoryId);
-          const peak = annotationPeak(index, annotation.seriesId);
+        const compositionNotes: ReadonlyArray<PlacedAnnotation> =
+          compositionNote === undefined || !categoryIds.includes(compositionNote.categoryId)
+            ? []
+            : [
+                {
+                  id: `composition:${compositionNote.categoryId}`,
+                  text: compositionNote.label,
+                  x: categoryCenter(compositionNote.categoryId),
+                  y: noteBaseline(compositionNote.value),
+                  isReceded: isReceded(compositionNote.categoryId),
+                },
+              ];
 
+        const placedAnnotations = annotations.map((annotation) => {
           const anchor =
             annotation.seriesId === undefined
-              ? { x: x(annotation.categoryId) ?? left, width: x.bandwidth() }
+              ? { x: categoryStart(annotation.categoryId), width: band.bandwidth }
               : span(annotation.categoryId, annotation.seriesId);
 
           return {
             id: annotation.id,
-            label: annotation.label,
-            x: anchor.x + anchor.width / 2,
-            y: Math.max(ANNOTATION_BASELINE_PX, y(peak) - ANNOTATION_GAP_PX),
+            text: annotation.label,
+            x: anchor.x + anchor.width * HALF,
+            y: noteBaseline(annotationPeak(categoryIds.indexOf(annotation.categoryId), annotation.seriesId)),
             isReceded: isReceded(annotation.categoryId),
           };
         });
 
+        const notes = [...compositionNotes, ...placedAnnotations];
+
         return (
           <BarChartFrame
-            figure={figure}
-            title={title}
-            description={description}
-            report={report}
-            series={legend}
-            layoutSeries={series}
-            markerLegend={markerLegend}
+            {...frame}
+            figure={figureProps}
+            legend={[...legend, ...markerLegend]}
+            layoutLegend={[...legendOf(series), ...markerLegend]}
             notes={active.notes}
             inspectionId={inspectionId}
             label={active.label}
-            detail={
+            titleDetail={
               active.category === undefined
                 ? undefined
                 : [active.category.axisLabel ?? active.category.label, active.summary].filter(Boolean).join(' · ')
             }
             summary={active.summary}
             rows={active.rows}
-            x={(x(inspected ?? '') ?? left) + x.bandwidth() / 2}
+            x={categoryCenter(inspected ?? '')}
             width={width}
-            offset={x.bandwidth() / 2 + 8}
-            data={{
-              label: `${title} observations`,
-              columns: [
-                { id: 'category', label: 'Category' },
-                { id: 'value', label: 'Value' },
-              ],
-              rows: [
-                ...categories.map((category, index) => ({
-                  id: category.id,
-                  values: [
-                    category.label,
-                    [
-                      barValueLabel(disclosedSeries, index, formatValue),
-                      ...markers.map(
-                        (marker) => `${marker.label}: ${markerValueLabel({ marker, index, formatValue })}`,
-                      ),
-                      ...annotations
-                        .filter((annotation) => annotation.categoryId === category.id)
-                        .map((annotation) => annotation.label),
-                    ].join(' · '),
-                  ],
-                })),
-                ...referenceLines.map((line) => ({
-                  id: `reference:${line.id}`,
-                  values: [line.label, formatValue(line.value)],
-                })),
-              ],
-            }}
+            offset={band.bandwidth * HALF + INSPECTOR_OFFSET}
+            data={data}
           >
-            <div ref={ref} {...stylex.props(chartStyles.plot, styles.plot)}>
-              {categories.length === 0 || (series.length === 0 && composition === undefined) ? (
-                <p {...stylex.props(styles.empty)}>No categories</p>
-              ) : (
-                <ChartSvgPlot
-                  role="img"
-                  aria-label={plotLabel({ title, marks: 'categories', isSelectable: selection !== undefined })}
-                  aria-describedby={inspectionId}
-                  viewBox={`0 0 ${width} ${height}`}
-                  height={height}
-                  {...stylex.props(chartStyles.svg, chartStyles.inspectable, stylex.defaultMarker())}
-                >
-                  {inspected !== null && (
-                    <rect
-                      x={(x(inspected) ?? left) - (x.step() - x.bandwidth()) / 2}
-                      y={top}
-                      width={x.step()}
-                      height={bottom - top}
-                      {...stylex.props(styles.guide)}
-                    />
-                  )}
-                  {y.ticks(3).map((tick) => (
-                    <g key={tick}>
-                      <line
-                        x1={left}
-                        x2={right}
-                        y1={y(tick)}
-                        y2={y(tick)}
-                        {...stylex.props(tick === 0 ? chartStyles.baseline : chartStyles.grid)}
-                      />
-                      <text
-                        x={left - 8}
-                        y={y(tick)}
-                        textAnchor="end"
-                        dominantBaseline="middle"
-                        {...stylex.props(chartStyles.label, chartStyles.tick)}
-                      >
-                        {formatTick(tick)}
-                      </text>
-                    </g>
-                  ))}
-                  {composition?.annotation !== undefined &&
-                    categories.some((category) => category.id === composition.annotation?.categoryId) && (
-                      <text
-                        x={x(composition.annotation.categoryId)}
-                        y={Math.max(top, y(composition.annotation.value) - 8)}
-                        {...stylex.props(chartStyles.label)}
-                      >
-                        {composition.annotation.label}
-                      </text>
-                    )}
+            {categories.length === 0 || (series.length === 0 && composition === undefined) ? (
+              <FigureEmpty>{emptyLabel}</FigureEmpty>
+            ) : (
+              <PlotSurface
+                plotRef={ref}
+                box={box}
+                label={plotLabel({ title, marks: 'categories', isSelectable: onSelectedChange !== undefined })}
+                readoutId={inspectionId}
+              >
+                <PlotAxes box={box} xTicks={plot.bandTicks} yTicks={plot.valueTicks} yTitle={valueLabel} />
+                <PlotClip box={box}>
                   {categories.map((category, categoryIndex) => {
-                    const axisLabel = category.axisLabel ?? category.label;
                     const composedBucket = composition?.buckets[categoryIndex];
-                    const isSelected = selection?.selectedId === category.id;
+                    const state = { isSelected: selected === category.id, isInspected: inspected === category.id };
 
-                    return (
-                      <g key={category.id}>
-                        <g {...stylex.props(chartStyles.emphasis, isReceded(category.id) && chartStyles.receded)}>
-                          {composedBucket === undefined ? (
-                            series.map((item, seriesIndex) => {
-                              const value = item.values[categoryIndex];
-
-                              if (value === null || value === undefined) {
-                                return null;
-                              }
-
-                              const base =
-                                mode === 'stacked'
-                                  ? series
-                                      .slice(0, seriesIndex)
-                                      .reduce((sum, previous) => sum + (previous.values[categoryIndex] ?? 0), 0)
-                                  : 0;
-
-                              const start = y(base);
-                              const end = y(base + value);
-
-                              return (
-                                <Bar
-                                  key={item.id}
-                                  x={(x(category.id) ?? left) + (mode === 'stacked' ? 0 : (grouped(item.id) ?? 0))}
-                                  y={Math.min(start, end)}
-                                  width={mode === 'stacked' ? x.bandwidth() : grouped.bandwidth()}
-                                  height={Math.max(value === 0 ? 1 : 0, Math.abs(end - start))}
-                                  fill={chartToneColors[colorTone(item.tone, seriesIndex)]}
-                                  stroke={chartToneOutlines[colorTone(item.tone, seriesIndex)]}
-                                  {...stylex.props(
-                                    chartStyles.outlined,
-                                    isSelected && chartStyles.selected,
-                                    highlightedSeriesId !== undefined &&
-                                      highlightedSeriesId !== item.id &&
-                                      styles.mutedMark,
-                                  )}
-                                />
-                              );
-                            })
-                          ) : (
-                            <CompositionBars
-                              bucket={composedBucket}
-                              series={series}
-                              focusedSeries={focusSeries}
-                              index={categoryIndex}
-                              x={x(category.id) ?? left}
-                              width={x.bandwidth()}
-                              y={y}
-                              isSelected={isSelected}
-                              highlightedSeriesId={highlightedSeriesId}
-                            />
-                          )}
+                    if (composedBucket !== undefined) {
+                      return (
+                        <g
+                          key={category.id}
+                          {...stylex.props(chartStyles.emphasis, isReceded(category.id) && chartStyles.receded)}
+                        >
+                          <CompositionBars
+                            {...state}
+                            bucket={composedBucket}
+                            series={series}
+                            focusedSeries={focusSeries}
+                            index={categoryIndex}
+                            x={categoryStart(category.id)}
+                            width={band.bandwidth}
+                            y={y}
+                            highlighted={highlighted}
+                            toneOf={toneOf}
+                          />
                         </g>
-                        {categoryIndex % labelEvery === 0 && (
-                          <text
-                            x={(x(category.id) ?? left) + x.bandwidth() / 2}
-                            y={height - 4}
-                            textAnchor="middle"
-                            {...stylex.props(chartStyles.label, chartStyles.tick)}
-                          >
-                            {axisLabel.length > labelCharacters
-                              ? `${axisLabel.slice(0, labelCharacters - 1)}…`
-                              : axisLabel}
-                          </text>
-                        )}
-                      </g>
-                    );
+                      );
+                    }
+
+                    return series.map((item, seriesIndex) => {
+                      const value = item.values[categoryIndex];
+
+                      if (value === null || value === undefined) {
+                        return null;
+                      }
+
+                      const base =
+                        mode === 'stacked'
+                          ? series
+                              .slice(0, seriesIndex)
+                              .reduce((sum, previous) => sum + (previous.values[categoryIndex] ?? 0), 0)
+                          : 0;
+
+                      const start = y(base);
+                      const end = y(base + value);
+                      const isMuted = highlighted !== undefined && highlighted !== null && highlighted !== item.id;
+                      const bar = span(category.id, item.id);
+
+                      return (
+                        <BarMark
+                          key={`${category.id}:${item.id}`}
+                          {...state}
+                          x={bar.x}
+                          y={Math.min(start, end)}
+                          width={bar.width}
+                          height={Math.max(value === 0 ? 1 : 0, Math.abs(end - start))}
+                          tone={toneOf(item.id)}
+                          emphasis={isMuted || isReceded(category.id) ? 'receded' : 'normal'}
+                        />
+                      );
+                    });
                   })}
-                  <ReferenceLines
-                    lines={referenceLines}
-                    y={y}
-                    left={left}
-                    right={right}
-                    top={top}
-                    bottom={bottom}
-                    formatValue={formatTick}
-                  />
+                  <RuleMark x1={box.left} x2={box.right} y1={y(0)} y2={y(0)} />
                   <BarMarkers
                     markers={markers}
                     categoryIds={categoryIds}
@@ -666,35 +671,28 @@ export function BarChart({
                     y={y}
                     isReceded={isReceded}
                   />
-                  <BarAnnotations annotations={placedAnnotations} left={left} right={right} />
-                  {cursor !== null && (
-                    <ChartCursor
-                      x={(x(cursor) ?? left) + x.bandwidth() / 2}
-                      top={top}
-                      bottom={bottom}
-                      width={Math.max(8, x.bandwidth())}
-                    />
-                  )}
-                </ChartSvgPlot>
-              )}
-            </div>
+                </PlotClip>
+                <ReferenceMarks
+                  lines={referenceLines}
+                  box={box}
+                  position={y}
+                  valueText={text}
+                  avoid={clearLabels(notes)}
+                />
+                <BarAnnotations annotations={notes} left={box.left} right={box.right} />
+                {cursor !== null && (
+                  <ChartCursor
+                    x={categoryCenter(cursor)}
+                    top={box.top}
+                    bottom={box.bottom}
+                    width={Math.max(CURSOR_MIN, band.bandwidth)}
+                  />
+                )}
+              </PlotSurface>
+            )}
           </BarChartFrame>
         );
       }}
     />
   );
-}
-
-function barValueLabel(
-  series: ReadonlyArray<BarSeries>,
-  index: number,
-  formatValue: (value: number) => string,
-): string {
-  return series
-    .map((item) => {
-      const value = item.values[index];
-
-      return `${item.label}: ${value === null || value === undefined ? 'Unavailable' : formatValue(value)}`;
-    })
-    .join(' · ');
 }

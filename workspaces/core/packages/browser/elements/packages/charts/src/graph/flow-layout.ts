@@ -1,11 +1,10 @@
 import type { ChartTone } from '../../../foundations/src/chart-tones.ts';
-import { colorTone } from '../categorical-values.tsx';
 
 /** A stage that amounts flow into or out of. The column follows from the links: sources first, then each next step. */
 export type FlowNode = {
   readonly id: string;
   readonly label: string;
-  /** Absent takes the next automatic series tone in node order. */
+  /** Absent takes the tone a `ToneScope` gives its id, or the next automatic series tone in node order. */
   readonly tone?: ChartTone | undefined;
 };
 
@@ -57,6 +56,8 @@ type LayoutInput = {
   readonly right: number;
   readonly top: number;
   readonly bottom: number;
+  /** Each node's resolved tone, from its own, its scope's or its place in `nodes`. */
+  readonly toneOf: (node: FlowNode, index: number) => ChartTone;
 };
 
 export const FLOW_NODE_WIDTH_PX = 12;
@@ -117,7 +118,7 @@ function offsets(sizes: ReadonlyArray<number>): ReadonlyArray<number> {
  * Lays nodes out in columns by longest path and keeps their supplied order within each column. Nodes and ribbons share
  * one scale, so every amount keeps the same length per unit.
  */
-export function layoutFlow({ nodes, links, left, right, top, bottom }: LayoutInput): FlowLayout {
+export function layoutFlow({ nodes, links, left, right, top, bottom, toneOf }: LayoutInput): FlowLayout {
   const columnOf = flowColumns({ nodes, links }) ?? new Map<string, number>();
   const columnCount = Math.max(1, ...[...columnOf.values()].map((column) => column + 1));
 
@@ -166,7 +167,7 @@ export function layoutFlow({ nodes, links, left, right, top, bottom }: LayoutInp
 
       return {
         node,
-        tone: colorTone(node.tone, nodes.indexOf(node)),
+        tone: toneOf(node, nodes.indexOf(node)),
         column: columnIndex,
         x: left + columnIndex * step,
         y: start + (positions[index] ?? 0),

@@ -24,8 +24,11 @@ export const chartStyles = stylex.create({
     fontWeight: typography.regularWeight,
     fontVariantNumeric: 'tabular-nums',
   },
-  /** Axis ticks and category labels use the mono face, so numbers and dates align like a printed figure. */
-  tick: { fontFamily: typography.monoFamily },
+  /**
+   * Axis ticks and category, row, column, layer and node labels: the body face, with the tabular figures `label` sets
+   * so numbers and dates align. Monospace is only for token text, code and ids.
+   */
+  tick: { fontFamily: typography.fontFamily },
   strongLabel: { fill: colors.ink, fontWeight: typography.mediumWeight },
   haloLabel: { paintOrder: 'stroke', stroke: colors.surface, strokeWidth: 3, strokeLinejoin: 'round' },
   mark: { strokeWidth: 1.75, strokeLinecap: 'round', strokeLinejoin: 'round', vectorEffect: 'non-scaling-stroke' },

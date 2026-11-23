@@ -1,23 +1,20 @@
-import * as stylex from '@stylexjs/stylex';
-import { scaleLinear } from '@visx/scale';
-import { useId } from 'react';
 import type { ReactNode } from 'react';
-import { chartToneColors, chartToneOutlines } from '../../../foundations/src/chart-tones.ts';
 import type { ChartTone } from '../../../foundations/src/chart-tones.ts';
 import { ChartCursor } from '../chart-cursor.tsx';
-import { ChartData } from '../chart-data.tsx';
-import { ChartFrame, ChartReadout } from '../chart-frame.tsx';
-import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
-import { ChartInputError } from '../chart-input.tsx';
-import { chartStyles } from '../chart-theme.ts';
-import { Chart, inspectedLabel, plotLabel } from '../chart.tsx';
-import { distributionInputError, distributionLimits, outsideDomain } from './distribution-input.ts';
-import type { NumericDomain } from './distribution-input.ts';
-import { distributionGeometry, distributionStyles, NumericPlot } from './distribution-plot.tsx';
+import { Chart } from '../chart.tsx';
+import { formatValue } from '../figure/figure-format.ts';
+import { FigureInvalid, FigureLoading } from '../figure/figure-frame.tsx';
+import type { FigureProps, FigureSelectionProps } from '../figure/figure-props.ts';
+import { fitDomain, numericPlot } from '../plot/plot-layout.ts';
+import type { PlotAxis, PlotHeight } from '../plot/plot-layout.ts';
+import { BarMark } from '../plot/plot-marks.tsx';
+import { usePlotSize } from '../plot/plot-surface.tsx';
+import { outsideDomain, scaleDomainError } from '../plot/scale.ts';
+import type { NumericDomain } from '../plot/scale.ts';
+import { distributionInputError, distributionLimits } from './distribution-input.ts';
+import { DistributionFigure } from './distribution-plot.tsx';
 
-/** Keeps the cursor's underline inside the plot, which clips at its bottom edge. */
-const CURSOR_INSET = 6;
-
+/** One prepared bin: its bounds on the value axis and the number of observations in it, or null when unrecorded. */
 export type HistogramBin = {
   readonly id: string;
   readonly label: string;
@@ -26,171 +23,50 @@ export type HistogramBin = {
   readonly count: number | null;
 };
 
-export type HistogramProps = {
-  readonly title: string;
-  readonly report?: ChartReport | undefined;
-  readonly description?: string;
-  readonly bins: ReadonlyArray<HistogramBin>;
-  readonly domain: NumericDomain;
-  readonly maximumCount: number;
-  readonly valueLabel: string;
-  readonly countLabel: string;
-  readonly formatValue: (value: number) => string;
-  readonly formatCount: (count: number) => string;
-  readonly tone?: ChartTone;
-  readonly selection?: ChartSelection;
-  readonly emptyLabel?: string;
-};
+export type HistogramProps = FigureProps &
+  FigureSelectionProps & {
+    /** Bins in increasing order that do not overlap. The application computes them. */
+    readonly bins: ReadonlyArray<HistogramBin>;
+    /** The measured variable the bins divide, with its unit. */
+    readonly value: PlotAxis;
+    /** The count axis. It starts at zero; leave its domain out to fit the largest count. */
+    readonly count: PlotAxis;
+    readonly tone?: ChartTone | undefined;
+    readonly height?: PlotHeight | undefined;
+  };
 
-export function Histogram({
-  title,
-  report,
-  description,
-  bins,
-  domain,
-  maximumCount,
-  valueLabel,
-  countLabel,
-  formatValue,
-  formatCount,
-  tone = 'series1',
-  selection,
-  emptyLabel = 'No histogram bins are available.',
-}: HistogramProps): ReactNode {
-  const items = bins.map((bin) => ({
-    id: bin.id,
-    label: `${bin.label}, ${formatValue(bin.lowerBound)} – ${formatValue(bin.upperBound)}, ${countLabel}: ${bin.count === null ? 'Unavailable' : formatCount(bin.count)}`,
-  }));
-
-  const readoutId = useId();
-  const inputError = histogramInputError({ bins, domain, maximumCount });
-
-  if (inputError !== undefined) {
-    return <ChartInputError title={title} report={report} description={description} message={inputError} />;
-  }
-
-  const yScale = scaleLinear({ domain: [0, maximumCount], range: [distributionGeometry.height, 0] });
-
-  return (
-    <Chart
-      items={items}
-      arrows="both"
-      locate={(point) => {
-        const value = domain[0] + (point.x / point.width) * (domain[1] - domain[0]);
-
-        return bins.find((bin) => value >= bin.lowerBound && value <= bin.upperBound)?.id;
-      }}
-      selected={selection?.selectedId ?? null}
-      onSelect={selection?.onSelect}
-      render={(figure, { inspected, cursor }) => (
-        <ChartFrame
-          figure={figure}
-          title={title}
-          report={report}
-          description={description}
-          footer={<ChartReadout id={readoutId}>{inspectedLabel(items, inspected)}</ChartReadout>}
-        >
-          {bins.length === 0 ? (
-            <p {...stylex.props(distributionStyles.empty)}>{emptyLabel}</p>
-          ) : (
-            <>
-              <NumericPlot
-                label={plotLabel({ title, isSelectable: selection !== undefined })}
-                readoutId={readoutId}
-                xDomain={domain}
-                yDomain={[0, maximumCount]}
-                xLabel={valueLabel}
-                yLabel={countLabel}
-                formatX={formatValue}
-                formatY={formatCount}
-              >
-                {(plotWidth) => {
-                  const xScale = scaleLinear({ domain: [...domain], range: [0, plotWidth] });
-
-                  const marks = bins.map((bin) => {
-                    const left = xScale(bin.lowerBound);
-                    const width = xScale(bin.upperBound) - left;
-                    const gap = Math.min(2, width * 0.2);
-
-                    const isSelected = selection?.selectedId === bin.id || inspected === bin.id;
-
-                    if (bin.count === null) {
-                      return (
-                        <rect
-                          key={bin.id}
-                          x={left + gap / 2}
-                          y={distributionGeometry.height - 6}
-                          width={width - gap}
-                          height={5}
-                          {...stylex.props(distributionStyles.missing)}
-                        />
-                      );
-                    }
-
-                    const top = yScale(bin.count);
-
-                    return (
-                      <rect
-                        key={bin.id}
-                        x={left + gap / 2}
-                        y={top}
-                        width={width - gap}
-                        height={distributionGeometry.height - top}
-                        fill={chartToneColors[tone]}
-                        stroke={chartToneOutlines[tone]}
-                        {...stylex.props(chartStyles.outlined, isSelected && chartStyles.selected)}
-                        opacity={selection?.selectedId === undefined || isSelected ? 1 : 0.45}
-                      />
-                    );
-                  });
-
-                  const rest = bins.find((bin) => bin.id === cursor);
-
-                  return (
-                    <>
-                      {marks}
-                      {rest !== undefined && (
-                        <ChartCursor
-                          x={(xScale(rest.lowerBound) + xScale(rest.upperBound)) / 2}
-                          top={0}
-                          bottom={distributionGeometry.height - CURSOR_INSET}
-                          width={xScale(rest.upperBound) - xScale(rest.lowerBound)}
-                        />
-                      )}
-                    </>
-                  );
-                }}
-              </NumericPlot>
-              <ChartData
-                label={`${title} observations`}
-                columns={[{ id: 'observation', label: 'Observation' }]}
-                rows={items.map((item) => ({ id: item.id, values: [item.label] }))}
-              />
-            </>
-          )}
-        </ChartFrame>
-      )}
-    />
-  );
-}
+const BIN_GAP = 2;
+const BIN_GAP_SHARE = 0.2;
+const MISSING_HEIGHT = 5;
 
 function histogramInputError({
   bins,
-  domain,
-  maximumCount,
-}: Pick<HistogramProps, 'bins' | 'domain' | 'maximumCount'>): string | undefined {
-  const error = distributionInputError({ items: bins, domain, maxEntries: distributionLimits.bins });
+  value,
+  count,
+  valueDomain,
+  countDomain,
+}: Pick<HistogramProps, 'bins' | 'value' | 'count'> & {
+  readonly valueDomain: NumericDomain;
+  readonly countDomain: NumericDomain;
+}): string | undefined {
+  const error =
+    distributionInputError({
+      items: bins,
+      domain: valueDomain,
+      scale: value.scale,
+      maxEntries: distributionLimits.bins,
+    }) ?? scaleDomainError(countDomain, count.scale);
 
   if (error !== undefined) {
     return error;
   }
 
-  if (!Number.isFinite(maximumCount) || maximumCount <= 0) {
-    return 'The histogram count domain must have a finite maximum greater than zero.';
+  if (countDomain[0] !== 0) {
+    return 'The histogram count axis must start at zero.';
   }
 
   for (const [index, bin] of bins.entries()) {
-    if (outsideDomain(bin.lowerBound, domain) || outsideDomain(bin.upperBound, domain)) {
+    if (outsideDomain(bin.lowerBound, valueDomain) || outsideDomain(bin.upperBound, valueDomain)) {
       return `Histogram bin ${bin.id} has a non-finite bound or lies outside the declared domain.`;
     }
 
@@ -200,12 +76,123 @@ function histogramInputError({
       return `Histogram bin ${bin.id} is reversed, overlaps another bin, or is out of order.`;
     }
 
-    if (bin.count !== null) {
-      if (!Number.isFinite(bin.count) || bin.count < 0 || bin.count > maximumCount) {
-        return `Histogram bin ${bin.id} has a count outside the declared count domain.`;
-      }
+    if (bin.count !== null && outsideDomain(bin.count, countDomain)) {
+      return `Histogram bin ${bin.id} has a count outside the declared count domain.`;
     }
   }
 
   return undefined;
+}
+
+/**
+ * Counts of observations in prepared bins along a measured value, such as request latency or token length. Bars start
+ * at zero; a bin with no recorded count is drawn hollow, never as zero. Use `ECDF` to read cumulative shares instead.
+ */
+export function Histogram(props: HistogramProps): ReactNode {
+  const { bins, value, count, tone = 'series1', height = 'regular', selected, onSelectedChange, ...figure } = props;
+  const { emptyLabel = 'No histogram bins are available.', ...frame } = figure;
+  const { locale } = frame;
+  const size = usePlotSize(height);
+
+  if (frame.status === 'loading') {
+    return <FigureLoading {...frame} height={height} />;
+  }
+
+  const bounds = bins.flatMap((bin) => [bin.lowerBound, bin.upperBound]);
+  const valueDomain = value.domain ?? fitDomain({ values: bounds, scale: value.scale });
+  const counts = bins.map((bin) => bin.count);
+  const countDomain = count.domain ?? fitDomain({ values: counts, isZeroBased: true, scale: count.scale });
+  const inputError = histogramInputError({ bins, value, count, valueDomain, countDomain });
+
+  if (inputError !== undefined) {
+    return <FigureInvalid {...frame} message={inputError} />;
+  }
+
+  const plot = numericPlot({
+    width: size.width,
+    height: size.height,
+    x: value,
+    y: count,
+    xDomain: valueDomain,
+    yDomain: countDomain,
+    locale,
+  });
+
+  const { box } = plot;
+
+  function valueText(amount: number | null): string {
+    return formatValue({ value: amount, locale, format: value.format });
+  }
+
+  const items = bins.map((bin) => ({
+    id: bin.id,
+    label: `${bin.label}, ${valueText(bin.lowerBound)} – ${valueText(bin.upperBound)}, ${count.label}: ${formatValue({ value: bin.count, locale, format: count.format })}`,
+  }));
+
+  return (
+    <Chart
+      items={items}
+      arrows="both"
+      locate={(point) => {
+        const at = plot.x.valueAt((point.x / point.width) * box.width);
+
+        return bins.find((bin) => at >= bin.lowerBound && at <= bin.upperBound)?.id;
+      }}
+      selected={selected ?? null}
+      onSelect={onSelectedChange}
+      render={(figureProps, view) => {
+        const rest = bins.find((bin) => bin.id === view.cursor);
+
+        return (
+          <DistributionFigure
+            frame={frame}
+            figure={figureProps}
+            items={items}
+            inspected={view.inspected}
+            plotRef={size.ref}
+            plot={plot}
+            x={value}
+            y={count}
+            isSelectable={onSelectedChange !== undefined}
+            emptyLabel={emptyLabel}
+            overlay={
+              rest !== undefined && (
+                <ChartCursor
+                  x={(plot.x.position(rest.lowerBound) + plot.x.position(rest.upperBound)) / 2}
+                  top={box.top}
+                  bottom={box.bottom}
+                  width={plot.x.position(rest.upperBound) - plot.x.position(rest.lowerBound)}
+                />
+              )
+            }
+          >
+            {bins.map((bin) => {
+              const left = plot.x.position(bin.lowerBound);
+              const width = plot.x.position(bin.upperBound) - left;
+              const gap = Math.min(BIN_GAP, width * BIN_GAP_SHARE);
+              const isSelected = view.selected === bin.id;
+              const isInspected = view.inspected === bin.id;
+              const isFocused = view.selected === null || isSelected || isInspected;
+              const top = bin.count === null ? box.bottom - MISSING_HEIGHT : plot.y.position(bin.count);
+
+              return (
+                <BarMark
+                  key={bin.id}
+                  x={left + gap / 2}
+                  y={top}
+                  width={width - gap}
+                  height={box.bottom - top}
+                  tone={tone}
+                  isHollow={bin.count === null}
+                  emphasis={isFocused ? 'normal' : 'receded'}
+                  isSelected={isSelected}
+                  isInspected={isInspected}
+                />
+              );
+            })}
+          </DistributionFigure>
+        );
+      }}
+    />
+  );
 }

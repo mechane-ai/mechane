@@ -70,25 +70,6 @@ type ChartState = {
 /** What a chart draws from: the open inspection, the application's selection, and where the keyboard cursor rests. */
 export type ChartView = Pick<ChartState, 'inspected' | 'selected' | 'cursor'>;
 
-/** A `locate` for items in equal bands along the x axis of a plot drawn `width` units wide, such as bar categories. */
-export function locateBand({
-  ids,
-  start,
-  step,
-  width,
-}: {
-  readonly ids: ReadonlyArray<string>;
-  readonly start: number;
-  readonly step: number;
-  readonly width: number;
-}): (point: ChartPoint) => string | undefined {
-  return (point) => {
-    const index = Math.floor(((point.x / point.width) * width - start) / step);
-
-    return ids[Math.max(0, Math.min(ids.length - 1, index))];
-  };
-}
-
 const LARGE_STEP = 10;
 const MARK = '[data-slot="chart-mark"]';
 const activationKeys: ReadonlySet<string> = new Set(['Enter', ' ']);
@@ -504,7 +485,6 @@ const parts = createParts(chart, { root: 'figure', plot: 'div', mark: 'span' });
 
 /** The plot as one Tab stop: arrows move the cursor, Enter or Space selects, Escape or an outside press dismisses. */
 export const ChartPlot: ChartPart<'div', ChartView> = parts.Plot;
-export const ChartSvgPlot: ChartPart<'svg', ChartView> = createParts(chart, { root: 'figure', plot: 'svg' }).Plot;
 export const ChartTextPlot: ChartPart<'p', ChartView> = createParts(chart, { root: 'figure', plot: 'p' }).Plot;
 /** One datum a pointer can inspect and press. Pass `render` for a mark that is not a span, such as an SVG shape. */
 export const ChartMark: ChartPart<'span', MarkState, { readonly value: string }> = parts.Mark;

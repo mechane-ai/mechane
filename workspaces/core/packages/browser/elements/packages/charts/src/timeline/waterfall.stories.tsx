@@ -14,7 +14,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Supported. Waterfall compares recorded intervals and points on one scale, with controlled selection and accessible textual timing. The application supplies stable IDs, labels, units, domain bounds, and explicit geometry. An interval needs both endpoints; a point records one known instant; unavailable means no drawable timing. Invalid or out-of-domain timing produces an error. Keep a missing endpoint unknown instead of substituting the current time. Use a table when ordering and values matter more than timing. The rows are one Tab stop: arrow keys, Home, End and typing a name move between rows, and Left and Right step through the cells of a row. Select a row with the pointer or Enter/Space to expose its full detail and exact timing. The optional selectedRef exposes the selected row so an owning Inspector can restore focus when returning from narrow detail. Selection alone never moves focus or scrolls.',
+          'Supported. Waterfall compares recorded intervals and points on one scale, with controlled selection and accessible textual timing. The application supplies stable IDs, labels, units, domain bounds, and explicit geometry. An interval needs both endpoints; a point records one known instant; unavailable means no drawable timing. Invalid or out-of-domain timing produces an error. Keep a missing endpoint unknown instead of substituting the current time. Use a table when ordering and values matter more than timing. The rows are one Tab stop: arrow keys, Home, End and typing a name move between rows, and Left and Right step through the cells of a row. Select a row with the pointer or Enter/Space to expose its full detail and exact timing. The optional `selectedRef` exposes the selected row so an owning Inspector can restore focus when returning from narrow detail. Selection alone never moves focus or scrolls.',
       },
     },
   },
@@ -22,6 +22,8 @@ const meta = {
 
 export default meta;
 type Story = StoryObj;
+
+const milliseconds = { style: 'unit', unit: 'millisecond', unitDisplay: 'short' } as const;
 
 const intervals: ReadonlyArray<WaterfallItem> = [
   {
@@ -45,7 +47,6 @@ const intervals: ReadonlyArray<WaterfallItem> = [
     label: 'Publish output',
     detail: 'Ready to recorded',
     summary: '200 ms',
-    tone: 'neutral',
     geometry: { kind: 'interval', start: 900, end: 1100 },
   },
 ];
@@ -57,7 +58,6 @@ const partialTiming: ReadonlyArray<WaterfallItem> = [
     label: 'Recorded event',
     detail: 'One known instant',
     summary: 'At 900 ms',
-    tone: 'neutral',
     geometry: { kind: 'point', at: 900, marker: 'filled' },
   },
   {
@@ -65,7 +65,6 @@ const partialTiming: ReadonlyArray<WaterfallItem> = [
     label: 'Awaiting completion',
     detail: 'The endpoint is not recorded',
     summary: 'Pending',
-    tone: 'neutral',
     geometry: { kind: 'point', at: 1000, marker: 'hollow' },
   },
   {
@@ -81,7 +80,6 @@ const partialTiming: ReadonlyArray<WaterfallItem> = [
     label: 'Unavailable timing',
     detail: 'No measured endpoints',
     summary: 'Unknown',
-    tone: 'neutral',
     geometry: { kind: 'unavailable' },
   },
 ];
@@ -96,7 +94,7 @@ function SelectableWaterfall({
   readonly report?: ChartReport;
 }): ReactNode {
   const detailsId = useId();
-  const [selectedId, setSelectedId] = useState<string>();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = items.find((item) => item.id === selectedId);
 
   const chart = (
@@ -104,14 +102,15 @@ function SelectableWaterfall({
       items={items.map((item) => ({ ...item, controls: detailsId }))}
       start={0}
       end={end}
-      label="Operation timing"
+      title="Operation timing"
       report={report}
+      locale="en-US"
       rowLabel="Operation"
       summaryLabel="Recorded result"
       emptyLabel="No timing records are available."
-      selectedId={selectedId}
-      onSelect={setSelectedId}
-      formatOffset={(offset) => `${offset} ms`}
+      selected={selectedId}
+      onSelectedChange={setSelectedId}
+      offsetFormat={milliseconds}
     />
   );
 
@@ -160,7 +159,6 @@ export const ZeroDuration: Story = {
           label: 'Recorded at the same instant',
           detail: 'Both endpoints are zero',
           summary: '0 ms',
-          tone: 'neutral',
           geometry: { kind: 'interval', start: 0, end: 0 },
         },
       ]}
@@ -179,7 +177,6 @@ export const NarrowLongLabels: Story = {
           label: 'Prepare the complete collection of release references for review',
           detail: 'The full label and measured values remain available to keyboard and screen-reader users',
           summary: 'Awaiting a recorded endpoint',
-          tone: 'neutral',
           geometry: { kind: 'point', at: 650, marker: 'hollow' },
         },
         ...intervals,
@@ -198,7 +195,6 @@ export const InvalidTiming: Story = {
             label: 'Reversed interval',
             detail: 'The end precedes the start',
             summary: 'Invalid timing',
-            tone: 'neutral',
             geometry: { kind: 'interval', start: 350, end: 0 },
           },
         ]}
@@ -210,7 +206,6 @@ export const InvalidTiming: Story = {
             label: 'Point outside the domain',
             detail: 'The event is later than the supplied domain',
             summary: 'Invalid timing',
-            tone: 'neutral',
             geometry: { kind: 'point', at: 1500, marker: 'filled' },
           },
         ]}

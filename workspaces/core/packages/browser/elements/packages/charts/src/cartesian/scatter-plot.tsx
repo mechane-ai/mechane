@@ -1,77 +1,72 @@
 import * as stylex from '@stylexjs/stylex';
 import { bindDrag, dispatch } from '@ui-sdk/core';
 import type { ChangeDetails } from '@ui-sdk/core';
-import { scaleLinear } from '@visx/scale';
 import { useEffect, useId, useRef, useState } from 'react';
 import type { ComponentProps, PointerEvent, ReactNode } from 'react';
 import { TextButton } from '../../../core/src/index.ts';
 import { Slider } from '../../../forms/src/index.ts';
-import { chartToneColors } from '../../../foundations/src/chart-tones.ts';
 import type { ChartTone } from '../../../foundations/src/chart-tones.ts';
 import { conditions } from '../../../foundations/src/constants.stylex.ts';
 import { colors, controls, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { ChartData } from '../chart-data.tsx';
-import { ChartFrame, ChartReadout } from '../chart-frame.tsx';
-import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
-import { ChartInputError, hasUniqueIds, isFiniteDomain } from '../chart-input.tsx';
+import { ChartReadout } from '../chart-frame.tsx';
+import { hasUniqueIds } from '../chart-input.ts';
 import { chartStyles } from '../chart-theme.ts';
-import { Chart, ChartMark, ChartPlot, inspectedLabel, plotLabel } from '../chart.tsx';
-import { usePlotWidth } from '../plot-width.ts';
+import { Chart, ChartMark, inspectedLabel, plotLabel } from '../chart.tsx';
+import { formatValue } from '../figure/figure-format.ts';
+import { FigureEmpty, FigureFrame, FigureInvalid, FigureLoading } from '../figure/figure-frame.tsx';
+import type { FigureProps, FigureSelectionProps } from '../figure/figure-props.ts';
+import { useTones } from '../figure/tone-scope.tsx';
+import { PlotAxes } from '../plot/plot-axes.tsx';
+import { axisTitle, fitDomain, numericPlot } from '../plot/plot-layout.ts';
+import type { NumericPlotLayout, PlotAxis, PlotHeight } from '../plot/plot-layout.ts';
+import { DotMark } from '../plot/plot-marks.tsx';
+import { PlotClip, PlotSurface, usePlotSize } from '../plot/plot-surface.tsx';
+import { outsideDomain, scaleDomainError } from '../plot/scale.ts';
+import type { NumericDomain } from '../plot/scale.ts';
 
+/** One supplied coordinate pair with a stable id, so selection survives reordering. */
 export type ScatterPoint = {
   readonly id: string;
   readonly label: string;
   readonly x: number;
   readonly y: number;
-  readonly tone: ChartTone;
+  readonly tone?: ChartTone | undefined;
 };
 
-export type ScatterRange = { readonly x: readonly [number, number]; readonly y: readonly [number, number] };
+/** A rectangle of coordinates, in axis values, that the reader selected. */
+export type ScatterRange = { readonly x: NumericDomain; readonly y: NumericDomain };
 
 type SliderDetails = Parameters<NonNullable<ComponentProps<typeof Slider.Root<[number, number]>>['onValueChange']>>[1];
 
 /** Why the range changed: a drag on the plot, one of the bound sliders, or the clear button. */
 export type ScatterRangeDetails = ChangeDetails<'drag' | 'clear-press'> | SliderDetails;
 
-export type ScatterRangeSelection = {
-  readonly value: ScatterRange | null;
-  readonly onChange: (range: ScatterRange | null, details: ScatterRangeDetails) => void;
-  readonly xStep: number;
-  readonly yStep: number;
-  readonly locale: string;
-};
+export type ScatterPlotProps = FigureProps &
+  FigureSelectionProps & {
+    readonly points: ReadonlyArray<ScatterPoint>;
+    readonly x: PlotAxis;
+    readonly y: PlotAxis;
+    /** The coordinate range the application holds, or null for none. */
+    readonly range?: ScatterRange | null | undefined;
+    /** Asks the application to set or clear the range. With it, the plot offers a drag and two range sliders. */
+    readonly onRangeChange?: ((range: ScatterRange | null, details: ScatterRangeDetails) => void) | undefined;
+    /** The slider steps on each axis, in axis units. Required with `onRangeChange`. */
+    readonly rangeStep?: { readonly x: number; readonly y: number } | undefined;
+    readonly height?: PlotHeight | undefined;
+  };
 
-export type ScatterPlotProps = {
-  readonly title: string;
-  readonly report?: ChartReport | undefined;
-  readonly description: string;
-  readonly points: ReadonlyArray<ScatterPoint>;
-  readonly xDomain: readonly [number, number];
-  readonly yDomain: readonly [number, number];
-  readonly xLabel: string;
-  readonly yLabel: string;
-  readonly formatX: (value: number) => string;
-  readonly formatY: (value: number) => string;
-  readonly selection?: ChartSelection | undefined;
-  readonly rangeSelection?: ScatterRangeSelection | undefined;
-  readonly emptyLabel: string;
-};
+/** The most points one scatter plot draws. Supply a labelled sample or window for more. */
+export const scatterLimits = { points: 1000 } as const;
 
 type Coordinate = { readonly x: number; readonly y: number };
 type Gesture = { readonly start: Coordinate; readonly end: Coordinate };
 
-const PLOT_HEIGHT = 260;
-const LEFT_MARGIN = 56;
-const RIGHT_MARGIN = 20;
-const TOP_MARGIN = 12;
-const BOTTOM_MARGIN = 44;
 const POINT_TARGET = 44;
-export const MAX_SCATTER_POINTS = 1000;
+const RING_SIZE = 12;
 
 const styles = stylex.create({
-  plot: { position: 'relative', minWidth: 0 },
-  marks: { position: 'absolute', inset: 0, clipPath: 'inset(12px 20px 44px 56px)', pointerEvents: 'none' },
-  brush: { touchAction: 'pan-y', cursor: 'crosshair' },
+  brush: { cursor: 'crosshair', fill: 'transparent' },
   range: {
     fill: colors.focus,
     fillOpacity: 0.08,
@@ -107,9 +102,7 @@ const styles = stylex.create({
     },
   },
   location: (left: number, top: number) => ({ left, top }),
-  dot: (color: string) => ({ width: 8, height: 8, borderRadius: '50%', backgroundColor: color }),
-  selected: { outlineWidth: controls.focusWidth, outlineColor: colors.ink, outlineStyle: 'solid', outlineOffset: 3 },
-  values: { minWidth: 0, fontVariantNumeric: 'tabular-nums', overflowWrap: 'anywhere', color: colors.muted },
+  ring: { width: RING_SIZE, height: RING_SIZE, borderRadius: '50%' },
   rangeControls: {
     display: 'grid',
     gap: spacing.md,
@@ -128,406 +121,41 @@ const styles = stylex.create({
     fontSize: typography.captionSize,
     overflowWrap: 'anywhere',
   },
-  empty: { margin: 0, color: colors.muted },
 });
 
-export function ScatterPlot(props: ScatterPlotProps): ReactNode {
-  const {
-    title,
-    report,
-    description,
-    points,
-    xDomain,
-    yDomain,
-    xLabel,
-    yLabel,
-    formatX,
-    formatY,
-    selection,
-    rangeSelection,
-    emptyLabel,
-  } = props;
-
-  const items = points.map((point) => ({
-    id: point.id,
-    label: `${point.label}, ${xLabel}: ${formatX(point.x)}, ${yLabel}: ${formatY(point.y)}`,
-  }));
-
-  const readoutId = useId();
-  const { ref, width } = usePlotWidth();
-  const problem = scatterProblem(props);
-
-  if (problem !== null) {
-    return <ChartInputError title={title} report={report} description={description} message={problem} />;
+function isRangeWithinDomain(range: NumericDomain, domain: NumericDomain): boolean {
+  if (!range.every(Number.isFinite) || range[0] > range[1]) {
+    return false;
   }
 
-  const scaleX = scaleLinear({
-    domain: [...xDomain],
-    range: [LEFT_MARGIN, Math.max(LEFT_MARGIN, width - RIGHT_MARGIN)],
-  });
-
-  const scaleY = scaleLinear({ domain: [...yDomain], range: [PLOT_HEIGHT - BOTTOM_MARGIN, TOP_MARGIN] });
-
-  const places = new Map(
-    points.map((point) => {
-      const left = scaleX(point.x);
-      const top = scaleY(point.y);
-
-      return [point.id, { left, top, right: left, bottom: top }];
-    }),
-  );
-
-  return (
-    <Chart
-      items={items}
-      place={(id) => places.get(id)}
-      selected={selection?.selectedId ?? null}
-      onSelect={selection?.onSelect}
-      render={(figure, { inspected, cursor }) => (
-        <ChartFrame
-          figure={figure}
-          title={title}
-          report={report}
-          description={description}
-          footer={<ChartReadout id={readoutId}>{inspectedLabel(items, inspected)}</ChartReadout>}
-        >
-          {points.length === 0 ? (
-            <p {...stylex.props(styles.empty)}>{emptyLabel}</p>
-          ) : (
-            <ChartPlot
-              ref={ref}
-              role="group"
-              aria-label={plotLabel({ title, isSelectable: selection !== undefined })}
-              aria-describedby={readoutId}
-              {...stylex.props(styles.plot, stylex.defaultMarker())}
-            >
-              <ScatterCanvas
-                key={`${xDomain[0]}:${xDomain[1]}:${yDomain[0]}:${yDomain[1]}:${width}`}
-                width={width}
-                scaleX={scaleX}
-                scaleY={scaleY}
-                {...props}
-              />
-              <div {...stylex.props(styles.marks)}>
-                {points.map((point, index) => {
-                  const isMarked = selection?.selectedId === point.id || inspected === point.id;
-
-                  return (
-                    <ChartMark
-                      key={point.id}
-                      value={point.id}
-                      render={
-                        <button
-                          type="button"
-                          tabIndex={-1}
-                          title={point.label}
-                          aria-label={items[index]?.label}
-                          aria-pressed={selection === undefined ? undefined : selection.selectedId === point.id}
-                        />
-                      }
-                      {...stylex.props(styles.target, styles.location(scaleX(point.x), scaleY(point.y)))}
-                    >
-                      <span
-                        aria-hidden
-                        {...stylex.props(
-                          styles.dot(chartToneColors[point.tone]),
-                          isMarked && styles.selected,
-                          !isMarked && cursor === point.id && chartStyles.cursor,
-                        )}
-                      />
-                    </ChartMark>
-                  );
-                })}
-              </div>
-            </ChartPlot>
-          )}
-          {rangeSelection !== undefined && <RangeControls {...props} rangeSelection={rangeSelection} />}
-          <ChartData
-            label={`${title} points`}
-            columns={[
-              { id: 'point', label: 'Point' },
-              { id: 'x', label: xLabel },
-              { id: 'y', label: yLabel },
-            ]}
-            rows={points.map((point) => ({ id: point.id, values: [point.label, formatX(point.x), formatY(point.y)] }))}
-          />
-        </ChartFrame>
-      )}
-    />
-  );
+  return range[0] >= domain[0] && range[1] <= domain[1];
 }
 
-function ScatterCanvas({
-  width,
-  scaleX,
-  scaleY,
-  xLabel,
-  yLabel,
-  formatX,
-  formatY,
-  rangeSelection,
-}: ScatterPlotProps & {
-  readonly width: number;
-  readonly scaleX: ReturnType<typeof scaleLinear<number>>;
-  readonly scaleY: ReturnType<typeof scaleLinear<number>>;
-}): ReactNode {
-  const clipId = useId();
-  const [gesture, setGesture] = useState<Gesture | null>(null);
-
-  const releaseDrag = useRef<(() => void) | null>(null);
-
-  useEffect(() => () => releaseDrag.current?.(), []);
-
-  const range: ScatterRange | null | undefined =
-    gesture === null
-      ? rangeSelection?.value
-      : {
-          x: [Math.min(gesture.start.x, gesture.end.x), Math.max(gesture.start.x, gesture.end.x)],
-          y: [Math.min(gesture.start.y, gesture.end.y), Math.max(gesture.start.y, gesture.end.y)],
-        };
-
-  function coordinate(rectangle: DOMRect, clientX: number, clientY: number): Coordinate {
-    return {
-      x: scaleX
-        .copy()
-        .clamp(true)
-        .invert(((clientX - rectangle.left) / rectangle.width) * width),
-      y: scaleY
-        .copy()
-        .clamp(true)
-        .invert(((clientY - rectangle.top) / rectangle.height) * PLOT_HEIGHT),
-    };
-  }
-
-  function begin(event: PointerEvent<SVGSVGElement>): void {
-    // Touch gestures scroll the page; range sliders own touch selection.
-    const isBrushPress = event.button === 0 && event.pointerType !== 'touch';
-
-    if (rangeSelection === undefined || releaseDrag.current !== null || !isBrushPress) {
-      return;
-    }
-
-    const rectangle = event.currentTarget.getBoundingClientRect();
-    const x = ((event.clientX - rectangle.left) / rectangle.width) * width;
-    const y = ((event.clientY - rectangle.top) / rectangle.height) * PLOT_HEIGHT;
-
-    const isOutsideHorizontalBounds = x < LEFT_MARGIN || x > width - RIGHT_MARGIN;
-    const isOutsideVerticalBounds = y < TOP_MARGIN || y > PLOT_HEIGHT - BOTTOM_MARGIN;
-
-    if (isOutsideHorizontalBounds || isOutsideVerticalBounds) {
-      return;
-    }
-
-    const svg = event.currentTarget;
-    const container = svg.parentElement;
-
-    if (container === null) {
-      return;
-    }
-
-    const start = coordinate(rectangle, event.clientX, event.clientY);
-
-    setGesture({ start, end: start });
-
-    releaseDrag.current = bindDrag(container, event.nativeEvent, {
-      cancelOnEscape: true,
-      onMove: ({ x: clientX, y: clientY }) =>
-        setGesture({ start, end: coordinate(svg.getBoundingClientRect(), clientX, clientY) }),
-      onEnd: (up, canceled) => {
-        releaseDrag.current = null;
-
-        setGesture(null);
-
-        if (canceled) {
-          return;
-        }
-
-        const end = coordinate(svg.getBoundingClientRect(), up.clientX, up.clientY);
-
-        const drawn: ScatterRange = {
-          x: [Math.min(start.x, end.x), Math.max(start.x, end.x)],
-          y: [Math.min(start.y, end.y), Math.max(start.y, end.y)],
-        };
-
-        dispatch({ options: () => rangeSelection }, 'onChange', drawn, { reason: 'drag', event: up });
-      },
-    });
-  }
-
-  return (
-    <svg
-      width={width}
-      height={PLOT_HEIGHT}
-      viewBox={`0 0 ${width} ${PLOT_HEIGHT}`}
-      aria-hidden
-      onPointerDown={begin}
-      {...stylex.props(chartStyles.svg, rangeSelection !== undefined && styles.brush)}
-    >
-      <defs>
-        <clipPath id={clipId}>
-          <rect
-            x={LEFT_MARGIN}
-            y={TOP_MARGIN}
-            width={Math.max(0, width - LEFT_MARGIN - RIGHT_MARGIN)}
-            height={PLOT_HEIGHT - TOP_MARGIN - BOTTOM_MARGIN}
-          />
-        </clipPath>
-      </defs>
-      {scaleX.ticks(5).map((tick) => (
-        <g key={tick}>
-          <line
-            x1={scaleX(tick)}
-            x2={scaleX(tick)}
-            y1={TOP_MARGIN}
-            y2={PLOT_HEIGHT - BOTTOM_MARGIN}
-            {...stylex.props(chartStyles.grid)}
-          />
-          <text
-            x={scaleX(tick)}
-            y={PLOT_HEIGHT - BOTTOM_MARGIN + 18}
-            textAnchor="middle"
-            {...stylex.props(chartStyles.label, chartStyles.tick)}
-          >
-            {formatX(tick)}
-          </text>
-        </g>
-      ))}
-      {scaleY.ticks(4).map((tick) => (
-        <g key={tick}>
-          <line
-            x1={LEFT_MARGIN}
-            x2={width - RIGHT_MARGIN}
-            y1={scaleY(tick)}
-            y2={scaleY(tick)}
-            {...stylex.props(chartStyles.grid)}
-          />
-          <text
-            x={LEFT_MARGIN - 8}
-            y={scaleY(tick) + 4}
-            textAnchor="end"
-            {...stylex.props(chartStyles.label, chartStyles.tick)}
-          >
-            {formatY(tick)}
-          </text>
-        </g>
-      ))}
-      <text
-        x={(LEFT_MARGIN + width - RIGHT_MARGIN) / 2}
-        y={PLOT_HEIGHT - 4}
-        textAnchor="middle"
-        {...stylex.props(chartStyles.label, chartStyles.tick)}
-      >
-        {xLabel}
-      </text>
-      <text
-        x={12}
-        y={(PLOT_HEIGHT - BOTTOM_MARGIN) / 2}
-        textAnchor="middle"
-        transform={`rotate(-90 12 ${(PLOT_HEIGHT - BOTTOM_MARGIN) / 2})`}
-        {...stylex.props(chartStyles.label)}
-      >
-        {yLabel}
-      </text>
-      <g clipPath={`url(#${clipId})`}>
-        {range !== null && range !== undefined && (
-          <rect
-            x={scaleX(range.x[0])}
-            y={scaleY(range.y[1])}
-            width={scaleX(range.x[1]) - scaleX(range.x[0])}
-            height={scaleY(range.y[0]) - scaleY(range.y[1])}
-            {...stylex.props(styles.range)}
-          />
-        )}
-      </g>
-    </svg>
-  );
+function isStepWithin(step: number, domain: NumericDomain): boolean {
+  return Number.isFinite(step) && step > 0 && step <= domain[1] - domain[0];
 }
 
-function RangeControls({
-  rangeSelection,
+function scatterProblem({
+  points,
+  x,
+  y,
   xDomain,
   yDomain,
-  xLabel,
-  yLabel,
-  formatX,
-  formatY,
-}: ScatterPlotProps & { readonly rangeSelection: ScatterRangeSelection }): ReactNode {
-  const value = rangeSelection.value ?? { x: xDomain, y: yDomain };
+  range,
+  onRangeChange,
+  rangeStep,
+}: Pick<ScatterPlotProps, 'points' | 'x' | 'y' | 'range' | 'onRangeChange' | 'rangeStep'> & {
+  readonly xDomain: NumericDomain;
+  readonly yDomain: NumericDomain;
+}): string | undefined {
+  const domainError = scaleDomainError(xDomain, x.scale) ?? scaleDomainError(yDomain, y.scale);
 
-  return (
-    <fieldset {...stylex.props(styles.rangeControls)}>
-      <legend {...stylex.props(styles.legend)}>
-        Drag with a mouse, or adjust these bounds to select a coordinate range.
-      </legend>
-      <Slider.Root<[number, number]>
-        value={[...value.x]}
-        format={formatX}
-        min={xDomain[0]}
-        max={xDomain[1]}
-        step={rangeSelection.xStep}
-        locale={rangeSelection.locale}
-        onValueChange={(x, details) => rangeSelection.onChange({ x, y: value.y }, details)}
-      >
-        <div {...stylex.props(styles.rangeTitle)}>
-          <Slider.Label>{xLabel}</Slider.Label>
-          <span>
-            {formatX(value.x[0])} – {formatX(value.x[1])}
-          </span>
-        </div>
-        <Slider.Control>
-          <Slider.Track>
-            <Slider.Indicator />
-            <Slider.Thumb index={0} aria-label={`${xLabel} minimum`} />
-            <Slider.Thumb index={1} aria-label={`${xLabel} maximum`} />
-          </Slider.Track>
-        </Slider.Control>
-      </Slider.Root>
-      <Slider.Root<[number, number]>
-        value={[...value.y]}
-        format={formatY}
-        min={yDomain[0]}
-        max={yDomain[1]}
-        step={rangeSelection.yStep}
-        locale={rangeSelection.locale}
-        onValueChange={(y, details) => rangeSelection.onChange({ x: value.x, y }, details)}
-      >
-        <div {...stylex.props(styles.rangeTitle)}>
-          <Slider.Label>{yLabel}</Slider.Label>
-          <span>
-            {formatY(value.y[0])} – {formatY(value.y[1])}
-          </span>
-        </div>
-        <Slider.Control>
-          <Slider.Track>
-            <Slider.Indicator />
-            <Slider.Thumb index={0} aria-label={`${yLabel} minimum`} />
-            <Slider.Thumb index={1} aria-label={`${yLabel} maximum`} />
-          </Slider.Track>
-        </Slider.Control>
-      </Slider.Root>
-      <TextButton
-        type="button"
-        disabled={rangeSelection.value === null}
-        onClick={(event) => {
-          dispatch({ options: () => rangeSelection }, 'onChange', null, {
-            reason: 'clear-press',
-            event: event.nativeEvent,
-          });
-        }}
-      >
-        Clear range
-      </TextButton>
-    </fieldset>
-  );
-}
-
-function scatterProblem({ points, xDomain, yDomain, rangeSelection }: ScatterPlotProps): string | null {
-  if (!isFiniteDomain(xDomain) || !isFiniteDomain(yDomain)) {
-    return 'Scatter domains must contain finite, increasing endpoints.';
+  if (domainError !== undefined) {
+    return domainError;
   }
 
-  if (points.length > MAX_SCATTER_POINTS) {
-    return `This plot exceeds the ${MAX_SCATTER_POINTS}-point render limit. Supply a smaller, labelled sample.`;
+  if (points.length > scatterLimits.points) {
+    return `This plot exceeds the ${scatterLimits.points}-point render limit. Supply a smaller, labelled sample.`;
   }
 
   if (!hasUniqueIds(points)) {
@@ -538,52 +166,376 @@ function scatterProblem({ points, xDomain, yDomain, rangeSelection }: ScatterPlo
     return 'Scatter coordinates must be finite.';
   }
 
-  if (
-    points.some((point) => {
-      const isOutsideXDomain = point.x < xDomain[0] || point.x > xDomain[1];
-      const isOutsideYDomain = point.y < yDomain[0] || point.y > yDomain[1];
-
-      return isOutsideXDomain || isOutsideYDomain;
-    })
-  ) {
+  if (points.some((point) => outsideDomain(point.x, xDomain) || outsideDomain(point.y, yDomain))) {
     return 'Scatter coordinates fall outside the declared domain. Widen the domain or supply a labelled window of points.';
   }
 
-  if (rangeSelection === undefined) {
-    return null;
+  if (onRangeChange === undefined) {
+    return undefined;
   }
 
-  const isValidXStep =
-    Number.isFinite(rangeSelection.xStep) &&
-    rangeSelection.xStep > 0 &&
-    rangeSelection.xStep <= xDomain[1] - xDomain[0];
-
-  const isValidYStep =
-    Number.isFinite(rangeSelection.yStep) &&
-    rangeSelection.yStep > 0 &&
-    rangeSelection.yStep <= yDomain[1] - yDomain[0];
-
-  if (!isValidXStep || !isValidYStep) {
+  if (rangeStep === undefined || !isStepWithin(rangeStep.x, xDomain) || !isStepWithin(rangeStep.y, yDomain)) {
     return 'Range selection steps must be finite, positive, and no larger than their domain span.';
   }
 
-  const range = rangeSelection.value;
-
-  if (range === null) {
-    return null;
+  if (range === null || range === undefined) {
+    return undefined;
   }
 
   if (!isRangeWithinDomain(range.x, xDomain) || !isRangeWithinDomain(range.y, yDomain)) {
     return 'The selected range must have finite, ordered bounds inside the declared domain.';
   }
 
-  return null;
+  return undefined;
 }
 
-function isRangeWithinDomain(range: readonly [number, number], domain: readonly [number, number]): boolean {
-  if (!range.every(Number.isFinite) || range[0] > range[1]) {
-    return false;
+function ordered(first: number, second: number): NumericDomain {
+  return [Math.min(first, second), Math.max(first, second)];
+}
+
+/**
+ * Supplied coordinates as points on two measured axes, such as an embedding projection or cost against quality. Either
+ * axis can be linear, log or symlog, points can be selected, and a coordinate range can be drawn by dragging or set
+ * with two range sliders. The application computes positions, and the plot never infers similarity or causation.
+ */
+export function ScatterPlot(props: ScatterPlotProps): ReactNode {
+  const {
+    points,
+    x,
+    y,
+    range,
+    onRangeChange,
+    rangeStep,
+    selected,
+    onSelectedChange,
+    height = 'regular',
+    ...figure
+  } = props;
+
+  const { emptyLabel = 'No points were supplied.', ...frame } = figure;
+  const { locale, title } = frame;
+  const readoutId = useId();
+  const size = usePlotSize(height);
+  const tones = useTones();
+  const [gesture, setGesture] = useState<Gesture | null>(null);
+  const releaseDrag = useRef<(() => void) | null>(null);
+
+  useEffect(() => () => releaseDrag.current?.(), []);
+
+  if (frame.status === 'loading') {
+    return <FigureLoading {...frame} height={height} />;
   }
 
-  return range[0] >= domain[0] && range[1] <= domain[1];
+  const xDomain = x.domain ?? fitDomain({ values: points.map((point) => point.x), scale: x.scale });
+  const yDomain = y.domain ?? fitDomain({ values: points.map((point) => point.y), scale: y.scale });
+  const problem = scatterProblem({ points, x, y, xDomain, yDomain, range, onRangeChange, rangeStep });
+  const selectedRange = range ?? null;
+
+  if (problem !== undefined) {
+    return <FigureInvalid {...frame} message={problem} />;
+  }
+
+  const plot = numericPlot({ width: size.width, height: size.height, x, y, xDomain, yDomain, locale });
+  const { box } = plot;
+
+  function xText(value: number): string {
+    return formatValue({ value, locale, format: x.format });
+  }
+
+  function yText(value: number): string {
+    return formatValue({ value, locale, format: y.format });
+  }
+
+  const items = points.map((point) => ({
+    id: point.id,
+    label: `${point.label}, ${x.label}: ${xText(point.x)}, ${y.label}: ${yText(point.y)}`,
+  }));
+
+  const drawn = points.map((point, index) => ({
+    ...point,
+    tone: tones({ id: point.id, tone: point.tone, index }),
+    left: plot.x.position(point.x),
+    top: plot.y.position(point.y),
+  }));
+
+  const places = new Map(
+    drawn.map((point) => [point.id, { left: point.left, top: point.top, right: point.left, bottom: point.top }]),
+  );
+
+  const shownRange: ScatterRange | null | undefined =
+    gesture === null
+      ? range
+      : { x: ordered(gesture.start.x, gesture.end.x), y: ordered(gesture.start.y, gesture.end.y) };
+
+  function coordinate(svg: SVGSVGElement, clientX: number, clientY: number): Coordinate {
+    const rectangle = svg.getBoundingClientRect();
+    const left = ((clientX - rectangle.left) / rectangle.width) * box.width;
+    const top = ((clientY - rectangle.top) / rectangle.height) * box.height;
+
+    return {
+      x: plot.x.valueAt(Math.min(box.right, Math.max(box.left, left))),
+      y: plot.y.valueAt(Math.min(box.bottom, Math.max(box.top, top))),
+    };
+  }
+
+  function begin(event: PointerEvent<SVGSVGElement>): void {
+    // Touch gestures scroll the page; the range sliders own touch selection.
+    const isBrushPress = event.button === 0 && event.pointerType !== 'touch';
+    const svg = event.currentTarget;
+    const container = svg.parentElement;
+    const isOnBrush = event.target instanceof Element && event.target.closest('[data-brush]') !== null;
+
+    const isBrushStart = isBrushPress && isOnBrush;
+
+    if (onRangeChange === undefined || releaseDrag.current !== null || !isBrushStart) {
+      return;
+    }
+
+    if (container === null) {
+      return;
+    }
+
+    const start = coordinate(svg, event.clientX, event.clientY);
+
+    setGesture({ start, end: start });
+
+    releaseDrag.current = bindDrag(container, event.nativeEvent, {
+      cancelOnEscape: true,
+      onMove: ({ x: clientX, y: clientY }) => setGesture({ start, end: coordinate(svg, clientX, clientY) }),
+      onEnd: (up, isCanceled) => {
+        releaseDrag.current = null;
+
+        setGesture(null);
+
+        if (isCanceled) {
+          return;
+        }
+
+        const end = coordinate(svg, up.clientX, up.clientY);
+        const drawnRange: ScatterRange = { x: ordered(start.x, end.x), y: ordered(start.y, end.y) };
+
+        dispatch({ options: () => props }, 'onRangeChange', drawnRange, { reason: 'drag', event: up });
+      },
+    });
+  }
+
+  return (
+    <Chart
+      items={items}
+      place={(id) => places.get(id)}
+      selected={selected ?? null}
+      onSelect={onSelectedChange}
+      render={(figureProps, { inspected, cursor }) => (
+        <FigureFrame
+          {...frame}
+          figure={figureProps}
+          footer={<ChartReadout id={readoutId}>{inspectedLabel(items, inspected)}</ChartReadout>}
+        >
+          {points.length === 0 ? (
+            <FigureEmpty>{emptyLabel}</FigureEmpty>
+          ) : (
+            <PlotSurface
+              plotRef={size.ref}
+              box={box}
+              label={plotLabel({ title, isSelectable: onSelectedChange !== undefined })}
+              readoutId={readoutId}
+              onPointerDown={begin}
+              overlay={drawn.map((point, index) => (
+                <ChartMark
+                  key={point.id}
+                  value={point.id}
+                  render={
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      title={point.label}
+                      aria-label={items[index]?.label}
+                      aria-pressed={onSelectedChange === undefined ? undefined : selected === point.id}
+                    />
+                  }
+                  {...stylex.props(styles.target, styles.location(point.left, point.top))}
+                >
+                  <span aria-hidden {...stylex.props(styles.ring, cursor === point.id && chartStyles.cursor)} />
+                </ChartMark>
+              ))}
+            >
+              <PlotAxes
+                box={box}
+                xTicks={plot.xTicks}
+                yTicks={plot.yTicks}
+                xTitle={axisTitle(x)}
+                yTitle={axisTitle(y)}
+                grid="both"
+              />
+              {onRangeChange !== undefined && (
+                <rect
+                  data-brush=""
+                  x={box.left}
+                  y={box.top}
+                  width={box.innerWidth}
+                  height={box.innerHeight}
+                  {...stylex.props(styles.brush)}
+                />
+              )}
+              <PlotClip box={box}>
+                {shownRange !== null && shownRange !== undefined && <RangeMark range={shownRange} plot={plot} />}
+                {drawn.map((point) => (
+                  <DotMark
+                    key={point.id}
+                    x={point.left}
+                    y={point.top}
+                    tone={point.tone}
+                    isInspected={inspected === point.id}
+                    isSelected={selected === point.id}
+                  />
+                ))}
+              </PlotClip>
+            </PlotSurface>
+          )}
+          {onRangeChange !== undefined && rangeStep !== undefined && (
+            <RangeControls
+              x={x}
+              y={y}
+              xDomain={xDomain}
+              yDomain={yDomain}
+              range={selectedRange}
+              rangeStep={rangeStep}
+              locale={locale}
+              onRangeChange={onRangeChange}
+            />
+          )}
+          <ChartData
+            label={`${title} points`}
+            columns={[
+              { id: 'point', label: 'Point' },
+              { id: 'x', label: x.label },
+              { id: 'y', label: y.label },
+            ]}
+            rows={points.map((point) => ({ id: point.id, values: [point.label, xText(point.x), yText(point.y)] }))}
+          />
+        </FigureFrame>
+      )}
+    />
+  );
+}
+
+function RangeMark({ range, plot }: { readonly range: ScatterRange; readonly plot: NumericPlotLayout }): ReactNode {
+  const left = plot.x.position(range.x[0]);
+  const top = plot.y.position(range.y[1]);
+
+  return (
+    <rect
+      x={left}
+      y={top}
+      width={plot.x.position(range.x[1]) - left}
+      height={plot.y.position(range.y[0]) - top}
+      {...stylex.props(styles.range)}
+    />
+  );
+}
+
+type RangeControlsProps = {
+  readonly x: PlotAxis;
+  readonly y: PlotAxis;
+  readonly xDomain: NumericDomain;
+  readonly yDomain: NumericDomain;
+  readonly range: ScatterRange | null;
+  readonly rangeStep: { readonly x: number; readonly y: number };
+  readonly locale: string;
+  readonly onRangeChange: NonNullable<ScatterPlotProps['onRangeChange']>;
+};
+
+function RangeSlider({
+  axis,
+  domain,
+  value,
+  step,
+  locale,
+  onChange,
+}: {
+  readonly axis: PlotAxis;
+  readonly domain: NumericDomain;
+  readonly value: NumericDomain;
+  readonly step: number;
+  readonly locale: string;
+  readonly onChange: (value: NumericDomain, details: SliderDetails) => void;
+}): ReactNode {
+  function text(bound: number): string {
+    return formatValue({ value: bound, locale, format: axis.format });
+  }
+
+  return (
+    <Slider.Root<[number, number]>
+      value={[...value]}
+      format={axis.format}
+      min={domain[0]}
+      max={domain[1]}
+      step={step}
+      locale={locale}
+      onValueChange={(bounds, details) => onChange(bounds, details)}
+    >
+      <div {...stylex.props(styles.rangeTitle)}>
+        <Slider.Label>{axis.label}</Slider.Label>
+        <span>
+          {text(value[0])} – {text(value[1])}
+        </span>
+      </div>
+      <Slider.Control>
+        <Slider.Track>
+          <Slider.Indicator />
+          <Slider.Thumb index={0} aria-label={`${axis.label} minimum`} />
+          <Slider.Thumb index={1} aria-label={`${axis.label} maximum`} />
+        </Slider.Track>
+      </Slider.Control>
+    </Slider.Root>
+  );
+}
+
+function RangeControls({
+  x,
+  y,
+  xDomain,
+  yDomain,
+  range,
+  rangeStep,
+  locale,
+  onRangeChange,
+}: RangeControlsProps): ReactNode {
+  const value = range ?? { x: xDomain, y: yDomain };
+
+  return (
+    <fieldset {...stylex.props(styles.rangeControls)}>
+      <legend {...stylex.props(styles.legend)}>
+        Drag with a mouse, or adjust these bounds to select a coordinate range.
+      </legend>
+      <RangeSlider
+        axis={x}
+        domain={xDomain}
+        value={value.x}
+        step={rangeStep.x}
+        locale={locale}
+        onChange={(bounds, details) => onRangeChange({ x: bounds, y: value.y }, details)}
+      />
+      <RangeSlider
+        axis={y}
+        domain={yDomain}
+        value={value.y}
+        step={rangeStep.y}
+        locale={locale}
+        onChange={(bounds, details) => onRangeChange({ x: value.x, y: bounds }, details)}
+      />
+      <TextButton
+        type="button"
+        disabled={range === null}
+        onClick={(event) => {
+          dispatch({ options: () => ({ onRangeChange }) }, 'onRangeChange', null, {
+            reason: 'clear-press',
+            event: event.nativeEvent,
+          });
+        }}
+      >
+        Clear range
+      </TextButton>
+    </fieldset>
+  );
 }

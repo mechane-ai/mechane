@@ -1,9 +1,10 @@
 import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
-import { chartToneColors } from '../../../foundations/src/chart-tones.ts';
-import { colors } from '../../../foundations/src/tokens.stylex.ts';
 import { chartStyles } from '../chart-theme.ts';
+import { IntervalMark, LabelMark } from '../plot/plot-marks.tsx';
+import type { Segment } from '../plot/plot-marks.tsx';
 import type { BarMarker } from './bar-data.ts';
+import { clearLabels, labelInside } from './value-labels.ts';
 
 /** The horizontal extent of one series' bar within a category. */
 export type BarSpan = { readonly x: number; readonly width: number };
@@ -18,37 +19,22 @@ type BarMarkersProps = {
   readonly isReceded: (categoryId: string) => boolean;
 };
 
+/** A note above one bar, positioned in plot pixels. */
 export type PlacedAnnotation = {
   readonly id: string;
-  readonly label: string;
+  readonly text: string;
   readonly x: number;
   readonly y: number;
   readonly isReceded: boolean;
 };
 
-const styles = stylex.create({
-  halo: { stroke: colors.surface, strokeLinecap: 'butt', vectorEffect: 'non-scaling-stroke' },
-  stroke: (color: string) => ({ stroke: color, strokeLinecap: 'butt', vectorEffect: 'non-scaling-stroke' }),
-});
+const TICK_OVERHANG = 3;
+const CAP_WIDTH_MAX = 14;
+const CAP_SHARE = 0.6;
+const HALF = 0.5;
 
-const TICK_WIDTH_PX = 3;
-const STEM_WIDTH_PX = 1;
-const RANGE_WIDTH_PX = 1.5;
-const HALO_PX = 2;
-const TICK_OVERHANG_PX = 3;
-const MAX_CAP_WIDTH_PX = 14;
-const CHARACTER_WIDTH_PX = 6.5;
-
-function HaloPath({ path, color, width }: { readonly path: string; readonly color: string; readonly width: number }) {
-  return (
-    <>
-      <path d={path} strokeWidth={width + HALO_PX * 2} {...stylex.props(styles.halo)} />
-      <path d={path} strokeWidth={width} {...stylex.props(styles.stroke(color))} />
-    </>
-  );
-}
-
-function stemPath({
+/** The segments one marker draws on one bar: a tick with its stem from the bar, or a whisker with two caps. */
+function markerSegments({
   marker,
   index,
   span,
@@ -60,77 +46,65 @@ function stemPath({
   readonly span: BarSpan;
   readonly base: number | null;
   readonly y: (value: number) => number;
-}): string | undefined {
-  const value = marker.kind === 'tick' ? (marker.values[index] ?? null) : null;
+}): ReadonlyArray<Segment & { readonly key: string }> {
+  const center = span.x + span.width * HALF;
 
-  if (value === null || base === null || value === base) {
-    return undefined;
-  }
-
-  const center = span.x + span.width / 2;
-
-  return `M${center},${y(base)} V${y(value)}`;
-}
-
-function markerPath({
-  marker,
-  index,
-  span,
-  y,
-}: {
-  readonly marker: BarMarker;
-  readonly index: number;
-  readonly span: BarSpan;
-  readonly y: (value: number) => number;
-}): string | undefined {
   if (marker.kind === 'tick') {
     const value = marker.values[index] ?? null;
 
     if (value === null) {
-      return undefined;
+      return [];
     }
 
-    const level = y(value);
+    const tick = {
+      key: 'tick',
+      x1: span.x - TICK_OVERHANG,
+      x2: span.x + span.width + TICK_OVERHANG,
+      y1: y(value),
+      y2: y(value),
+    };
 
-    return `M${span.x - TICK_OVERHANG_PX},${level} H${span.x + span.width + TICK_OVERHANG_PX}`;
+    const hasStem = base !== null && base !== value;
+
+    return hasStem ? [{ key: 'stem', x1: center, x2: center, y1: y(base), y2: y(value) }, tick] : [tick];
   }
 
   const lower = marker.lower[index] ?? null;
   const upper = marker.upper[index] ?? null;
 
   if (lower === null || upper === null) {
-    return undefined;
+    return [];
   }
 
-  const center = span.x + span.width / 2;
-  const cap = Math.min(MAX_CAP_WIDTH_PX, span.width * 0.6) / 2;
-  const bottom = y(lower);
-  const top = y(upper);
+  const cap = Math.min(CAP_WIDTH_MAX, span.width * CAP_SHARE) * HALF;
 
-  return `M${center - cap},${top} H${center + cap} M${center},${top} V${bottom} M${center - cap},${bottom} H${center + cap}`;
+  return [
+    { key: 'whisker', x1: center, x2: center, y1: y(lower), y2: y(upper) },
+    { key: 'upper', x1: center - cap, x2: center + cap, y1: y(upper), y2: y(upper) },
+    { key: 'lower', x1: center - cap, x2: center + cap, y1: y(lower), y2: y(lower) },
+  ];
 }
 
-/** Draws each marker's tick or whisker over its bar with a surface halo, so it reads on the bar and on the canvas. */
+/** Draws each marker's tick or whisker over its bar, on the value axis rather than the stack. */
 export function BarMarkers({ markers, categoryIds, span, barTop, y, isReceded }: BarMarkersProps): ReactNode {
   return (
     <g>
       {markers.map((marker) => (
         <g key={marker.id}>
           {categoryIds.map((categoryId, index) => {
-            const bar = span(categoryId, marker.seriesId);
-            const path = markerPath({ marker, index, span: bar, y });
-
-            if (path === undefined) {
-              return null;
-            }
-
-            const color = chartToneColors[marker.tone ?? 'neutral'];
-            const stem = stemPath({ marker, index, span: bar, base: barTop(index, marker.seriesId), y });
+            const segments = markerSegments({
+              marker,
+              index,
+              span: span(categoryId, marker.seriesId),
+              base: barTop(index, marker.seriesId),
+              y,
+            });
 
             return (
               <g key={categoryId} {...stylex.props(chartStyles.emphasis, isReceded(categoryId) && chartStyles.receded)}>
-                {stem !== undefined && <HaloPath path={stem} color={color} width={STEM_WIDTH_PX} />}
-                <HaloPath path={path} color={color} width={marker.kind === 'tick' ? TICK_WIDTH_PX : RANGE_WIDTH_PX} />
+                {segments.map(({ key, ...segment }) => (
+                  <IntervalMark key={key} {...segment} tone={marker.tone ?? 'neutral'} />
+                ))}
               </g>
             );
           })}
@@ -140,7 +114,10 @@ export function BarMarkers({ markers, categoryIds, span, barTop, y, isReceded }:
   );
 }
 
-/** Centers each note above its anchor and keeps it inside the plot's horizontal bounds. */
+/**
+ * Notes above their bars, kept inside the plot's horizontal bounds. Where notes would touch, as on a narrow plot, the
+ * later ones are left out of the plot; they stay in the readout and the exact values.
+ */
 export function BarAnnotations({
   annotations,
   left,
@@ -152,29 +129,15 @@ export function BarAnnotations({
 }): ReactNode {
   return (
     <g aria-hidden>
-      {annotations.map((annotation) => {
-        const halfWidth = (annotation.label.length * CHARACTER_WIDTH_PX) / 2;
-        const isPastStart = annotation.x - halfWidth < left;
-        const isPastEnd = annotation.x + halfWidth > right;
-        const anchor = isPastStart ? 'start' : isPastEnd ? 'end' : 'middle';
-        const x = isPastStart ? left : isPastEnd ? right : annotation.x;
+      {clearLabels(annotations).map((annotation) => {
+        const placed = labelInside({ x: annotation.x, text: annotation.text, left, right });
 
         return (
-          <text
-            key={annotation.id}
-            x={x}
-            y={annotation.y}
-            textAnchor={anchor}
-            {...stylex.props(
-              chartStyles.label,
-              chartStyles.strongLabel,
-              chartStyles.haloLabel,
-              chartStyles.emphasis,
-              annotation.isReceded && chartStyles.receded,
-            )}
-          >
-            {annotation.label}
-          </text>
+          <g key={annotation.id} {...stylex.props(chartStyles.emphasis, annotation.isReceded && chartStyles.receded)}>
+            <LabelMark x={placed.x} y={annotation.y} anchor={placed.anchor}>
+              {annotation.text}
+            </LabelMark>
+          </g>
         );
       })}
     </g>

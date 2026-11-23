@@ -462,9 +462,6 @@
       "@tanstack/react-table",
       "@ui-sdk/core",
       "@ui-sdk/react",
-      "@visx/hierarchy",
-      "@visx/scale",
-      "@visx/shape",
       "oxc-parser",
       "streamdown",
       "strip-ansi"

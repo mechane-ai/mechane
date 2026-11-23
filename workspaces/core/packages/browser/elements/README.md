@@ -115,38 +115,52 @@ emitted layers and selector specificity.
 
 Every path below belongs to `@mechane-ai/elements`. There is one package, version, and stylesheet.
 
-| Entry                  | Responsibility                                                                       |
-| ---------------------- | ------------------------------------------------------------------------------------ |
-| Root                   | Buttons, text, surfaces, disclosure, avatars, and CopyValue.                         |
-| `/forms`               | Fields, inputs, selection, appearance picking, file picking, and settings sections.  |
-| `/forms/dates`         | Civil-date pickers, range selection, and a controlled event month.                   |
-| `/overlays`            | Dialog, Drawer, Menu, Popover, Preview, Tooltip, and AlertDialog.                    |
-| `/feedback`            | Async regions, skeletons, progress, meters, notices, empty states, and toasts.       |
-| `/navigation`          | Tabs, page navigation, breadcrumbs, skip links, and shortcut labels.                 |
-| `/navigation/commands` | Command palette and scoped application-owned shortcuts.                              |
-| `/layout`              | Application shell, sidebar, toolbars, compound record pages, and resizable panes.    |
-| `/collections`         | Tables, inspectors, collection controls, timelines, metrics, and timestamps.         |
-| `/content`             | Trace, JSON, recorded logs, and stack traces.                                        |
-| `/content/link`        | Safe content links without a renderer dependency.                                    |
-| `/content/markdown`    | Completed and streaming Markdown, embedded headings, and inert previews.             |
-| `/content/code`        | Source-preserving code highlighting.                                                 |
-| `/content/diff`        | File changes and patches.                                                            |
-| `/content/tree`        | File paths, statuses, and controlled selection.                                      |
-| `/ai`                  | Conversations, messages, prompts, approvals, sources, and citations.                 |
-| `/charts`              | Shared frames, legends, selection, and category types.                               |
-| `/charts/cartesian`    | Lines, ranges, areas, sparklines, small multiples, bars, bridges, and scatter plots. |
-| `/charts/distribution` | Histograms, cumulative distributions, intervals, and ranked values.                  |
-| `/charts/matrix`       | Matrices, compact strips, token heatmaps, and color legends.                         |
-| `/charts/graph`        | Supplied relationships, weighted flows, and selection.                               |
-| `/charts/hierarchy`    | Treemaps.                                                                            |
-| `/charts/timeline`     | Waterfall intervals and instants.                                                    |
-| `/theme`               | Light and dark theme props.                                                          |
-| `/agent`               | Optional UI SDK bridge for a host that enables component inspection and actions.     |
-| `/csp`                 | Application-supplied content security policy configuration.                          |
-| `/tokens`              | Compiled token references for runtime styles.                                        |
-| `/tokens.stylex`       | Variable definitions for StyleX authoring and themes.                                |
-| `/constants.stylex`    | Compile-time conditions, palette values, layers, and shared geometry.                |
-| `/styles.css`          | Component styles and token defaults.                                                 |
+| Entry                    | Responsibility                                                                                                 |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| Root                     | Buttons, text, surfaces, disclosure, avatars, and CopyValue.                                                   |
+| `/forms`                 | Fields, inputs, selection, appearance picking, file picking, and settings sections.                            |
+| `/forms/dates`           | Civil-date pickers, range selection, and a controlled event month.                                             |
+| `/overlays`              | Dialog, Drawer, Menu, Popover, Preview, Tooltip, and AlertDialog.                                              |
+| `/feedback`              | Async regions, skeletons, progress, meters, notices, empty states, and toasts.                                 |
+| `/navigation`            | Tabs, page navigation, breadcrumbs, skip links, and shortcut labels.                                           |
+| `/navigation/commands`   | Command palette and scoped application-owned shortcuts.                                                        |
+| `/layout`                | Application shell, sidebar, toolbars, compound record pages, and resizable panes.                              |
+| `/collections`           | Tables, inspectors, collection controls, timelines, metrics, and timestamps.                                   |
+| `/content`               | Trace, JSON, recorded logs, and stack traces.                                                                  |
+| `/content/link`          | Safe content links without a renderer dependency.                                                              |
+| `/content/markdown`      | Completed and streaming Markdown, embedded headings, and inert previews.                                       |
+| `/content/code`          | Source-preserving code highlighting.                                                                           |
+| `/content/diff`          | File changes and patches.                                                                                      |
+| `/content/tree`          | File paths, statuses, and controlled selection.                                                                |
+| `/ai`                    | Conversations, messages, prompts, approvals, sources, and citations.                                           |
+| `/charts`                | Figure props, formats, tone scope, linked inspection, frames, legends, and grids.                              |
+| `/charts/cartesian`      | Lines, ranges, areas, sparklines, small multiples, bars, bridges, and scatter plots.                           |
+| `/charts/distribution`   | Histograms, cumulative distributions, intervals, ranked values, box, violin, strip, and ridgeline plots.       |
+| `/charts/matrix`         | Matrices and their confusion, correlation, attention, and calendar presets, token heatmaps, and color legends. |
+| `/charts/graph`          | Supplied relationships, weighted flows, attribution graphs, and tree diagrams.                                 |
+| `/charts/hierarchy`      | Treemaps and icicles.                                                                                          |
+| `/charts/timeline`       | Waterfall intervals and instants, and lanes of events.                                                         |
+| `/charts/trend`          | Curves over a step or layer, many runs, slopes, rank changes, and horizon rows.                                |
+| `/charts/comparison`     | Dot plots, dumbbells, and bullet bars.                                                                         |
+| `/charts/relationship`   | Contours, scatter matrices, parallel coordinates, embedding maps, and density maps.                            |
+| `/charts/text`           | Token examples, next-token predictions, layer by position token grids, and token links.                        |
+| `/charts/image`          | Image grids, attribution overlays, and image atlases.                                                          |
+| `/charts/cells`          | Bar, heat, change, interval, and spark graphics for table cells.                                               |
+| `/charts/transforms`     | Bins, densities, fits, quantiles, ranks, smoothing, and sampling that an application calls before drawing.     |
+| `/charts/plot`           | The plot kernel: scales, ticks, axes, marks, and states for a chart the library lacks.                         |
+| `/charts/figure`         | Figure specs as JSON: validate a spec, draw it, describe it, and read the chart guide.                         |
+| `/kits/explainers`       | Numbered figures, linked terms, bound values, and guided steps.                                                |
+| `/kits/training`         | A run dashboard, a run table, and a sweep overview.                                                            |
+| `/kits/operations`       | Service health, budgets against objectives, and an incident timeline.                                          |
+| `/kits/evaluation`       | A model leaderboard, a score breakdown, and a two-model comparison.                                            |
+| `/kits/interpretability` | Feature cards and lists, an attribution workbench, attention heads, a logit lens, a feature map, and steering. |
+| `/theme`                 | Light and dark theme props.                                                                                    |
+| `/agent`                 | Optional UI SDK bridge for a host that enables component inspection and actions.                               |
+| `/csp`                   | Application-supplied content security policy configuration.                                                    |
+| `/tokens`                | Compiled token references for runtime styles.                                                                  |
+| `/tokens.stylex`         | Variable definitions for StyleX authoring and themes.                                                          |
+| `/constants.stylex`      | Compile-time conditions, palette values, layers, and shared geometry.                                          |
+| `/styles.css`            | Component styles and token defaults.                                                                           |
 
 Focused entries keep renderer and chart dependencies out of basic controls. There is no all-components barrel. Renderers
 initialize when used, without a consumer-managed worker pool or grammar CDN. The
@@ -206,7 +220,7 @@ selection; Escape dismisses the readout while retaining the cursor.
 Change callbacks receive the UI SDK's change details after the value. `details.reason` names what happened, such as
 `input-change`, `clear-press` or `item-press`, and `details.source` says whether a pointer, the keyboard, an agent or
 code caused it. `Input` and `Textarea` `onValueChange`, a collection's `search.onChange` and `search.onSubmit`, a
-filter's `onChange`, `FilterChips` `onRemove`, a chart's `selection.onSelect` and a table's `onSortChange` and
+filter's `onChange`, `FilterChips` `onRemove`, a chart's `onSelectedChange` and a table's `onSortChange` and
 `onSelectionChange` all pass them.
 
 `Workbench` accepts an optional `inspector={{ label: 'Workspace', content: <WorkspaceFiles /> }}`. The application
@@ -349,6 +363,265 @@ their content, focus, and drafts; display progress or failure alongside the last
 Build placeholders from the same layouts as their destinations. `DataTablePlaceholder` accepts the real table's
 `DataTableColumnLayout` definitions and optional decorative cells. The async region owns the loading announcement; its
 placeholders must not contain interactive controls, invented records, or independent status announcements.
+
+## Charts and figures
+
+Every chart is built from one plot kernel and takes the same figure props. This is the idea:
+
+- **One kernel.** Scales, ticks, axes, marks, readout and keyboard cursor come from `/charts/plot`, so charts behave
+  alike. A chart owns its input and the arrangement of parts.
+- **Shared figure props.** Each chart takes `title`, `description`, `locale`, `source`, `coverage`, `transforms`,
+  `status` and `emptyLabel`. Selection is `selected` with `onSelectedChange`. `Waterfall` takes a subset of these.
+  `Sparkline`, `ColorLegend` and the table cells are compact graphics and do not take them.
+- **Declared formats and locale.** A number is written from `Intl` options and the figure's required `locale`. There is
+  no formatter-function prop. Axes are `{ label, domain?, scale?, format, tickFormat? }`, and heights are `'compact'`,
+  `'regular'` or `'tall'`.
+- **One meaning per visual channel.** Hue names a thing, lightness is a magnitude, two hues around a middle are a signed
+  value, a dashed stroke is modelled, a pale band is uncertainty, a hollow mark is missing and gray is context.
+- **States.** Each figure has loading, empty, invalid and partial states. A figure that draws part of its data says how
+  much beside its title. The footnote names the source and each transform.
+
+Statistics stay outside charts. Compute bins, quantiles, densities and fits with `/charts/transforms` and name them in
+`transforms`.
+
+### Choose a chart
+
+The table is the library's own `chartGuide`: one entry per registered chart, grouped by family, with the question the
+chart answers. Each family is the import entry `@mechane-ai/elements/charts/<family>`. The
+[chart guide](https://github.com/mechane-ai/mechane/blob/main/workspaces/core/docs/ui-charts.md#choose-a-chart) adds
+when to use each chart and when another is better. Use a table when exact comparison matters more than shape.
+
+| Family entry           | Chart                 | The reader asks                                                          |
+| ---------------------- | --------------------- | ------------------------------------------------------------------------ |
+| `/charts/trend`        | `CurveChart`          | How did a metric change over training steps or another ordered variable? |
+| `/charts/trend`        | `RunsChart`           | How does one run compare with the whole sweep it belongs to?             |
+| `/charts/trend`        | `SlopeChart`          | How did each item move between two to six conditions?                    |
+| `/charts/trend`        | `BumpChart`           | How did the ranking of items change across stages?                       |
+| `/charts/trend`        | `HorizonChart`        | Which of many series run above or below normal, and when?                |
+| `/charts/comparison`   | `DotPlot`             | How do a few models compare on each of several measures?                 |
+| `/charts/comparison`   | `DumbbellPlot`        | How much did each row change between two measurements?                   |
+| `/charts/comparison`   | `BulletBar`           | Is each measure meeting its target?                                      |
+| `/charts/cartesian`    | `BarChart`            | How large is each amount, by category and series?                        |
+| `/charts/cartesian`    | `BridgeChart`         | Which changes add up to the difference between two totals?               |
+| `/charts/cartesian`    | `BreakdownBar`        | How does one total split into parts?                                     |
+| `/charts/cartesian`    | `ScatterPlot`         | How do two measures of the same records relate?                          |
+| `/charts/cartesian`    | `LineChart`           | How did a measure change over time?                                      |
+| `/charts/cartesian`    | `AreaChart`           | How did a total and its parts change over time?                          |
+| `/charts/cartesian`    | `SmallMultiples`      | How do several related measures move together over the same time?        |
+| `/charts/cartesian`    | `Sparkline`           | Which way is one measure trending, at a glance?                          |
+| `/charts/distribution` | `Histogram`           | How are the values of one measure distributed?                           |
+| `/charts/distribution` | `ECDF`                | What share of values falls below a given level?                          |
+| `/charts/distribution` | `IntervalPlot`        | What is each estimate, and how uncertain is it?                          |
+| `/charts/distribution` | `RankedBars`          | Which items rank highest on one measure?                                 |
+| `/charts/distribution` | `BoxPlot`             | How do the distributions of several groups compare?                      |
+| `/charts/distribution` | `ViolinPlot`          | How does the shape of a distribution differ between groups?              |
+| `/charts/distribution` | `StripPlot`           | Where does every single value of each group fall?                        |
+| `/charts/distribution` | `Ridgeline`           | How does a distribution shift across many ordered groups?                |
+| `/charts/matrix`       | `Matrix`              | What is the value for every pair of two categories?                      |
+| `/charts/matrix`       | `TokenHeatmap`        | Which tokens of a text carry the most of a score?                        |
+| `/charts/matrix`       | `ConfusionMatrix`     | Which classes does a classifier confuse with which?                      |
+| `/charts/matrix`       | `CorrelationMatrix`   | Which measures move together?                                            |
+| `/charts/matrix`       | `AttentionMatrix`     | Which earlier tokens does each token attend to?                          |
+| `/charts/matrix`       | `CalendarHeatmap`     | How does a daily measure vary by week and weekday?                       |
+| `/charts/graph`        | `RelationGraph`       | How are a few named things connected?                                    |
+| `/charts/graph`        | `FlowDiagram`         | Where does a quantity go between stages?                                 |
+| `/charts/graph`        | `AttributionGraph`    | Which features carry a model’s answer from the prompt to the output?     |
+| `/charts/graph`        | `TreeDiagram`         | How is a hierarchy structured?                                           |
+| `/charts/hierarchy`    | `Treemap`             | Which parts make up most of a total?                                     |
+| `/charts/hierarchy`    | `Icicle`              | How does a total split through nested levels?                            |
+| `/charts/timeline`     | `Waterfall`           | When did each step of a request or run start and end?                    |
+| `/charts/timeline`     | `EventStrip`          | What happened when, across a few kinds of events?                        |
+| `/charts/relationship` | `ContourPlot`         | What does a value look like over two continuous inputs?                  |
+| `/charts/relationship` | `ScatterMatrix`       | How do several measures relate to each other, pair by pair?              |
+| `/charts/relationship` | `ParallelCoordinates` | Which records do well on many measures at once?                          |
+| `/charts/relationship` | `EmbeddingMap`        | How do many items cluster in a learned embedding space?                  |
+| `/charts/relationship` | `DensityMap`          | Where are points concentrated over two measures?                         |
+| `/charts/text`         | `TokenExamples`       | On which passages, and which tokens, does a feature fire?                |
+| `/charts/text`         | `TokenPredictions`    | Which tokens does the model expect next, and how did that change?        |
+| `/charts/text`         | `TokenGrid`           | How does a per-token value change across layers or conditions?           |
+| `/charts/text`         | `TokenLinks`          | Which tokens most influence which later tokens?                          |
+| `/charts/image`        | `ImageGrid`           | What do a set of images look like, with a value for each?                |
+| `/charts/image`        | `AttributionOverlay`  | Which parts of an image drove the model’s output?                        |
+| `/charts/image`        | `ImageAtlas`          | How do images arrange over a two-dimensional layout?                     |
+
+`ColorLegend`, the table cells in `/charts/cells`, the placeholders and the kits are not registered charts, so the guide
+does not list them. `chartGuide` is exported from `@mechane-ai/elements/charts/figure`, so an application or an agent
+can read the same guidance at run time. Each entry has `chart`, `family`, `question`, `use`, `avoid` and `example`, a
+small valid figure spec.
+
+```ts
+import { chartGuide } from '@mechane-ai/elements/charts/figure';
+
+const entry = chartGuide.find((item) => item.chart === 'Histogram');
+// entry?.question, entry?.use, entry?.avoid, entry?.example
+```
+
+### Link figures and keep one hue per thing
+
+Give a thing one id in every figure. `ToneScope` gives each id one hue. `ChartLink` shares one inspected id between the
+figures inside it: pointing at a record in one figure marks the record with the same id in the others. `ChartGrid` is a
+`ChartLink` and a `ToneScope` laid out as panels with one title.
+
+```tsx
+import { ChartLink, ToneScope } from '@mechane-ai/elements/charts';
+import { DotPlot } from '@mechane-ai/elements/charts/comparison';
+import { CurveChart } from '@mechane-ai/elements/charts/trend';
+
+export function Runs() {
+  return (
+    <ToneScope ids={['base', 'wide']}>
+      <ChartLink>
+        <CurveChart
+          title="Validation loss"
+          locale="en-US"
+          series={[
+            {
+              id: 'base',
+              label: 'Base',
+              points: [
+                { x: 100, y: 4.2 },
+                { x: 1000, y: 2.6 },
+              ],
+            },
+            {
+              id: 'wide',
+              label: 'Wide',
+              points: [
+                { x: 100, y: 4.1 },
+                { x: 1000, y: 2.2 },
+              ],
+            },
+          ]}
+          x={{ label: 'Training step', scale: 'log', format: { maximumFractionDigits: 0 } }}
+          y={{ label: 'Loss (nats)', format: { maximumFractionDigits: 2 } }}
+        />
+        <DotPlot
+          title="Score by task"
+          locale="en-US"
+          rows={[{ id: 'code', label: 'Code' }]}
+          series={[
+            { id: 'base', label: 'Base', values: { code: 0.61 } },
+            { id: 'wide', label: 'Wide', values: { code: 0.68 } },
+          ]}
+          value={{ label: 'Accuracy', domain: [0, 1], format: { style: 'percent' } }}
+        />
+      </ChartLink>
+    </ToneScope>
+  );
+}
+```
+
+A figure that draws series can also take emphasis from outside, which never changes selection:
+
+- `CurveChart`, `DotPlot` and `BarChart` take `highlighted`, the id of the one series drawn at full strength while the
+  others fade, or `null` for none. Left out on `CurveChart` and `DotPlot`, it follows the enclosing `ChartLink`, so
+  hovering a table row that inspects a series id lights that series. `RunsChart` takes `featured`, a required list of
+  the run ids drawn in their hue, and no `highlighted`.
+- `CurveChart` takes `labels`: `'legend'` (the default) names the series in a legend, `'inline'` writes each name at the
+  end of its line when there is room, and `'none'` leaves them out when a legend beside a grid already names them.
+- `useScopedTone(id)` returns the hue the enclosing `ToneScope` gives an id, or `undefined` outside a scope. Use it so a
+  word or a diagram part matches its chart.
+- `useChartLinkControl()` returns `{ inspected, inspect }` for the enclosing `ChartLink`, or `undefined` outside one.
+  Call `inspect(id, { reason, event })` from prose or a diagram to point every linked figure at a record.
+
+### Describe a figure as JSON
+
+A figure spec is `{ chart, props }` as plain JSON. `chart` is the name of a registered chart, and `props` are its props
+without callbacks and React content, such as `actions`. An agent or a server writes it. The entry
+`@mechane-ai/elements/charts/figure` exports:
+
+| Export                  | What it does                                                                                                |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `FigureSpec`            | The type of a spec. `FigureSpecOf<'Histogram'>` is the spec of one chart.                                   |
+| `validateFigureSpec(x)` | Returns `{ kind: 'ok', spec }` or `{ kind: 'invalid', message }`. It checks the structure and never throws. |
+| `Figure`                | Draws a spec. It takes `selected`, `onSelectedChange` and `status` beside it.                               |
+| `describeFigure(spec)`  | Returns the figure as one short text for a place that cannot draw it.                                       |
+| `figureCharts`          | `{ chart, family }` for every registered chart.                                                             |
+| `chartGuide`            | The guide above, as data.                                                                                   |
+
+`validateFigureSpec` checks that the input is an object, that `chart` is registered, that `props` is an object holding
+every required prop with the right JSON kind, that no function is inside, and that `locale` is not empty. Each chart
+then checks its own values. `Figure` runs the same check. For a bad spec it draws the shared invalid figure with the
+reason in place of the chart, so a spec an agent got wrong is visible and nothing throws. `selected` and
+`onSelectedChange` reach only the charts that take a selection, and `status` replaces the spec's own while newer data
+loads.
+
+```tsx
+import { Figure, describeFigure, validateFigureSpec } from '@mechane-ai/elements/charts/figure';
+
+const spec = {
+  chart: 'Histogram',
+  props: {
+    title: 'Request latency',
+    description: 'Synthetic requests over one hour, in 25 ms bins.',
+    locale: 'en-US',
+    source: 'Synthetic trace',
+    transforms: ['Binned at 25 ms'],
+    value: { label: 'Latency (ms)', format: { maximumFractionDigits: 0 } },
+    count: { label: 'Requests', format: { maximumFractionDigits: 0 } },
+    bins: [
+      { id: 'b0', label: '0 to 25 ms', lowerBound: 0, upperBound: 25, count: 120 },
+      { id: 'b1', label: '25 to 50 ms', lowerBound: 25, upperBound: 50, count: 340 },
+    ],
+  },
+};
+
+const result = validateFigureSpec(spec);
+
+export function Latency() {
+  return result.kind === 'ok' ? <Figure spec={result.spec} /> : null;
+}
+
+// For this spec, describeFigure(result.spec) returns:
+// A histogram, "Request latency", with 2 bins. Synthetic requests over one hour, in 25 ms bins. Source: Synthetic trace. Transforms: Binned at 25 ms.
+```
+
+`describeFigure` names the chart and its title, then the description, how much of the data is drawn when `coverage` is
+set, the source, the transforms, and how many records the spec holds. It does not restate the values.
+
+A misspelt chart name is refused with the close names:
+
+```ts
+validateFigureSpec({ chart: 'Histogramm', props: { title: 'Request latency', locale: 'en-US' } });
+// { kind: 'invalid', message: '"Histogramm" is not a registered chart. Did you mean Histogram?' }
+
+validateFigureSpec({ chart: 'Bar', props: {} });
+// { kind: 'invalid', message: '"Bar" is not a registered chart. Did you mean BarChart, BreakdownBar, RankedBars?' }
+```
+
+The `use-elements` skill's [figures guide](skills/use-elements/references/figures.md) has the rules for an agent that
+writes specs.
+
+### Build a chart the library lacks
+
+`@mechane-ai/elements/charts/plot` is the kernel every chart uses. It exports the scales, ticks and paths, the plot
+layout, `PlotSurface`, `PlotAxes` and `PlotClip`, the marks (`LineMark`, `AreaMark`, `BandMark`, `DotMark`, `BarMark`,
+`RuleMark`, `IntervalMark`, `LabelMark`, `SymbolMark`, `RingMark`, `LinkMark`, `ConnectorMark` and `GuideMark`), the
+`Chart` primitive with `ChartCursor`, `ChartInspection` and `ChartData`, the frame and its states (`FigureFrame`,
+`FigureLoading`, `FigureEmpty`, `FigureInvalid`), `useTones`, the tick helpers (`axisTicks`, `timeAxisTicks`,
+`tickTexts`, `ticksMinimum`), the label placement helpers (`freeLabelSpot`, `labelBox`), and the canvas and WebGL
+layers. `FigureFrame` takes `seriesLegend`, a legend that names things, above the plot, and `scaleLegend`, a color or
+size scale, below it. A custom chart that is built from these has the same axes, readout, keyboard cursor, states and
+tones as the others. Take `FigureProps`, `formatValue` and `useLinkedInspection` from `/charts`. Do not draw your own
+scale or axis.
+
+### Kits
+
+A kit composes charts into a page for one domain: `/kits/training` for runs, `/kits/evaluation` for model comparison,
+`/kits/operations` for service health, `/kits/interpretability` for features, attribution, attention and steering, and
+`/kits/explainers` for long articles. A kit adds no marks. It decides which figures answer the question and shares one
+tone scope and one linked inspection between them. The application supplies every value. The `use-elements` skill's
+[kits guide](skills/use-elements/references/kits.md) lists each component and the data it takes.
+
+### Renderer limits
+
+Marks a reader inspects one by one draw as SVG. Most charts export a limits object, such as `scatterLimits`, and refuse
+input above it with a message that names the limit. `BarChart`, `BridgeChart`, `BreakdownBar` and `Treemap` share
+`categoricalLimits`, exported from `/charts`. `Histogram`, `ECDF`, `IntervalPlot` and `RankedBars` share
+`distributionLimits`, exported from `/charts/distribution`. `EmbeddingMap` draws on canvas up to 100,000 points and with
+WebGL up to 1,000,000, and `DensityMap` draws its grid on canvas. A canvas or WebGL plot keeps the same inspection,
+selection, readout and text alternative as an SVG plot. The WebGL figure was measured in a headless software renderer,
+not on a GPU.
 
 ## Develop and release
 

@@ -1,20 +1,26 @@
-import { hasUniqueIds, isFiniteDomain } from '../chart-input.tsx';
+import { hasUniqueIds } from '../chart-input.ts';
+import { scaleDomainError } from '../plot/scale.ts';
+import type { NumericDomain, ScaleType } from '../plot/scale.ts';
 
-export type NumericDomain = readonly [minimum: number, maximum: number];
-
+/** The most records each distribution chart draws. Larger input is refused with a message that names the limit. */
 export const distributionLimits = { bins: 200, cumulativePoints: 2000, rows: 200 } as const;
 
+/** Why a distribution chart cannot draw its records on a domain, or undefined when it can. */
 export function distributionInputError({
   items,
   domain,
+  scale,
   maxEntries,
 }: {
   readonly items: ReadonlyArray<{ readonly id: string }>;
   readonly domain: NumericDomain;
+  readonly scale?: ScaleType | undefined;
   readonly maxEntries: number;
 }): string | undefined {
-  if (!isFiniteDomain(domain)) {
-    return 'The chart domain must contain two finite, increasing values.';
+  const domainError = scaleDomainError(domain, scale);
+
+  if (domainError !== undefined) {
+    return domainError;
   }
 
   if (!hasUniqueIds(items)) {
@@ -26,8 +32,4 @@ export function distributionInputError({
   }
 
   return undefined;
-}
-
-export function outsideDomain(value: number, domain: NumericDomain): boolean {
-  return !Number.isFinite(value) || value < domain[0] || value > domain[1];
 }

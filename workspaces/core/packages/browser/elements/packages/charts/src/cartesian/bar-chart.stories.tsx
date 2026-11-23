@@ -69,32 +69,39 @@ const peaks: ReadonlyArray<BarAnnotation> = [
   { id: 'december-peak', categoryId: '2026-12', label: 'Peak' },
 ];
 
-function formatThousands(value: number): string {
-  return `$${new Intl.NumberFormat('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(value)}k`;
+const oneDecimal = new Intl.NumberFormat('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const upToOneDecimal = new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 });
+
+/** Values are in thousands of dollars, a unit no `Intl` option writes, so the story declares a function format. */
+function thousands(value: number): string {
+  return `$${oneDecimal.format(value)}k`;
 }
 
-function formatCompactThousands(value: number): string {
-  return `$${new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }).format(value)}k`;
+function compactThousands(value: number): string {
+  return `$${upToOneDecimal.format(value)}k`;
 }
 
 function PlannedSpend(): ReactNode {
-  const [selectedId, setSelectedId] = useState<string>();
+  const [selected, setSelected] = useState<string | null>(null);
 
   return (
     <BarChart
       title="Planned compute spend"
+      locale="en-US"
       description="Synthetic plan in thousands of US dollars. Training runs in April and September raise those months; December carries seasonal inference demand."
       categories={months}
       series={plannedSpend}
       mode="stacked"
       domain={[0, 7]}
-      formatValue={formatThousands}
-      formatTick={formatCompactThousands}
+      valueFormat={thousands}
+      tickFormat={compactThousands}
+      valueLabel="Spend (USD)"
       referenceLines={budget}
       annotations={peaks}
       emphasizedCategoryIds={['2026-04', '2026-09', '2026-12']}
-      selection={{ selectedId, onSelect: setSelectedId }}
-      height={240}
+      selected={selected}
+      onSelectedChange={setSelected}
+      height="regular"
     />
   );
 }
@@ -125,9 +132,7 @@ const waitMarkers: ReadonlyArray<BarMarker> = [
   },
 ];
 
-function formatSeconds(value: number): string {
-  return `${value} s`;
-}
+const seconds = { style: 'unit', unit: 'second' } as const;
 
 export const TicksAndRanges: Story = {
   render: () => (
@@ -135,17 +140,62 @@ export const TicksAndRanges: Story = {
       <Panel>
         <BarChart
           title="Queue wait by region"
+          locale="en-US"
           description="Synthetic waits in seconds. A tick marks each region's slowest day against its typical day; the whisker spans the middle half of weekend waits. The west region has no weekday record."
           categories={regions}
           series={typicalWait}
           domain={[0, 120]}
-          formatValue={formatSeconds}
+          valueFormat={seconds}
           markers={waitMarkers}
           referenceLines={[{ id: 'objective', label: 'Objective', value: 60, tone: 'positive' }]}
           annotations={[{ id: 'east-note', categoryId: 'east', seriesId: 'typical', label: 'Slowest' }]}
-          height={240}
+          height="regular"
         />
       </Panel>
+    </Stack>
+  ),
+};
+
+const quarterMonths = months.slice(0, 3);
+
+export const States: Story = {
+  render: () => (
+    <Stack>
+      <BarChart
+        title="Loading spend"
+        locale="en-US"
+        status="loading"
+        categories={quarterMonths}
+        series={plannedSpend}
+        valueFormat={thousands}
+      />
+      <BarChart
+        title="No spend recorded"
+        locale="en-US"
+        categories={[]}
+        series={[]}
+        valueFormat={thousands}
+        emptyLabel="No months have recorded spend yet."
+      />
+      <BarChart
+        title="First quarter spend"
+        description="Synthetic plan. The value axis is fitted from zero to the largest stack."
+        locale="en-US"
+        coverage={{ shown: 3, total: 12, unit: 'months' }}
+        categories={quarterMonths}
+        series={plannedSpend.map((item) => ({ ...item, values: item.values.slice(0, 3) }))}
+        mode="stacked"
+        valueFormat={thousands}
+        tickFormat={compactThousands}
+      />
+      <BarChart
+        title="Invalid stack"
+        locale="en-US"
+        categories={quarterMonths}
+        series={[{ id: 'refund', label: 'Refund', values: [-1, 0.4, 0.2] }]}
+        mode="stacked"
+        valueFormat={thousands}
+      />
     </Stack>
   ),
 };

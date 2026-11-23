@@ -1,5 +1,7 @@
 import type { ChartTone } from '../../../foundations/src/chart-tones.ts';
-import { hasUniqueIds } from '../chart-input.tsx';
+import { hasUniqueIds } from '../chart-input.ts';
+import type { ToneInput } from '../figure/tone-scope.tsx';
+import type { NumericDomain } from '../plot/scale.ts';
 
 export type TimeSeriesPoint = { readonly timestamp: number; readonly value: number | null };
 
@@ -31,7 +33,9 @@ export type PlotSeries = {
 
 export const timeSeriesLimits = { series: 12, pointsPerSeries: 2000, markers: 200, panels: 12 } as const;
 const DOMAIN_PADDING_RATIO = 0.01;
-const AUTOMATIC_TONES: ReadonlyArray<ChartTone> = ['series1', 'series2', 'series3', 'series4', 'series5', 'series6'];
+
+/** Resolves a record's tone, as `useTones` returns it. */
+export type ToneResolver = (input: ToneInput) => ChartTone;
 
 export function validateTimeSeries({
   series,
@@ -155,28 +159,34 @@ export function timeSeriesSignature({
   ]);
 }
 
-export function observationDomain(
-  minimum: number,
-  maximum: number,
-  shouldStartAtZero = false,
-): readonly [number, number] {
+/** The time an axis spans: the first to the last observation, widened around a lone one so it sits mid-plot. */
+export function observationDomain(minimum: number, maximum: number): NumericDomain {
   if (minimum !== maximum) {
     return [minimum, maximum];
   }
 
   const padding = Math.max(1, Math.abs(minimum) * DOMAIN_PADDING_RATIO);
-  const lower = shouldStartAtZero ? 0 : minimum - padding;
+  const lower = minimum - padding;
   const upper = maximum + padding;
 
   return [Number.isFinite(lower) ? lower : minimum, Number.isFinite(upper) ? upper : maximum];
 }
 
-export function prepareTimeSeries(series: ReadonlyArray<TimeSeries>, isStacked: boolean): ReadonlyArray<PlotSeries> {
+/** Stacks the series when asked and gives each its tone. An explicit tone takes no automatic slot. */
+export function prepareTimeSeries({
+  series,
+  isStacked,
+  tones,
+}: {
+  readonly series: ReadonlyArray<TimeSeries>;
+  readonly isStacked: boolean;
+  readonly tones: ToneResolver;
+}): ReadonlyArray<PlotSeries> {
   const automatic = series.filter((item) => item.tone === undefined);
 
   return series.map((item, seriesIndex) => {
-    const automaticIndex = automatic.findIndex((candidate) => candidate.id === item.id);
-    const tone = item.tone ?? AUTOMATIC_TONES[automaticIndex % AUTOMATIC_TONES.length] ?? 'series1';
+    const index = automatic.findIndex((candidate) => candidate.id === item.id);
+    const tone = tones({ id: item.id, tone: item.tone, index });
 
     const points = item.points.map((point, pointIndex) => {
       const base = isStacked

@@ -21,11 +21,7 @@ const meta = {
 export default meta;
 type Story = StoryObj;
 
-const dollars = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
-
-function formatDollars(value: number): string {
-  return dollars.format(value);
-}
+const dollars = { style: 'currency', currency: 'USD', maximumFractionDigits: 0 } as const;
 
 const budgetNodes: ReadonlyArray<FlowNode> = [
   { id: 'income', label: 'Income after tax', tone: 'series1' },
@@ -49,7 +45,7 @@ const budgetLinks: ReadonlyArray<FlowLink> = [
 ];
 
 function MonthlyFlow(): ReactNode {
-  const [selectedId, setSelectedId] = useState<string>();
+  const [selected, setSelected] = useState<string | null>(null);
 
   return (
     <FlowDiagram
@@ -57,8 +53,10 @@ function MonthlyFlow(): ReactNode {
       description="Synthetic monthly plan in US dollars. Spending divides into its largest categories."
       nodes={budgetNodes}
       links={budgetLinks}
-      formatValue={formatDollars}
-      selection={{ selectedId, onSelect: setSelectedId }}
+      locale="en-US"
+      valueFormat={dollars}
+      selected={selected}
+      onSelectedChange={setSelected}
     />
   );
 }
@@ -83,8 +81,10 @@ const requestLinks: ReadonlyArray<FlowLink> = [
   { id: 'mobile-service', sourceId: 'mobile', targetId: 'service', value: null },
 ];
 
+const requestNumber = new Intl.NumberFormat('en-US');
+
 function formatRequests(value: number): string {
-  return `${new Intl.NumberFormat('en-US').format(value)} requests`;
+  return `${requestNumber.format(value)} requests`;
 }
 
 export const MergedSourcesAndGaps: Story = {
@@ -96,8 +96,9 @@ export const MergedSourcesAndGaps: Story = {
           description="Synthetic hour of traffic. No requests were rejected, and direct mobile traffic was not measured. The gateway forwards 600 fewer requests than it receives; the uncovered height shows that difference."
           nodes={requestNodes}
           links={requestLinks}
-          formatValue={formatRequests}
-          height={220}
+          locale="en-US"
+          valueFormat={formatRequests}
+          height="regular"
         />
       </Panel>
     </Stack>

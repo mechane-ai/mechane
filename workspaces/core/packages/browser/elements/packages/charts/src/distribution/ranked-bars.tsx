@@ -1,150 +1,46 @@
-import * as stylex from '@stylexjs/stylex';
-import { scaleLinear } from '@visx/scale';
-import { Bar } from '@visx/shape';
 import type { ReactNode } from 'react';
-import { chartToneColors, chartToneOutlines } from '../../../foundations/src/chart-tones.ts';
 import type { ChartTone } from '../../../foundations/src/chart-tones.ts';
-import { ChartFrame } from '../chart-frame.tsx';
-import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
-import { ChartInputError } from '../chart-input.tsx';
-import { ChartDatum, ChartRows } from '../chart-rows.tsx';
-import { chartStyles } from '../chart-theme.ts';
-import { Chart } from '../chart.tsx';
+import { formatValue } from '../figure/figure-format.ts';
+import { FigureInvalid, FigureLoading } from '../figure/figure-frame.tsx';
+import type { FigureProps, FigureSelectionProps } from '../figure/figure-props.ts';
 import { usePlotWidth } from '../plot-width.ts';
-import { distributionInputError, distributionLimits, outsideDomain } from './distribution-input.ts';
-import type { NumericDomain } from './distribution-input.ts';
-import { distributionStyles, DomainLabels } from './distribution-plot.tsx';
+import { fitDomain } from '../plot/plot-layout.ts';
+import type { PlotAxis, PlotHeight } from '../plot/plot-layout.ts';
+import { BarMark, RuleMark } from '../plot/plot-marks.tsx';
+import { outsideDomain } from '../plot/scale.ts';
+import type { NumericDomain } from '../plot/scale.ts';
+import { distributionInputError, distributionLimits } from './distribution-input.ts';
+import { groupLayout, rowsPlotHeight, segmentBetween } from './group-plot-layout.ts';
+import { BandCursor, GroupFigure, useToned } from './group-plot.tsx';
 
+/** One ranked value. `rank` is the application's own ordinal, shown before the label. */
 export type RankedBarDatum = {
   readonly id: string;
   readonly label: string;
-  readonly rank?: string;
+  readonly rank?: string | undefined;
   readonly value: number | null;
-  readonly tone?: ChartTone;
+  readonly tone?: ChartTone | undefined;
 };
 
-export type RankedBarsProps = {
-  readonly title: string;
-  readonly report?: ChartReport | undefined;
-  readonly description?: string;
-  readonly items: ReadonlyArray<RankedBarDatum>;
-  readonly domain: NumericDomain;
-  readonly valueLabel: string;
-  readonly formatValue: (value: number) => string;
-  readonly selection?: ChartSelection;
-  readonly emptyLabel?: string;
-};
+export type RankedBarsProps = FigureProps &
+  FigureSelectionProps & {
+    /** Values in the order the application ranked them. */
+    readonly items: ReadonlyArray<RankedBarDatum>;
+    /** The ranked quantity, with its unit. Its domain includes zero, where every bar starts. */
+    readonly value: PlotAxis;
+    /** The room each row gets: `compact` fits a short ranked list in a card. */
+    readonly height?: PlotHeight | undefined;
+  };
 
-export function RankedBars({
-  title,
-  report,
-  description,
+const BAR_SHARE = 0.6;
+const BAR_HEIGHT_MAX = 20;
+
+function rankedInputError({
   items,
+  value,
   domain,
-  valueLabel,
-  formatValue,
-  selection,
-  emptyLabel = 'No ranked values are available.',
-}: RankedBarsProps): ReactNode {
-  const { ref, width } = usePlotWidth();
-  const inputError = rankedInputError({ items, domain });
-
-  if (inputError !== undefined) {
-    return <ChartInputError title={title} report={report} description={description} message={inputError} />;
-  }
-
-  const scale = scaleLinear({ domain: [...domain], range: [0, width] });
-  const zero = scale(0);
-
-  const rows = items.map((item) => {
-    const value = item.value === null ? 'Unavailable' : formatValue(item.value);
-    const label = item.rank === undefined ? item.label : `${item.rank} · ${item.label}`;
-
-    return { item, value, label, readout: `${label}, ${valueLabel}: ${value}` };
-  });
-
-  const chartItems = rows.map((row) => ({ id: row.item.id, label: row.readout }));
-
-  return (
-    <Chart
-      items={chartItems}
-      arrows="both"
-      selected={selection?.selectedId ?? null}
-      onSelect={selection?.onSelect}
-      render={(figure, chart) => {
-        const view = selection === undefined ? undefined : chart;
-
-        return (
-          <ChartFrame figure={figure} title={title} report={report} description={description} footer={valueLabel}>
-            {items.length === 0 ? (
-              <p {...stylex.props(distributionStyles.empty)}>{emptyLabel}</p>
-            ) : (
-              <ChartRows title={title} items={chartItems} view={view}>
-                <div {...stylex.props(distributionStyles.values)}>
-                  {rows.map(({ item, value, label, readout }) => {
-                    const tone = item.tone ?? 'series1';
-                    const color = chartToneColors[tone];
-
-                    return (
-                      <ChartDatum key={item.id} id={item.id} label={readout} view={view}>
-                        <span {...stylex.props(distributionStyles.row)}>
-                          <span {...stylex.props(distributionStyles.rowLabel)}>
-                            <span>{label}</span>
-                            <span {...stylex.props(distributionStyles.rowValue)}>{value}</span>
-                          </span>
-                          <svg
-                            aria-hidden
-                            viewBox={`0 0 ${width} 28`}
-                            preserveAspectRatio="none"
-                            {...stylex.props(distributionStyles.rowSvg)}
-                          >
-                            <rect x={0} y={10} width={width} height={8} {...stylex.props(distributionStyles.track)} />
-                            <line x1={zero} x2={zero} y1={3} y2={25} {...stylex.props(distributionStyles.baseline)} />
-                            {item.value !== null &&
-                              (item.value === 0 ? (
-                                <line
-                                  x1={zero}
-                                  x2={zero}
-                                  y1={10}
-                                  y2={18}
-                                  stroke={color}
-                                  strokeWidth={2}
-                                  vectorEffect="non-scaling-stroke"
-                                />
-                              ) : (
-                                <Bar
-                                  x={Math.min(zero, scale(item.value))}
-                                  y={10}
-                                  width={Math.abs(scale(item.value) - zero)}
-                                  height={8}
-                                  fill={color}
-                                  stroke={chartToneOutlines[tone]}
-                                  {...stylex.props(chartStyles.outlined)}
-                                />
-                              ))}
-                          </svg>
-                        </span>
-                      </ChartDatum>
-                    );
-                  })}
-                  <div {...stylex.props(distributionStyles.row, distributionStyles.rowAxis)}>
-                    <span {...stylex.props(distributionStyles.axisSpacer)} />
-                    <div ref={ref}>
-                      <DomainLabels domain={domain} formatValue={formatValue} />
-                    </div>
-                  </div>
-                </div>
-              </ChartRows>
-            )}
-          </ChartFrame>
-        );
-      }}
-    />
-  );
-}
-
-function rankedInputError({ items, domain }: Pick<RankedBarsProps, 'items' | 'domain'>): string | undefined {
-  const error = distributionInputError({ items, domain, maxEntries: distributionLimits.rows });
+}: Pick<RankedBarsProps, 'items' | 'value'> & { readonly domain: NumericDomain }): string | undefined {
+  const error = distributionInputError({ items, domain, scale: value.scale, maxEntries: distributionLimits.rows });
 
   if (error !== undefined) {
     return error;
@@ -154,11 +50,107 @@ function rankedInputError({ items, domain }: Pick<RankedBarsProps, 'items' | 'do
     return 'The ranked-value domain must include zero.';
   }
 
-  for (const item of items) {
-    if (item.value !== null && outsideDomain(item.value, domain)) {
-      return `Ranked value ${item.id} is non-finite or lies outside the declared domain.`;
-    }
+  const outside = items.find((item) => item.value !== null && outsideDomain(item.value, domain));
+
+  return outside === undefined
+    ? undefined
+    : `Ranked value ${outside.id} is non-finite or lies outside the declared domain.`;
+}
+
+/**
+ * Signed or positive values in the application's ranking, one bar per row from zero: feature attributions, top error
+ * sources, the largest regressions. The readout states the exact value of the row being inspected, and a measured zero
+ * keeps its row.
+ */
+export function RankedBars(props: RankedBarsProps): ReactNode {
+  const { items, value, height = 'regular', selected, onSelectedChange, ...figure } = props;
+  const { emptyLabel = 'No ranked values are available.', ...frame } = figure;
+  const { locale } = frame;
+  const { ref, width } = usePlotWidth();
+
+  const drawn = useToned(
+    items.map((item) => ({ ...item, label: item.rank === undefined ? item.label : `${item.rank} · ${item.label}` })),
+  );
+
+  if (frame.status === 'loading') {
+    return <FigureLoading {...frame} height={height} />;
   }
 
-  return undefined;
+  const observed = items.map((item) => item.value);
+  const domain = value.domain ?? fitDomain({ values: observed, isZeroBased: true, scale: value.scale });
+  const inputError = rankedInputError({ items, value, domain });
+
+  if (inputError !== undefined) {
+    return <FigureInvalid {...frame} message={inputError} />;
+  }
+
+  const layout = groupLayout({
+    width,
+    height: rowsPlotHeight({ height, count: items.length }),
+    direction: 'rows',
+    groups: drawn,
+    value,
+    valueDomain: domain,
+    locale,
+  });
+
+  const { orient, placed } = layout;
+  const zero = layout.value.position(0);
+  const barHeight = Math.min(layout.bandwidth * BAR_SHARE, BAR_HEIGHT_MAX);
+
+  const chartItems = placed.map((item) => ({
+    id: item.id,
+    label: `${item.label}, ${value.label}: ${formatValue({ value: item.value, locale, format: value.format })}`,
+  }));
+
+  return (
+    <GroupFigure
+      frame={frame}
+      emptyLabel={emptyLabel}
+      size={{ ref, width, height: layout.box.height }}
+      axes={layout}
+      items={chartItems}
+      locate={layout.locate}
+      marksLabel="ranked values"
+      selected={selected}
+      onSelectedChange={onSelectedChange}
+      cursor={(id) => {
+        const target = placed.find((item) => item.id === id);
+
+        return target === undefined ? null : <BandCursor {...layout.slot(target.center)} />;
+      }}
+      marks={(view) => (
+        <>
+          <RuleMark {...segmentBetween(orient.point(layout.box.top, zero), orient.point(layout.box.bottom, zero))} />
+          {placed.map((item) => {
+            const end = item.value === null ? zero : layout.value.position(item.value);
+            const state = { isInspected: view.inspected === item.id, isSelected: view.selected === item.id };
+
+            return item.value === 0 ? (
+              <RuleMark
+                key={item.id}
+                {...segmentBetween(
+                  orient.point(item.center - barHeight / 2, zero),
+                  orient.point(item.center + barHeight / 2, zero),
+                )}
+                tone={item.tone}
+              />
+            ) : (
+              item.value !== null && (
+                <BarMark
+                  key={item.id}
+                  x={Math.min(zero, end)}
+                  y={item.center - barHeight / 2}
+                  width={Math.abs(end - zero)}
+                  height={barHeight}
+                  tone={item.tone}
+                  {...state}
+                />
+              )
+            );
+          })}
+        </>
+      )}
+    />
+  );
 }

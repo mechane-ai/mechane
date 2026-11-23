@@ -79,7 +79,7 @@ Give each implementation library one job inside its owning family:
 | TanStack Table | `collections` models prepared rows; the UI SDK virtualizer bounds their rendered window. |
 | Pierre Highlights and Diffs | `content` owns tokenization and diff rendering. |
 | Streamdown | `content` parses supplied Markdown through Elements renderers. |
-| visx | `charts` computes and renders geometry from supplied presentation records. |
+| Plot kernel | `charts` owns scales, ticks, paths and layouts over UI SDK number helpers, and renders geometry from supplied presentation records. |
 
 `AgentAvatar` owns its finite catalog of original identity glyphs. Their stable names are presentation data, not a
 second control-icon vocabulary. The forms picker reports an appearance choice; the application owns its persistence.
@@ -118,9 +118,10 @@ from synthetic inputs. Lazy loading renderer code and packaged assets is compone
 - dependency-cruiser `ui-ai-dependencies` (065): enforced: Compose independent areas in the application, such as `<AppShell>{chart}</AppShell>`
 - dependency-cruiser `ui-charts-public-entry` (065): enforced: Import another Elements family through its public entry, such as `../../core/src/index.ts`; shared foundation definitions have explicit internal entries
 - dependency-cruiser `ui-charts-dependencies` (065): enforced: Compose independent areas in the application, such as `<AppShell>{chart}</AppShell>`
+- dependency-cruiser `ui-kits-public-entry` (065): enforced: Import another Elements family through its public entry, such as `../../core/src/index.ts`; shared foundation definitions have explicit internal entries
+- dependency-cruiser `ui-kits-dependencies` (065): enforced: Compose independent areas in the application, such as `<AppShell>{chart}</AppShell>`
 - dependency-cruiser `ui-sdk-element-owner` (065): enforced: Compose Elements controls, such as `Button` from `@mechane-ai/elements`; the family owns UI SDK behavior
 - dependency-cruiser `ui-tables-vendor-owner` (065): enforced: Import the Elements tables API, such as `@mechane-ai/elements/collections`, instead of its implementation dependency
 - dependency-cruiser `ui-content-vendor-owner` (065): enforced: Import the Elements content API, such as `@mechane-ai/elements/content`, instead of its implementation dependency
-- dependency-cruiser `ui-charts-vendor-owner` (065): enforced: Import the Elements charts API, such as `@mechane-ai/elements/charts`, instead of its implementation dependency
 
 <!-- End of the generated block. -->

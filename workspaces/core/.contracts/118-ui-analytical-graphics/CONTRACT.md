@@ -12,7 +12,7 @@ Stacking supplied additive values and mapping values to screen coordinates are r
 Reject invalid finite values, inconsistent dimensions, duplicate record identifiers, or impossible intervals through
 a clear error state or declared input failure. Do not silently repair, clamp, reorder, or discard evidence.
 
-Require the consumer to declare the meaning of a value, its unit, and its formatter. Keep missing, masked, zero, and
+Require the consumer to declare the meaning of a value, its unit, and its format. Keep missing, masked, zero, and
 out-of-domain values distinguishable. Show declared sampling, partial coverage, normalization, or truncation alongside
 the corresponding graphic. Use a zero baseline for additive magnitude comparisons and a diverging domain for signed
 contributions. Display color-domain and interval meaning where a reader needs them to interpret the mark.
@@ -29,8 +29,10 @@ Keep cursor movement separate from controlled selection. Activate a linked selec
 Keep the cursor visible at zero and missing values, after Escape dismisses details, and while equivalent data refreshes.
 Use the shared ChartCursor for Cartesian plots. Check its local marker in light, dark, and forced-colors modes.
 
-Bound SVG workloads and document the accepted window. A render limit must produce an explicit unavailable or truncated
-state, not a partial graphic that looks complete. Require measured need before adding another rendering engine.
+Bound each renderer's workload and document the accepted window. A render limit must produce an explicit unavailable or
+truncated state, not a partial graphic that looks complete. The kernel's canvas and WebGL layers draw plots beyond the
+SVG window under contract 140, with limits set from measured draw times. Require measured need before adding a further
+engine or a third-party renderer.
 
 Keep exact values available through direct inspection and static text alternatives. Charts add no automatic data accordion. Preserve relationships, missing values and selection when changing their presentation. Use a visible application-supplied table when comparing records is part of the task.
 
@@ -79,7 +81,7 @@ Keep period summaries stable while inspection shows the selected observation. Gi
 The report and its loading representation share the same frame, title and summary geometry.
 An absent, null or false summary reserves no summary spacing.
 Use the same report input across the other full graphic families; passive sparklines retain their compact representation.
-Keep compact axis formatting separate from the exact inspection formatter. Inspect a parts bucket with its supplied
+Keep compact axis formatting separate from the exact inspection format. Inspect a parts bucket with its supplied
 components, a total-only bucket with its independent total, and a gap with an explicit missing value.
 Match a focused chart's legend to its focused series and independent context. Row highlighting changes emphasis only.
 Use `ChartSeriesMarker` for a decorative series swatch or icon beside a meaningful label. Supply the same tone in

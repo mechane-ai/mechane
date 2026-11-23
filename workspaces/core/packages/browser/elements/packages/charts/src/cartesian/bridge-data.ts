@@ -1,6 +1,8 @@
 import type { ChartTone } from '../../../foundations/src/chart-tones.ts';
 import { categoricalLimits } from '../categorical-values.tsx';
-import { hasUniqueIds, isFiniteDomain } from '../chart-input.tsx';
+import { hasUniqueIds } from '../chart-input.ts';
+import { isFiniteDomain } from '../plot/scale.ts';
+import type { NumericDomain } from '../plot/scale.ts';
 
 /**
  * One column of a bridge; the first is the start total. A change adds its signed value to the running total, and a
@@ -76,9 +78,8 @@ export function bridgeLevels(steps: ReadonlyArray<BridgeStep>): ReadonlyArray<Br
   );
 }
 
-type ValueDomain = readonly [number, number];
-
-export function bridgeDomain(levels: ReadonlyArray<BridgeLevel>): ValueDomain {
+/** The span of zero and every known running level, which any domain for the bridge must contain. */
+export function bridgeDomain(levels: ReadonlyArray<BridgeLevel>): NumericDomain {
   const values = levels.flatMap((level) => [level.from, level.to].filter((value) => value !== null));
   const lowest = Math.min(0, ...values);
   const highest = Math.max(0, ...values);
@@ -86,12 +87,13 @@ export function bridgeDomain(levels: ReadonlyArray<BridgeLevel>): ValueDomain {
   return lowest === highest ? [lowest, lowest + 1] : [lowest, highest];
 }
 
+/** Why steps cannot form a bridge on the domain, or undefined when they can. */
 export function validateBridge({
   steps,
   domain,
 }: {
   readonly steps: ReadonlyArray<BridgeStep>;
-  readonly domain?: ValueDomain | undefined;
+  readonly domain?: NumericDomain | undefined;
 }): string | undefined {
   if (steps.length > categoricalLimits.items) {
     return `Choose a bridge with at most ${categoricalLimits.items} steps.`;

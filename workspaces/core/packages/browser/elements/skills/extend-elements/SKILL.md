@@ -100,3 +100,63 @@ Check a representative task in the family story with keyboard and the public `/a
 once the control is disabled, its selection changes, or its data is loading. For sensitive controls also inspect
 compound snapshots and action results for private values. Update the page recipe if the preferred consumer composition
 changes.
+
+## A chart
+
+Read contract `workspaces/core/.contracts/140-ui-data-display/CONTRACT.md` and the chart guide
+`workspaces/core/docs/ui-charts.md` first. Copy the structure of `packages/charts/src/trend/curve-chart.tsx` and its
+story.
+
+1. Choose the family by the reader's question. A chart that no family fits needs a new kernel part first, and only when
+   a named chart needs it. Add the part to `packages/charts/src/plot` or `figure`, keep the edit additive, and export it
+   from `plot/index.ts`, which is the public kernel entry `@mechane-ai/elements/charts/plot`.
+2. Draw with the kernel only: `numericPlot` or `categoryPlot`, `PlotSurface`, `PlotAxes`, `PlotClip` and the marks
+   (`LineMark`, `AreaMark`, `BandMark`, `DotMark`, `BarMark`, `RuleMark`, `IntervalMark`, `LabelMark`, `SymbolMark`,
+   `RingMark`, `LinkMark`, `ConnectorMark`, `GuideMark`). Do not write a scale, a tick, an axis or a path again, and do
+   not restyle a mark. The marks carry the channel meanings.
+3. Take `FigureProps`, plus `FigureSelectionProps` when a record can be selected. Name state the way the others do:
+   `selected` with `onSelectedChange`, `range` with `onRangeChange`. No `format*` function props: use `PlotAxis`,
+   `valueFormat` and `timeFormat`, and write text with `formatValue` and `formatTime`. `locale` is required. Height is a
+   `PlotHeight`.
+4. Write ticks with `axisTicks` or `timeAxisTicks` and `tickTexts` from `plot`, and place labels with `freeLabelSpot`.
+   Give `FigureFrame` a `seriesLegend` for a legend that names things (above the plot) and a `scaleLegend` for a color
+   or size scale (below it). Resolve tones with `useTones()` and never hard-code a color. Spread `useLinkedInspection()`
+   into `Chart` when item ids mean the same thing in other charts.
+5. Validate first and return `FigureInvalid` with the reason. Never repair, clamp, reorder or drop. Refuse input above a
+   `<chart>Limits` object with a message that names it. Handle `status`, empty input and `coverage`.
+6. Keep every prop except callbacks and `ReactNode` slots plain JSON, then register the chart so a figure spec can name
+   it. In `packages/charts/src/spec/figure-spec.ts`, add its props to `FigureChartProps`, and a new family to
+   `FigureFamily`. In `spec/figure-registry.tsx`, add an entry with the component, its family, its required props with
+   their JSON kinds and `isSelectable`. Render the chart from its spec and compare it with the direct call.
+7. Keep statistics out. If the chart needs a bin, quantile, density or fit, add a named function to
+   `packages/charts/src/transforms` with a `describe...` footnote, and take the result as props.
+8. Add a guide entry in `spec/chart-guide.tsx`: the `question` the chart answers in a reader's words, `use` for when to
+   choose it, `avoid` for the chart that is better otherwise, and a small valid `example` spec. Build the data with the
+   helpers in `spec/guide-data.ts` where they fit. The types require one entry for every registered chart. The entry
+   feeds the wall. Write the chart into the chooser tables of the package `README.md`, `docs/ui-charts.md` and the
+   `use-elements` charts reference, which are the guide written out.
+9. Write the stories: `Charts/<ChartName>` with a default, an interactive story and a `States` story, in `en-US` with
+   deterministic data.
+10. Check the wall. `Charts/Wall`, in `spec/wall.stories.tsx`, draws every registered chart from its guide example
+    through `Figure`, so the new chart appears in its family story and in `All` with no further edit. A new family also
+    needs a title and a place in the wall's list. Review it in light and dark themes and at phone width. Inspect a
+    record by pointer, touch and keyboard. Compare the frame, axes, ticks, legend, readout, footnote and each state with
+    its neighbors.
+11. Add the chart to the family `index.ts`, with its types and its limits. Run `mise run fix` and `mise run check` from
+    the factory root.
+
+## A kit component
+
+A kit under `packages/kits/src/<kit>` composes charts and collections for a domain question. It adds no marks, scales,
+axes or colors. If you want to draw an SVG mark, use or request a chart instead.
+
+- Follow contract `workspaces/core/.contracts/141-ui-domain-kits/CONTRACT.md`. Import other families only through their
+  public `index.ts` entries.
+- Take `locale` and declared formats. Take the state the application owns as a value with a change callback. Take the
+  words as one partial `labels` prop with English defaults.
+- Use one `ToneScope` over the things shown in more than one figure, and one `ChartLink` or `ChartGrid` where figures
+  share ids. Use the table cells from `charts/cells` inside `DataTable` columns.
+- Handle `status`, empty, partial and invalid input. Refuse bad input with a sentence.
+- Compute no statistic. The application supplies means, intervals, ranks and deltas.
+- Write one stories file titled `Kits/<Kit name>` with a story per component, one page that composes them and a `States`
+  story. Export the components from the kit's `index.ts` and add the entry to `package.json`.

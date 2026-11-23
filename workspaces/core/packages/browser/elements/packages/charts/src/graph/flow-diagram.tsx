@@ -2,34 +2,36 @@ import * as stylex from '@stylexjs/stylex';
 import { useId } from 'react';
 import type { ReactNode } from 'react';
 import { chartToneColors, chartToneOutlines } from '../../../foundations/src/chart-tones.ts';
-import { colors, controls, motion, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
+import { colors, controls, motion, spacing } from '../../../foundations/src/tokens.stylex.ts';
 import { ChartData } from '../chart-data.tsx';
-import { ChartFrame, ChartReadout } from '../chart-frame.tsx';
-import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
-import { ChartInputError, hasUniqueIds } from '../chart-input.tsx';
+import { ChartReadout } from '../chart-frame.tsx';
+import { hasUniqueIds } from '../chart-input.ts';
+import { useLinkedInspection } from '../chart-link.tsx';
 import { chartStyles } from '../chart-theme.ts';
 import { Chart, ChartMark, ChartPlot, inspectedLabel, plotLabel } from '../chart.tsx';
+import { formatValue } from '../figure/figure-format.ts';
+import type { ValueFormat } from '../figure/figure-format.ts';
+import { FigureEmpty, FigureFrame, FigureInvalid, FigureLoading } from '../figure/figure-frame.tsx';
+import type { FigureProps, FigureSelectionProps } from '../figure/figure-props.ts';
+import { useTones } from '../figure/tone-scope.tsx';
 import { spreadPositions } from '../label-spacing.ts';
 import { usePlotWidth } from '../plot-width.ts';
+import { plotHeights } from '../plot/plot-layout.ts';
+import type { PlotHeight } from '../plot/plot-layout.ts';
 import { FLOW_NODE_WIDTH_PX, flowColumns, layoutFlow, ribbonPath, threadPath } from './flow-layout.ts';
 import type { FlowLink, FlowNode, PlacedFlowLink, PlacedFlowNode } from './flow-layout.ts';
 
 export type { FlowLink, FlowNode } from './flow-layout.ts';
 
-export type FlowDiagramProps = {
-  readonly title: string;
-  readonly description?: ReactNode;
-  readonly report?: ChartReport | undefined;
-  readonly nodes: ReadonlyArray<FlowNode>;
-  readonly links: ReadonlyArray<FlowLink>;
-  /** Formats every amount exactly, for labels, inspection and accessible values. */
-  readonly formatValue: (value: number) => string;
-  /** Controlled selection of a node or link identifier, activated by click, Enter or Space. */
-  readonly selection?: ChartSelection | undefined;
-  /** The plot height in pixels. Absent fits the busiest column. */
-  readonly height?: number | undefined;
-  readonly emptyLabel?: string | undefined;
-};
+export type FlowDiagramProps = FigureProps &
+  FigureSelectionProps & {
+    readonly nodes: ReadonlyArray<FlowNode>;
+    readonly links: ReadonlyArray<FlowLink>;
+    /** How every amount is written, for labels, inspection and exact values. */
+    readonly valueFormat: ValueFormat;
+    /** The plot height. Absent fits the busiest column. */
+    readonly height?: PlotHeight | undefined;
+  };
 
 const styles = stylex.create({
   surface: {
@@ -57,11 +59,11 @@ const styles = stylex.create({
   },
   selected: { stroke: colors.ink, strokeWidth: 2, vectorEffect: 'non-scaling-stroke' },
   interactive: { cursor: 'pointer' },
-  empty: { margin: 0, color: colors.muted, fontSize: typography.captionSize },
 });
 
-export const MAX_FLOW_NODES = 64;
-export const MAX_FLOW_LINKS = 256;
+/** The render limits. Larger input shows an explicit error; the application supplies a coarser grouping. */
+export const flowLimits = { nodes: 64, links: 256 } as const;
+
 const PLOT_PADDING_PX = 8;
 const LABEL_GAP_PX = 8;
 const LABEL_SPACING_PX = 16;
@@ -70,7 +72,9 @@ const LABEL_CHARACTERS_MAX = 22;
 const GUTTER_MAX_PX = 180;
 const ROW_HEIGHT_PX = 48;
 const MIN_HEIGHT_PX = 240;
-const SMALLEST_HEIGHT_PX = 96;
+/** The room above the nodes for the labels of middle columns, which sit above their node, clear of the ribbons. */
+const MIDDLE_LABEL_PX = 18;
+const MIDDLE_LABEL_GAP_PX = 5;
 
 function validateFlow({
   nodes,
@@ -79,8 +83,8 @@ function validateFlow({
   readonly nodes: ReadonlyArray<FlowNode>;
   readonly links: ReadonlyArray<FlowLink>;
 }): string | undefined {
-  if (nodes.length > MAX_FLOW_NODES || links.length > MAX_FLOW_LINKS) {
-    return `This flow exceeds the render limit of ${MAX_FLOW_NODES} nodes or ${MAX_FLOW_LINKS} links. Supply a smaller, labelled grouping.`;
+  if (nodes.length > flowLimits.nodes || links.length > flowLimits.links) {
+    return `This flow exceeds the render limit of ${flowLimits.nodes} nodes or ${flowLimits.links} links. Supply a smaller, labelled grouping.`;
   }
 
   if (!hasUniqueIds([...nodes, ...links])) {
@@ -112,30 +116,32 @@ function nodeAmount(placed: PlacedFlowNode): number {
   return Math.max(placed.inflow, placed.outflow);
 }
 
+type AmountText = (value: number) => string;
+
 function nodeValueText({
   placed,
-  formatValue,
+  amountText,
 }: {
   readonly placed: PlacedFlowNode;
-  readonly formatValue: (value: number) => string;
+  readonly amountText: AmountText;
 }): string {
   const isPassing = placed.inflow > 0 && placed.outflow > 0 && placed.inflow !== placed.outflow;
 
   const amounts = isPassing
-    ? `in ${formatValue(placed.inflow)}, out ${formatValue(placed.outflow)}`
-    : formatValue(nodeAmount(placed));
+    ? `in ${amountText(placed.inflow)}, out ${amountText(placed.outflow)}`
+    : amountText(nodeAmount(placed));
 
   return placed.hasUnavailable ? `${amounts}, with an unavailable amount` : amounts;
 }
 
 function linkText({
   placed,
-  formatValue,
+  amountText,
 }: {
   readonly placed: PlacedFlowLink;
-  readonly formatValue: (value: number) => string;
+  readonly amountText: AmountText;
 }): string {
-  const amount = placed.link.value === null ? 'Unavailable' : formatValue(placed.link.value);
+  const amount = placed.link.value === null ? 'Unavailable' : amountText(placed.link.value);
 
   return `${placed.source.node.label} → ${placed.target.node.label}: ${amount}`;
 }
@@ -144,11 +150,11 @@ function linkText({
 function labelGutter({
   nodes,
   links,
-  formatValue,
+  amountText,
 }: {
   readonly nodes: ReadonlyArray<FlowNode>;
   readonly links: ReadonlyArray<FlowLink>;
-  readonly formatValue: (value: number) => string;
+  readonly amountText: AmountText;
 }): number {
   const characters = nodes.map((node) => {
     const incoming = links
@@ -161,7 +167,7 @@ function labelGutter({
 
     const total = Math.max(incoming, outgoing);
 
-    return shortLabel(node.label).length + formatValue(total).length + 1;
+    return shortLabel(node.label).length + amountText(total).length + 1;
   });
 
   return Math.min(GUTTER_MAX_PX, Math.max(0, ...characters) * CHARACTER_WIDTH_PX + LABEL_GAP_PX);
@@ -172,18 +178,18 @@ function labelGutter({
  * Node height and ribbon width share one scale; columns follow the links and keep the supplied order. Use BreakdownBar
  * for one level of parts and RelationGraph for unweighted relationships; the diagram never infers or balances a flow.
  */
-export function FlowDiagram({
-  title,
-  description,
-  report,
-  nodes,
-  links,
-  formatValue,
-  selection,
-  height,
-  emptyLabel = 'No flows',
-}: FlowDiagramProps): ReactNode {
+export function FlowDiagram(props: FlowDiagramProps): ReactNode {
+  const { nodes, links, valueFormat, height, selected, onSelectedChange, ...figure } = props;
+  const { emptyLabel = 'No flows', ...frame } = figure;
+  const { locale, title } = frame;
   const { ref, width } = usePlotWidth();
+  const tones = useTones();
+  const linked = useLinkedInspection();
+
+  function amountText(value: number): string {
+    return formatValue({ value, locale, format: valueFormat });
+  }
+
   const issue = validateFlow({ nodes, links });
   const columnOf = (issue === undefined ? flowColumns({ nodes, links }) : undefined) ?? new Map<string, number>();
   const lastColumn = Math.max(0, ...columnOf.values());
@@ -193,52 +199,51 @@ export function FlowDiagram({
     (_, column) => nodes.filter((node) => columnOf.get(node.id) === column).length,
   );
 
-  const plotHeight = height ?? Math.max(MIN_HEIGHT_PX, Math.max(...columnSizes) * ROW_HEIGHT_PX);
+  const plotHeight =
+    height === undefined ? Math.max(MIN_HEIGHT_PX, Math.max(...columnSizes) * ROW_HEIGHT_PX) : plotHeights[height];
+
   const firstNodes = lastColumn === 0 ? [] : nodes.filter((node) => columnOf.get(node.id) === 0);
   const lastNodes = nodes.filter((node) => columnOf.get(node.id) === lastColumn);
-  const startGutter = labelGutter({ nodes: firstNodes, links, formatValue });
-  const endGutter = labelGutter({ nodes: lastNodes, links, formatValue });
+  const startGutter = labelGutter({ nodes: firstNodes, links, amountText });
+  const endGutter = labelGutter({ nodes: lastNodes, links, amountText });
+
+  const top = PLOT_PADDING_PX + (lastColumn > 1 ? MIDDLE_LABEL_PX : 0);
 
   const layout = layoutFlow({
     nodes: issue === undefined ? nodes : [],
     links: issue === undefined ? links : [],
     left: startGutter,
     right: Math.max(startGutter + FLOW_NODE_WIDTH_PX, width - endGutter),
-    top: PLOT_PADDING_PX,
+    top,
     bottom: plotHeight - PLOT_PADDING_PX,
+    toneOf: (node, index) => tones({ id: node.id, tone: node.tone, index }),
   });
 
   const items = layout.nodes.flatMap((placed) => [
-    { id: placed.node.id, label: `${placed.node.label}: ${nodeValueText({ placed, formatValue })}` },
+    { id: placed.node.id, label: `${placed.node.label}: ${nodeValueText({ placed, amountText })}` },
     ...layout.links
       .filter((link) => link.source.node.id === placed.node.id)
-      .map((link) => ({ id: link.link.id, label: linkText({ placed: link, formatValue }) })),
+      .map((link) => ({ id: link.link.id, label: linkText({ placed: link, amountText }) })),
   ]);
 
   const readoutId = useId();
 
-  if (issue !== undefined) {
-    return <ChartInputError title={title} description={description} report={report} message={issue} />;
+  if (frame.status === 'loading') {
+    return <FigureLoading {...frame} height={height ?? 'regular'} />;
   }
 
-  if (!Number.isFinite(plotHeight) || plotHeight < SMALLEST_HEIGHT_PX) {
-    return (
-      <ChartInputError
-        title={title}
-        description={description}
-        report={report}
-        message={`Flow height must be at least ${SMALLEST_HEIGHT_PX} pixels.`}
-      />
-    );
+  if (issue !== undefined) {
+    return <FigureInvalid {...frame} message={issue} />;
   }
 
   return (
     <Chart
+      {...linked}
       items={items}
       arrows="both"
-      selected={selection?.selectedId ?? null}
-      onSelect={selection?.onSelect}
-      render={(figure, { inspected, cursor }) => {
+      selected={selected ?? null}
+      onSelect={onSelectedChange}
+      render={(figureProps, { inspected, cursor }) => {
         const activeLink = layout.links.find((placed) => placed.link.id === inspected);
         const activeNode = layout.nodes.find((placed) => placed.node.id === inspected);
 
@@ -272,11 +277,9 @@ export function FlowDiagram({
         const isInspecting = inspected !== null;
 
         return (
-          <ChartFrame
-            figure={figure}
-            title={title}
-            description={description}
-            report={report}
+          <FigureFrame
+            {...frame}
+            figure={figureProps}
             footer={<ChartReadout id={readoutId}>{inspectedLabel(items, inspected)}</ChartReadout>}
           >
             <ChartData
@@ -288,24 +291,24 @@ export function FlowDiagram({
               rows={[
                 ...layout.nodes.map((placed) => ({
                   id: `node:${placed.node.id}`,
-                  values: [placed.node.label, nodeValueText({ placed, formatValue })],
+                  values: [placed.node.label, nodeValueText({ placed, amountText })],
                 })),
                 ...layout.links.map((placed) => ({
                   id: `link:${placed.link.id}`,
                   values: [
                     `${placed.source.node.label} → ${placed.target.node.label}`,
-                    placed.link.value === null ? 'Unavailable' : formatValue(placed.link.value),
+                    placed.link.value === null ? 'Unavailable' : amountText(placed.link.value),
                   ],
                 })),
               ]}
             />
             <div ref={ref}>
               {nodes.length === 0 ? (
-                <p {...stylex.props(styles.empty)}>{emptyLabel}</p>
+                <FigureEmpty>{emptyLabel}</FigureEmpty>
               ) : (
                 <ChartPlot
                   role="group"
-                  aria-label={plotLabel({ title, isSelectable: selection !== undefined })}
+                  aria-label={plotLabel({ title, isSelectable: onSelectedChange !== undefined })}
                   aria-describedby={readoutId}
                   {...stylex.props(styles.surface, stylex.defaultMarker())}
                 >
@@ -320,7 +323,7 @@ export function FlowDiagram({
                         const color = chartToneColors[placed.tone];
                         const isLit = isLinkLit(placed);
                         const hasWidth = placed.width > 0;
-                        const isSelected = selection?.selectedId === placed.link.id;
+                        const isSelected = selected === placed.link.id;
                         const isResting = !isInspecting && !isSelected && cursor === placed.link.id;
 
                         return (
@@ -335,7 +338,7 @@ export function FlowDiagram({
                               isLit && hasWidth && styles.lit,
                               isInspecting && !isLit && styles.dim,
                               isSelected && styles.selected,
-                              selection !== undefined && styles.interactive,
+                              onSelectedChange !== undefined && styles.interactive,
                               isResting && (hasWidth ? chartStyles.shapeCursor : chartStyles.cursor),
                             )}
                           />
@@ -351,8 +354,8 @@ export function FlowDiagram({
                           styles.node(chartToneColors[placed.tone], chartToneOutlines[placed.tone]),
                           styles.transition,
                           isInspecting && !isNodeLit(placed) && styles.dim,
-                          selection?.selectedId === placed.node.id && styles.selected,
-                          selection !== undefined && styles.interactive,
+                          selected === placed.node.id && styles.selected,
+                          onSelectedChange !== undefined && styles.interactive,
                           !isInspecting && cursor === placed.node.id && chartStyles.cursor,
                         )}
                       />
@@ -360,16 +363,17 @@ export function FlowDiagram({
                     <FlowLabels
                       nodes={layout.nodes}
                       columnCount={layout.columnCount}
-                      top={PLOT_PADDING_PX}
+                      width={width}
+                      top={top}
                       bottom={plotHeight - PLOT_PADDING_PX}
-                      formatValue={formatValue}
+                      amountText={amountText}
                       isLit={(placed) => !isInspecting || isNodeLit(placed)}
                     />
                   </svg>
                 </ChartPlot>
               )}
             </div>
-          </ChartFrame>
+          </FigureFrame>
         );
       }}
     />
@@ -379,16 +383,19 @@ export function FlowDiagram({
 function FlowLabels({
   nodes,
   columnCount,
+  width,
   top,
   bottom,
-  formatValue,
+  amountText,
   isLit,
 }: {
   readonly nodes: ReadonlyArray<PlacedFlowNode>;
   readonly columnCount: number;
+  /** The plot width, so a middle label centered over its node stays inside it. */
+  readonly width: number;
   readonly top: number;
   readonly bottom: number;
-  readonly formatValue: (value: number) => string;
+  readonly amountText: AmountText;
   readonly isLit: (placed: PlacedFlowNode) => boolean;
 }): ReactNode {
   const columns = Array.from({ length: columnCount }, (_, column) =>
@@ -399,6 +406,7 @@ function FlowLabels({
     <g>
       {columns.map((column, columnIndex) => {
         const isFirst = columnIndex === 0 && columnCount > 1;
+        const isMiddle = columnIndex > 0 && columnIndex < columnCount - 1;
 
         const centers = spreadPositions({
           positions: column.map((placed) => placed.y + placed.height / 2),
@@ -407,19 +415,31 @@ function FlowLabels({
           end: bottom,
         });
 
-        return column.map((placed, index) => (
-          <text
-            key={placed.node.id}
-            x={isFirst ? placed.x - LABEL_GAP_PX : placed.x + FLOW_NODE_WIDTH_PX + LABEL_GAP_PX}
-            y={centers[index] ?? placed.y}
-            textAnchor={isFirst ? 'end' : 'start'}
-            dominantBaseline="middle"
-            {...stylex.props(chartStyles.label, chartStyles.haloLabel, styles.transition, !isLit(placed) && styles.dim)}
-          >
-            <tspan {...stylex.props(chartStyles.strongLabel)}>{shortLabel(placed.node.label)}</tspan>{' '}
-            {formatValue(nodeAmount(placed))}
-          </text>
-        ));
+        return column.map((placed, index) => {
+          const name = shortLabel(placed.node.label);
+          const amount = amountText(nodeAmount(placed));
+          const half = ((name.length + amount.length + 1) * CHARACTER_WIDTH_PX) / 2;
+          const side = isFirst ? placed.x - LABEL_GAP_PX : placed.x + FLOW_NODE_WIDTH_PX + LABEL_GAP_PX;
+          const over = Math.min(width - half, Math.max(half, placed.x + FLOW_NODE_WIDTH_PX / 2));
+
+          return (
+            <text
+              key={placed.node.id}
+              x={isMiddle ? over : side}
+              y={isMiddle ? placed.y - MIDDLE_LABEL_GAP_PX : (centers[index] ?? placed.y)}
+              textAnchor={isMiddle ? 'middle' : isFirst ? 'end' : 'start'}
+              dominantBaseline={isMiddle ? 'auto' : 'middle'}
+              {...stylex.props(
+                chartStyles.label,
+                chartStyles.haloLabel,
+                styles.transition,
+                !isLit(placed) && styles.dim,
+              )}
+            >
+              <tspan {...stylex.props(chartStyles.strongLabel)}>{name}</tspan> {amount}
+            </text>
+          );
+        });
       })}
     </g>
   );

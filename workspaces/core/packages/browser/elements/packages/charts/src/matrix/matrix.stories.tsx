@@ -3,6 +3,7 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Panel, Stack } from '../../../core/src/index.ts';
 import { ColorLegend } from './color-legend.tsx';
+import type { MatrixCellRange } from './matrix-types.ts';
 import { Matrix } from './matrix.tsx';
 import type { MatrixAxisItem, MatrixCell } from './matrix.tsx';
 import { TokenHeatmap } from './token-heatmap.tsx';
@@ -16,7 +17,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Matrix renders explicit row and column identities as a semantic table. The strip variant draws the same cells as compact intensity rows that fill the width, such as months across categories; Up and Down move between rows. Values, masked cells, unavailable cells, and values outside the color domain stay distinct. The application supplies normalization, units, and formatting. TokenHeatmap preserves exact text and supplied indices, including whitespace. Its underline indicates a score while keeping text readable in both themes. Selection is controlled. The render limits are 4,096 matrix coordinates and 2,048 tokens; larger inputs show an explicit error and must be windowed by the application. Invalid identifiers and nonfinite values also show an error. ColorLegend uses the same scale as the supplied values.',
+          'Matrix renders explicit row and column identities as a semantic table. A reader marks a block with Shift and the arrow keys or a drag and copies it as tab-separated exact values; the block is application state. The strip variant draws the same cells as compact intensity rows that fill the width, such as months across categories; Up and Down move between rows. Values, masked cells, unavailable cells, and values outside the color domain stay distinct. The application supplies normalization, units, and formatting. TokenHeatmap preserves exact text and supplied indices, including whitespace. Its underline indicates a score while keeping text readable in both themes. Selection is controlled. The render limits are 4,096 matrix coordinates and 2,048 tokens; larger inputs show an explicit error and must be windowed by the application. Invalid identifiers and nonfinite values also show an error. ColorLegend uses the same scale as the supplied values.',
       },
     },
   },
@@ -25,11 +26,8 @@ const meta = {
 export default meta;
 type Story = StoryObj;
 
-const numberFormat = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2, minimumFractionDigits: 2 });
-
-function formatValue(value: number): string {
-  return numberFormat.format(value);
-}
+const valueFormat = { maximumFractionDigits: 2, minimumFractionDigits: 2 } as const;
+const locale = 'en-US';
 
 const axes: ReadonlyArray<MatrixAxisItem> = [
   { id: 'the', label: 'The' },
@@ -68,7 +66,8 @@ const tokens: ReadonlyArray<HeatmapToken> = [
 ];
 
 function Attention(): ReactNode {
-  const [selectedId, setSelectedId] = useState<string>();
+  const [selected, setSelected] = useState<string | null>(null);
+  const [cellRange, setCellRange] = useState<MatrixCellRange | null>(null);
 
   return (
     <Panel>
@@ -81,8 +80,12 @@ function Attention(): ReactNode {
         domain={[0, 1]}
         palette="sequential"
         valueLabel="Attention weight (unitless)"
-        formatValue={formatValue}
-        selection={{ selectedId, onSelect: setSelectedId }}
+        valueFormat={valueFormat}
+        locale={locale}
+        selected={selected}
+        onSelectedChange={setSelected}
+        cellRange={cellRange}
+        onCellRangeChange={setCellRange}
         emptyLabel="No attention values were supplied."
       />
     </Panel>
@@ -90,7 +93,7 @@ function Attention(): ReactNode {
 }
 
 function Tokens(): ReactNode {
-  const [selectedId, setSelectedId] = useState<string>();
+  const [selected, setSelected] = useState<string | null>(null);
 
   return (
     <Panel>
@@ -101,9 +104,10 @@ function Tokens(): ReactNode {
         domain={[-1, 1]}
         palette="diverging"
         valueLabel="Contribution (logit units)"
-        formatValue={formatValue}
-        selection={{ selectedId, onSelect: setSelectedId }}
-        emptyLabel="No tokens were supplied."
+        valueFormat={valueFormat}
+        locale={locale}
+        selected={selected}
+        onSelectedChange={setSelected}
       />
     </Panel>
   );
@@ -153,12 +157,14 @@ const seasonalCells: ReadonlyArray<MatrixCell> = seasonalRows.flatMap((row) =>
   }),
 );
 
+const shareNumber = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 });
+
 function formatShare(value: number): string {
-  return `${new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }).format(value)}× monthly average`;
+  return `${shareNumber.format(value)}× monthly average`;
 }
 
 function SeasonalStrip(): ReactNode {
-  const [selectedId, setSelectedId] = useState<string>();
+  const [selected, setSelected] = useState<string | null>(null);
 
   return (
     <Panel>
@@ -171,8 +177,10 @@ function SeasonalStrip(): ReactNode {
         domain={[0, 5]}
         palette="sequential"
         valueLabel="Month compared with the category average"
-        formatValue={formatShare}
-        selection={{ selectedId, onSelect: setSelectedId }}
+        valueFormat={formatShare}
+        locale={locale}
+        selected={selected}
+        onSelectedChange={setSelected}
         emptyLabel="No seasonal plan was supplied."
         variant="strip"
       />
@@ -187,8 +195,20 @@ export const ExactTokenText: Story = { render: () => <Tokens /> };
 export const ColorDomains: Story = {
   render: () => (
     <Stack>
-      <ColorLegend label="Activation (unitless)" domain={[0, 3]} palette="sequential" formatValue={formatValue} />
-      <ColorLegend label="Signed change (points)" domain={[-1, 2]} palette="diverging" formatValue={formatValue} />
+      <ColorLegend
+        label="Activation (unitless)"
+        domain={[0, 3]}
+        palette="sequential"
+        valueFormat={valueFormat}
+        locale={locale}
+      />
+      <ColorLegend
+        label="Signed change (points)"
+        domain={[-1, 2]}
+        palette="diverging"
+        valueFormat={valueFormat}
+        locale={locale}
+      />
     </Stack>
   ),
 };
@@ -205,7 +225,8 @@ export const ValuesOutsideDomain: Story = {
         domain={[0, 1]}
         palette="sequential"
         valueLabel="Measured score (unitless)"
-        formatValue={formatValue}
+        valueFormat={valueFormat}
+        locale={locale}
         emptyLabel="No measurements."
       />
       <TokenHeatmap
@@ -215,7 +236,8 @@ export const ValuesOutsideDomain: Story = {
         domain={[-1, 1]}
         palette="diverging"
         valueLabel="Contribution (logit units)"
-        formatValue={formatValue}
+        valueFormat={valueFormat}
+        locale={locale}
         emptyLabel="No tokens."
       />
     </Stack>
@@ -234,7 +256,8 @@ export const Empty: Story = {
         domain={[0, 1]}
         palette="sequential"
         valueLabel="Weight (unitless)"
-        formatValue={formatValue}
+        valueFormat={valueFormat}
+        locale={locale}
         emptyLabel="No attention values were supplied."
       />
       <TokenHeatmap
@@ -244,7 +267,8 @@ export const Empty: Story = {
         domain={[-1, 1]}
         palette="diverging"
         valueLabel="Contribution (logit units)"
-        formatValue={formatValue}
+        valueFormat={valueFormat}
+        locale={locale}
         emptyLabel="No tokens were supplied."
       />
     </Stack>
@@ -266,7 +290,8 @@ export const InvalidInput: Story = {
         domain={[0, 1]}
         palette="sequential"
         valueLabel="Weight (unitless)"
-        formatValue={formatValue}
+        valueFormat={valueFormat}
+        locale={locale}
         emptyLabel="No cells."
       />
       <TokenHeatmap
@@ -279,7 +304,8 @@ export const InvalidInput: Story = {
         domain={[-1, 1]}
         palette="diverging"
         valueLabel="Contribution (logit units)"
-        formatValue={formatValue}
+        valueFormat={valueFormat}
+        locale={locale}
         emptyLabel="No tokens."
       />
     </Stack>
@@ -287,7 +313,7 @@ export const InvalidInput: Story = {
 };
 
 function LongMatrixLabels(): ReactNode {
-  const [selectedId, onSelect] = useState<string>('the-map');
+  const [selected, setSelected] = useState<string | null>('the-map');
 
   const longAxes = axes.map((axis) => ({
     ...axis,
@@ -305,8 +331,10 @@ function LongMatrixLabels(): ReactNode {
         domain={[0, 1]}
         palette="sequential"
         valueLabel="Normalized attention weight for the selected layer and head"
-        formatValue={formatValue}
-        selection={{ selectedId, onSelect }}
+        valueFormat={valueFormat}
+        locale={locale}
+        selected={selected}
+        onSelectedChange={setSelected}
         emptyLabel="No values were supplied."
       />
       <Tokens />
@@ -318,3 +346,43 @@ export const NarrowLongLabels: Story = {
   globals: { viewport: { value: 'narrow', isRotated: false } },
   render: () => <LongMatrixLabels />,
 };
+
+const LAYER_COUNT = 24;
+const layers = Array.from({ length: LAYER_COUNT }, (_, index) => ({ id: `layer-${index}`, label: `L${index}` }));
+
+const similarity: ReadonlyArray<MatrixCell> = layers.flatMap((row, rowIndex) =>
+  layers.map((column, columnIndex): MatrixCell => ({
+    id: `${row.id}:${column.id}`,
+    rowId: row.id,
+    columnId: column.id,
+    kind: 'value',
+    value: Math.round(1000 * Math.exp(-Math.abs(rowIndex - columnIndex) / 6)) / 1000,
+  })),
+);
+
+function BlockCopy(): ReactNode {
+  const [cellRange, setCellRange] = useState<MatrixCellRange | null>({
+    anchor: { rowId: 'layer-2', columnId: 'layer-2' },
+    end: { rowId: 'layer-5', columnId: 'layer-6' },
+  });
+
+  return (
+    <Matrix
+      title="Representation similarity across layers"
+      description="Synthetic linear CKA between the residual streams of 24 layers. Mark a block with Shift and the arrow keys, or drag across cells, then copy it into a spreadsheet."
+      locale={locale}
+      rows={layers}
+      columns={layers}
+      cells={similarity}
+      domain={[0, 1]}
+      palette="sequential"
+      valueLabel="Linear CKA (unitless)"
+      valueFormat={valueFormat}
+      cellRange={cellRange}
+      onCellRangeChange={setCellRange}
+      source="Synthetic"
+    />
+  );
+}
+
+export const BlockSelection: Story = { render: () => <BlockCopy /> };
