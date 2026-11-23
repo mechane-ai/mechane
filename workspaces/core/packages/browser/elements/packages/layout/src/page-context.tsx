@@ -7,6 +7,7 @@ const pageTitle = definePrimitive({
   name: 'page-title',
   state: () => ({}),
   api: () => ({}),
+  agent: { actions: [] },
   slots: (slot) => ({ root: slot({}) }),
 });
 

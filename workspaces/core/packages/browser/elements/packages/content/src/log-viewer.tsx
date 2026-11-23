@@ -1,11 +1,13 @@
 import * as stylex from '@stylexjs/stylex';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createStickToBottom } from '@ui-sdk/core';
+import { useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
 import stripAnsi from 'strip-ansi';
 import { Button, CopyValue } from '../../core/src/index.ts';
 import { colors, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import { useScrollTabIndex } from '../../foundations/src/use-scroll-tab-index.ts';
 import { viewerStyles } from './viewer-styles.ts';
+import { Viewer } from './viewer.tsx';
 
 export type LogViewerProps = {
   readonly output: string;
@@ -29,6 +31,8 @@ const styles = stylex.create({
     overflowWrap: 'anywhere',
     tabSize: 2,
   }),
+  // A block the follower can measure as the output grows.
+  text: { display: 'block' },
   notice: { borderBlockEndWidth: 1, borderBlockEndStyle: 'solid', borderBlockEndColor: colors.line },
 });
 
@@ -45,7 +49,14 @@ export function LogViewer({
   const keyboardScroll = useScrollTabIndex<HTMLPreElement>();
   const scroll = keyboardScroll.viewport;
   const isFollowFocused = useRef(false);
-  const [isFollowing, setFollowing] = useState(true);
+
+  const [follower] = useState(() => {
+    const log = createStickToBottom();
+
+    return { ...log, subscribe: (listener: () => void) => log.subscribe(listener), read: () => log.get() };
+  });
+
+  const { following: isFollowing } = useSyncExternalStore(follower.subscribe, follower.read, follower.read);
   const text = stripAnsi(output);
   const lines = text.slice(-MAX_PREVIEW_CHARACTERS).split('\n');
   const retainedLines = lines.slice(-Math.max(1, maxLines));
@@ -53,11 +64,12 @@ export function LogViewer({
   const isEmbedded = variant === 'embedded';
   const shouldShowFollow = isRunning && (isEmbedded ? !isFollowing : true);
 
-  useEffect(() => {
-    if (isFollowing && scroll.current !== null) {
-      scroll.current.scrollTop = scroll.current.scrollHeight;
-    }
-  }, [output, isFollowing]);
+  // The UI SDK follower keeps the end in view while output grows, until the reader scrolls up.
+  useLayoutEffect(() => {
+    const node = scroll.current;
+
+    return node === null ? undefined : follower.connect(node);
+  }, [follower, scroll]);
 
   useLayoutEffect(() => {
     if (!isRunning && isFollowFocused.current) {
@@ -68,7 +80,7 @@ export function LogViewer({
   }, [isRunning]);
 
   return (
-    <section aria-label={label} {...stylex.props(viewerStyles.root, isEmbedded && viewerStyles.embedded)}>
+    <Viewer kind="log" aria-label={label} {...stylex.props(viewerStyles.root, isEmbedded && viewerStyles.embedded)}>
       <div {...stylex.props(viewerStyles.header, isEmbedded && viewerStyles.embeddedHeader)}>
         <span {...stylex.props(viewerStyles.label)}>
           {label}
@@ -78,7 +90,13 @@ export function LogViewer({
           {shouldShowFollow && (
             <Button
               variant="ghost"
-              onClick={() => setFollowing(!isFollowing)}
+              onClick={() => {
+                if (isFollowing) {
+                  follower.release();
+                } else {
+                  follower.scrollToBottom();
+                }
+              }}
               onFocus={() => {
                 isFollowFocused.current = true;
               }}
@@ -109,15 +127,12 @@ export function LogViewer({
         role="region"
         aria-label={`${label} output`}
         tabIndex={keyboardScroll.tabIndex}
-        onScroll={(event) => {
-          const node = event.currentTarget;
-
-          setFollowing(node.scrollHeight - node.scrollTop - node.clientHeight < 8);
-        }}
         {...stylex.props(viewerStyles.scrollRegion, styles.output(maxHeight))}
       >
-        {text.length === 0 ? 'No output recorded.' : retainedLines.join('\n')}
+        <span {...stylex.props(styles.text)}>
+          {text.length === 0 ? 'No output recorded.' : retainedLines.join('\n')}
+        </span>
       </pre>
-    </section>
+    </Viewer>
   );
 }

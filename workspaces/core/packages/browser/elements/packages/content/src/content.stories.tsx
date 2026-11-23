@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Stack } from '../../core/src/index.ts';
+import { useState } from 'react';
+import type { ReactNode } from 'react';
+import { Button, Stack } from '../../core/src/index.ts';
 import { ContentLink } from './content-link.tsx';
 import { JsonViewer } from './json-viewer.tsx';
 import { LogViewer } from './log-viewer.tsx';
@@ -85,6 +87,21 @@ export const RecordedOutput: Story = {
     </Stack>
   ),
 };
+
+function RunningOutputExample(): ReactNode {
+  const [count, setCount] = useState(40);
+  const output = Array.from({ length: count }, (_, index) => `Step ${index + 1} complete`).join('\n');
+
+  return (
+    <Stack>
+      <Button onClick={() => setCount(count + 5)}>Append output</Button>
+      <LogViewer label="Running build" isRunning maxHeight={200} output={output} />
+    </Stack>
+  );
+}
+
+/** The view follows new output until the reader scrolls up, and follows again from the end or the button. */
+export const RunningOutput: Story = { render: () => <RunningOutputExample /> };
 
 export const ErrorFrames: Story = {
   render: () => (

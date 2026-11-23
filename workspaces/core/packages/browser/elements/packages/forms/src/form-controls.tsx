@@ -1,8 +1,6 @@
-import { mergeProps } from '@base-ui/react/merge-props';
 import * as stylex from '@stylexjs/stylex';
 import {
   Field as SdkField,
-  FieldControl as SdkFieldControl,
   FieldLabel as SdkFieldLabel,
   FieldLegend as SdkFieldLegend,
   FieldSet as SdkFieldSet,
@@ -16,6 +14,7 @@ import {
   NumberInputIncrement,
   NumberInput as SdkNumberInput,
 } from '@ui-sdk/react/number-input';
+import { mergeProps } from '@ui-sdk/react/primitive';
 import {
   Slider as SdkSlider,
   SliderControl as SdkSliderControl,
@@ -176,66 +175,12 @@ const styles = stylex.create({
     fontVariantNumeric: 'tabular-nums',
     color: colors.muted,
   },
-  file: {
-    'paddingBlock': 0,
-    'paddingInline': 0,
-    'lineHeight': {
-      default: `calc(${controls.height} - 2px)`,
-      [conditions.coarsePointer]: `calc(${controls.coarseTarget} - 2px)`,
-    },
-    '::file-selector-button': {
-      marginInlineEnd: spacing.sm,
-      paddingBlock: 0,
-      paddingInline: controls.paddingInline,
-      minHeight: {
-        default: `calc(${controls.height} - 2px)`,
-        [conditions.coarsePointer]: `calc(${controls.coarseTarget} - 2px)`,
-      },
-      borderWidth: 0,
-      borderInlineEndWidth: 1,
-      borderStyle: 'solid',
-      borderColor: colors.line,
-      backgroundColor: colors.canvas,
-      color: colors.ink,
-      fontFamily: typography.fontFamily,
-      fontWeight: typography.regularWeight,
-      fontSize: { default: typography.bodySize, [conditions.coarsePointer]: typography.touchInputSize },
-      cursor: 'pointer',
-    },
-    ':hover:not(:disabled)': {
-      '::file-selector-button': { backgroundColor: { [conditions.hoverPointer]: colors.line } },
-    },
-    ':active:not(:disabled)': { '::file-selector-button': { backgroundColor: colors.line } },
-    ':disabled': { '::file-selector-button': { cursor: 'not-allowed', color: colors.muted } },
-  },
 });
 
 const addonDensityStyles = stylex.create<Record<ControlDensity, stylex.CSSProperties>>({
   standard: {},
   compact: { paddingInline: controls.compactPaddingInline },
 });
-
-const fileStyles = stylex.create({
-  standard: {},
-  compact: {
-    'lineHeight': {
-      default: `calc(${controls.compactHeight} - 2px)`,
-      [conditions.coarsePointer]: `calc(${controls.coarseTarget} - 2px)`,
-    },
-    '::file-selector-button': {
-      paddingInline: controls.compactPaddingInline,
-      minHeight: {
-        default: `calc(${controls.compactHeight} - 2px)`,
-        [conditions.coarsePointer]: `calc(${controls.coarseTarget} - 2px)`,
-      },
-    },
-  },
-});
-
-const fileDensityStyles = { standard: fileStyles.standard, compact: fileStyles.compact } satisfies Record<
-  ControlDensity,
-  stylex.CompiledStyles
->;
 
 type FieldsetRootProps = ComponentProps<typeof SdkFieldSet> & { readonly xstyle?: PlacementStyle };
 type FieldsetLegendProps = ComponentProps<typeof SdkFieldLegend>;
@@ -278,11 +223,6 @@ type SliderThumbProps = ComponentProps<typeof SdkSliderThumb>;
 type SliderLabelProps = ComponentProps<typeof SdkFieldLabel>;
 type SliderValueProps = ComponentProps<typeof SdkSliderValue>;
 
-type FilePickerProps = Omit<
-  ComponentProps<typeof SdkFieldControl>,
-  'type' | 'value' | 'defaultValue' | 'onValueChange'
-> & { readonly density?: ControlDensity; readonly xstyle?: PlacementStyle };
-
 function FieldsetRoot({ className, style, xstyle, ...props }: FieldsetRootProps): ReactNode {
   return (
     <SdkFieldSet {...props} {...mergeStyles({ className, style, styles: stylex.props(styles.fieldset, xstyle) })} />
@@ -311,7 +251,7 @@ function InputGroupRoot({ density = 'standard', className, style, xstyle, ...pro
 function InputGroupAddon(props: InputGroupAddonProps): ReactNode {
   const density = useContext(InputGroupDensityContext);
 
-  return <span {...mergeProps<'span'>(stylex.props(styles.addon, addonDensityStyles[density]), props)} />;
+  return <span {...mergeProps(stylex.props(styles.addon, addonDensityStyles[density]), props)} />;
 }
 
 function InputGroupInput(props: InputGroupInputProps): ReactNode {
@@ -455,30 +395,6 @@ function SliderLabel({ className, style, ...props }: SliderLabelProps): ReactNod
 
 function SliderValue({ className, style, ...props }: SliderValueProps): ReactNode {
   return <SdkSliderValue {...props} {...mergeStyles({ className, style, styles: stylex.props(styles.value) })} />;
-}
-
-export function FilePicker({ density = 'standard', className, style, xstyle, ...props }: FilePickerProps): ReactNode {
-  return (
-    <SdkFieldControl
-      {...props}
-      type="file"
-      {...mergeStyles({
-        className,
-        style,
-        styles: stylex.props(
-          controlStyles.base,
-          controlStyles.field,
-          controlStyles.singleLineField,
-          controlStyles.textFieldState,
-          controlDensityStyles[density],
-          singleLineControlDensityStyles[density],
-          styles.file,
-          fileDensityStyles[density],
-          xstyle,
-        ),
-      })}
-    />
-  );
 }
 
 export const Fieldset = { Root: FieldsetRoot, Legend: FieldsetLegend };

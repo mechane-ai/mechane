@@ -35,6 +35,10 @@ Mark only the focused plot's keyboard cursor when small multiples share inspecti
 Keep inspection open when equivalent observations arrive in new arrays, and close it when values, series identity, or markers change.
 Keep inspection details inside the viewport and in the active theme, and keep series legends visible while idle.
 
+Keep a selected time range as the application's state. Draw it with a mouse or pen on the plot, move and resize it with
+a pointer or the keyboard through the UI SDK spans behavior, and offer buttons that select and clear it for touch and
+keyboard users. Keep pointer inspection working under a selected range, and report every change with its details.
+
 Use SmallMultiples for measures compared on the same observation timestamps. Share the plot gutter and show the
 visible date axis beneath the final panel. Keep each panel's value scale, units, sample population and exact-value
 table independent. Show one inspection surface at the source panel while the shared timestamp guides all panels.

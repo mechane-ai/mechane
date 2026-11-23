@@ -163,7 +163,7 @@ module.exports = {
       comment: 'Compose independent areas in the application, such as `<AppShell>{chart}</AppShell>`',
       severity: 'error',
       from: { path: '^(?:packages/browser/elements/packages)/(?:navigation)/', pathNot: '[.]stories[.]tsx$' },
-      to: { path: '^(?:packages/browser/elements/packages)/(?!(?:navigation|foundations|forms|overlays)/)' },
+      to: { path: '^(?:packages/browser/elements/packages)/(?!(?:navigation|foundations|core|forms|overlays)/)' },
     },
     {
       name: 'ui-layout-public-entry',
@@ -273,29 +273,6 @@ module.exports = {
       to: { path: 'node_modules/@ui-sdk/' },
     },
     {
-      name: 'ui-base-utility-owner',
-      comment:
-        'Use the owning Elements component, such as `Dialog` from `@mechane-ai/elements/overlays`; only forms and CSP retain Base UI utilities',
-      severity: 'error',
-      from: {
-        path: '^packages/browser/',
-        pathNot:
-          '^packages/browser/elements/packages/(?:foundations/src/csp/(?:index[.]ts|provider[.]tsx)|forms/src/form-controls[.]tsx)$',
-      },
-      to: { path: 'node_modules/@base-ui/react/' },
-    },
-    {
-      name: 'ui-base-utility-entry',
-      comment:
-        'Implement controls with UI SDK, such as `@ui-sdk/react/dialog`; Base UI supplies only merge-props and csp-provider',
-      severity: 'error',
-      from: { path: '^packages/browser/' },
-      to: {
-        path: 'node_modules/@base-ui/react/',
-        pathNot: 'node_modules/@base-ui/react/(?:merge-props|csp-provider)/',
-      },
-    },
-    {
       name: 'ui-tables-vendor-owner',
       comment:
         'Import the Elements tables API, such as `@mechane-ai/elements/collections`, instead of its implementation dependency',
@@ -304,7 +281,7 @@ module.exports = {
         path: '^(?:packages/browser/elements/packages)/',
         pathNot: '^(?:packages/browser/elements/packages)/(?:collections)/',
       },
-      to: { path: 'node_modules/(?:@tanstack/(?:react-table|react-virtual))' },
+      to: { path: 'node_modules/(?:@tanstack/react-table)' },
     },
     {
       name: 'ui-content-vendor-owner',
@@ -316,17 +293,6 @@ module.exports = {
         pathNot: '^(?:packages/browser/elements/packages)/(?:content)/',
       },
       to: { path: 'node_modules/(?:(?:@pierre/|streamdown|strip-ansi))' },
-    },
-    {
-      name: 'ui-conversation-vendor-owner',
-      comment:
-        'Import the Elements conversation API, such as `@mechane-ai/elements/ai`, instead of its implementation dependency',
-      severity: 'error',
-      from: {
-        path: '^(?:packages/browser/elements/packages)/',
-        pathNot: '^(?:packages/browser/elements/packages)/(?:ai)/',
-      },
-      to: { path: 'node_modules/(?:@shadcn/)' },
     },
     {
       name: 'ui-charts-vendor-owner',
@@ -1085,17 +1051,6 @@ module.exports = {
       to: { path: '/node_modules/@ai-sdk/mcp/' },
     },
     {
-      name: 'confine:@base-ui/react',
-      comment:
-        'Import a confined package only in a member whose `confines` names it, such as `cookie` in `@mechane/pages`',
-      severity: 'error',
-      from: {
-        pathNot:
-          '^(?:packages/browser/elements/packages|packages/browser/elements/recipes|packages/browser/elements/src|packages/browser/elements/bin|packages/browser/elements/scripts|packages/browser/elements/[.]storybook|packages/browser/elements/vite[.]config[.]ts)/',
-      },
-      to: { path: '/node_modules/@base-ui/react/' },
-    },
-    {
       name: 'confine:@earendil-works/chord',
       comment:
         'Import a confined package only in a member whose `confines` names it, such as `cookie` in `@mechane/pages`',
@@ -1150,17 +1105,6 @@ module.exports = {
       to: { path: '/node_modules/@pierre/highlights/' },
     },
     {
-      name: 'confine:@shadcn/react',
-      comment:
-        'Import a confined package only in a member whose `confines` names it, such as `cookie` in `@mechane/pages`',
-      severity: 'error',
-      from: {
-        pathNot:
-          '^(?:packages/browser/elements/packages|packages/browser/elements/recipes|packages/browser/elements/src|packages/browser/elements/bin|packages/browser/elements/scripts|packages/browser/elements/[.]storybook|packages/browser/elements/vite[.]config[.]ts)/',
-      },
-      to: { path: '/node_modules/@shadcn/react/' },
-    },
-    {
       name: 'confine:@tanstack/browser-db-sqlite-persistence',
       comment:
         'Import a confined package only in a member whose `confines` names it, such as `cookie` in `@mechane/pages`',
@@ -1213,17 +1157,6 @@ module.exports = {
           '^(?:packages/browser/elements/packages|packages/browser/elements/recipes|packages/browser/elements/src|packages/browser/elements/bin|packages/browser/elements/scripts|packages/browser/elements/[.]storybook|packages/browser/elements/vite[.]config[.]ts)/',
       },
       to: { path: '/node_modules/@tanstack/react-table/' },
-    },
-    {
-      name: 'confine:@tanstack/react-virtual',
-      comment:
-        'Import a confined package only in a member whose `confines` names it, such as `cookie` in `@mechane/pages`',
-      severity: 'error',
-      from: {
-        pathNot:
-          '^(?:packages/browser/elements/packages|packages/browser/elements/recipes|packages/browser/elements/src|packages/browser/elements/bin|packages/browser/elements/scripts|packages/browser/elements/[.]storybook|packages/browser/elements/vite[.]config[.]ts)/',
-      },
-      to: { path: '/node_modules/@tanstack/react-virtual/' },
     },
     {
       name: 'confine:@ui-sdk/core',

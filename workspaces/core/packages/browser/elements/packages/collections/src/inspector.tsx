@@ -88,6 +88,7 @@ const detailField = definePrimitive({
   state: fieldState,
   sync: fieldState,
   api: () => ({}),
+  agent: { actions: [] },
   slots: (slot) => ({ root: slot({}) }),
 });
 

@@ -1,4 +1,5 @@
 import * as stylex from '@stylexjs/stylex';
+import { dispatch } from '@ui-sdk/core';
 import {
   Field as SdkField,
   FieldControl as SdkFieldControl,
@@ -8,7 +9,7 @@ import {
 } from '@ui-sdk/react/field';
 import { Input as SdkInput } from '@ui-sdk/react/input';
 import { Textarea as SdkTextarea } from '@ui-sdk/react/textarea';
-import type { ComponentProps, ReactNode } from 'react';
+import type { ChangeEvent, ComponentProps, ReactNode } from 'react';
 import type { ControlDensity } from '../../foundations/src/control-density.ts';
 import type { TextValueProperties } from '../../foundations/src/control-state.ts';
 import {
@@ -31,11 +32,14 @@ type FieldLabelProps = ComponentProps<typeof SdkFieldLabel>;
 type FieldDescriptionProps = ComponentProps<typeof SdkFieldDescription>;
 type FieldErrorProps = ComponentProps<typeof SdkFieldError>;
 
+/** The new text, then the SDK's change details: the reason, the event and who caused it. */
+type TextValueChange = NonNullable<ComponentProps<typeof SdkInput>['onValueChange']>;
+
 type TextControlProps<Tag extends 'input' | 'textarea'> = Omit<
   ComponentProps<Tag>,
   'value' | 'defaultValue' | 'onChange' | 'readOnly' | 'size' | 'onSelect' | 'onSubmit'
 > &
-  TextValueProperties<string | number, NonNullable<ComponentProps<Tag>['onChange']>, (value: string) => void> & {
+  TextValueProperties<string | number, NonNullable<ComponentProps<Tag>['onChange']>, TextValueChange> & {
     /** Keep credentials and other private text out of the UI SDK runtime. Password inputs always use this mode. */
     readonly isSensitive?: boolean;
     readonly xstyle?: PlacementStyle;
@@ -82,6 +86,21 @@ export function Input(props: InputProps): ReactNode {
   return <TextInput {...props} />;
 }
 
+/** Reports a private field's change with the SDK's details. The text itself is never handed to the SDK. */
+function reportPrivateChange(
+  event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  onValueChange: TextValueChange | undefined,
+): void {
+  if (event.defaultPrevented || onValueChange === undefined) {
+    return;
+  }
+
+  const { value } = event.currentTarget;
+  const report = { onReport: (_: null, details: Parameters<TextValueChange>[1]) => onValueChange(value, details) };
+
+  dispatch({ options: () => report }, 'onReport', null, { reason: 'input-change', event: event.nativeEvent });
+}
+
 function privateAutocomplete(autoComplete: string | undefined): boolean {
   return /(?:^|\s)(?:current-password|new-password|one-time-code|cc-[a-z-]+)(?:\s|$)/i.test(autoComplete ?? '');
 }
@@ -124,10 +143,7 @@ export function TextInput({
         defaultValue={defaultValue}
         onChange={(event) => {
           onChange?.(event);
-
-          if (!event.defaultPrevented) {
-            onValueChange?.(event.currentTarget.value);
-          }
+          reportPrivateChange(event, onValueChange);
         }}
       />
     );
@@ -189,10 +205,7 @@ export function Textarea({
             defaultValue={defaultValue}
             onChange={(event) => {
               onChange?.(event);
-
-              if (!event.defaultPrevented) {
-                onValueChange?.(event.currentTarget.value);
-              }
+              reportPrivateChange(event, onValueChange);
             }}
           />
         }

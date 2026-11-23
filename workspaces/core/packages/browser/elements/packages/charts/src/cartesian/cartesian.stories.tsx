@@ -5,6 +5,7 @@ import { Button, Panel, Row, Stack, Text } from '../../../core/src/index.ts';
 import { AsyncRegion } from '../../../feedback/src/index.ts';
 import type { BreakdownItem } from '../categorical-values.tsx';
 import { ChartFrame, ChartLegend } from '../chart-frame.tsx';
+import type { ChartRangeValue } from '../chart-range.tsx';
 import { BarChart, BarChartPlaceholder } from './bar-chart.tsx';
 import type { BarSeries } from './bar-chart.tsx';
 import { BreakdownBar } from './breakdown-bar.tsx';
@@ -106,6 +107,33 @@ export const Observations: Story = {
     </Panel>
   ),
 };
+
+function SelectTimeRange(): ReactNode {
+  const [range, setRange] = useState<ChartRangeValue | null>([90, 180]);
+  const selected = range === null ? times : times.filter((time) => time >= range[0] && time <= range[1]);
+
+  return (
+    <Panel>
+      <Stack>
+        <LineChart
+          title="Request latency"
+          description="Drag on the plot to select a range of time. Drag the range to move it, or an edge to resize it. With the keyboard, Tab to the range, then use the arrow keys, Shift with an arrow, and Delete."
+          series={[baseline, candidate]}
+          timestampUnit="seconds"
+          formatTimestamp={formatTime}
+          formatValue={formatLatency}
+          rangeSelection={{ value: range, onChange: setRange, step: 30 }}
+        />
+        <Text tone="muted">
+          The application owns the range. Here it counts {selected.length} of {times.length} observations.
+        </Text>
+      </Stack>
+    </Panel>
+  );
+}
+
+/** A range of time the application owns, drawn and adjusted on the plot. */
+export const TimeRange: Story = { render: () => <SelectTimeRange /> };
 
 export const TimeSeriesLoading: Story = {
   render: () => (

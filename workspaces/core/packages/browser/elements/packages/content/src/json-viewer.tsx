@@ -5,6 +5,7 @@ import { Collapsible, CopyValue } from '../../core/src/index.ts';
 import { colors, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import { useScrollTabIndex } from '../../foundations/src/use-scroll-tab-index.ts';
 import { viewerStyles } from './viewer-styles.ts';
+import { Viewer } from './viewer.tsx';
 
 export type JsonValue =
   | null
@@ -122,7 +123,7 @@ export function JsonViewer({ value, label, maxDepth = 6, maxEntries = 50 }: Json
   const copyValue = useCallback(() => JSON.stringify(value, null, 2), [value]);
 
   return (
-    <section aria-label={label} {...stylex.props(viewerStyles.root)}>
+    <Viewer kind="json" aria-label={label} {...stylex.props(viewerStyles.root)}>
       <div {...stylex.props(viewerStyles.header)}>
         <span {...stylex.props(viewerStyles.label)}>{label}</span>
         <CopyValue label={label} value={copyValue}>
@@ -145,6 +146,6 @@ export function JsonViewer({ value, label, maxDepth = 6, maxEntries = 50 }: Json
           maxEntries={Math.max(1, maxEntries)}
         />
       </div>
-    </section>
+    </Viewer>
   );
 }

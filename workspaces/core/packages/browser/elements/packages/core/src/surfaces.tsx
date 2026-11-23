@@ -4,6 +4,7 @@ import type { ComponentProps, ReactNode } from 'react';
 import { conditions } from '../../foundations/src/constants.stylex.ts';
 import type { PlacementStyle } from '../../foundations/src/style-composition.ts';
 import { colors, controls, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { RouteLink } from './route-link.tsx';
 
 const styles = stylex.create({
   panel: {
@@ -75,7 +76,7 @@ export function Panel({ isPadded = true, ...props }: PanelProps): ReactNode {
 }
 
 export function SurfaceLink({ xstyle, ...props }: SurfaceLinkProps): ReactNode {
-  return <a {...mergeProps(stylex.props(styles.link, xstyle), props)} />;
+  return <RouteLink {...mergeProps(stylex.props(styles.link, xstyle), props)} />;
 }
 
 export function Row({ shouldSpaceBetween = false, ...props }: RowProps): ReactNode {

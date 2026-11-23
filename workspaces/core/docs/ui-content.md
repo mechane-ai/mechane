@@ -88,8 +88,9 @@ in.
 
 [LogViewer](../packages/browser/elements/packages/content/src/log-viewer.tsx) displays recorded text. It strips ANSI
 sequences for presentation, keeps the last 200,000 characters and the configured line limit, and lets the reader pause
-following output. Copy retains the supplied string. It never attaches a terminal, launches commands, or interprets
-escape sequences as browser behavior.
+following output. The UI SDK `createStickToBottom` follows the end while output grows, stops when the reader scrolls up,
+and follows again from the end. Copy retains the supplied string. It never attaches a terminal, launches commands, or
+interprets escape sequences as browser behavior.
 
 [StackTrace](../packages/browser/elements/packages/content/src/stack-trace.tsx) composes an error summary and stable
 frames. Applications supply each frame's file destination and optional source. Empty frames remain an explicit state

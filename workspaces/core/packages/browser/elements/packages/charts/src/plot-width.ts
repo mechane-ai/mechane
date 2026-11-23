@@ -22,5 +22,5 @@ export function usePlotWidth() {
     return () => observer.disconnect();
   }, [element]);
 
-  return { ref, width, element };
+  return { ref, width };
 }

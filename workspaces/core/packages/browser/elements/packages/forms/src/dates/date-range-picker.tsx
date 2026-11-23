@@ -92,6 +92,7 @@ export function DateRangePicker({
             <DateInput
               label="Start date"
               value={draft?.from}
+              locale={environment.locale}
               minimum={environment.minimum}
               maximum={environment.maximum}
               onValueChange={(from) => setDraft(from === undefined ? undefined : { from, to: draft?.to })}
@@ -99,6 +100,7 @@ export function DateRangePicker({
             <DateInput
               label="End date"
               value={draft?.to}
+              locale={environment.locale}
               minimum={environment.minimum}
               maximum={environment.maximum}
               onValueChange={(to) => {

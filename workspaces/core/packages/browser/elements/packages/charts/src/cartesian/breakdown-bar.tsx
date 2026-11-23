@@ -2,11 +2,12 @@ import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
 import { chartToneColors, chartToneOutlines } from '../../../foundations/src/chart-tones.ts';
 import { colors, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
-import { CategoricalValues, colorTone, validateBreakdown } from '../categorical-values.tsx';
+import { categoricalItems, CategoricalValues, colorTone, validateBreakdown } from '../categorical-values.tsx';
 import type { BreakdownItem } from '../categorical-values.tsx';
 import { ChartFrame } from '../chart-frame.tsx';
 import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError } from '../chart-input.tsx';
+import { Chart } from '../chart.tsx';
 
 const styles = stylex.create({
   track: {
@@ -66,44 +67,51 @@ export function BreakdownBar({
     );
   }
 
+  const values = items.map((item, index) => ({
+    id: item.id,
+    label: item.label,
+    valueLabel: item.value === null ? 'Unavailable' : formatValue(item.value),
+    tone: colorTone(item.tone, index),
+  }));
+
   return (
-    <ChartFrame title={title} report={report} description={description}>
-      {items.length === 0 ? (
-        <p {...stylex.props(styles.empty)}>No values</p>
-      ) : (
-        <>
-          <div aria-hidden {...stylex.props(styles.track)}>
-            {items.map((item, index) =>
-              item.value === null ? null : (
-                <span
-                  key={item.id}
-                  {...stylex.props(
-                    styles.segment(
-                      total === 0 ? 0 : (item.value / total) * 100,
-                      chartToneColors[colorTone(item.tone, index)],
-                      chartToneOutlines[colorTone(item.tone, index)],
-                    ),
-                  )}
-                />
-              ),
-            )}
-          </div>
-          <CategoricalValues
-            items={items.map((item, index) => ({
-              id: item.id,
-              label: item.label,
-              valueLabel: item.value === null ? 'Unavailable' : formatValue(item.value),
-              tone: colorTone(item.tone, index),
-            }))}
-            selection={selection}
-          />
-          {total - recorded > roundingTolerance && (
-            <p {...stylex.props(styles.empty)}>
-              Unassigned portion: {formatValue(total - recorded)} of {formatValue(total)}
-            </p>
+    <Chart
+      items={categoricalItems(values)}
+      arrows="both"
+      selected={selection?.selectedId ?? null}
+      onSelect={selection?.onSelect}
+      render={(figure, view) => (
+        <ChartFrame figure={figure} title={title} report={report} description={description}>
+          {items.length === 0 ? (
+            <p {...stylex.props(styles.empty)}>No values</p>
+          ) : (
+            <>
+              <div aria-hidden {...stylex.props(styles.track)}>
+                {items.map((item, index) =>
+                  item.value === null ? null : (
+                    <span
+                      key={item.id}
+                      {...stylex.props(
+                        styles.segment(
+                          total === 0 ? 0 : (item.value / total) * 100,
+                          chartToneColors[colorTone(item.tone, index)],
+                          chartToneOutlines[colorTone(item.tone, index)],
+                        ),
+                      )}
+                    />
+                  ),
+                )}
+              </div>
+              <CategoricalValues title={title} items={values} view={selection === undefined ? undefined : view} />
+              {total - recorded > roundingTolerance && (
+                <p {...stylex.props(styles.empty)}>
+                  Unassigned portion: {formatValue(total - recorded)} of {formatValue(total)}
+                </p>
+              )}
+            </>
           )}
-        </>
+        </ChartFrame>
       )}
-    </ChartFrame>
+    />
   );
 }

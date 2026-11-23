@@ -71,6 +71,10 @@ Make a row's primary native link or button cover its noninteractive cells. Navig
 modifier-click, context-menu, and keyboard behavior; do not forward row clicks through a synthetic control click.
 Keep embedded controls and selection independently operable above that hit area, including focusable timestamps.
 Show the row's keyboard focus without moving its geometry, and preserve the primary trigger as the return-focus target.
+The rows' primary triggers share one Tab stop on the UI SDK grid focus. Arrow keys move by a row, Page Up and Page
+Down by ten, and Home and End reach the first and last supplied row. The Tab stop follows its record when the
+application sorts, filters or pages. A selectable table offers a checkbox per row, Shift ranges, and one header
+checkbox for every supplied row. Sort and selection callbacks pass the UI SDK change details after the value.
 Inspect a non-primary cell, an embedded control, and keyboard return in the existing Console navigation flow.
 
 Use `onRowHighlightChange` for transient inspection shared with a chart or another view. Report the supplied row ID
@@ -85,8 +89,9 @@ selection remain explicit. Keep the same behavior when virtual rows leave the or
 Check reusable column metadata against `DataTableColumnLayout` at its definition with an annotation or `satisfies`.
 Check complete columns against `DataTableColumn<Row>` there. A later spread or `Object.values` call must not be the
 first type check: structural assignment can accept stale extra properties and silently lose their behavior.
-TanStack Table supplies the row model; TanStack Virtual may window DOM rows without changing the supplied records.
+TanStack Table supplies the row model; the UI SDK virtualizer may window DOM rows without changing the supplied records.
 Neither engine owns the application's query, search, sort, grouping, or page boundaries.
+The `collection-results` primitive owns row focus, selection gestures and the actions an agent can use.
 
 The upstream tied-query pagination check applies to application consumers when a query changes. The generic catalog
 checks supplied order and controlled callbacks without inventing a database or retaining a product mock.

@@ -1,16 +1,22 @@
 import * as stylex from '@stylexjs/stylex';
 import { scaleLinear } from '@visx/scale';
+import { useId } from 'react';
 import type { ReactNode } from 'react';
 import { chartToneColors } from '../../../foundations/src/chart-tones.ts';
 import type { ChartTone } from '../../../foundations/src/chart-tones.ts';
+import { ChartCursor } from '../chart-cursor.tsx';
 import { ChartData } from '../chart-data.tsx';
 import { ChartFrame, ChartReadout } from '../chart-frame.tsx';
 import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError } from '../chart-input.tsx';
-import { useChartNavigation } from '../chart-navigation.tsx';
+import { Chart, inspectedLabel, plotLabel } from '../chart.tsx';
 import { distributionInputError, distributionLimits, outsideDomain } from './distribution-input.ts';
 import type { NumericDomain } from './distribution-input.ts';
 import { distributionGeometry, distributionStyles, NumericPlot } from './distribution-plot.tsx';
+
+/** Keeps the cursor's underline inside the plot, which clips at its bottom edge. */
+const CURSOR_INSET = 6;
+const CURSOR_WIDTH = 12;
 
 export type ECDFPoint = { readonly id: string; readonly value: number; readonly probability: number | null };
 
@@ -48,7 +54,7 @@ export function ECDF({
     label: `${valueLabel}: ${formatValue(point.value)}, ${probabilityLabel}: ${point.probability === null ? 'Unavailable' : formatProbability(point.probability)}`,
   }));
 
-  const navigation = useChartNavigation({ title, items, selection });
+  const readoutId = useId();
   const inputError = ecdfInputError({ points, domain });
 
   if (inputError !== undefined) {
@@ -58,107 +64,114 @@ export function ECDF({
   const yScale = scaleLinear({ domain: [0, 1], range: [distributionGeometry.height, 0] });
 
   return (
-    <ChartFrame
-      title={title}
-      report={report}
-      description={description}
-      footer={<ChartReadout id={navigation.id}>{navigation.label ?? '\u00A0'}</ChartReadout>}
-    >
-      {points.length === 0 ? (
-        <p {...stylex.props(distributionStyles.empty)}>{emptyLabel}</p>
-      ) : (
-        <>
-          <NumericPlot
-            navigation={navigation.props}
-            onInspectValue={(value) => {
-              const nearest = { point: points[0] };
+    <Chart
+      items={items}
+      arrows="both"
+      locate={(point) => {
+        const value = domain[0] + (point.x / point.width) * (domain[1] - domain[0]);
+        const nearest = { point: points[0] };
 
-              for (const item of points) {
-                if (
-                  nearest.point === undefined ||
-                  Math.abs(item.value - value) < Math.abs(nearest.point.value - value)
-                ) {
-                  nearest.point = item;
-                }
-              }
+        for (const item of points) {
+          if (nearest.point === undefined || Math.abs(item.value - value) < Math.abs(nearest.point.value - value)) {
+            nearest.point = item;
+          }
+        }
 
-              const point = nearest.point;
+        return nearest.point?.id;
+      }}
+      selected={selection?.selectedId ?? null}
+      onSelect={selection?.onSelect}
+      render={(figure, { inspected, cursor }) => (
+        <ChartFrame
+          figure={figure}
+          title={title}
+          report={report}
+          description={description}
+          footer={<ChartReadout id={readoutId}>{inspectedLabel(items, inspected)}</ChartReadout>}
+        >
+          {points.length === 0 ? (
+            <p {...stylex.props(distributionStyles.empty)}>{emptyLabel}</p>
+          ) : (
+            <>
+              <NumericPlot
+                label={plotLabel({ title, isSelectable: selection !== undefined })}
+                readoutId={readoutId}
+                xDomain={domain}
+                yDomain={[0, 1]}
+                xLabel={valueLabel}
+                yLabel={probabilityLabel}
+                formatX={formatValue}
+                formatY={formatProbability}
+              >
+                {(plotWidth) => {
+                  const xScale = scaleLinear({ domain: [...domain], range: [0, plotWidth] });
 
-              if (point !== undefined) {
-                navigation.inspect(point.id);
-              }
-            }}
-            xDomain={domain}
-            yDomain={[0, 1]}
-            xLabel={valueLabel}
-            yLabel={probabilityLabel}
-            formatX={formatValue}
-            formatY={formatProbability}
-          >
-            {(plotWidth) => {
-              const xScale = scaleLinear({ domain: [...domain], range: [0, plotWidth] });
+                  const path = points
+                    .map((point, index) => {
+                      if (point.probability === null) {
+                        return '';
+                      }
 
-              const path = points
-                .map((point, index) => {
-                  if (point.probability === null) {
-                    return '';
-                  }
+                      const x = xScale(point.value);
+                      const y = yScale(point.probability);
+                      const previous = points[index - 1];
 
-                  const x = xScale(point.value);
-                  const y = yScale(point.probability);
-                  const previous = points[index - 1];
+                      if (previous === undefined || previous.probability === null) {
+                        return `M ${x} ${y}`;
+                      }
 
-                  if (previous === undefined || previous.probability === null) {
-                    return `M ${x} ${y}`;
-                  }
+                      return `H ${x} V ${y}`;
+                    })
+                    .join(' ');
 
-                  return `H ${x} V ${y}`;
-                })
-                .join(' ');
+                  const rest = points.find((point) => point.id === cursor);
 
-              return (
-                <>
-                  <path
-                    d={path}
-                    fill="none"
-                    stroke={chartToneColors[tone]}
-                    strokeWidth={2}
-                    vectorEffect="non-scaling-stroke"
-                  />
-                  {points.map((point) => {
-                    if (point.probability === null) {
-                      return null;
-                    }
-
-                    return (
-                      <circle
-                        key={point.id}
-                        onPointerEnter={() => navigation.inspect(point.id)}
-                        onClick={() => selection?.onSelect(point.id)}
-                        cx={xScale(point.value)}
-                        cy={yScale(point.probability)}
-                        r={
-                          selection?.selectedId === point.id ||
-                          (navigation.label !== undefined && navigation.activeId === point.id)
-                            ? 4
-                            : 2
-                        }
-                        fill={chartToneColors[tone]}
+                  return (
+                    <>
+                      <path
+                        d={path}
+                        fill="none"
+                        stroke={chartToneColors[tone]}
+                        strokeWidth={2}
+                        vectorEffect="non-scaling-stroke"
                       />
-                    );
-                  })}
-                </>
-              );
-            }}
-          </NumericPlot>
-          <ChartData
-            label={`${title} observations`}
-            columns={[{ id: 'observation', label: 'Observation' }]}
-            rows={items.map((item) => ({ id: item.id, values: [item.label] }))}
-          />
-        </>
+                      {points.map((point) => {
+                        if (point.probability === null) {
+                          return null;
+                        }
+
+                        return (
+                          <circle
+                            key={point.id}
+                            cx={xScale(point.value)}
+                            cy={yScale(point.probability)}
+                            r={selection?.selectedId === point.id || inspected === point.id ? 4 : 2}
+                            fill={chartToneColors[tone]}
+                          />
+                        );
+                      })}
+                      {rest !== undefined && (
+                        <ChartCursor
+                          x={xScale(rest.value)}
+                          top={0}
+                          bottom={distributionGeometry.height - CURSOR_INSET}
+                          width={CURSOR_WIDTH}
+                        />
+                      )}
+                    </>
+                  );
+                }}
+              </NumericPlot>
+              <ChartData
+                label={`${title} observations`}
+                columns={[{ id: 'observation', label: 'Observation' }]}
+                rows={items.map((item) => ({ id: item.id, values: [item.label] }))}
+              />
+            </>
+          )}
+        </ChartFrame>
       )}
-    </ChartFrame>
+    />
   );
 }
 

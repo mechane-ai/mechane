@@ -6,6 +6,7 @@ import { CopyValue } from '../../../core/src/index.ts';
 import { colors, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { useScrollTabIndex } from '../../../foundations/src/use-scroll-tab-index.ts';
 import { viewerStyles } from '../viewer-styles.ts';
+import { Viewer } from '../viewer.tsx';
 import { useHighlightedCode } from './use-highlighted-code.ts';
 
 export type CodeAnnotation = { readonly line: number; readonly content: ReactNode };
@@ -106,7 +107,11 @@ export function CodeBlock({
   const isEmbedded = variant === 'embedded';
 
   return (
-    <section aria-label={filename ?? 'Code'} {...stylex.props(viewerStyles.root, isEmbedded && viewerStyles.embedded)}>
+    <Viewer
+      kind="code"
+      aria-label={filename ?? 'Code'}
+      {...stylex.props(viewerStyles.root, isEmbedded && viewerStyles.embedded)}
+    >
       <div {...stylex.props(viewerStyles.header, isEmbedded && viewerStyles.embeddedHeader)}>
         <span {...stylex.props(viewerStyles.label)}>
           {label}
@@ -169,6 +174,6 @@ export function CodeBlock({
       {result !== undefined && result.hasFailed && (
         <div {...stylex.props(viewerStyles.note)}>Syntax highlighting unavailable. The source is shown unchanged.</div>
       )}
-    </section>
+    </Viewer>
   );
 }

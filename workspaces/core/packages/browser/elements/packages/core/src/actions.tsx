@@ -15,6 +15,7 @@ import {
 import { mergeStyles } from '../../foundations/src/style-composition.ts';
 import type { PlacementStyle } from '../../foundations/src/style-composition.ts';
 import { colors, controls, typography } from '../../foundations/src/tokens.stylex.ts';
+import { Link, RouteLink } from './route-link.tsx';
 
 const styles = stylex.create({
   button: {
@@ -330,11 +331,11 @@ export function TextButton({
 }
 
 export function TextLink({ xstyle, ...props }: TextLinkProps): ReactNode {
-  return <a {...mergeProps(stylex.props(styles.link, xstyle), props)} />;
+  return <RouteLink {...mergeProps(stylex.props(styles.link, xstyle), props)} />;
 }
 
 export function IconLink({ children, density = 'standard', xstyle, render, ref, ...props }: IconLinkProps): ReactNode {
-  return renderElement(
+  const anchor = renderElement(
     'a',
     mergeProps(
       stylex.props(
@@ -352,6 +353,8 @@ export function IconLink({ children, density = 'standard', xstyle, render, ref, 
     ),
     render,
   );
+
+  return <Link destination={props.href} current={props['aria-current']} render={anchor} />;
 }
 
 type ConfirmProps = Pick<ButtonProps, 'disabled' | 'isPending' | 'pendingLabel' | 'tone'> & {

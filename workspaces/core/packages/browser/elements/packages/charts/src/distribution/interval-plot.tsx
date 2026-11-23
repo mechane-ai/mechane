@@ -3,9 +3,11 @@ import { scaleLinear } from '@visx/scale';
 import type { ReactNode } from 'react';
 import { chartToneColors } from '../../../foundations/src/chart-tones.ts';
 import type { ChartTone } from '../../../foundations/src/chart-tones.ts';
-import { ChartDatumButton, ChartFrame } from '../chart-frame.tsx';
+import { ChartFrame } from '../chart-frame.tsx';
 import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError } from '../chart-input.tsx';
+import { ChartDatum, ChartRows } from '../chart-rows.tsx';
+import { Chart } from '../chart.tsx';
 import { usePlotWidth } from '../plot-width.ts';
 import { distributionInputError, distributionLimits, outsideDomain } from './distribution-input.ts';
 import type { NumericDomain } from './distribution-input.ts';
@@ -54,61 +56,83 @@ export function IntervalPlot({
 
   const scale = scaleLinear({ domain: [...domain], range: [0, width] });
 
-  return (
-    <ChartFrame title={title} report={report} description={description} footer={`${valueLabel} · ${intervalLabel}`}>
-      {items.length === 0 ? (
-        <p {...stylex.props(distributionStyles.empty)}>{emptyLabel}</p>
-      ) : (
-        <div {...stylex.props(distributionStyles.values)}>
-          {items.map((item) => {
-            const estimate = item.estimate === null ? 'Estimate unavailable' : formatValue(item.estimate);
-            const lower = item.lower === null ? 'Unavailable' : formatValue(item.lower);
-            const upper = item.upper === null ? 'Unavailable' : formatValue(item.upper);
-            const interval = `${intervalLabel}: ${lower} – ${upper}`;
-            const color = chartToneColors[item.tone ?? 'series1'];
+  const rows = items.map((item) => {
+    const estimate = item.estimate === null ? 'Estimate unavailable' : formatValue(item.estimate);
+    const lower = item.lower === null ? 'Unavailable' : formatValue(item.lower);
+    const upper = item.upper === null ? 'Unavailable' : formatValue(item.upper);
+    const interval = `${intervalLabel}: ${lower} – ${upper}`;
 
-            return (
-              <ChartDatumButton
-                key={item.id}
-                label={`${item.label}, ${valueLabel}: ${estimate}, ${interval}`}
-                isSelected={selection?.selectedId === item.id}
-                onSelect={selection === undefined ? undefined : () => selection.onSelect(item.id)}
-              >
-                <span {...stylex.props(distributionStyles.row)}>
-                  <span {...stylex.props(distributionStyles.rowLabel)}>
-                    <span>{item.label}</span>
-                    <span {...stylex.props(distributionStyles.rowValue)}>{estimate}</span>
-                    <span {...stylex.props(distributionStyles.label)}>{interval}</span>
-                  </span>
-                  <svg
-                    aria-hidden
-                    viewBox={`0 0 ${width} 28`}
-                    preserveAspectRatio="none"
-                    {...stylex.props(distributionStyles.rowSvg)}
-                  >
-                    <line x1={0} x2={width} y1={14} y2={14} {...stylex.props(distributionStyles.baseline)} />
-                    {item.lower !== null && item.upper !== null && (
-                      <g stroke={color} strokeWidth={2} vectorEffect="non-scaling-stroke">
-                        <line x1={scale(item.lower)} x2={scale(item.upper)} y1={14} y2={14} />
-                        <line x1={scale(item.lower)} x2={scale(item.lower)} y1={9} y2={19} />
-                        <line x1={scale(item.upper)} x2={scale(item.upper)} y1={9} y2={19} />
-                      </g>
-                    )}
-                    {item.estimate !== null && <circle cx={scale(item.estimate)} cy={14} r={4} fill={color} />}
-                  </svg>
-                </span>
-              </ChartDatumButton>
-            );
-          })}
-          <div {...stylex.props(distributionStyles.row, distributionStyles.rowAxis)}>
-            <span {...stylex.props(distributionStyles.axisSpacer)} />
-            <div ref={ref}>
-              <DomainLabels domain={domain} formatValue={formatValue} />
-            </div>
-          </div>
-        </div>
-      )}
-    </ChartFrame>
+    return { item, estimate, interval, readout: `${item.label}, ${valueLabel}: ${estimate}, ${interval}` };
+  });
+
+  const chartItems = rows.map((row) => ({ id: row.item.id, label: row.readout }));
+
+  return (
+    <Chart
+      items={chartItems}
+      arrows="both"
+      selected={selection?.selectedId ?? null}
+      onSelect={selection?.onSelect}
+      render={(figure, chart) => {
+        const view = selection === undefined ? undefined : chart;
+
+        return (
+          <ChartFrame
+            figure={figure}
+            title={title}
+            report={report}
+            description={description}
+            footer={`${valueLabel} · ${intervalLabel}`}
+          >
+            {items.length === 0 ? (
+              <p {...stylex.props(distributionStyles.empty)}>{emptyLabel}</p>
+            ) : (
+              <ChartRows title={title} items={chartItems} view={view}>
+                <div {...stylex.props(distributionStyles.values)}>
+                  {rows.map(({ item, estimate, interval, readout }) => {
+                    const color = chartToneColors[item.tone ?? 'series1'];
+
+                    return (
+                      <ChartDatum key={item.id} id={item.id} label={readout} view={view}>
+                        <span {...stylex.props(distributionStyles.row)}>
+                          <span {...stylex.props(distributionStyles.rowLabel)}>
+                            <span>{item.label}</span>
+                            <span {...stylex.props(distributionStyles.rowValue)}>{estimate}</span>
+                            <span {...stylex.props(distributionStyles.label)}>{interval}</span>
+                          </span>
+                          <svg
+                            aria-hidden
+                            viewBox={`0 0 ${width} 28`}
+                            preserveAspectRatio="none"
+                            {...stylex.props(distributionStyles.rowSvg)}
+                          >
+                            <line x1={0} x2={width} y1={14} y2={14} {...stylex.props(distributionStyles.baseline)} />
+                            {item.lower !== null && item.upper !== null && (
+                              <g stroke={color} strokeWidth={2} vectorEffect="non-scaling-stroke">
+                                <line x1={scale(item.lower)} x2={scale(item.upper)} y1={14} y2={14} />
+                                <line x1={scale(item.lower)} x2={scale(item.lower)} y1={9} y2={19} />
+                                <line x1={scale(item.upper)} x2={scale(item.upper)} y1={9} y2={19} />
+                              </g>
+                            )}
+                            {item.estimate !== null && <circle cx={scale(item.estimate)} cy={14} r={4} fill={color} />}
+                          </svg>
+                        </span>
+                      </ChartDatum>
+                    );
+                  })}
+                  <div {...stylex.props(distributionStyles.row, distributionStyles.rowAxis)}>
+                    <span {...stylex.props(distributionStyles.axisSpacer)} />
+                    <div ref={ref}>
+                      <DomainLabels domain={domain} formatValue={formatValue} />
+                    </div>
+                  </div>
+                </div>
+              </ChartRows>
+            )}
+          </ChartFrame>
+        );
+      }}
+    />
   );
 }
 

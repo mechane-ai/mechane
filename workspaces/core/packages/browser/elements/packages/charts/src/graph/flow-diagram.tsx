@@ -1,4 +1,5 @@
 import * as stylex from '@stylexjs/stylex';
+import { useId } from 'react';
 import type { ReactNode } from 'react';
 import { chartToneColors, chartToneOutlines } from '../../../foundations/src/chart-tones.ts';
 import { colors, controls, motion, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
@@ -6,9 +7,8 @@ import { ChartData } from '../chart-data.tsx';
 import { ChartFrame, ChartReadout } from '../chart-frame.tsx';
 import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds } from '../chart-input.tsx';
-import { useChartNavigation } from '../chart-navigation.tsx';
-import { ChartSurface } from '../chart-surface.tsx';
 import { chartStyles } from '../chart-theme.ts';
+import { Chart, ChartMark, ChartPlot, inspectedLabel, plotLabel } from '../chart.tsx';
 import { spreadPositions } from '../label-spacing.ts';
 import { usePlotWidth } from '../plot-width.ts';
 import { FLOW_NODE_WIDTH_PX, flowColumns, layoutFlow, ribbonPath, threadPath } from './flow-layout.ts';
@@ -215,7 +215,7 @@ export function FlowDiagram({
       .map((link) => ({ id: link.link.id, label: linkText({ placed: link, formatValue }) })),
   ]);
 
-  const navigation = useChartNavigation({ title, selection, items });
+  const readoutId = useId();
 
   if (issue !== undefined) {
     return <ChartInputError title={title} description={description} report={report} message={issue} />;
@@ -232,129 +232,147 @@ export function FlowDiagram({
     );
   }
 
-  const activeId = navigation.label === undefined ? undefined : navigation.activeId;
-  const activeLink = layout.links.find((placed) => placed.link.id === activeId);
-  const activeNode = layout.nodes.find((placed) => placed.node.id === activeId);
-
-  function isLinkLit(placed: PlacedFlowLink): boolean {
-    if (activeLink !== undefined) {
-      return activeLink.link.id === placed.link.id;
-    }
-
-    return activeNode !== undefined && [placed.source.node.id, placed.target.node.id].includes(activeNode.node.id);
-  }
-
-  function isNodeLit(placed: PlacedFlowNode): boolean {
-    if (activeLink !== undefined) {
-      return [activeLink.source.node.id, activeLink.target.node.id].includes(placed.node.id);
-    }
-
-    if (activeNode === undefined) {
-      return true;
-    }
-
-    return (
-      activeNode.node.id === placed.node.id ||
-      layout.links.some(
-        (link) => isLinkLit(link) && [link.source.node.id, link.target.node.id].includes(placed.node.id),
-      )
-    );
-  }
-
-  const isFocused = activeId !== undefined;
-
-  function interaction(id: string) {
-    return { onPointerEnter: () => navigation.inspect(id), onClick: () => selection?.onSelect(id) };
-  }
-
   return (
-    <ChartFrame
-      title={title}
-      description={description}
-      report={report}
-      footer={<ChartReadout id={navigation.id}>{navigation.label ?? ' '}</ChartReadout>}
-    >
-      <ChartData
-        label={`${title} flows`}
-        columns={[
-          { id: 'item', label: 'Item' },
-          { id: 'amount', label: 'Amount' },
-        ]}
-        rows={[
-          ...layout.nodes.map((placed) => ({
-            id: `node:${placed.node.id}`,
-            values: [placed.node.label, nodeValueText({ placed, formatValue })],
-          })),
-          ...layout.links.map((placed) => ({
-            id: `link:${placed.link.id}`,
-            values: [
-              `${placed.source.node.label} → ${placed.target.node.label}`,
-              placed.link.value === null ? 'Unavailable' : formatValue(placed.link.value),
-            ],
-          })),
-        ]}
-      />
-      <div ref={ref}>
-        {nodes.length === 0 ? (
-          <p {...stylex.props(styles.empty)}>{emptyLabel}</p>
-        ) : (
-          <ChartSurface {...navigation.props} {...stylex.props(styles.surface)}>
-            <svg aria-hidden viewBox={`0 0 ${width} ${plotHeight}`} height={plotHeight} {...stylex.props(styles.svg)}>
-              <g>
-                {layout.links.map((placed) => {
-                  const color = chartToneColors[placed.tone];
-                  const isLit = isLinkLit(placed);
-                  const hasWidth = placed.width > 0;
-                  const isSelected = selection?.selectedId === placed.link.id;
+    <Chart
+      items={items}
+      arrows="both"
+      selected={selection?.selectedId ?? null}
+      onSelect={selection?.onSelect}
+      render={(figure, { inspected, cursor }) => {
+        const activeLink = layout.links.find((placed) => placed.link.id === inspected);
+        const activeNode = layout.nodes.find((placed) => placed.node.id === inspected);
 
-                  return (
-                    <path
-                      key={placed.link.id}
-                      d={hasWidth ? ribbonPath(placed) : threadPath(placed)}
-                      {...interaction(placed.link.id)}
-                      {...stylex.props(
-                        hasWidth ? styles.ribbon(color) : styles.thread(color),
-                        placed.link.value === null && styles.unavailable,
-                        styles.transition,
-                        isLit && hasWidth && styles.lit,
-                        isFocused && !isLit && styles.dim,
-                        isSelected && styles.selected,
-                        selection !== undefined && styles.interactive,
-                      )}
+        function isLinkLit(placed: PlacedFlowLink): boolean {
+          if (activeLink !== undefined) {
+            return activeLink.link.id === placed.link.id;
+          }
+
+          return (
+            activeNode !== undefined && [placed.source.node.id, placed.target.node.id].includes(activeNode.node.id)
+          );
+        }
+
+        function isNodeLit(placed: PlacedFlowNode): boolean {
+          if (activeLink !== undefined) {
+            return [activeLink.source.node.id, activeLink.target.node.id].includes(placed.node.id);
+          }
+
+          if (activeNode === undefined) {
+            return true;
+          }
+
+          return (
+            activeNode.node.id === placed.node.id ||
+            layout.links.some(
+              (link) => isLinkLit(link) && [link.source.node.id, link.target.node.id].includes(placed.node.id),
+            )
+          );
+        }
+
+        const isInspecting = inspected !== null;
+
+        return (
+          <ChartFrame
+            figure={figure}
+            title={title}
+            description={description}
+            report={report}
+            footer={<ChartReadout id={readoutId}>{inspectedLabel(items, inspected)}</ChartReadout>}
+          >
+            <ChartData
+              label={`${title} flows`}
+              columns={[
+                { id: 'item', label: 'Item' },
+                { id: 'amount', label: 'Amount' },
+              ]}
+              rows={[
+                ...layout.nodes.map((placed) => ({
+                  id: `node:${placed.node.id}`,
+                  values: [placed.node.label, nodeValueText({ placed, formatValue })],
+                })),
+                ...layout.links.map((placed) => ({
+                  id: `link:${placed.link.id}`,
+                  values: [
+                    `${placed.source.node.label} → ${placed.target.node.label}`,
+                    placed.link.value === null ? 'Unavailable' : formatValue(placed.link.value),
+                  ],
+                })),
+              ]}
+            />
+            <div ref={ref}>
+              {nodes.length === 0 ? (
+                <p {...stylex.props(styles.empty)}>{emptyLabel}</p>
+              ) : (
+                <ChartPlot
+                  role="group"
+                  aria-label={plotLabel({ title, isSelectable: selection !== undefined })}
+                  aria-describedby={readoutId}
+                  {...stylex.props(styles.surface, stylex.defaultMarker())}
+                >
+                  <svg
+                    aria-hidden
+                    viewBox={`0 0 ${width} ${plotHeight}`}
+                    height={plotHeight}
+                    {...stylex.props(styles.svg)}
+                  >
+                    <g>
+                      {layout.links.map((placed) => {
+                        const color = chartToneColors[placed.tone];
+                        const isLit = isLinkLit(placed);
+                        const hasWidth = placed.width > 0;
+                        const isSelected = selection?.selectedId === placed.link.id;
+                        const isResting = !isInspecting && !isSelected && cursor === placed.link.id;
+
+                        return (
+                          <ChartMark
+                            key={placed.link.id}
+                            value={placed.link.id}
+                            render={<path d={hasWidth ? ribbonPath(placed) : threadPath(placed)} />}
+                            {...stylex.props(
+                              hasWidth ? styles.ribbon(color) : styles.thread(color),
+                              placed.link.value === null && styles.unavailable,
+                              styles.transition,
+                              isLit && hasWidth && styles.lit,
+                              isInspecting && !isLit && styles.dim,
+                              isSelected && styles.selected,
+                              selection !== undefined && styles.interactive,
+                              isResting && (hasWidth ? chartStyles.shapeCursor : chartStyles.cursor),
+                            )}
+                          />
+                        );
+                      })}
+                    </g>
+                    {layout.nodes.map((placed) => (
+                      <ChartMark
+                        key={placed.node.id}
+                        value={placed.node.id}
+                        render={<rect x={placed.x} y={placed.y} width={FLOW_NODE_WIDTH_PX} height={placed.height} />}
+                        {...stylex.props(
+                          styles.node(chartToneColors[placed.tone], chartToneOutlines[placed.tone]),
+                          styles.transition,
+                          isInspecting && !isNodeLit(placed) && styles.dim,
+                          selection?.selectedId === placed.node.id && styles.selected,
+                          selection !== undefined && styles.interactive,
+                          !isInspecting && cursor === placed.node.id && chartStyles.cursor,
+                        )}
+                      />
+                    ))}
+                    <FlowLabels
+                      nodes={layout.nodes}
+                      columnCount={layout.columnCount}
+                      top={PLOT_PADDING_PX}
+                      bottom={plotHeight - PLOT_PADDING_PX}
+                      formatValue={formatValue}
+                      isLit={(placed) => !isInspecting || isNodeLit(placed)}
                     />
-                  );
-                })}
-              </g>
-              {layout.nodes.map((placed) => (
-                <rect
-                  key={placed.node.id}
-                  x={placed.x}
-                  y={placed.y}
-                  width={FLOW_NODE_WIDTH_PX}
-                  height={placed.height}
-                  {...interaction(placed.node.id)}
-                  {...stylex.props(
-                    styles.node(chartToneColors[placed.tone], chartToneOutlines[placed.tone]),
-                    styles.transition,
-                    isFocused && !isNodeLit(placed) && styles.dim,
-                    selection?.selectedId === placed.node.id && styles.selected,
-                    selection !== undefined && styles.interactive,
-                  )}
-                />
-              ))}
-              <FlowLabels
-                nodes={layout.nodes}
-                columnCount={layout.columnCount}
-                top={PLOT_PADDING_PX}
-                bottom={plotHeight - PLOT_PADDING_PX}
-                formatValue={formatValue}
-                isLit={(placed) => !isFocused || isNodeLit(placed)}
-              />
-            </svg>
-          </ChartSurface>
-        )}
-      </div>
-    </ChartFrame>
+                  </svg>
+                </ChartPlot>
+              )}
+            </div>
+          </ChartFrame>
+        );
+      }}
+    />
   );
 }
 

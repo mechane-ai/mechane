@@ -1,8 +1,10 @@
 import * as stylex from '@stylexjs/stylex';
+import { dispatch } from '@ui-sdk/core';
 import { scaleLinear } from '@visx/scale';
 import { AreaClosed } from '@visx/shape';
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useId, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
+import { TextButton } from '../../../core/src/index.ts';
 import { Skeleton, SkeletonText } from '../../../feedback/src/index.ts';
 import { chartToneColors } from '../../../foundations/src/chart-tones.ts';
 import { colors, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
@@ -12,8 +14,11 @@ import { ChartFrame } from '../chart-frame.tsx';
 import type { ChartSeriesReport } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds } from '../chart-input.tsx';
 import { ChartInspection, ChartInspectionTitle, inspectionReadout } from '../chart-inspection.tsx';
-import { ChartSvgSurface } from '../chart-surface.tsx';
+import { ChartRange } from '../chart-range.tsx';
+import type { ChartRangeDetails, ChartRangeValue } from '../chart-range.tsx';
 import { chartStyles } from '../chart-theme.ts';
+import { Chart, ChartSvgPlot, plotLabel } from '../chart.tsx';
+import type { ChartPoint } from '../chart.tsx';
 import { usePlotWidth } from '../plot-width.ts';
 import { bandValues, findCrossings, nearestTimestamp, prepareBands, validateBands } from './time-series-bands.ts';
 import type { FoundCrossing, PlotBand, TimeSeriesBand, TimeSeriesCrossing } from './time-series-bands.ts';
@@ -28,6 +33,14 @@ import type { PlotPoint, TimeSeries, TimeSeriesMarker } from './time-series-data
 import { TimeSeriesLine } from './time-series-line.tsx';
 import { instantsTop, placeInstants, TimeInstants, TimeSeriesBands } from './time-series-overlays.tsx';
 import type { TimeLabelledInstant } from './time-series-overlays.tsx';
+
+/** A range of time a reader selects on the plot. The application owns it, for example to filter another view. */
+export type TimeRangeSelection = {
+  readonly value: ChartRangeValue | null;
+  readonly onChange: (range: ChartRangeValue | null, details: ChartRangeDetails) => void;
+  /** What each end snaps to and what an arrow key moves the range by, in the timestamps' unit. */
+  readonly step: number;
+};
 
 export type TimeSeriesChartProps = {
   readonly title: string;
@@ -45,6 +58,8 @@ export type TimeSeriesChartProps = {
   readonly bands?: ReadonlyArray<TimeSeriesBand> | undefined;
   /** Where a series or band center first reaches a value. A crossing that never happens is listed as not reached. */
   readonly crossings?: ReadonlyArray<TimeSeriesCrossing> | undefined;
+  /** Lets a reader select a range of time by dragging on the plot, with the keyboard, or with the buttons below it. */
+  readonly rangeSelection?: TimeRangeSelection | undefined;
 };
 
 export type AreaChartProps = TimeSeriesChartProps & { readonly isStacked?: boolean | undefined };
@@ -66,6 +81,7 @@ export type SmallMultiplesProps = Omit<
   | 'report'
   | 'bands'
   | 'crossings'
+  | 'rangeSelection'
 > & {
   readonly charts: ReadonlyArray<{
     readonly id: string;
@@ -83,12 +99,12 @@ export type SmallMultiplesPlaceholderProps = Pick<SmallMultiplesProps, 'height'>
   readonly charts: ReadonlyArray<TimeSeriesChartPlaceholderProps & { readonly id: string }>;
 };
 
-type Inspection = { readonly signature: string; readonly timestamp: number; readonly source: 'pointer' | 'keyboard' };
-
+/** One inspection sibling panels share: each marks the timestamp, and the source panel shows its readout. */
 type SharedInspection = {
-  readonly value: Inspection | undefined;
+  readonly id: string | null;
   readonly isSource: boolean;
-  readonly onChange: (value: Inspection | undefined) => void;
+  readonly onChange: (id: string | null) => void;
+  readonly within: (target: Node) => boolean;
 };
 
 const REPORT_BORDER_WIDTH_PX = 1;
@@ -111,6 +127,17 @@ const styles = stylex.create({
   timestamp: { flex: '1 1 0', minWidth: 0, overflowWrap: 'anywhere' },
   lastTimestamp: { textAlign: 'end' },
   muted: { color: colors.muted },
+  range: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+    color: colors.muted,
+    fontSize: typography.captionSize,
+    lineHeight: typography.captionLineHeight,
+    overflowWrap: 'anywhere',
+  },
   markerList: {
     display: 'flex',
     flexWrap: 'wrap',
@@ -259,7 +286,6 @@ function TimeChartPlaceholder({
             rows={[]}
             x={0}
             width={0}
-            source={undefined}
             hasSeriesSummary={report?.seriesValues !== undefined}
           />
           <div {...stylex.props(chartStyles.plot)}>
@@ -279,7 +305,12 @@ function TimeChartPlaceholder({
 
 export function SmallMultiples({ charts, ...props }: SmallMultiplesProps): ReactNode {
   const root = useRef<HTMLDivElement>(null);
-  const [inspection, setInspection] = useState<(Inspection & { readonly chartId: string }) | undefined>();
+
+  const [inspection, setInspection] = useState<{
+    readonly id: string;
+    readonly signature: string;
+    readonly chartId: string;
+  }>();
 
   const signature = JSON.stringify(
     charts.map((chart) => [
@@ -303,18 +334,6 @@ export function SmallMultiples({ charts, ...props }: SmallMultiplesProps): React
   if (inspection !== undefined && inspection.signature !== signature) {
     setInspection(undefined);
   }
-
-  useEffect(() => {
-    function dismiss(event: PointerEvent): void {
-      if (event.target instanceof Node && root.current?.contains(event.target) !== true) {
-        setInspection(undefined);
-      }
-    }
-
-    document.addEventListener('pointerdown', dismiss);
-
-    return () => document.removeEventListener('pointerdown', dismiss);
-  }, []);
 
   if (!aligned || !hasUniqueIds(charts)) {
     return (
@@ -368,10 +387,10 @@ export function SmallMultiples({ charts, ...props }: SmallMultiplesProps): React
             kind="line"
             isStacked={false}
             sharedInspection={{
-              value: inspection?.signature === signature ? inspection : undefined,
+              id: inspection?.signature === signature ? inspection.id : null,
               isSource: inspection?.chartId === chart.id,
-              onChange: (value): void =>
-                setInspection(value === undefined ? undefined : { ...value, signature, chartId: chart.id }),
+              onChange: (id): void => setInspection(id === null ? undefined : { id, signature, chartId: chart.id }),
+              within: (target): boolean => root.current?.contains(target) === true,
             }}
             axisWidth={axisWidth}
             showTimeAxis={index === charts.length - 1}
@@ -424,6 +443,7 @@ function TimeChart({
   showTimeAxis = true,
   bands = [],
   crossings = [],
+  rangeSelection,
 }: TimeSeriesChartProps & {
   readonly kind: 'line' | 'area';
   readonly isStacked: boolean;
@@ -438,7 +458,8 @@ function TimeChart({
     !Number.isFinite(height) || height < 48
       ? 'Chart height must be at least 48 pixels.'
       : (validateTimeSeries({ series, isStacked, markers, timeline: bandTimeline }) ??
-        validateBands({ bands, crossings, series, timestamps: timeline }));
+        validateBands({ bands, crossings, series, timestamps: timeline }) ??
+        rangeIssue({ rangeSelection, timeline }));
 
   const prepared = useMemo(
     () => (issue === undefined ? prepareTimeSeries(series, isStacked) : []),
@@ -451,17 +472,13 @@ function TimeChart({
   );
 
   const points: ReadonlyArray<{ readonly timestamp: number }> = prepared[0]?.points ?? preparedBands[0]?.points ?? [];
-  const { ref, width, element } = usePlotWidth();
-  const rootRef = useRef<HTMLDivElement>(null);
-  const [keyboardTimestamp, setKeyboardTimestamp] = useState<number>();
+  const { ref, width } = usePlotWidth();
 
   const inspectionItems = useMemo(
     () => points.map(({ timestamp }) => ({ id: String(timestamp), label: formatTimestamp(timestamp) })),
     [points, formatTimestamp],
   );
 
-  const cursor = points.find((point) => point.timestamp === keyboardTimestamp) ?? points[0];
-  const [inspection, setInspection] = useState<Inspection | undefined>();
   const signature = `${timeSeriesSignature({ series, markers, timestampUnit, isStacked })}${bandSignature({ bands, crossings })}`;
 
   const legendSeries = [
@@ -469,39 +486,8 @@ function TimeChart({
     ...preparedBands.map(({ id, label, tone }) => ({ id, label, tone, shape: 'band' as const })),
   ];
 
-  const active =
-    sharedInspection === undefined
-      ? inspection?.signature === signature
-        ? inspection
-        : undefined
-      : sharedInspection.value;
-
-  const inspected = sharedInspection === undefined || sharedInspection.isSource ? active : undefined;
   const hasSeriesSummary = report?.seriesValues !== undefined;
-
   const inspectionId = useId();
-
-  if (inspection !== undefined && (inspection.signature !== signature || issue !== undefined)) {
-    setInspection(undefined);
-  }
-
-  const hasSharedInspection = sharedInspection !== undefined;
-
-  useEffect(() => {
-    if (hasSharedInspection) {
-      return;
-    }
-
-    function dismiss(event: PointerEvent): void {
-      if (event.target instanceof Node && rootRef.current?.contains(event.target) !== true) {
-        setInspection(undefined);
-      }
-    }
-
-    document.addEventListener('pointerdown', dismiss);
-
-    return () => document.removeEventListener('pointerdown', dismiss);
-  }, [hasSharedInspection]);
 
   if (issue !== undefined) {
     return <ChartInputError title={title} description={description} report={report} message={issue} />;
@@ -525,32 +511,32 @@ function TimeChart({
     ),
   ];
 
-  const instantNotes = instants
-    .filter((instant) => nearestTimestamp(timestamps, instant.timestamp) === inspected?.timestamp)
-    .map((instant) => `${instant.label} · ${formatTimestamp(instant.timestamp)}`);
+  function reading(timestamp: number | undefined) {
+    return {
+      label: timestamp === undefined ? undefined : formatTimestamp(timestamp),
+      rows: [
+        ...prepared.map((item) => {
+          const point = item.points.find((value) => value.timestamp === timestamp);
 
-  const reading = {
-    label: inspected === undefined ? undefined : formatTimestamp(inspected.timestamp),
-    rows: [
-      ...prepared.map((item) => {
-        const point = item.points.find((value) => value.timestamp === inspected?.timestamp);
-
-        return {
-          id: item.id,
-          label: item.label,
-          tone: item.tone,
-          value: point?.value === null || point === undefined ? 'Unavailable' : formatValue(point.value),
-        };
-      }),
-      ...bandRows({ bands: preparedBands, timestamp: inspected?.timestamp, formatValue }),
-    ],
-    notes: [
-      ...markers
-        .filter((marker) => marker.kind !== 'event' && marker.timestamp === inspected?.timestamp)
-        .map((marker) => marker.label),
-      ...instantNotes,
-    ],
-  };
+          return {
+            id: item.id,
+            label: item.label,
+            tone: item.tone,
+            value: point?.value === null || point === undefined ? 'Unavailable' : formatValue(point.value),
+          };
+        }),
+        ...bandRows({ bands: preparedBands, timestamp, formatValue }),
+      ],
+      notes: [
+        ...markers
+          .filter((marker) => marker.kind !== 'event' && marker.timestamp === timestamp)
+          .map((marker) => marker.label),
+        ...instants
+          .filter((instant) => nearestTimestamp(timestamps, instant.timestamp) === timestamp)
+          .map((instant) => `${instant.label} · ${formatTimestamp(instant.timestamp)}`),
+      ],
+    };
+  }
 
   const bottom = height - 28;
   const svgHeight = bottom + 12;
@@ -579,130 +565,43 @@ function TimeChart({
   const y = scaleLinear({ domain: [...valueDomain], range: [bottom, top] });
   const yTicks = y.ticks(3);
 
-  function inspectClient(clientX: number): void {
-    const bounds = element?.getBoundingClientRect();
-
-    if (bounds === undefined) {
-      return;
-    }
-
-    const timestamp = x.invert(clientX - bounds.left);
-
-    const closest = points.find((point, index) => {
-      const next = points[index + 1];
-
-      return next === undefined || timestamp <= point.timestamp + (next.timestamp - point.timestamp) / 2;
-    });
-
-    if (closest !== undefined) {
-      updateInspection({ signature, timestamp: closest.timestamp, source: 'pointer' });
-    }
+  function describeRange(range: ChartRangeValue): string {
+    return `${formatTimestamp(range[0])} to ${formatTimestamp(range[1])}`;
   }
 
-  function updateInspection(value: Inspection | undefined): void {
-    if (sharedInspection !== undefined) {
-      sharedInspection.onChange(value);
+  function locate(point: ChartPoint): string | undefined {
+    const timestamp = x.invert((point.x / point.width) * width);
 
-      return;
-    }
+    const closest = points.find((candidate, index) => {
+      const next = points[index + 1];
 
-    setInspection(value);
+      return next === undefined || timestamp <= candidate.timestamp + (next.timestamp - candidate.timestamp) / 2;
+    });
+
+    return closest === undefined ? undefined : String(closest.timestamp);
   }
 
   return (
-    <div ref={rootRef} {...stylex.props(styles.frame)}>
-      <ChartFrame
-        title={
-          hasSeriesSummary ? (
-            title
-          ) : (
-            <ChartInspectionTitle
-              title={title}
-              detail={inspected === undefined ? undefined : formatTimestamp(inspected.timestamp)}
-            />
-          )
-        }
-        description={description}
-        report={report}
-        series={legendSeries}
-        actions={actions}
-      >
-        <ChartData
-          label={`${title} observations`}
-          columns={[
-            { id: 'time', label: `Time (${timestampUnit})` },
-            ...prepared.map((item) => ({ id: `series:${item.id}`, label: item.label })),
-            ...preparedBands.flatMap((band) => [
-              { id: `band:${band.id}`, label: band.label },
-              { id: `band-range:${band.id}`, label: `${band.label}: ${band.rangeLabel}` },
-            ]),
-          ]}
-          rows={points.map((point, index) => ({
-            id: point.timestamp,
-            values: [
-              formatTimestamp(point.timestamp),
-              ...prepared.map((item) =>
-                item.points[index]?.value === null || item.points[index]?.value === undefined
-                  ? 'Unavailable'
-                  : formatValue(item.points[index].value),
-              ),
-              ...bandRows({ bands: preparedBands, timestamp: point.timestamp, formatValue }).map((row) => row.value),
-            ],
-          }))}
-        />
-        <div {...stylex.props(styles.body)}>
-          <ChartInspection
-            id={inspectionId}
-            label={reading.label}
-            legend={legendSeries}
-            rows={reading.rows}
-            x={x(active?.timestamp ?? first)}
-            width={width}
-            source={inspected?.source}
-            notes={reading.notes}
-            hasSeriesSummary={hasSeriesSummary}
-          />
-          <div ref={ref} {...stylex.props(chartStyles.plot)}>
-            <ChartSvgSurface
+    <div {...stylex.props(styles.frame)}>
+      <Chart
+        items={inspectionItems}
+        readout={(id) => inspectionReadout(reading(Number(id)))}
+        locate={locate}
+        revision={signature}
+        inspected={sharedInspection?.id}
+        onInspectedChange={sharedInspection?.onChange}
+        within={sharedInspection?.within}
+        render={(figure, { inspected, cursor }) => {
+          const active = inspected === null ? undefined : Number(inspected);
+          const shown = reading(sharedInspection === undefined || sharedInspection.isSource ? active : undefined);
+
+          const plot = (
+            <ChartSvgPlot
               role="img"
-              aria-label={`${title}. Use arrow keys to inspect observations.`}
+              aria-label={plotLabel({ title, marks: 'observations', isSelectable: false })}
               aria-describedby={inspectionId}
-              tabIndex={0}
               viewBox={`0 0 ${width} ${svgHeight}`}
               height={svgHeight}
-              controls={{
-                items: inspectionItems,
-                cursor: cursor === undefined ? undefined : String(cursor.timestamp),
-                inspected: inspected === undefined ? undefined : String(inspected.timestamp),
-                readout: inspectionReadout(reading),
-                onInspect: (id) => {
-                  const timestamp = Number(id);
-
-                  setKeyboardTimestamp(timestamp);
-                  updateInspection({ signature, timestamp, source: 'keyboard' });
-                },
-                onDismiss: () => updateInspection(undefined),
-              }}
-              onFocus={(event) => {
-                if (event.currentTarget.matches(':focus-visible')) {
-                  const timestamp = active?.timestamp ?? first;
-
-                  setKeyboardTimestamp(timestamp);
-                  updateInspection({ signature, timestamp, source: 'keyboard' });
-                }
-              }}
-              onPointerMove={(event) => {
-                if (event.pointerType === 'mouse') {
-                  inspectClient(event.clientX);
-                }
-              }}
-              onPointerDown={(event) => inspectClient(event.clientX)}
-              onPointerLeave={(event) => {
-                if (event.pointerType === 'mouse' && active?.source === 'pointer') {
-                  updateInspection(undefined);
-                }
-              }}
-              onBlur={() => updateInspection(undefined)}
               {...stylex.props(chartStyles.svg, chartStyles.inspectable, stylex.defaultMarker())}
             >
               {yTicks.map((tick) => (
@@ -750,7 +649,7 @@ function TimeChart({
                       fillOpacity={isStacked ? 0.65 : 0.12}
                     />
                   )}
-                  <TimeSeriesLine series={item} x={x} y={y} inspectedTimestamp={active?.timestamp} />
+                  <TimeSeriesLine series={item} x={x} y={y} inspectedTimestamp={active} />
                 </g>
               ))}
               <TimeInstants placed={placedInstants} x={x} y={y} bottom={bottom} />
@@ -786,50 +685,202 @@ function TimeChart({
                   </g>
                 ))}
               {active !== undefined && (
-                <line
-                  x1={x(active.timestamp)}
-                  x2={x(active.timestamp)}
-                  y1={top}
-                  y2={bottom}
-                  {...stylex.props(styles.guide)}
-                />
+                <line x1={x(active)} x2={x(active)} y1={top} y2={bottom} {...stylex.props(styles.guide)} />
               )}
-              {cursor !== undefined && (
-                <ChartCursor
-                  x={x(cursor.timestamp)}
-                  top={top}
-                  bottom={bottom}
-                  width={Math.min(16, (right - left) / 2)}
-                />
+              {cursor !== null && (
+                <ChartCursor x={x(Number(cursor))} top={top} bottom={bottom} width={Math.min(16, (right - left) / 2)} />
               )}
-            </ChartSvgSurface>
-            {showTimeAxis && (
-              <div
-                aria-hidden
-                {...stylex.props(styles.timeAxis, styles.timeAxisInset(left, Math.max(0, width - right)))}
+            </ChartSvgPlot>
+          );
+
+          const plotWithRange =
+            rangeSelection === undefined || last === first ? (
+              plot
+            ) : (
+              <ChartRange
+                value={rangeSelection.value}
+                onValueChange={rangeSelection.onChange}
+                min={first}
+                max={last}
+                step={rangeSelection.step}
+                describe={describeRange}
+                label={`${title} time range`}
+                left={x(first)}
+                width={x(last) - x(first)}
+                height={bottom}
               >
-                <span {...stylex.props(styles.timestamp)}>{formatTimestamp(first)}</span>
-                {last !== first && (
-                  <span {...stylex.props(styles.timestamp, styles.lastTimestamp)}>{formatTimestamp(last)}</span>
+                {plot}
+              </ChartRange>
+            );
+
+          return (
+            <ChartFrame
+              figure={figure}
+              title={hasSeriesSummary ? title : <ChartInspectionTitle title={title} detail={shown.label} />}
+              description={description}
+              report={report}
+              series={legendSeries}
+              actions={actions}
+            >
+              <ChartData
+                label={`${title} observations`}
+                columns={[
+                  { id: 'time', label: `Time (${timestampUnit})` },
+                  ...prepared.map((item) => ({ id: `series:${item.id}`, label: item.label })),
+                  ...preparedBands.flatMap((band) => [
+                    { id: `band:${band.id}`, label: band.label },
+                    { id: `band-range:${band.id}`, label: `${band.label}: ${band.rangeLabel}` },
+                  ]),
+                ]}
+                rows={points.map((point, index) => ({
+                  id: point.timestamp,
+                  values: [
+                    formatTimestamp(point.timestamp),
+                    ...prepared.map((item) =>
+                      item.points[index]?.value === null || item.points[index]?.value === undefined
+                        ? 'Unavailable'
+                        : formatValue(item.points[index].value),
+                    ),
+                    ...bandRows({ bands: preparedBands, timestamp: point.timestamp, formatValue }).map(
+                      (row) => row.value,
+                    ),
+                  ],
+                }))}
+              />
+              <div {...stylex.props(styles.body)}>
+                <ChartInspection
+                  id={inspectionId}
+                  label={shown.label}
+                  legend={legendSeries}
+                  rows={shown.rows}
+                  x={x(active ?? first)}
+                  width={width}
+                  notes={shown.notes}
+                  hasSeriesSummary={hasSeriesSummary}
+                />
+                <div ref={ref} {...stylex.props(chartStyles.plot)}>
+                  {plotWithRange}
+                  {showTimeAxis && (
+                    <div
+                      aria-hidden
+                      {...stylex.props(styles.timeAxis, styles.timeAxisInset(left, Math.max(0, width - right)))}
+                    >
+                      <span {...stylex.props(styles.timestamp)}>{formatTimestamp(first)}</span>
+                      {last !== first && (
+                        <span {...stylex.props(styles.timestamp, styles.lastTimestamp)}>{formatTimestamp(last)}</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+                {rangeSelection !== undefined && last !== first && (
+                  <div {...stylex.props(styles.range)}>
+                    <span>
+                      {rangeSelection.value === null
+                        ? 'Drag on the plot with a mouse to select a range of time.'
+                        : `Selected range: ${describeRange(rangeSelection.value)}`}
+                    </span>
+                    {rangeSelection.value === null ? (
+                      <TextButton
+                        type="button"
+                        onClick={(event) => {
+                          dispatch(
+                            { options: () => rangeSelection },
+                            'onChange',
+                            middleRange({ first, last, rangeSelection }),
+                            { reason: 'trigger-press', event: event.nativeEvent },
+                          );
+                        }}
+                      >
+                        Select a range
+                      </TextButton>
+                    ) : (
+                      <TextButton
+                        type="button"
+                        onClick={(event) => {
+                          dispatch({ options: () => rangeSelection }, 'onChange', null, {
+                            reason: 'clear-press',
+                            event: event.nativeEvent,
+                          });
+                        }}
+                      >
+                        Clear range
+                      </TextButton>
+                    )}
+                  </div>
+                )}
+                {markers.length + foundCrossings.length > 0 && (
+                  <ul {...stylex.props(styles.markerList)}>
+                    {markers.map((marker) => (
+                      <li key={marker.id}>
+                        {formatTimestamp(marker.timestamp)} · {marker.label}
+                        {marker.kind === 'point' && ` · ${formatValue(marker.value)}`}
+                      </li>
+                    ))}
+                    {foundCrossings.map((found) => (
+                      <li key={found.crossing.id}>{crossingText({ found, formatTimestamp })}</li>
+                    ))}
+                  </ul>
                 )}
               </div>
-            )}
-          </div>
-          {markers.length + foundCrossings.length > 0 && (
-            <ul {...stylex.props(styles.markerList)}>
-              {markers.map((marker) => (
-                <li key={marker.id}>
-                  {formatTimestamp(marker.timestamp)} · {marker.label}
-                  {marker.kind === 'point' && ` · ${formatValue(marker.value)}`}
-                </li>
-              ))}
-              {foundCrossings.map((found) => (
-                <li key={found.crossing.id}>{crossingText({ found, formatTimestamp })}</li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </ChartFrame>
+            </ChartFrame>
+          );
+        }}
+      />
     </div>
   );
+}
+
+function rangeIssue({
+  rangeSelection,
+  timeline,
+}: {
+  readonly rangeSelection: TimeRangeSelection | undefined;
+  readonly timeline: ReadonlyArray<number>;
+}): string | undefined {
+  const first = timeline[0];
+  const last = timeline.at(-1);
+
+  if (rangeSelection === undefined || first === undefined || last === undefined) {
+    return undefined;
+  }
+
+  const { step, value } = rangeSelection;
+  const span = last - first;
+
+  // One moment has no range to select, so the chart draws without the brush.
+  if (span === 0) {
+    return undefined;
+  }
+
+  if (!Number.isFinite(step) || step <= 0 || step > span) {
+    return 'The range selection step must be finite, positive, and no longer than the observed time.';
+  }
+
+  if (value === null) {
+    return undefined;
+  }
+
+  const isInside = value[0] >= first && value[1] <= last;
+
+  if (!isInside || value[0] >= value[1]) {
+    return 'The selected range must have ordered ends inside the observed time.';
+  }
+
+  return undefined;
+}
+
+/** The middle half of the observed time, snapped to the step: where a range starts when a reader asks for one. */
+function middleRange({
+  first,
+  last,
+  rangeSelection,
+}: {
+  readonly first: number;
+  readonly last: number;
+  readonly rangeSelection: TimeRangeSelection;
+}): ChartRangeValue {
+  const quarter = Math.max(1, Math.round((last - first) / 4 / rangeSelection.step)) * rangeSelection.step;
+  const start = Math.min(first + quarter, last - rangeSelection.step);
+
+  return [start, Math.min(last, Math.max(start + rangeSelection.step, last - quarter))];
 }

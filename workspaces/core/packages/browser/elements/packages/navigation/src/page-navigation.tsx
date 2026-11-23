@@ -1,9 +1,9 @@
 import * as stylex from '@stylexjs/stylex';
 import { Children } from 'react';
 import type { ReactNode } from 'react';
+import { RouteLink } from '../../core/src/index.ts';
 import { headerStyles } from '../../foundations/src/header-styles.ts';
 import { colors, spacing } from '../../foundations/src/tokens.stylex.ts';
-import { RouteLink } from './route-link.tsx';
 import { tabStyles } from './tab-styles.ts';
 
 const styles = stylex.create({

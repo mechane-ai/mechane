@@ -23,7 +23,7 @@ type CompositionBarsProps = {
   readonly x: number;
   readonly width: number;
   readonly y: (value: number) => number;
-  readonly isHighlighted: boolean;
+  readonly isSelected: boolean;
   readonly highlightedSeriesId?: string | undefined;
 };
 
@@ -35,7 +35,7 @@ export function CompositionBars({
   x,
   width,
   y,
-  isHighlighted,
+  isSelected,
   highlightedSeriesId,
 }: CompositionBarsProps): ReactNode {
   const hasFocus = focusedSeries !== undefined;
@@ -61,7 +61,7 @@ export function CompositionBars({
           height={1}
           vectorEffect="non-scaling-stroke"
           fill={chartToneColors.neutral}
-          {...stylex.props(styles.mark, isHighlighted && chartStyles.selected)}
+          {...stylex.props(styles.mark, isSelected && chartStyles.selected)}
           style={{ transform: geometry(bucket.total, 0), opacity: hasFocus ? 0.18 : bucket.kind === 'total' ? 1 : 0 }}
         />
       )}
@@ -91,7 +91,7 @@ export function CompositionBars({
             vectorEffect="non-scaling-stroke"
             fill={chartToneColors[colorTone(item.tone, seriesIndex)]}
             stroke={chartToneOutlines[colorTone(item.tone, seriesIndex)]}
-            {...stylex.props(styles.mark, chartStyles.outlined, isHighlighted && chartStyles.selected)}
+            {...stylex.props(styles.mark, chartStyles.outlined, isSelected && chartStyles.selected)}
             style={{ transform: geometry(value, base), opacity: isVisible ? (isMuted ? 0.3 : 1) : 0 }}
           />
         );

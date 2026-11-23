@@ -4,8 +4,8 @@ import type { ReactNode } from 'react';
 import { Button, Row, Stack } from '../../core/src/index.ts';
 import { Notice } from '../../feedback/src/index.ts';
 import { createAgent } from '../../foundations/src/agent/index.ts';
+import type { DataTableColumn } from './data-table-layout.tsx';
 import { DataTable } from './data-table.tsx';
-import type { DataTableColumn } from './data-table.tsx';
 
 const queryActions: ReadonlySet<string> = new Set(['setQuery', 'setFilter']);
 
@@ -28,7 +28,7 @@ function ProjectSearch(): ReactNode {
     const agent = createAgent({
       allow: (step) => {
         const canQuery = step.component === 'collection-query' && queryActions.has(step.action);
-        const canOpen = step.component === 'collection-record' && step.action === 'press';
+        const canOpen = step.component === 'collection-results' && step.action === 'open';
 
         return step.confirm === undefined && (canQuery || canOpen);
       },
@@ -74,21 +74,7 @@ function ProjectSearch(): ReactNode {
       return;
     }
 
-    const records = await agent.query({ kind: 'collection-record', text: record.label });
-
-    const link = Array.isArray(records)
-      ? records.find(
-          (item) => item.offPage !== true && item['recordId'] === record.value && item['collection'] === 'Projects',
-        )
-      : undefined;
-
-    if (link === undefined) {
-      setError('The matching project is unavailable.');
-
-      return;
-    }
-
-    const response = await agent.act({ steps: [{ ref: link.ref, action: 'press' }] });
+    const response = await agent.act({ steps: [{ ref: page.ref, action: 'open', args: [record.value] }] });
 
     setError(response.error?.message ?? '');
   }
@@ -124,7 +110,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'The host permits search, filter and record activation. The agent discovers an available status filter, reads the matching result and activates its record by stable ID. The same table controls remain available to the reader.',
+          'The host permits search, filter and record activation. The agent discovers an available status filter, reads the matching result and opens its record by stable ID. The same table controls remain available to the reader.',
       },
     },
   },

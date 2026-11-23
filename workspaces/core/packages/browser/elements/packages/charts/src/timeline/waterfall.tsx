@@ -1,5 +1,14 @@
 import * as stylex from '@stylexjs/stylex';
-import { Button as ChartButton } from '@ui-sdk/react/button';
+import {
+  Waterfall as Spans,
+  WaterfallBar,
+  WaterfallCell,
+  WaterfallColumnHeader,
+  WaterfallHeaderRow,
+  WaterfallRow,
+  WaterfallRowHeader,
+} from '@ui-sdk/react/waterfall';
+import type { WaterfallProps as SpansProps } from '@ui-sdk/react/waterfall';
 import { scaleLinear } from '@visx/scale';
 import { Bar } from '@visx/shape';
 import type { ReactNode, Ref } from 'react';
@@ -25,6 +34,9 @@ export type WaterfallItem = {
   readonly controls?: string;
 };
 
+/** Why the selection wants to change: a press or Enter on a row, or a call such as an agent's step. */
+export type WaterfallSelectDetails = Parameters<NonNullable<SpansProps['onValueChange']>>[1];
+
 type WaterfallProps = {
   readonly items: ReadonlyArray<WaterfallItem>;
   readonly start: number;
@@ -35,8 +47,9 @@ type WaterfallProps = {
   readonly summaryLabel: string;
   readonly emptyLabel: string;
   readonly selectedId: string | undefined;
-  readonly selectedRef?: Ref<HTMLButtonElement> | undefined;
-  readonly onSelect: (id: string) => void;
+  /** The selected row, which takes focus, so an owner can return focus to it. */
+  readonly selectedRef?: Ref<HTMLDivElement> | undefined;
+  readonly onSelect: (id: string, details: WaterfallSelectDetails) => void;
   readonly formatOffset: (offset: number) => string;
 };
 
@@ -90,6 +103,15 @@ const styles = stylex.create({
     ':last-child': { borderBottomWidth: 0 },
   },
   active: { backgroundColor: colors.canvas, boxShadow: shadows.selection },
+  cell: {
+    'outlineStyle': 'none',
+    ':focus-visible': {
+      outlineColor: colors.focus,
+      outlineStyle: 'solid',
+      outlineWidth: controls.focusWidth,
+      outlineOffset: 2,
+    },
+  },
   name: { minWidth: 0, display: 'grid', gap: spacing.xxs },
   detail: { overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' },
   selectedDetail: { whiteSpace: 'normal', overflowWrap: 'anywhere' },
@@ -160,91 +182,113 @@ export function Waterfall({
   const ticks = span > 0 ? TICKS : [0];
   const hasTiming = items.some((item) => item.geometry.kind !== 'unavailable');
 
-  const rows = (
-    <div role="group" aria-label={label} {...stylex.props(styles.frame)}>
-      <div {...stylex.props(styles.grid, styles.head)}>
-        <Text variant="caption" tone="muted">
-          {rowLabel}
-        </Text>
-        <div {...stylex.props(styles.plot, styles.axis)}>
-          {hasTiming ? (
-            ticks.map((tick) => <span key={tick}>{formatOffset(span * tick)}</span>)
-          ) : (
-            <span>Timing unavailable</span>
-          )}
-        </div>
-        <span {...stylex.props(styles.summary)}>
-          <Text variant="caption" tone="muted">
-            {summaryLabel}
-          </Text>
-        </span>
-      </div>
-      {items.length === 0 && (
+  const timings = new Map(
+    items.map((item) => [item.id, formatGeometry({ geometry: item.geometry, start, formatOffset })]),
+  );
+
+  // The label starts with the row's name for typeahead and carries its exact values for an agent.
+  const spans = items.map((item) => ({
+    value: item.id,
+    label: `${item.label} · ${item.detail} · ${item.summary} · ${timings.get(item.id)}`,
+    ...spanTime(item.geometry),
+  }));
+
+  const rows =
+    items.length === 0 ? (
+      <div role="group" aria-label={label} {...stylex.props(styles.frame)}>
         <p {...stylex.props(styles.empty)}>
           <Text tone="muted">{emptyLabel}</Text>
         </p>
-      )}
-      {items.map((item) => {
-        const timing = formatGeometry({ geometry: item.geometry, start, formatOffset });
+      </div>
+    ) : (
+      <Spans
+        items={spans}
+        range={[start, end]}
+        value={selectedId ?? null}
+        onValueChange={(id, details) => {
+          if (id !== null) {
+            onSelect(id, details);
+          }
+        }}
+        getBarLabel={(row) => timings.get(row.value) ?? ''}
+        aria-label={label}
+        {...stylex.props(styles.frame)}
+      >
+        <WaterfallHeaderRow {...stylex.props(styles.grid, styles.head)}>
+          <WaterfallColumnHeader>
+            <Text variant="caption" tone="muted">
+              {rowLabel}
+            </Text>
+          </WaterfallColumnHeader>
+          <WaterfallColumnHeader aria-label="Timing" {...stylex.props(styles.plot, styles.axis)}>
+            {hasTiming ? (
+              ticks.map((tick) => <span key={tick}>{formatOffset(span * tick)}</span>)
+            ) : (
+              <span>Timing unavailable</span>
+            )}
+          </WaterfallColumnHeader>
+          <WaterfallColumnHeader {...stylex.props(styles.summary)}>
+            <Text variant="caption" tone="muted">
+              {summaryLabel}
+            </Text>
+          </WaterfallColumnHeader>
+        </WaterfallHeaderRow>
+        {items.map((item) => {
+          const timing = timings.get(item.id);
+          const isSelected = selectedId === item.id;
 
-        return (
-          <ChartButton
-            key={item.id}
-            ref={selectedId === item.id ? selectedRef : undefined}
-            type="button"
-            aria-pressed={selectedId === item.id}
-            aria-controls={item.controls}
-            aria-label={`${item.label} · ${item.detail} · ${item.summary} · ${timing}`}
-            onClick={() => onSelect(item.id)}
-            {...stylex.props(styles.grid, styles.row, selectedId === item.id && styles.active)}
-          >
-            <span {...stylex.props(styles.name)}>
-              <Text>{item.label}</Text>
-              <span
-                title={item.detail}
-                {...stylex.props(styles.detail, selectedId === item.id && styles.selectedDetail)}
-              >
+          return (
+            <WaterfallRow
+              key={item.id}
+              value={item.id}
+              ref={isSelected ? selectedRef : undefined}
+              aria-controls={item.controls}
+              {...stylex.props(styles.grid, styles.row, isSelected && styles.active)}
+            >
+              <WaterfallRowHeader {...stylex.props(styles.name, styles.cell)}>
+                <Text>{item.label}</Text>
+                <span title={item.detail} {...stylex.props(styles.detail, isSelected && styles.selectedDetail)}>
+                  <Text variant="caption" tone="muted">
+                    {item.detail}
+                  </Text>
+                </span>
+              </WaterfallRowHeader>
+              <WaterfallBar title={timing} {...stylex.props(styles.plot, styles.cell, toneStyles[item.tone])}>
+                {item.geometry.kind === 'unavailable' ? (
+                  <Text variant="caption" tone="muted">
+                    {timing}
+                  </Text>
+                ) : (
+                  <svg aria-hidden {...stylex.props(styles.svg)}>
+                    {ticks.map((tick) => (
+                      <line
+                        key={tick}
+                        x1={`${tick * PERCENT}%`}
+                        x2={`${tick * PERCENT}%`}
+                        y1="0"
+                        y2="18"
+                        {...stylex.props(styles.guide)}
+                      />
+                    ))}
+                    <WaterfallMark geometry={item.geometry} scale={scale} />
+                  </svg>
+                )}
+              </WaterfallBar>
+              <WaterfallCell {...stylex.props(styles.summary, styles.cell)}>
                 <Text variant="caption" tone="muted">
-                  {item.detail}
+                  {item.summary}
                 </Text>
-              </span>
-            </span>
-            <span title={timing} {...stylex.props(styles.plot, toneStyles[item.tone])}>
-              {item.geometry.kind === 'unavailable' ? (
-                <Text variant="caption" tone="muted">
-                  {timing}
-                </Text>
-              ) : (
-                <svg aria-hidden {...stylex.props(styles.svg)}>
-                  {ticks.map((tick) => (
-                    <line
-                      key={tick}
-                      x1={`${tick * PERCENT}%`}
-                      x2={`${tick * PERCENT}%`}
-                      y1="0"
-                      y2="18"
-                      {...stylex.props(styles.guide)}
-                    />
-                  ))}
-                  <WaterfallMark geometry={item.geometry} scale={scale} />
-                </svg>
-              )}
-            </span>
-            <span {...stylex.props(styles.summary)}>
-              <Text variant="caption" tone="muted">
-                {item.summary}
-              </Text>
-              {selectedId === item.id && (
-                <Text variant="caption" tone="muted">
-                  {timing}
-                </Text>
-              )}
-            </span>
-          </ChartButton>
-        );
-      })}
-    </div>
-  );
+                {isSelected && (
+                  <Text variant="caption" tone="muted">
+                    {timing}
+                  </Text>
+                )}
+              </WaterfallCell>
+            </WaterfallRow>
+          );
+        })}
+      </Spans>
+    );
 
   return report === undefined ? (
     rows
@@ -330,6 +374,21 @@ function WaterfallMark({
           );
       }
     }
+  }
+}
+
+/**
+ * The start and duration the SDK takes for every span. A point lasts no time. A row without timing has no number to
+ * give, so it gets none: its text and its mark come from the geometry and never from a made-up endpoint.
+ */
+function spanTime(geometry: WaterfallGeometry): { readonly start: number; readonly duration: number } {
+  switch (geometry.kind) {
+    case 'interval':
+      return { start: geometry.start, duration: geometry.end - geometry.start };
+    case 'point':
+      return { start: geometry.at, duration: 0 };
+    case 'unavailable':
+      return { start: Number.NaN, duration: Number.NaN };
   }
 }
 

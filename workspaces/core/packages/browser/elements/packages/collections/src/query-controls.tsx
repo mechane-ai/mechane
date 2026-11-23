@@ -1,13 +1,21 @@
-import { definePrimitive } from '@ui-sdk/core';
+import { definePrimitive, dispatch } from '@ui-sdk/core';
+import type { ChangeDetails } from '@ui-sdk/core';
 import { createParts } from '@ui-sdk/react/primitive';
 import type { PartProps } from '@ui-sdk/react/primitive';
 import type { ComponentType } from 'react';
 import type { CollectionFilter } from './collection-filters.tsx';
 
+/** Why a search term changed: typing, the close button, Escape, a form reset, or a call such as an agent's step. */
+export type CollectionSearchDetails = ChangeDetails<
+  'input-change' | 'clear-press' | 'escape-key' | 'reset' | 'imperative'
+>;
+
+export type CollectionSubmitDetails = ChangeDetails<'enter-key' | 'imperative'>;
+
 export type CollectionSearch = {
   readonly value: string;
-  readonly onChange: (value: string) => void;
-  readonly onSubmit?: () => void;
+  readonly onChange: (value: string, details: CollectionSearchDetails) => void;
+  readonly onSubmit?: (value: string, details: CollectionSubmitDetails) => void;
   readonly label?: string;
   readonly placeholder?: string;
 };
@@ -62,13 +70,19 @@ const collectionQuery = definePrimitive({
           throw new TypeError('The search term must be a string.');
         }
 
-        search.onChange(value);
+        dispatch({ options: () => search }, 'onChange', value, { reason: 'imperative' });
       };
     },
     get submitSearch() {
       const { search, isDisabled } = options();
 
-      return isDisabled ? undefined : search?.onSubmit;
+      if (isDisabled || search?.onSubmit === undefined) {
+        return null;
+      }
+
+      return () => {
+        dispatch({ options: () => search }, 'onSubmit', search.value, { reason: 'imperative' });
+      };
     },
     get setFilter() {
       const { groups, isDisabled } = options();
@@ -85,7 +99,7 @@ const collectionQuery = definePrimitive({
           throw new Error('Unknown filter or option. Choose one of the listed filter options.');
         }
 
-        group.onChange(choice);
+        dispatch({ options: () => group }, 'onChange', choice, { reason: 'imperative' });
       };
     },
     items() {
@@ -102,7 +116,8 @@ const collectionQuery = definePrimitive({
     items: (api) => api.items(),
     shown: (state) => state.available && !state.disabled,
   },
-  slots: (slot) => ({ root: slot({ attrs: () => ({ role: 'group' }) }) }),
+  // The role comes from the toolbar that renders the root: a toolbar alone, or a group inside another.
+  slots: (slot) => ({ root: slot({}) }),
 });
 
 const parts = createParts(collectionQuery, { root: 'div' });

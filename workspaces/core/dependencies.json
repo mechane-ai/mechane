@@ -457,12 +457,9 @@
     "criterion": "closure",
     "consumers": ["@mechane/console-views", "@mechane/console"],
     "confines": [
-      "@base-ui/react",
       "@pierre/diffs",
       "@pierre/highlights",
-      "@shadcn/react",
       "@tanstack/react-table",
-      "@tanstack/react-virtual",
       "@ui-sdk/core",
       "@ui-sdk/react",
       "@visx/hierarchy",

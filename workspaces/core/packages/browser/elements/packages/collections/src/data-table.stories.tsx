@@ -4,11 +4,13 @@ import { FileCheck } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Badge, Button, Stack, Text } from '../../core/src/index.ts';
 import { CollectionPagination, CollectionToolbar, DisplayOptions, FilterChips } from './collection-controls.tsx';
-import { DataTable, DataTablePlaceholder, DataTableText, DataTableTextPlaceholder } from './data-table.tsx';
-import type { DataTableColumn, DataTableSort } from './data-table.tsx';
+import type { DataTableColumn } from './data-table-layout.tsx';
+import { DataTableText, DataTableTextPlaceholder } from './data-table-text.tsx';
+import { DataTable, DataTablePlaceholder } from './data-table.tsx';
 import { ListFooter } from './list-footer.tsx';
 import { TableQueryFrame, useLocalTableQuery } from './table-query.tsx';
 import type { LocalTableQuery } from './table-query.tsx';
+import type { DataTableSort } from './table-results.tsx';
 import { useCollectionControls } from './use-collection-controls.tsx';
 
 const styles = stylex.create({ fillFrame: { display: 'flex', flexDirection: 'column', height: 360, minWidth: 0 } });

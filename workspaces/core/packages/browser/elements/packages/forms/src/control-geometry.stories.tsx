@@ -7,11 +7,12 @@ import type { ControlDensity } from '../../core/src/index.ts';
 import { ButtonPlaceholder, FieldPlaceholder } from '../../feedback/src/index.ts';
 import { spacing } from '../../foundations/src/tokens.stylex.ts';
 import { Combobox } from './combobox.tsx';
+import { FilePicker } from './file-picker.tsx';
 import { FormActions } from './form-actions.tsx';
-import { FilePicker, InputGroup, NumberField } from './form-controls.tsx';
+import { InputGroup, NumberField } from './form-controls.tsx';
 import { Field, Input, Textarea } from './forms.tsx';
 import { Select } from './select.tsx';
-import { Switch, ToggleGroup } from './selection.tsx';
+import { SegmentedControl, Switch } from './selection.tsx';
 import { SettingsRow } from './settings-row.tsx';
 import { SettingsSection } from './settings-section.tsx';
 
@@ -237,10 +238,10 @@ export const ReportToolbar: Story = {
   render: () => (
     <Row>
       <Input type="month" aria-label="Reporting month" defaultValue="2026-11" />
-      <ToggleGroup.Root aria-label="Period" defaultValue={['month']}>
-        <ToggleGroup.Item value="month">Month</ToggleGroup.Item>
-        <ToggleGroup.Item value="year">Year</ToggleGroup.Item>
-      </ToggleGroup.Root>
+      <SegmentedControl.Root aria-label="Period" defaultValue="month">
+        <SegmentedControl.Item value="month">Month</SegmentedControl.Item>
+        <SegmentedControl.Item value="year">Year</SegmentedControl.Item>
+      </SegmentedControl.Root>
       <Button>Export</Button>
     </Row>
   ),

@@ -30,7 +30,7 @@ type Story = StoryObj;
 
 export const Grouped: Story = {
   render: () => (
-    <Accordion.Root defaultValue={['summary']} multiple>
+    <Accordion.Root aria-label="Run details" defaultValue={['summary']} multiple>
       <Accordion.Item value="summary">
         <Accordion.Header>
           <Accordion.Trigger>Summary</Accordion.Trigger>

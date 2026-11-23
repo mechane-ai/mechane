@@ -85,12 +85,17 @@ column map, use `satisfies Record<string, DataTableColumnLayout>` before spreadi
 Checking only the final array can silently accept obsolete properties inherited through those intermediate values.
 
 Selection requires `selectedIds`, `onSelectionChange` and a label for each row's checkbox. Changes preserve selected IDs
-outside the current page. Individual cells can perform actions without turning a table row into a button.
+outside the current page. Shift and a click select the range from the row chosen before, and the header checkbox selects
+every supplied row. Individual cells can perform actions without turning a table row into a button.
 
 Use `rowAction` for an inspectable record. Its first visible cell contains a real link when `href` is supplied, or a
 button for a local action. Modified link clicks retain normal browser behavior. Other cell controls keep their own
-actions, and text selection does not open the record. Arrow keys move between record actions; virtualized focus stays
-mounted. `activeRowId` marks the inspected record without changing selection.
+actions, and text selection does not open the record. The record actions share one Tab stop on the UI SDK grid focus.
+Arrow keys move by a row, Page Up and Page Down by ten, and Home and End reach the first and last supplied row. The UI
+SDK virtualizer windows long tables, and the Tab stop's row stays mounted. `activeRowId` marks the inspected record
+without changing selection. `onSortChange` and `onSelectionChange` receive the UI SDK change details after the value. An
+agent reads the rows as items of `collection-results` and uses its `sort`, `select`, `open`, `previousPage` and
+`nextPage` actions.
 
 Mark columns `isSecondary` to hide them at the compact table breakpoint. `shouldTruncate` clips a cell within its
 column; the full value should remain available through the record view. `hideCaption` and `hideHeaders` keep their
@@ -174,6 +179,10 @@ React content. It returns `actions`, `chips`, local `onKeyDown` handling and `op
 Place actions in the existing page or section header, or beside PageNavigation when that row owns the view controls.
 Place active chips below it through CollectionToolbar. Keep the title, navigation and row layout with their existing
 owners. The Collection interactions catalog demonstrates this composition and its pending and failed states.
+
+The actions are one UI SDK toolbar: Tab enters once, the arrow keys move between find, filters and display, and the
+search field releases the arrows only from the end of its text. `CollectionToolbar` and `FilterChips` are toolbars too.
+Chips and actions placed inside a CollectionToolbar become groups of it, so the whole control row keeps one Tab stop.
 
 Applications can register `openSearch` through `useCommandShortcuts` with an explicit focus region and eligibility. The
 collection hook adds no global shortcut or fixed shortcut hint. Text entry, native document find and modal focus retain

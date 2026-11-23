@@ -1,6 +1,9 @@
 import * as stylex from '@stylexjs/stylex';
+import { createInputHistory, dispatch, isComposing } from '@ui-sdk/core';
+import { matchesShortcut } from '@ui-sdk/core/shortcuts';
+import { useShortcutHint } from '@ui-sdk/react/shortcuts';
 import { ArrowUp, Square } from 'lucide-react';
-import { useId } from 'react';
+import { useId, useLayoutEffect, useRef, useState } from 'react';
 import type { ComponentProps, KeyboardEvent, ReactNode, SubmitEvent } from 'react';
 import { IconButton } from '../../core/src/index.ts';
 import { ButtonPlaceholder, SkeletonText } from '../../feedback/src/index.ts';
@@ -54,6 +57,8 @@ const styles = stylex.create({
   placeholderControls: { fontSize: typography.captionSize, lineHeight: typography.captionLineHeight },
 });
 
+const SUBMIT_SHORTCUT = 'mod+enter';
+
 export type PromptInputPlaceholderProps = { readonly isCompact?: boolean };
 
 export function PromptInputPlaceholder({ isCompact = false }: PromptInputPlaceholderProps): ReactNode {
@@ -84,7 +89,8 @@ export function PromptInputPlaceholder({ isCompact = false }: PromptInputPlaceho
 export type PromptInputProps = {
   readonly label: string;
   readonly value: string;
-  readonly onValueChange: (value: string) => void;
+  /** The new text, then the UI SDK change details. */
+  readonly onValueChange: NonNullable<ComponentProps<typeof Textarea>['onValueChange']>;
   readonly onSubmit: NonNullable<ComponentProps<'form'>['onSubmit']>;
   readonly name?: string;
   readonly placeholder?: string;
@@ -95,7 +101,10 @@ export type PromptInputProps = {
   readonly isSubmitDisabled?: boolean;
   readonly submitLabel?: string;
   readonly pendingLabel?: string;
+  /** What a plain Enter does. Command or Control with Enter always submits, and Shift with Enter always adds a line. */
   readonly enterBehavior?: 'newline' | 'submit';
+  /** Earlier prompts, oldest first. Arrow Up on the first line brings one back, and Arrow Down returns to the draft. */
+  readonly history?: ReadonlyArray<string>;
   readonly isCompact?: boolean;
   readonly description?: ReactNode;
   readonly error?: string | undefined;
@@ -121,6 +130,7 @@ export function PromptInput({
   submitLabel = 'Send message',
   pendingLabel = 'Sending…',
   enterBehavior = 'newline',
+  history,
   isCompact = false,
   description,
   error,
@@ -134,7 +144,23 @@ export function PromptInput({
   const isInputDisabled = disabled;
   const isInline = isCompact && attachments === undefined && controls === undefined;
   const canSubmit = !isInputDisabled && !isPending && !isSubmitDisabled;
-  let tooltipLabel = submitLabel;
+  const submitHint = useShortcutHint(SUBMIT_SHORTCUT);
+  const latest = useRef({ history, value, onValueChange });
+
+  useLayoutEffect(() => {
+    latest.current = { history, value, onValueChange };
+  });
+
+  const [earlier] = useState(() =>
+    createInputHistory<string>({
+      entries: () => latest.current.history,
+      read: () => latest.current.value,
+      write: (next, event) =>
+        !dispatch({ options: () => latest.current }, 'onValueChange', next, { reason: 'input-change', event }),
+    }),
+  );
+
+  let tooltipLabel = `${submitLabel} · ${submitHint.text}`;
 
   if (onStop !== undefined) {
     tooltipLabel = isStopPending ? 'Stopping…' : stopLabel;
@@ -145,18 +171,19 @@ export function PromptInput({
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>): void {
-    if (enterBehavior !== 'submit' || event.key !== 'Enter' || event.repeat) {
+    if (earlier.keydown(event.nativeEvent)) {
       return;
     }
 
-    const hasCommandModifier = event.altKey || event.ctrlKey || event.metaKey;
-
-    if (event.shiftKey || hasCommandModifier) {
+    // An input method's Enter chooses a candidate, so it never submits.
+    if (event.key !== 'Enter' || event.repeat || isComposing(event)) {
       return;
     }
 
-    // oxlint-disable-next-line typescript/no-deprecated -- WebKit can clear isComposing before IME Enter (keyCode 229).
-    if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
+    const isCommandEnter = matchesShortcut(event.nativeEvent, SUBMIT_SHORTCUT);
+    const isPlainEnter = !isCommandEnter && matchesShortcut(event.nativeEvent, 'enter');
+
+    if (!isCommandEnter && (enterBehavior !== 'submit' || !isPlainEnter)) {
       return;
     }
 
@@ -210,6 +237,11 @@ export function PromptInput({
                       data-agent-confirm={submitLabel}
                       variant="solid"
                       aria-label={isPending ? pendingLabel : submitLabel}
+                      aria-keyshortcuts={
+                        enterBehavior === 'submit'
+                          ? `Enter ${submitHint.ariaKeyshortcuts}`
+                          : submitHint.ariaKeyshortcuts
+                      }
                       disabled={disabled || isSubmitDisabled}
                       isPending={isPending}
                     >

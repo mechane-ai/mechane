@@ -43,7 +43,7 @@ const MODULES: ReadonlyArray<ModuleBoundary> = [
   { name: 'overlays', dependencies: ['foundations'] },
   { name: 'forms', dependencies: ['foundations', 'core', 'overlays'] },
   { name: 'feedback', dependencies: ['foundations', 'core'] },
-  { name: 'navigation', dependencies: ['foundations', 'forms', 'overlays'] },
+  { name: 'navigation', dependencies: ['foundations', 'core', 'forms', 'overlays'] },
   { name: 'layout', dependencies: ['foundations', 'core', 'overlays', 'navigation'] },
   { name: 'collections', dependencies: ['foundations', 'core', 'forms', 'overlays', 'feedback'] },
   { name: 'content', dependencies: ['foundations', 'core', 'forms'] },
@@ -52,9 +52,8 @@ const MODULES: ReadonlyArray<ModuleBoundary> = [
 ];
 
 const VENDORS = [
-  { name: 'tables', owner: 'collections', packages: '@tanstack/(?:react-table|react-virtual)' },
+  { name: 'tables', owner: 'collections', packages: '@tanstack/react-table' },
   { name: 'content', owner: 'content', packages: '(?:@pierre/|streamdown|strip-ansi)' },
-  { name: 'conversation', owner: 'ai', packages: '@shadcn/' },
   { name: 'charts', owner: 'charts', packages: '@visx/' },
 ] as const;
 
@@ -71,33 +70,6 @@ export const uiPresentationBoundaries = {
         'Compose Elements controls, such as `Button` from `@mechane-ai/elements`; the family owns UI SDK behavior',
       from: { path: '^packages/browser/', pathNot: '^packages/browser/elements/' },
       to: { path: 'node_modules/@ui-sdk/' },
-      standard: '065',
-    },
-    {
-      ...CRUISER_DEFAULTS,
-      ...ADOPTED,
-      name: 'ui-base-utility-owner',
-      comment:
-        'Use the owning Elements component, such as `Dialog` from `@mechane-ai/elements/overlays`; only forms and CSP retain Base UI utilities',
-      from: {
-        path: '^packages/browser/',
-        pathNot:
-          '^packages/browser/elements/packages/(?:foundations/src/csp/(?:index[.]ts|provider[.]tsx)|forms/src/form-controls[.]tsx)$',
-      },
-      to: { path: 'node_modules/@base-ui/react/' },
-      standard: '065',
-    },
-    {
-      ...CRUISER_DEFAULTS,
-      ...ADOPTED,
-      name: 'ui-base-utility-entry',
-      comment:
-        'Implement controls with UI SDK, such as `@ui-sdk/react/dialog`; Base UI supplies only merge-props and csp-provider',
-      from: { path: '^packages/browser/' },
-      to: {
-        path: 'node_modules/@base-ui/react/',
-        pathNot: 'node_modules/@base-ui/react/(?:merge-props|csp-provider)/',
-      },
       standard: '065',
     },
     ...VENDORS.map(({ name, owner, packages }): CruiserRule => ({

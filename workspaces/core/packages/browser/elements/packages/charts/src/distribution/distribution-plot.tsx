@@ -1,8 +1,7 @@
 import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
 import { chartColors, colors, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
-import type { useChartNavigation } from '../chart-navigation.tsx';
-import { ChartSurface } from '../chart-surface.tsx';
+import { ChartPlot } from '../chart.tsx';
 import { usePlotWidth } from '../plot-width.ts';
 import type { NumericDomain } from './distribution-input.ts';
 
@@ -81,8 +80,9 @@ export const distributionStyles = stylex.create({
 });
 
 type NumericPlotProps = {
-  readonly navigation: ReturnType<typeof useChartNavigation>['props'];
-  readonly onInspectValue?: (value: number) => void;
+  /** The plot's accessible name and the id of the readout that describes it. */
+  readonly label: string;
+  readonly readoutId: string;
   readonly xDomain: NumericDomain;
   readonly yDomain: NumericDomain;
   readonly xLabel: string;
@@ -93,8 +93,8 @@ type NumericPlotProps = {
 };
 
 export function NumericPlot({
-  navigation,
-  onInspectValue,
+  label,
+  readoutId,
   xDomain,
   yDomain,
   xLabel,
@@ -118,19 +118,15 @@ export function NumericPlot({
           <span key={tick}>{formatY(tick)}</span>
         ))}
       </div>
-      <ChartSurface ref={ref} {...navigation} {...stylex.props(distributionStyles.plotArea)}>
+      <ChartPlot
+        ref={ref}
+        role="group"
+        aria-label={label}
+        aria-describedby={readoutId}
+        {...stylex.props(distributionStyles.plotArea, stylex.defaultMarker())}
+      >
         <svg
           aria-hidden
-          onPointerMove={(event) => {
-            const bounds = event.currentTarget.getBoundingClientRect();
-
-            onInspectValue?.(xDomain[0] + ((event.clientX - bounds.left) / bounds.width) * (xDomain[1] - xDomain[0]));
-          }}
-          onPointerDown={(event) => {
-            const bounds = event.currentTarget.getBoundingClientRect();
-
-            onInspectValue?.(xDomain[0] + ((event.clientX - bounds.left) / bounds.width) * (xDomain[1] - xDomain[0]));
-          }}
           viewBox={`0 0 ${width} ${distributionGeometry.height}`}
           preserveAspectRatio="none"
           {...stylex.props(distributionStyles.svg)}
@@ -147,7 +143,7 @@ export function NumericPlot({
           ))}
           {children(width)}
         </svg>
-      </ChartSurface>
+      </ChartPlot>
       <span />
       <div aria-hidden {...stylex.props(distributionStyles.axis)}>
         {xTicks.map((tick, index) => (

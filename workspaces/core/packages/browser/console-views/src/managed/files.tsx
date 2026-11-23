@@ -6,12 +6,14 @@ import { Field, FilePicker } from '@mechane-ai/elements/forms';
 import { AlertDialog } from '@mechane-ai/elements/overlays';
 import { Download, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import type { ChangeEvent, ReactNode, SubmitEvent } from 'react';
+import type { ReactNode, SubmitEvent } from 'react';
 import { ManagedTimestamp } from './timestamp.tsx';
 
 const BYTES_PER_KIBIBYTE = 1024;
 const BYTES_PER_MEBIBYTE = BYTES_PER_KIBIBYTE * BYTES_PER_KIBIBYTE;
 const FIXED_DECIMALS = 1;
+const MAX_UPLOAD_MEBIBYTES = 32;
+const MAX_UPLOAD_BYTES = MAX_UPLOAD_MEBIBYTES * BYTES_PER_MEBIBYTE;
 
 type WorkspaceFile = {
   readonly id: string;
@@ -61,10 +63,6 @@ export function UploadFileForm({
 }): ReactNode {
   const [selected, setSelected] = useState<File>();
 
-  function onFileChange(event: ChangeEvent<HTMLInputElement>): void {
-    setSelected(event.currentTarget.files?.[0]);
-  }
-
   function submit(event: SubmitEvent<HTMLFormElement>): void {
     event.preventDefault();
 
@@ -78,7 +76,7 @@ export function UploadFileForm({
       <Stack>
         <Field.Root name="file" disabled={isPending}>
           <Field.Label>File</Field.Label>
-          <FilePicker required onChange={onFileChange} />
+          <FilePicker required maxSize={MAX_UPLOAD_BYTES} onValueChange={(files) => setSelected(files[0])} />
           <Field.Description>Upload a file up to 32 MiB to mount in sessions.</Field.Description>
         </Field.Root>
         {error !== undefined && <Notice hasError>{error}</Notice>}

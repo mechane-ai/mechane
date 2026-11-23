@@ -6,6 +6,7 @@ import { Collapsible, CopyValue, TextButton } from '../../../core/src/index.ts';
 import { spacing } from '../../../foundations/src/tokens.stylex.ts';
 import { CodeBlock } from '../code/code-block.tsx';
 import { viewerStyles } from '../viewer-styles.ts';
+import { Viewer } from '../viewer.tsx';
 import type { DiffSource, DiffViewerProps } from './diff-source.ts';
 import type { PierreDiff } from './pierre-diff.tsx';
 
@@ -138,7 +139,7 @@ export function DiffViewer(props: DiffViewerProps): ReactNode {
   const hasNoChanges = current?.files?.length === 0;
 
   return (
-    <section aria-label={label} {...stylex.props(viewerStyles.root)}>
+    <Viewer kind="diff" aria-label={label} {...stylex.props(viewerStyles.root)}>
       <div {...stylex.props(viewerStyles.header)}>
         <span {...stylex.props(viewerStyles.label)}>{label}</span>
         <div {...stylex.props(viewerStyles.actions)}>
@@ -185,6 +186,6 @@ export function DiffViewer(props: DiffViewerProps): ReactNode {
         </>
       )}
       {hasNoChanges && <div {...stylex.props(viewerStyles.note)}>No file changes in this patch.</div>}
-    </section>
+    </Viewer>
   );
 }

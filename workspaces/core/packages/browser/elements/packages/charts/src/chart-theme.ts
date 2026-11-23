@@ -1,6 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
 import type { ChartTone } from '../../foundations/src/chart-tones.ts';
-import { colors, motion, typography } from '../../foundations/src/tokens.stylex.ts';
+import { colors, controls, motion, typography } from '../../foundations/src/tokens.stylex.ts';
 import type { ChartMarkShape } from './chart-series-marker.tsx';
 
 export type ChartLegendItem = {
@@ -31,8 +31,25 @@ export const chartStyles = stylex.create({
   mark: { strokeWidth: 1.75, strokeLinecap: 'round', strokeLinejoin: 'round', vectorEffect: 'non-scaling-stroke' },
   /** A one-pixel edge for filled marks; pair it with the tone's outline color. */
   outlined: { strokeWidth: 1, vectorEffect: 'non-scaling-stroke' },
+  /** The mark the application reports as selected. It keeps this edge while another mark is inspected. */
   selected: { stroke: colors.ink, strokeWidth: 2, vectorEffect: 'non-scaling-stroke' },
+  /** The mark under the pointer or cursor, where the plot draws no guide band behind it. Lighter than selected. */
+  inspected: { stroke: colors.ink, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' },
   inspectable: { outlineStyle: 'none' },
+  /** Where the keyboard cursor rests, shown while the plot has keyboard focus. The plot carries `defaultMarker`. */
+  cursor: {
+    outlineWidth: controls.focusWidth,
+    outlineColor: { 'default': colors.ink, '@media (forced-colors: active)': 'Highlight' },
+    outlineStyle: { default: 'none', [stylex.when.ancestor(':focus-visible')]: 'dashed' },
+    outlineOffset: 2,
+  },
+  /** The cursor on a curved mark with no stroke of its own: a dashed edge along the shape, not a box around it. */
+  shapeCursor: {
+    stroke: { 'default': colors.ink, '@media (forced-colors: active)': 'Highlight' },
+    strokeWidth: { default: 0, [stylex.when.ancestor(':focus-visible')]: controls.focusWidth },
+    strokeDasharray: '4 3',
+    vectorEffect: 'non-scaling-stroke',
+  },
   emphasis: {
     transitionProperty: 'opacity',
     transitionDuration: { 'default': motion.duration, '@media (prefers-reduced-motion: reduce)': '0ms' },

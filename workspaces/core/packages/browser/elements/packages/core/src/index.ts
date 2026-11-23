@@ -7,6 +7,7 @@ export { agentAvatarShapes } from './agent-avatar-glyphs.tsx';
 export type { AgentAppearance, AgentAvatarColor, AgentAvatarProps, AgentAvatarSize } from './agent-avatar.tsx';
 export { AgentAvatar, agentAppearance, agentAvatarColors } from './agent-avatar.tsx';
 export { CopyValue } from './copy-value.tsx';
+export { RouteLink } from './route-link.tsx';
 export { Accordion, Collapsible } from './disclosure.tsx';
 export { Panel, SurfaceLink, Row, Stack, Columns, Divider } from './surfaces.tsx';
 export { SectionHeading } from './section-heading.tsx';

@@ -1,14 +1,14 @@
 import * as stylex from '@stylexjs/stylex';
-import { Button as ChartButton } from '@ui-sdk/react/button';
+import { mergeProps } from '@ui-sdk/react/primitive';
 import { Children, useId } from 'react';
-import type { ReactNode } from 'react';
-import { conditions } from '../../foundations/src/constants.stylex.ts';
+import type { ComponentProps, ReactNode } from 'react';
 import { headerStyles } from '../../foundations/src/header-styles.ts';
-import { colors, controls, pageGeometry, shadows, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { colors, pageGeometry, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import { ChartHeading } from './chart-heading.tsx';
 import { ChartSeriesMarker } from './chart-series-marker.tsx';
 import { ChartSeriesSummary } from './chart-series-summary.tsx';
 import type { ChartLegendItem } from './chart-theme.ts';
+import type { ChartSelectDetails } from './chart.tsx';
 
 type ChartReportHeading = { readonly meta?: ReactNode; readonly actions?: ReactNode };
 
@@ -21,7 +21,11 @@ export type ChartSeriesReport =
       readonly seriesValues: Readonly<Record<string, string | undefined>>;
     });
 
-export type ChartSelection = { readonly selectedId: string | undefined; readonly onSelect: (id: string) => void };
+export type ChartSelection = {
+  readonly selectedId: string | undefined;
+  /** The details say why and how: a press, a key or an agent's step. */
+  readonly onSelect: (id: string, details: ChartSelectDetails) => void;
+};
 
 export type ChartFrameProps = {
   readonly title: ReactNode;
@@ -31,6 +35,8 @@ export type ChartFrameProps = {
   readonly footer?: ReactNode;
   readonly report?: ChartSeriesReport | undefined;
   readonly series?: ReadonlyArray<ChartLegendItem> | undefined;
+  /** The chart part's own props, when this figure is the root of an interactive chart. */
+  readonly figure?: ComponentProps<'figure'> | undefined;
 };
 
 export type { ChartLegendItem } from './chart-theme.ts';
@@ -108,43 +114,6 @@ const styles = stylex.create({
     maxWidth: '100%',
     overflowWrap: 'anywhere',
   },
-  datum: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    columnGap: spacing.md,
-    rowGap: spacing.xs,
-    minWidth: 0,
-    minHeight: { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
-    boxSizing: 'border-box',
-    width: '100%',
-    borderWidth: 0,
-    paddingBlock: spacing.xs,
-    paddingInline: spacing.sm,
-    fontFamily: typography.fontFamily,
-    fontSize: typography.bodySize,
-    fontWeight: typography.regularWeight,
-    lineHeight: typography.bodyLineHeight,
-    textAlign: 'start',
-    overflowWrap: 'anywhere',
-    color: colors.ink,
-    backgroundColor: colors.surface,
-    fontVariantNumeric: 'tabular-nums',
-  },
-  action: {
-    'cursor': 'pointer',
-    'outlineStyle': 'none',
-    ':hover': { backgroundColor: { [conditions.hoverPointer]: colors.canvas } },
-    ':active': { backgroundColor: colors.line },
-    ':focus-visible': {
-      outlineColor: colors.focus,
-      outlineStyle: 'solid',
-      outlineWidth: controls.focusWidth,
-      outlineOffset: -2,
-    },
-  },
-  selected: { backgroundColor: colors.canvas, boxShadow: shadows.selection },
   readout: {
     margin: 0,
     minWidth: 0,
@@ -165,6 +134,7 @@ export function ChartFrame({
   footer,
   report,
   series = [],
+  figure = {},
 }: ChartFrameProps): ReactNode {
   const titleId = useId();
 
@@ -187,7 +157,7 @@ export function ChartFrame({
     );
 
     return (
-      <figure aria-labelledby={titleId} {...stylex.props(styles.frame, styles.report)}>
+      <figure {...mergeProps(figure, { 'aria-labelledby': titleId }, stylex.props(styles.frame, styles.report))}>
         <figcaption>
           <ChartHeading id={titleId} title={title} meta={report.meta} actions={hasCaptionActions && captionActions} />
         </figcaption>
@@ -202,7 +172,7 @@ export function ChartFrame({
   }
 
   return (
-    <figure aria-labelledby={titleId} {...stylex.props(styles.frame)}>
+    <figure {...mergeProps(figure, { 'aria-labelledby': titleId }, stylex.props(styles.frame))}>
       <figcaption {...stylex.props(styles.heading)}>
         <div {...stylex.props(styles.title)}>
           <p id={titleId} {...stylex.props(styles.caption)}>
@@ -231,37 +201,9 @@ export function ChartLegend({ items, label = 'Legend', isScrollable = false }: C
   );
 }
 
-export function ChartDatumButton({
-  label,
-  isSelected = false,
-  onSelect,
-  children,
-}: {
-  readonly label: string;
-  readonly isSelected?: boolean | undefined;
-  readonly onSelect?: (() => void) | undefined;
-  readonly children: ReactNode;
-}): ReactNode {
-  if (onSelect === undefined) {
-    return <div {...stylex.props(styles.datum)}>{children}</div>;
-  }
-
-  return (
-    <ChartButton
-      type="button"
-      aria-label={label}
-      aria-pressed={isSelected}
-      onClick={onSelect}
-      {...stylex.props(styles.datum, styles.action, isSelected && styles.selected)}
-    >
-      {children}
-    </ChartButton>
-  );
-}
-
 export function ChartReadout({ children, id }: { readonly children: ReactNode; readonly id?: string }): ReactNode {
   return (
-    <p id={id} aria-live="polite" {...stylex.props(styles.readout)}>
+    <p id={id} {...stylex.props(styles.readout)}>
       {children}
     </p>
   );

@@ -18,8 +18,6 @@ minimumReleaseAgeExclude:
   - '@tanstack/query-core@5.105.2'
   - '@vitejs/plugin-react@6.2.1'
   - '@pierre/diffs@1.6.4'
-  - '@tanstack/react-virtual@3.14.26'
-  - '@tanstack/virtual-core@3.19.11'
   - '@tanstack/browser-db-sqlite-persistence@1.0.0-rc.1.4'
   - '@tanstack/db-sqlite-persistence-core@1.0.0-rc.1.4'
   - '@tanstack/db@1.0.0-rc.1.4'

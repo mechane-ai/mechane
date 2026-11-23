@@ -5,6 +5,11 @@ import {
   RadioGroup as SdkRadioGroup,
   RadioIndicator as SdkRadioIndicator,
 } from '@ui-sdk/react/radio';
+import {
+  SegmentedControl as SdkSegmentedControl,
+  SegmentedControlIndicator as SdkSegmentedControlIndicator,
+  SegmentedControlItem as SdkSegmentedControlItem,
+} from '@ui-sdk/react/segmented-control';
 import { Switch as SdkSwitch, SwitchThumb as SdkSwitchThumb } from '@ui-sdk/react/switch';
 import { Toggle as SdkToggle, ToggleGroup as SdkToggleGroup } from '@ui-sdk/react/toggle';
 import type { ComponentProps, ReactNode } from 'react';
@@ -16,7 +21,7 @@ import type {
 } from '../../foundations/src/control-state.ts';
 import { mergeStyles } from '../../foundations/src/style-composition.ts';
 import type { PlacementStyle } from '../../foundations/src/style-composition.ts';
-import { colors, controls, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { colors, controls, motion, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 
 const GROUP_OUTLINE_WIDTH_PX = 1;
 const SWITCH_TRACK_WIDTH_PX = 36;
@@ -153,6 +158,7 @@ const styles = stylex.create({
     'display': 'inline-flex',
     'alignItems': 'center',
     'flexWrap': 'wrap',
+    'width': 'fit-content',
     'minWidth': 0,
     'maxWidth': '100%',
     'boxSizing': 'border-box',
@@ -197,6 +203,25 @@ const styles = stylex.create({
       outlineOffset: -2,
     },
   },
+  segments: { position: 'relative', isolation: 'isolate' },
+  // The UI SDK measures the checked item into these variables. The box moves by transform, so only that animates.
+  segmentIndicator: {
+    'position': 'absolute',
+    'zIndex': -1,
+    'top': 0,
+    'left': 0,
+    'width': 'var(--segmented-control-indicator-width)',
+    'height': 'var(--segmented-control-indicator-height)',
+    'transform': 'translate(var(--segmented-control-indicator-left, 0), var(--segmented-control-indicator-top, 0))',
+    'borderRadius': radii.sm,
+    'backgroundColor': colors.canvas,
+    'pointerEvents': 'none',
+    'transitionProperty': 'transform',
+    'transitionTimingFunction': motion.easing,
+    'transitionDuration': { default: motion.duration, [conditions.reducedMotion]: '0s' },
+    ':is([data-activation-direction="none"])': { transitionDuration: '0s' },
+  },
+  segment: { ':is([data-checked])': { color: colors.ink } },
 });
 
 type CheckboxChange = NonNullable<ComponentProps<typeof SdkCheckbox>['onCheckedChange']>;
@@ -248,6 +273,21 @@ type ToggleItemProps<Value extends string> = Omit<
   ComponentProps<typeof SdkToggle>,
   'value' | 'pressed' | 'defaultPressed' | 'onPressedChange'
 > & { readonly value: Value };
+
+type SegmentChange<Value extends string> = NonNullable<
+  ComponentProps<typeof SdkSegmentedControl<Value>>['onValueChange']
+>;
+
+type SegmentedControlRootProps<Value extends string> = Omit<
+  ComponentProps<typeof SdkSegmentedControl<Value>>,
+  'value' | 'defaultValue' | 'onValueChange' | 'children'
+> &
+  ValueStateProperties<Value, (value: Value, details: Parameters<SegmentChange<Value>>[1]) => void> & {
+    readonly children?: ReactNode;
+    readonly xstyle?: PlacementStyle;
+  };
+
+type SegmentedControlItemProps = ComponentProps<typeof SdkSegmentedControlItem>;
 
 function CheckboxRoot({
   className,
@@ -355,7 +395,42 @@ function ToggleItem<Value extends string>({ className, style, ...props }: Toggle
   return <SdkToggle {...props} {...mergeStyles({ className, style, styles: stylex.props(styles.toggle) })} />;
 }
 
+/** One choice from a short row, on the UI SDK segmented control: a radio group drawn as buttons, with one Tab stop. */
+function SegmentedControlRoot<Value extends string>({
+  className,
+  style,
+  xstyle,
+  children,
+  onValueChange,
+  ...props
+}: SegmentedControlRootProps<Value>): ReactNode {
+  return (
+    <SdkSegmentedControl<Value>
+      {...props}
+      onValueChange={(value, details) => {
+        if (value !== null) {
+          onValueChange?.(value, details);
+        }
+      }}
+      {...mergeStyles({ className, style, styles: stylex.props(styles.toggles, styles.segments, xstyle) })}
+    >
+      <SdkSegmentedControlIndicator {...stylex.props(styles.segmentIndicator)} />
+      {children}
+    </SdkSegmentedControl>
+  );
+}
+
+function SegmentedControlItem({ className, style, ...props }: SegmentedControlItemProps): ReactNode {
+  return (
+    <SdkSegmentedControlItem
+      {...props}
+      {...mergeStyles({ className, style, styles: stylex.props(styles.toggle, styles.segment) })}
+    />
+  );
+}
+
 export const Checkbox = { Root: CheckboxRoot, Indicator: CheckboxIndicator };
 export const RadioGroup = { Root: RadioGroupRoot, Item: RadioItem, Indicator: RadioIndicator };
 export const Switch = { Root: SwitchRoot, Thumb: SwitchThumb };
 export const ToggleGroup = { Root: ToggleGroupRoot, Item: ToggleItem };
+export const SegmentedControl = { Root: SegmentedControlRoot, Item: SegmentedControlItem };

@@ -1,9 +1,11 @@
 import * as stylex from '@stylexjs/stylex';
-import { Button as ChartButton } from '@ui-sdk/react/button';
 import type { ReactNode } from 'react';
 import { conditions } from '../../../foundations/src/constants.stylex.ts';
 import { colors, controls, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import type { ChartSelection } from '../chart-frame.tsx';
+import { chartStyles } from '../chart-theme.ts';
+import { ChartMark } from '../chart.tsx';
+import type { ChartView } from '../chart.tsx';
 import { heatmapColor, isHeatmapValueInDomain } from './heatmap-scale.ts';
 import type { HeatmapScale } from './heatmap-scale.ts';
 import { matrixCellGlyph, matrixValueText } from './matrix-cells.ts';
@@ -80,8 +82,7 @@ type StripProps = HeatmapScale & {
   readonly columns: ReadonlyArray<MatrixAxisItem>;
   readonly cellAt: (rowId: string, columnId: string) => MatrixCell | undefined;
   readonly coordinateId: (rowId: string, columnId: string) => string;
-  readonly inspectedId: string | undefined;
-  readonly onInspect: (id: string) => void;
+  readonly view: ChartView;
   readonly formatValue: (value: number) => string;
   readonly selection: ChartSelection | undefined;
 };
@@ -136,8 +137,7 @@ export function MatrixStrip({
   columns,
   cellAt,
   coordinateId,
-  inspectedId,
-  onInspect,
+  view,
   domain,
   palette,
   formatValue,
@@ -162,46 +162,36 @@ export function MatrixStrip({
             const text = matrixValueText(cell, domain, formatValue);
             const label = `${row.label}, ${column.label}: ${text}`;
             const isSelected = cell !== undefined && selection?.selectedId === cell.id;
+            const isResting = !isSelected && view.inspected !== id && view.cursor === id;
 
             const appearance = stylex.props(
               styles.cell,
               ...cellAppearance({ cell, domain, palette }),
               selection !== undefined && cell !== undefined && styles.interactive,
-              inspectedId === id && styles.inspected,
+              view.inspected === id && styles.inspected,
               isSelected && styles.selected,
+              isResting && chartStyles.cursor,
             );
 
             const glyph = stripGlyph({ cell, text, domain });
 
-            if (selection === undefined || cell === undefined) {
-              return (
-                <span
-                  key={column.id}
-                  role="img"
-                  aria-label={label}
-                  title={label}
-                  onPointerEnter={() => onInspect(id)}
-                  {...appearance}
-                >
-                  {glyph}
-                </span>
-              );
-            }
-
             return (
-              <ChartButton
+              <ChartMark
                 key={column.id}
-                type="button"
-                tabIndex={-1}
+                value={id}
+                render={
+                  selection === undefined || cell === undefined ? (
+                    <span role="img" />
+                  ) : (
+                    <button type="button" tabIndex={-1} aria-pressed={isSelected} />
+                  )
+                }
                 aria-label={label}
                 title={label}
-                aria-pressed={isSelected}
-                onPointerEnter={() => onInspect(id)}
-                onClick={() => selection.onSelect(cell.id)}
                 {...appearance}
               >
                 {glyph}
-              </ChartButton>
+              </ChartMark>
             );
           })}
         </div>

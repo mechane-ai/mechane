@@ -74,13 +74,11 @@ Give each implementation library one job inside its owning family:
 | Library | Owner and responsibility |
 | --- | --- |
 | UI SDK core and React | Interactive primitives, controlled changes, keyboard navigation, focus and overlay lifecycle in the family owning each interaction. |
-| Base UI | The forms implementation uses `merge-props` for native event composition. Foundations retains `csp-provider` for the public nonce provider. |
 | Lucide | Control and navigation icons with shared sizing. |
 | StyleX | `foundations/src/tokens.stylex.ts` defines shared visual roles; components own their styles. |
-| TanStack Table and Virtual | `collections` models prepared rows and bounds their rendered window. |
+| TanStack Table | `collections` models prepared rows; the UI SDK virtualizer bounds their rendered window. |
 | Pierre Highlights and Diffs | `content` owns tokenization and diff rendering. |
 | Streamdown | `content` parses supplied Markdown through Elements renderers. |
-| shadcn message scroller | `ai` owns scroll anchoring and live-edge following through its headless primitive. |
 | visx | `charts` computes and renders geometry from supplied presentation records. |
 
 `AgentAvatar` owns its finite catalog of original identity glyphs. Their stable names are presentation data, not a
@@ -121,11 +119,8 @@ from synthetic inputs. Lazy loading renderer code and packaged assets is compone
 - dependency-cruiser `ui-charts-public-entry` (065): enforced: Import another Elements family through its public entry, such as `../../core/src/index.ts`; shared foundation definitions have explicit internal entries
 - dependency-cruiser `ui-charts-dependencies` (065): enforced: Compose independent areas in the application, such as `<AppShell>{chart}</AppShell>`
 - dependency-cruiser `ui-sdk-element-owner` (065): enforced: Compose Elements controls, such as `Button` from `@mechane-ai/elements`; the family owns UI SDK behavior
-- dependency-cruiser `ui-base-utility-owner` (065): enforced: Use the owning Elements component, such as `Dialog` from `@mechane-ai/elements/overlays`; only forms and CSP retain Base UI utilities
-- dependency-cruiser `ui-base-utility-entry` (065): enforced: Implement controls with UI SDK, such as `@ui-sdk/react/dialog`; Base UI supplies only merge-props and csp-provider
 - dependency-cruiser `ui-tables-vendor-owner` (065): enforced: Import the Elements tables API, such as `@mechane-ai/elements/collections`, instead of its implementation dependency
 - dependency-cruiser `ui-content-vendor-owner` (065): enforced: Import the Elements content API, such as `@mechane-ai/elements/content`, instead of its implementation dependency
-- dependency-cruiser `ui-conversation-vendor-owner` (065): enforced: Import the Elements conversation API, such as `@mechane-ai/elements/ai`, instead of its implementation dependency
 - dependency-cruiser `ui-charts-vendor-owner` (065): enforced: Import the Elements charts API, such as `@mechane-ai/elements/charts`, instead of its implementation dependency
 
 <!-- End of the generated block. -->

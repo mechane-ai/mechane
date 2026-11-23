@@ -81,10 +81,16 @@ const styles = stylex.create({
 const triggerStyles = { default: null, inline: styles.inline };
 const iconStyles = { default: null, inline: styles.inlineIcon };
 
+/** Names the group of sections, so a reader and an agent can tell one accordion from another. */
+type AccordionName =
+  | { readonly 'aria-label': string; readonly 'aria-labelledby'?: undefined }
+  | { readonly 'aria-labelledby': string; readonly 'aria-label'?: undefined };
+
 type AccordionRootProps<Value extends string> = Omit<
   ComponentProps<typeof SdkAccordion.Accordion<Value>>,
-  'value' | 'defaultValue' | 'onValueChange'
+  'value' | 'defaultValue' | 'onValueChange' | 'aria-label' | 'aria-labelledby'
 > &
+  AccordionName &
   ValueStateProperties<
     Array<Value>,
     NonNullable<ComponentProps<typeof SdkAccordion.Accordion<Value>>['onValueChange']>

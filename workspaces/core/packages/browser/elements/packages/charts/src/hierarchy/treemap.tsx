@@ -4,12 +4,13 @@ import type { ReactNode } from 'react';
 import { chartToneColors } from '../../../foundations/src/chart-tones.ts';
 import type { ChartTone } from '../../../foundations/src/chart-tones.ts';
 import { colors, typography } from '../../../foundations/src/tokens.stylex.ts';
-import { CategoricalValues, colorTone, validateBreakdown } from '../categorical-values.tsx';
+import { categoricalItems, CategoricalValues, colorTone, validateBreakdown } from '../categorical-values.tsx';
 import type { BreakdownItem } from '../categorical-values.tsx';
 import { ChartFrame } from '../chart-frame.tsx';
 import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError } from '../chart-input.tsx';
 import { chartStyles } from '../chart-theme.ts';
+import { Chart } from '../chart.tsx';
 import { usePlotWidth } from '../plot-width.ts';
 
 const styles = stylex.create({
@@ -70,85 +71,93 @@ export function Treemap({
     datum.children === undefined ? undefined : [...datum.children],
   ).sum((datum) => datum.value);
 
+  const values = items.map((item, index) => ({
+    id: item.id,
+    label: item.label,
+    valueLabel: item.value === null ? 'Unavailable' : formatValue(item.value),
+    tone: colorTone(item.tone, index),
+  }));
+
   return (
-    <ChartFrame title={title} report={report} description={description}>
-      <div ref={ref} {...stylex.props(chartStyles.plot)}>
-        {total === 0 ? (
-          <p {...stylex.props(styles.empty)}>No positive values to size the areas</p>
-        ) : (
-          <svg
-            role="img"
-            aria-label={`${title}. Areas compare recorded values.`}
-            viewBox={`0 0 ${width} ${height}`}
-            height={height}
-            {...stylex.props(chartStyles.svg)}
-          >
-            <VisxTreemap root={root} size={[width, height]} paddingInner={2}>
-              {(tree) =>
-                tree.leaves().map((node) => {
-                  const hasLabelRoom = node.x1 - node.x0 > 96 && node.y1 - node.y0 > 40;
-                  const labelCharacters = Math.max(1, Math.floor((node.x1 - node.x0 - 16) / 7));
+    <Chart
+      items={categoricalItems(values)}
+      arrows="both"
+      selected={selection?.selectedId ?? null}
+      onSelect={selection?.onSelect}
+      render={(figure, view) => (
+        <ChartFrame figure={figure} title={title} report={report} description={description}>
+          <div ref={ref} {...stylex.props(chartStyles.plot)}>
+            {total === 0 ? (
+              <p {...stylex.props(styles.empty)}>No positive values to size the areas</p>
+            ) : (
+              <svg
+                role="img"
+                aria-label={`${title}. Areas compare recorded values.`}
+                viewBox={`0 0 ${width} ${height}`}
+                height={height}
+                {...stylex.props(chartStyles.svg)}
+              >
+                <VisxTreemap root={root} size={[width, height]} paddingInner={2}>
+                  {(tree) =>
+                    tree.leaves().map((node) => {
+                      const hasLabelRoom = node.x1 - node.x0 > 96 && node.y1 - node.y0 > 40;
+                      const labelCharacters = Math.max(1, Math.floor((node.x1 - node.x0 - 16) / 7));
 
-                  const label =
-                    node.data.label.length > labelCharacters
-                      ? `${node.data.label.slice(0, labelCharacters - 1)}…`
-                      : node.data.label;
+                      const label =
+                        node.data.label.length > labelCharacters
+                          ? `${node.data.label.slice(0, labelCharacters - 1)}…`
+                          : node.data.label;
 
-                  return (
-                    <g key={node.data.id}>
-                      <rect
-                        x={node.x0}
-                        y={node.y0}
-                        width={node.x1 - node.x0}
-                        height={node.y1 - node.y0}
-                        fill={chartToneColors[node.data.tone]}
-                        fillOpacity={0.24}
-                        {...stylex.props(
-                          styles.treeRect,
-                          selection?.selectedId === node.data.id && chartStyles.selected,
-                        )}
-                      />
-                      <title>
-                        {node.data.label}: {formatValue(node.data.value)}
-                      </title>
-                      {hasLabelRoom && (
-                        <svg
-                          x={node.x0}
-                          y={node.y0}
-                          width={node.x1 - node.x0}
-                          height={node.y1 - node.y0}
-                          overflow="hidden"
-                        >
-                          <text x={8} y={18} {...stylex.props(styles.treeLabel)}>
-                            {label}
-                          </text>
-                          {formatValue(node.data.value).length * 12 < node.x1 - node.x0 - 16 && (
-                            <text x={8} y={34} {...stylex.props(styles.treeLabel)}>
-                              {formatValue(node.data.value)}
-                            </text>
+                      return (
+                        <g key={node.data.id}>
+                          <rect
+                            x={node.x0}
+                            y={node.y0}
+                            width={node.x1 - node.x0}
+                            height={node.y1 - node.y0}
+                            fill={chartToneColors[node.data.tone]}
+                            fillOpacity={0.24}
+                            {...stylex.props(
+                              styles.treeRect,
+                              view.inspected === node.data.id && chartStyles.inspected,
+                              view.selected === node.data.id && chartStyles.selected,
+                            )}
+                          />
+                          <title>
+                            {node.data.label}: {formatValue(node.data.value)}
+                          </title>
+                          {hasLabelRoom && (
+                            <svg
+                              x={node.x0}
+                              y={node.y0}
+                              width={node.x1 - node.x0}
+                              height={node.y1 - node.y0}
+                              overflow="hidden"
+                            >
+                              <text x={8} y={18} {...stylex.props(styles.treeLabel)}>
+                                {label}
+                              </text>
+                              {formatValue(node.data.value).length * 12 < node.x1 - node.x0 - 16 && (
+                                <text x={8} y={34} {...stylex.props(styles.treeLabel)}>
+                                  {formatValue(node.data.value)}
+                                </text>
+                              )}
+                            </svg>
                           )}
-                        </svg>
-                      )}
-                    </g>
-                  );
-                })
-              }
-            </VisxTreemap>
-          </svg>
-        )}
-      </div>
-      <CategoricalValues
-        items={items.map((item, index) => ({
-          id: item.id,
-          label: item.label,
-          valueLabel: item.value === null ? 'Unavailable' : formatValue(item.value),
-          tone: colorTone(item.tone, index),
-        }))}
-        selection={selection}
-      />
-      {items.some((item) => item.value === null) && (
-        <p {...stylex.props(styles.empty)}>Unavailable values have no area.</p>
+                        </g>
+                      );
+                    })
+                  }
+                </VisxTreemap>
+              </svg>
+            )}
+          </div>
+          <CategoricalValues title={title} items={values} view={selection === undefined ? undefined : view} />
+          {items.some((item) => item.value === null) && (
+            <p {...stylex.props(styles.empty)}>Unavailable values have no area.</p>
+          )}
+        </ChartFrame>
       )}
-    </ChartFrame>
+    />
   );
 }

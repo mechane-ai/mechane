@@ -3,9 +3,9 @@ import type { ReactNode } from 'react';
 import { chartToneColors, chartToneOutlines } from '../../foundations/src/chart-tones.ts';
 import type { ChartTone } from '../../foundations/src/chart-tones.ts';
 import { colors, spacing } from '../../foundations/src/tokens.stylex.ts';
-import { ChartDatumButton } from './chart-frame.tsx';
-import type { ChartSelection } from './chart-frame.tsx';
 import { hasUniqueIds } from './chart-input.tsx';
+import { ChartDatum, ChartRows } from './chart-rows.tsx';
+import type { ChartItem, ChartView } from './chart.tsx';
 
 const styles = stylex.create({
   rows: { display: 'grid', margin: 0, padding: 0, listStyle: 'none' },
@@ -55,38 +55,46 @@ export function validateBreakdown(items: ReadonlyArray<BreakdownItem>): string |
   return undefined;
 }
 
+export type CategoricalValue = {
+  readonly id: string;
+  readonly label: string;
+  readonly valueLabel: string;
+  readonly tone: ChartTone;
+};
+
+/** What a chart of categorical values tells its readers and agents about each item. */
+export function categoricalItems(items: ReadonlyArray<CategoricalValue>): ReadonlyArray<ChartItem> {
+  return items.map((item) => ({ id: item.id, label: `${item.label}: ${item.valueLabel}` }));
+}
+
 export function CategoricalValues({
+  title,
   items,
-  selection,
+  view,
 }: {
-  readonly items: ReadonlyArray<{
-    readonly id: string;
-    readonly label: string;
-    readonly valueLabel: string;
-    readonly tone: ChartTone;
-  }>;
-  readonly selection?: ChartSelection | undefined;
+  readonly title: string;
+  readonly items: ReadonlyArray<CategoricalValue>;
+  /** The chart's view when its rows can be selected. */
+  readonly view: ChartView | undefined;
 }): ReactNode {
   return (
-    <ul {...stylex.props(styles.rows)}>
-      {items.map((item) => (
-        <li key={item.id}>
-          <ChartDatumButton
-            label={`${item.label}: ${item.valueLabel}`}
-            isSelected={selection?.selectedId === item.id}
-            onSelect={selection === undefined ? undefined : () => selection.onSelect(item.id)}
-          >
-            <span {...stylex.props(styles.name)}>
-              <span
-                aria-hidden
-                {...stylex.props(styles.swatch(chartToneColors[item.tone], chartToneOutlines[item.tone]))}
-              />
-              {item.label}
-            </span>
-            <span {...stylex.props(styles.value)}>{item.valueLabel}</span>
-          </ChartDatumButton>
-        </li>
-      ))}
-    </ul>
+    <ChartRows title={title} items={categoricalItems(items)} view={view}>
+      <ul {...stylex.props(styles.rows)}>
+        {items.map((item) => (
+          <li key={item.id}>
+            <ChartDatum id={item.id} label={`${item.label}: ${item.valueLabel}`} view={view}>
+              <span {...stylex.props(styles.name)}>
+                <span
+                  aria-hidden
+                  {...stylex.props(styles.swatch(chartToneColors[item.tone], chartToneOutlines[item.tone]))}
+                />
+                {item.label}
+              </span>
+              <span {...stylex.props(styles.value)}>{item.valueLabel}</span>
+            </ChartDatum>
+          </li>
+        ))}
+      </ul>
+    </ChartRows>
   );
 }

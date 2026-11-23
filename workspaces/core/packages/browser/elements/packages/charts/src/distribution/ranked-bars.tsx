@@ -4,10 +4,12 @@ import { Bar } from '@visx/shape';
 import type { ReactNode } from 'react';
 import { chartToneColors, chartToneOutlines } from '../../../foundations/src/chart-tones.ts';
 import type { ChartTone } from '../../../foundations/src/chart-tones.ts';
-import { ChartDatumButton, ChartFrame } from '../chart-frame.tsx';
+import { ChartFrame } from '../chart-frame.tsx';
 import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError } from '../chart-input.tsx';
+import { ChartDatum, ChartRows } from '../chart-rows.tsx';
 import { chartStyles } from '../chart-theme.ts';
+import { Chart } from '../chart.tsx';
 import { usePlotWidth } from '../plot-width.ts';
 import { distributionInputError, distributionLimits, outsideDomain } from './distribution-input.ts';
 import type { NumericDomain } from './distribution-input.ts';
@@ -54,74 +56,90 @@ export function RankedBars({
   const scale = scaleLinear({ domain: [...domain], range: [0, width] });
   const zero = scale(0);
 
-  return (
-    <ChartFrame title={title} report={report} description={description} footer={valueLabel}>
-      {items.length === 0 ? (
-        <p {...stylex.props(distributionStyles.empty)}>{emptyLabel}</p>
-      ) : (
-        <div {...stylex.props(distributionStyles.values)}>
-          {items.map((item) => {
-            const value = item.value === null ? 'Unavailable' : formatValue(item.value);
-            const label = item.rank === undefined ? item.label : `${item.rank} · ${item.label}`;
-            const tone = item.tone ?? 'series1';
-            const color = chartToneColors[tone];
+  const rows = items.map((item) => {
+    const value = item.value === null ? 'Unavailable' : formatValue(item.value);
+    const label = item.rank === undefined ? item.label : `${item.rank} · ${item.label}`;
 
-            return (
-              <ChartDatumButton
-                key={item.id}
-                label={`${label}, ${valueLabel}: ${value}`}
-                isSelected={selection?.selectedId === item.id}
-                onSelect={selection === undefined ? undefined : () => selection.onSelect(item.id)}
-              >
-                <span {...stylex.props(distributionStyles.row)}>
-                  <span {...stylex.props(distributionStyles.rowLabel)}>
-                    <span>{label}</span>
-                    <span {...stylex.props(distributionStyles.rowValue)}>{value}</span>
-                  </span>
-                  <svg
-                    aria-hidden
-                    viewBox={`0 0 ${width} 28`}
-                    preserveAspectRatio="none"
-                    {...stylex.props(distributionStyles.rowSvg)}
-                  >
-                    <rect x={0} y={10} width={width} height={8} {...stylex.props(distributionStyles.track)} />
-                    <line x1={zero} x2={zero} y1={3} y2={25} {...stylex.props(distributionStyles.baseline)} />
-                    {item.value !== null &&
-                      (item.value === 0 ? (
-                        <line
-                          x1={zero}
-                          x2={zero}
-                          y1={10}
-                          y2={18}
-                          stroke={color}
-                          strokeWidth={2}
-                          vectorEffect="non-scaling-stroke"
-                        />
-                      ) : (
-                        <Bar
-                          x={Math.min(zero, scale(item.value))}
-                          y={10}
-                          width={Math.abs(scale(item.value) - zero)}
-                          height={8}
-                          fill={color}
-                          stroke={chartToneOutlines[tone]}
-                          {...stylex.props(chartStyles.outlined)}
-                        />
-                      ))}
-                  </svg>
-                </span>
-              </ChartDatumButton>
-            );
-          })}
-          <div {...stylex.props(distributionStyles.row, distributionStyles.rowAxis)}>
-            <span {...stylex.props(distributionStyles.axisSpacer)} />
-            <div ref={ref}>
-              <DomainLabels domain={domain} formatValue={formatValue} />
-            </div>
-          </div>
-        </div>
-      )}
-    </ChartFrame>
+    return { item, value, label, readout: `${label}, ${valueLabel}: ${value}` };
+  });
+
+  const chartItems = rows.map((row) => ({ id: row.item.id, label: row.readout }));
+
+  return (
+    <Chart
+      items={chartItems}
+      arrows="both"
+      selected={selection?.selectedId ?? null}
+      onSelect={selection?.onSelect}
+      render={(figure, chart) => {
+        const view = selection === undefined ? undefined : chart;
+
+        return (
+          <ChartFrame figure={figure} title={title} report={report} description={description} footer={valueLabel}>
+            {items.length === 0 ? (
+              <p {...stylex.props(distributionStyles.empty)}>{emptyLabel}</p>
+            ) : (
+              <ChartRows title={title} items={chartItems} view={view}>
+                <div {...stylex.props(distributionStyles.values)}>
+                  {rows.map(({ item, value, label, readout }) => {
+                    const tone = item.tone ?? 'series1';
+                    const color = chartToneColors[tone];
+
+                    return (
+                      <ChartDatum key={item.id} id={item.id} label={readout} view={view}>
+                        <span {...stylex.props(distributionStyles.row)}>
+                          <span {...stylex.props(distributionStyles.rowLabel)}>
+                            <span>{label}</span>
+                            <span {...stylex.props(distributionStyles.rowValue)}>{value}</span>
+                          </span>
+                          <svg
+                            aria-hidden
+                            viewBox={`0 0 ${width} 28`}
+                            preserveAspectRatio="none"
+                            {...stylex.props(distributionStyles.rowSvg)}
+                          >
+                            <rect x={0} y={10} width={width} height={8} {...stylex.props(distributionStyles.track)} />
+                            <line x1={zero} x2={zero} y1={3} y2={25} {...stylex.props(distributionStyles.baseline)} />
+                            {item.value !== null &&
+                              (item.value === 0 ? (
+                                <line
+                                  x1={zero}
+                                  x2={zero}
+                                  y1={10}
+                                  y2={18}
+                                  stroke={color}
+                                  strokeWidth={2}
+                                  vectorEffect="non-scaling-stroke"
+                                />
+                              ) : (
+                                <Bar
+                                  x={Math.min(zero, scale(item.value))}
+                                  y={10}
+                                  width={Math.abs(scale(item.value) - zero)}
+                                  height={8}
+                                  fill={color}
+                                  stroke={chartToneOutlines[tone]}
+                                  {...stylex.props(chartStyles.outlined)}
+                                />
+                              ))}
+                          </svg>
+                        </span>
+                      </ChartDatum>
+                    );
+                  })}
+                  <div {...stylex.props(distributionStyles.row, distributionStyles.rowAxis)}>
+                    <span {...stylex.props(distributionStyles.axisSpacer)} />
+                    <div ref={ref}>
+                      <DomainLabels domain={domain} formatValue={formatValue} />
+                    </div>
+                  </div>
+                </div>
+              </ChartRows>
+            )}
+          </ChartFrame>
+        );
+      }}
+    />
   );
 }
 

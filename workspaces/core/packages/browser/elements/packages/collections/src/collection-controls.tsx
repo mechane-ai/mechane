@@ -1,4 +1,7 @@
 import * as stylex from '@stylexjs/stylex';
+import { dispatch } from '@ui-sdk/core';
+import type { ChangeDetails } from '@ui-sdk/core';
+import { ToolbarButton } from '@ui-sdk/react/toolbar';
 import { ChevronLeft, ChevronRight, Settings2, X } from 'lucide-react';
 import { Children } from 'react';
 import type { ReactNode } from 'react';
@@ -8,6 +11,7 @@ import { conditions } from '../../foundations/src/constants.stylex.ts';
 import { headerStyles } from '../../foundations/src/header-styles.ts';
 import { colors, controls, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import { Popover } from '../../overlays/src/index.ts';
+import { ControlToolbar, useToolbarButton } from './control-toolbar.tsx';
 
 const styles = stylex.create({
   toolbar: {
@@ -84,6 +88,7 @@ export type CollectionToolbarProps = {
   readonly actions?: ReactNode;
 };
 
+/** The control row above a collection, on the UI SDK toolbar: filter chips and actions share one Tab stop. */
 export function CollectionToolbar({ label, children, actions }: CollectionToolbarProps): ReactNode {
   const hasChildren = Children.toArray(children).length > 0;
   const hasActions = Children.toArray(actions).length > 0;
@@ -93,44 +98,50 @@ export function CollectionToolbar({ label, children, actions }: CollectionToolba
   }
 
   return (
-    <div role="group" aria-label={label} {...stylex.props(headerStyles.row, headerStyles.blockEnd, styles.toolbar)}>
+    <ControlToolbar aria-label={label} {...stylex.props(headerStyles.row, headerStyles.blockEnd, styles.toolbar)}>
       {children}
       {hasActions && <div {...stylex.props(styles.actions)}>{actions}</div>}
-    </div>
+    </ControlToolbar>
   );
 }
 
 export type FilterChip = { readonly id: string; readonly label: string };
 
+export type FilterRemoveDetails = ChangeDetails<'remove-press'>;
+
 export type FilterChipsProps = {
   readonly filters: ReadonlyArray<FilterChip>;
-  readonly onRemove: (id: string) => void;
+  readonly onRemove: (id: string, details: FilterRemoveDetails) => void;
   readonly label?: string;
 };
 
+/** The applied filters, each with a remove button. The buttons share one Tab stop on the UI SDK toolbar. */
 export function FilterChips({ filters, onRemove, label = 'Applied filters' }: FilterChipsProps): ReactNode {
   if (filters.length === 0) {
     return null;
   }
 
   return (
-    <div role="group" aria-label={label} {...stylex.props(styles.filters)}>
+    <ControlToolbar aria-label={label} {...stylex.props(styles.filters)}>
       {filters.map((filter) => (
         <span key={filter.id} {...stylex.props(styles.filter)}>
           <span title={filter.label} {...stylex.props(styles.filterLabel)}>
             {filter.label}
           </span>
-          <IconButton
-            aria-label={`Remove ${filter.label}`}
-            variant="ghost"
-            onClick={() => onRemove(filter.id)}
-            xstyle={styles.remove}
+          <ToolbarButton
+            render={<IconButton aria-label={`Remove ${filter.label}`} variant="ghost" xstyle={styles.remove} />}
+            onClick={(event) => {
+              dispatch({ options: () => ({ onRemove }) }, 'onRemove', filter.id, {
+                reason: 'remove-press',
+                event: event.nativeEvent,
+              });
+            }}
           >
             <X size={14} aria-hidden="true" />
-          </IconButton>
+          </ToolbarButton>
         </span>
       ))}
-    </div>
+    </ControlToolbar>
   );
 }
 
@@ -154,9 +165,11 @@ export function DisplayOptions({
   onReset,
   label = 'Display options',
 }: DisplayOptionsProps): ReactNode {
+  const trigger = useToolbarButton(<IconButton aria-label={label} title={label} />);
+
   return (
     <Popover.Root>
-      <Popover.Trigger render={<IconButton aria-label={label} title={label} />}>
+      <Popover.Trigger render={trigger}>
         <Settings2 size={14} aria-hidden="true" />
       </Popover.Trigger>
       <Popover.Popup align="end">

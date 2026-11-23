@@ -1,9 +1,9 @@
 import * as stylex from '@stylexjs/stylex';
-import { bindDrag } from '@ui-sdk/core';
-import { Button as ChartButton } from '@ui-sdk/react/button';
+import { bindDrag, dispatch } from '@ui-sdk/core';
+import type { ChangeDetails } from '@ui-sdk/core';
 import { scaleLinear } from '@visx/scale';
 import { useEffect, useId, useRef, useState } from 'react';
-import type { PointerEvent, ReactNode } from 'react';
+import type { ComponentProps, PointerEvent, ReactNode } from 'react';
 import { TextButton } from '../../../core/src/index.ts';
 import { Slider } from '../../../forms/src/index.ts';
 import { chartToneColors } from '../../../foundations/src/chart-tones.ts';
@@ -14,9 +14,8 @@ import { ChartData } from '../chart-data.tsx';
 import { ChartFrame, ChartReadout } from '../chart-frame.tsx';
 import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds, isFiniteDomain } from '../chart-input.tsx';
-import { useChartNavigation } from '../chart-navigation.tsx';
-import { ChartSurface } from '../chart-surface.tsx';
 import { chartStyles } from '../chart-theme.ts';
+import { Chart, ChartMark, ChartPlot, inspectedLabel, plotLabel } from '../chart.tsx';
 import { usePlotWidth } from '../plot-width.ts';
 
 export type ScatterPoint = {
@@ -29,9 +28,14 @@ export type ScatterPoint = {
 
 export type ScatterRange = { readonly x: readonly [number, number]; readonly y: readonly [number, number] };
 
+type SliderDetails = Parameters<NonNullable<ComponentProps<typeof Slider.Root<[number, number]>>['onValueChange']>>[1];
+
+/** Why the range changed: a drag on the plot, one of the bound sliders, or the clear button. */
+export type ScatterRangeDetails = ChangeDetails<'drag' | 'clear-press'> | SliderDetails;
+
 export type ScatterRangeSelection = {
   readonly value: ScatterRange | null;
-  readonly onChange: (range: ScatterRange | null) => void;
+  readonly onChange: (range: ScatterRange | null, details: ScatterRangeDetails) => void;
   readonly xStep: number;
   readonly yStep: number;
   readonly locale: string;
@@ -144,15 +148,12 @@ export function ScatterPlot(props: ScatterPlotProps): ReactNode {
     emptyLabel,
   } = props;
 
-  const navigation = useChartNavigation({
-    title,
-    selection,
-    items: points.map((point) => ({
-      id: point.id,
-      label: `${point.label}, ${xLabel}: ${formatX(point.x)}, ${yLabel}: ${formatY(point.y)}`,
-    })),
-  });
+  const items = points.map((point) => ({
+    id: point.id,
+    label: `${point.label}, ${xLabel}: ${formatX(point.x)}, ${yLabel}: ${formatY(point.y)}`,
+  }));
 
+  const readoutId = useId();
   const { ref, width } = usePlotWidth();
   const problem = scatterProblem(props);
 
@@ -167,69 +168,92 @@ export function ScatterPlot(props: ScatterPlotProps): ReactNode {
 
   const scaleY = scaleLinear({ domain: [...yDomain], range: [PLOT_HEIGHT - BOTTOM_MARGIN, TOP_MARGIN] });
 
-  return (
-    <ChartFrame
-      title={title}
-      report={report}
-      description={description}
-      footer={<ChartReadout id={navigation.id}>{navigation.label ?? '\u00A0'}</ChartReadout>}
-    >
-      {points.length === 0 ? (
-        <p {...stylex.props(styles.empty)}>{emptyLabel}</p>
-      ) : (
-        <ChartSurface ref={ref} {...navigation.props} {...stylex.props(styles.plot)}>
-          <ScatterCanvas
-            key={`${xDomain[0]}:${xDomain[1]}:${yDomain[0]}:${yDomain[1]}:${width}`}
-            width={width}
-            scaleX={scaleX}
-            scaleY={scaleY}
-            {...props}
-          />
-          {points.length > 0 && (
-            <div {...stylex.props(styles.marks)}>
-              {points.map((point) => {
-                const isInspected = navigation.label !== undefined && navigation.activeId === point.id;
+  const places = new Map(
+    points.map((point) => {
+      const left = scaleX(point.x);
+      const top = scaleY(point.y);
 
-                return (
-                  <ChartButton
-                    key={point.id}
-                    type="button"
-                    tabIndex={-1}
-                    onPointerEnter={() => navigation.inspect(point.id)}
-                    title={point.label}
-                    aria-label={`${point.label}, ${xLabel}: ${formatX(point.x)}, ${yLabel}: ${formatY(point.y)}`}
-                    aria-pressed={selection === undefined ? undefined : selection.selectedId === point.id}
-                    onClick={() => {
-                      navigation.inspect(point.id);
-                      selection?.onSelect(point.id);
-                    }}
-                    {...stylex.props(styles.target, styles.location(scaleX(point.x), scaleY(point.y)))}
-                  >
-                    <span
-                      aria-hidden
-                      {...stylex.props(
-                        styles.dot(chartToneColors[point.tone]),
-                        (selection?.selectedId === point.id || isInspected) && styles.selected,
-                      )}
-                    />
-                  </ChartButton>
-                );
-              })}
-            </div>
+      return [point.id, { left, top, right: left, bottom: top }];
+    }),
+  );
+
+  return (
+    <Chart
+      items={items}
+      place={(id) => places.get(id)}
+      selected={selection?.selectedId ?? null}
+      onSelect={selection?.onSelect}
+      render={(figure, { inspected, cursor }) => (
+        <ChartFrame
+          figure={figure}
+          title={title}
+          report={report}
+          description={description}
+          footer={<ChartReadout id={readoutId}>{inspectedLabel(items, inspected)}</ChartReadout>}
+        >
+          {points.length === 0 ? (
+            <p {...stylex.props(styles.empty)}>{emptyLabel}</p>
+          ) : (
+            <ChartPlot
+              ref={ref}
+              role="group"
+              aria-label={plotLabel({ title, isSelectable: selection !== undefined })}
+              aria-describedby={readoutId}
+              {...stylex.props(styles.plot, stylex.defaultMarker())}
+            >
+              <ScatterCanvas
+                key={`${xDomain[0]}:${xDomain[1]}:${yDomain[0]}:${yDomain[1]}:${width}`}
+                width={width}
+                scaleX={scaleX}
+                scaleY={scaleY}
+                {...props}
+              />
+              <div {...stylex.props(styles.marks)}>
+                {points.map((point, index) => {
+                  const isMarked = selection?.selectedId === point.id || inspected === point.id;
+
+                  return (
+                    <ChartMark
+                      key={point.id}
+                      value={point.id}
+                      render={
+                        <button
+                          type="button"
+                          tabIndex={-1}
+                          title={point.label}
+                          aria-label={items[index]?.label}
+                          aria-pressed={selection === undefined ? undefined : selection.selectedId === point.id}
+                        />
+                      }
+                      {...stylex.props(styles.target, styles.location(scaleX(point.x), scaleY(point.y)))}
+                    >
+                      <span
+                        aria-hidden
+                        {...stylex.props(
+                          styles.dot(chartToneColors[point.tone]),
+                          isMarked && styles.selected,
+                          !isMarked && cursor === point.id && chartStyles.cursor,
+                        )}
+                      />
+                    </ChartMark>
+                  );
+                })}
+              </div>
+            </ChartPlot>
           )}
-        </ChartSurface>
+          {rangeSelection !== undefined && <RangeControls {...props} rangeSelection={rangeSelection} />}
+          <ChartData
+            label={`${title} points`}
+            columns={[
+              { id: 'point', label: 'Point' },
+              { id: 'x', label: xLabel },
+              { id: 'y', label: yLabel },
+            ]}
+            rows={points.map((point) => ({ id: point.id, values: [point.label, formatX(point.x), formatY(point.y)] }))}
+          />
+        </ChartFrame>
       )}
-      {rangeSelection !== undefined && <RangeControls {...props} rangeSelection={rangeSelection} />}
-      <ChartData
-        label={`${title} points`}
-        columns={[
-          { id: 'point', label: 'Point' },
-          { id: 'x', label: xLabel },
-          { id: 'y', label: yLabel },
-        ]}
-        rows={points.map((point) => ({ id: point.id, values: [point.label, formatX(point.x), formatY(point.y)] }))}
-      />
-    </ChartFrame>
+    />
   );
 }
 
@@ -320,10 +344,12 @@ function ScatterCanvas({
 
         const end = coordinate(svg.getBoundingClientRect(), up.clientX, up.clientY);
 
-        rangeSelection.onChange({
+        const drawn: ScatterRange = {
           x: [Math.min(start.x, end.x), Math.max(start.x, end.x)],
           y: [Math.min(start.y, end.y), Math.max(start.y, end.y)],
-        });
+        };
+
+        dispatch({ options: () => rangeSelection }, 'onChange', drawn, { reason: 'drag', event: up });
       },
     });
   }
@@ -440,7 +466,7 @@ function RangeControls({
         max={xDomain[1]}
         step={rangeSelection.xStep}
         locale={rangeSelection.locale}
-        onValueChange={(x) => rangeSelection.onChange({ x, y: value.y })}
+        onValueChange={(x, details) => rangeSelection.onChange({ x, y: value.y }, details)}
       >
         <div {...stylex.props(styles.rangeTitle)}>
           <Slider.Label>{xLabel}</Slider.Label>
@@ -463,7 +489,7 @@ function RangeControls({
         max={yDomain[1]}
         step={rangeSelection.yStep}
         locale={rangeSelection.locale}
-        onValueChange={(y) => rangeSelection.onChange({ x: value.x, y })}
+        onValueChange={(y, details) => rangeSelection.onChange({ x: value.x, y }, details)}
       >
         <div {...stylex.props(styles.rangeTitle)}>
           <Slider.Label>{yLabel}</Slider.Label>
@@ -479,7 +505,16 @@ function RangeControls({
           </Slider.Track>
         </Slider.Control>
       </Slider.Root>
-      <TextButton type="button" disabled={rangeSelection.value === null} onClick={() => rangeSelection.onChange(null)}>
+      <TextButton
+        type="button"
+        disabled={rangeSelection.value === null}
+        onClick={(event) => {
+          dispatch({ options: () => rangeSelection }, 'onChange', null, {
+            reason: 'clear-press',
+            event: event.nativeEvent,
+          });
+        }}
+      >
         Clear range
       </TextButton>
     </fieldset>

@@ -1,4 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
+import { dispatch } from '@ui-sdk/core';
+import { ToolbarButton, ToolbarInput } from '@ui-sdk/react/toolbar';
 import { ListFilter, Search, X } from 'lucide-react';
 import { Children, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent, ReactNode } from 'react';
@@ -7,8 +9,10 @@ import { Input } from '../../forms/src/index.ts';
 import { spacing } from '../../foundations/src/tokens.stylex.ts';
 import { Popover } from '../../overlays/src/index.ts';
 import { FilterChips } from './collection-controls.tsx';
+import type { FilterRemoveDetails } from './collection-controls.tsx';
 import { CollectionFilters } from './collection-filters.tsx';
 import type { CollectionFilter } from './collection-filters.tsx';
+import { ControlToolbar } from './control-toolbar.tsx';
 import { QueryControls } from './query-controls.tsx';
 import type { CollectionSearch } from './query-controls.tsx';
 
@@ -39,7 +43,11 @@ export type CollectionControlsProps = {
   readonly search?: CollectionSearch;
   readonly filters?: ReadonlyArray<CollectionFilter>;
   readonly filterContent?: (close: () => void) => ReactNode;
-  readonly chips?: ReadonlyArray<{ readonly id: string; readonly label: string; readonly onRemove: () => void }>;
+  readonly chips?: ReadonlyArray<{
+    readonly id: string;
+    readonly label: string;
+    readonly onRemove: (details: FilterRemoveDetails) => void;
+  }>;
   readonly viewActions?: ReactNode;
   readonly display?: ReactNode;
 };
@@ -83,8 +91,11 @@ export function useCollectionControls({
     }
   }
 
-  function close() {
-    search?.onChange('');
+  function close(reason: 'clear-press' | 'escape-key', event: Event) {
+    if (search !== undefined) {
+      dispatch({ options: () => search }, 'onChange', '', { reason, event });
+    }
+
     setFinding(false);
     focusControl();
   }
@@ -108,7 +119,7 @@ export function useCollectionControls({
 
     event.preventDefault();
     event.stopPropagation();
-    close();
+    close('escape-key', event.nativeEvent);
   }
 
   const activeChips = filters
@@ -116,7 +127,7 @@ export function useCollectionControls({
     .map((group) => ({
       id: `filter:${group.id}`,
       label: group.options.find((option) => option.value === group.value)?.label ?? group.value,
-      onRemove: () => group.onChange(group.defaultValue),
+      onRemove: (details: FilterRemoveDetails) => group.onChange(group.defaultValue, details),
     }));
 
   for (const chip of chips) {
@@ -129,69 +140,89 @@ export function useCollectionControls({
   const searchLabel = search?.label ?? 'Search this view';
   const searchPlaceholder = search?.placeholder ?? 'Find in view…';
 
+  // The controls are one UI SDK toolbar, or a group of the collection toolbar around them: one Tab stop either way.
   const actions = hasActions ? (
-    <QueryControls
-      search={search}
-      groups={filters}
-      selections={selections}
-      isDisabled={isUnavailable}
-      ref={collectionControls}
+    <ControlToolbar
       aria-label={label}
-      aria-hidden={isUnavailable}
-      inert={isUnavailable}
-      {...stylex.props(styles.controls)}
+      render={
+        <QueryControls
+          search={search}
+          groups={filters}
+          selections={selections}
+          isDisabled={isUnavailable}
+          ref={collectionControls}
+          aria-hidden={isUnavailable}
+          inert={isUnavailable}
+          {...stylex.props(styles.controls)}
+        />
+      }
     >
       {search !== undefined && (
-        <IconButton
-          ref={trigger}
-          type="button"
+        <ToolbarButton
           disabled={isPlaceholder}
-          aria-label="Find in view"
-          title="Find in view"
-          data-view-find-trigger
-          aria-expanded={isOpen}
-          onClick={openSearch}
+          render={
+            <IconButton
+              ref={trigger}
+              type="button"
+              aria-label="Find in view"
+              title="Find in view"
+              data-view-find-trigger
+              aria-expanded={isOpen}
+              onClick={openSearch}
+            />
+          }
         >
           <Search size={14} aria-hidden />
-        </IconButton>
+        </ToolbarButton>
       )}
       {isOpen && (
         <div {...stylex.props(styles.find)}>
-          <Input
-            ref={input}
-            type="search"
+          <ToolbarInput
             disabled={isPlaceholder}
-            data-view-find
-            aria-label={searchLabel}
-            placeholder={searchPlaceholder}
-            value={search.value}
-            onValueChange={search.onChange}
-            onKeyDown={(event) => {
-              const shouldSubmit = event.key === 'Enter' && search.onSubmit !== undefined;
+            render={
+              <Input
+                ref={input}
+                type="search"
+                data-view-find
+                aria-label={searchLabel}
+                placeholder={searchPlaceholder}
+                value={search.value}
+                onValueChange={search.onChange}
+                onKeyDown={(event) => {
+                  const shouldSubmit = event.key === 'Enter' && search.onSubmit !== undefined;
 
-              if (shouldSubmit) {
-                event.preventDefault();
-                search.onSubmit();
-              }
+                  if (shouldSubmit) {
+                    event.preventDefault();
+                    dispatch({ options: () => search }, 'onSubmit', search.value, {
+                      reason: 'enter-key',
+                      event: event.nativeEvent,
+                    });
+                  }
 
-              if (event.key === 'Escape') {
-                event.preventDefault();
-                event.stopPropagation();
-                close();
-              }
-            }}
-            xstyle={styles.input}
+                  if (event.key === 'Escape') {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    close('escape-key', event.nativeEvent);
+                  }
+                }}
+                xstyle={styles.input}
+              />
+            }
           />
-          <IconButton
-            type="button"
-            variant="ghost"
-            data-view-find-close
-            aria-label="Close search"
-            title="Close search (Esc)"
-            onClick={close}
+          <ToolbarButton
+            render={
+              <IconButton
+                type="button"
+                variant="ghost"
+                data-view-find-close
+                aria-label="Close search"
+                title="Close search (Esc)"
+                onClick={(event) => close('clear-press', event.nativeEvent)}
+              />
+            }
           >
             <X size={14} aria-hidden />
-          </IconButton>
+          </ToolbarButton>
         </div>
       )}
       {filterContent === undefined ? (
@@ -200,7 +231,7 @@ export function useCollectionControls({
         ) : null
       ) : (
         <Popover.Root open={isFilterOpen} onOpenChange={setFilterOpen}>
-          <Popover.Trigger render={<IconButton aria-label="Filters" title="Filters" />}>
+          <Popover.Trigger render={<ToolbarButton render={<IconButton aria-label="Filters" title="Filters" />} />}>
             <ListFilter size={14} aria-hidden />
           </Popover.Trigger>
           <Popover.Popup align="end" {...stylex.props(styles.popup)}>
@@ -211,7 +242,7 @@ export function useCollectionControls({
       )}
       {viewActions}
       {display}
-    </QueryControls>
+    </ControlToolbar>
   ) : undefined;
 
   return {
@@ -222,9 +253,9 @@ export function useCollectionControls({
       <div aria-hidden={isUnavailable} inert={isUnavailable} {...stylex.props(styles.contents)}>
         <FilterChips
           filters={activeChips}
-          onRemove={(id) => {
+          onRemove={(id, details) => {
             focusControl();
-            activeChips.find((chip) => chip.id === id)?.onRemove();
+            activeChips.find((chip) => chip.id === id)?.onRemove(details);
           }}
         />
       </div>

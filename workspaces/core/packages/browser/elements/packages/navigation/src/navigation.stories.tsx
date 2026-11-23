@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Stack, Text } from '../../core/src/index.ts';
+import { RouteLink, Stack, Text } from '../../core/src/index.ts';
 import { Breadcrumb, Kbd } from './navigation.tsx';
-import { RouteLink } from './route-link.tsx';
 
 const meta = {
   title: 'Navigation/Breadcrumb',

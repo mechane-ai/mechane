@@ -1,7 +1,14 @@
-import { MessageScroller, useMessageScroller, useMessageScrollerScrollable } from '@shadcn/react/message-scroller';
 import * as stylex from '@stylexjs/stylex';
+import {
+  createScrollAreaController,
+  ScrollArea,
+  ScrollAreaContent,
+  ScrollAreaScrollToEnd,
+  ScrollAreaViewport,
+} from '@ui-sdk/react/scroll-area';
+import type { ScrollAreaController } from '@ui-sdk/react/scroll-area';
 import { ArrowDown } from 'lucide-react';
-import { createContext, useContext, useLayoutEffect, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useLayoutEffect, useRef, useState } from 'react';
 import type { ReactNode, RefObject } from 'react';
 import { Button } from '../../core/src/index.ts';
 import { colors, controls, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
@@ -28,6 +35,8 @@ const styles = stylex.create({
     'overflowY': 'auto',
     'overflowAnchor': 'auto',
     'scrollbarGutter': 'stable',
+    // The scroll area hides the native scrollbar inline until it has counted its own, and this viewport has none.
+    'scrollbarWidth': 'auto !important',
     'borderRadius': radii.sm,
     'outlineStyle': 'none',
     ':focus-visible': {
@@ -96,8 +105,30 @@ export type ConversationJumpProps = { readonly label?: string };
 export type ConversationControlsProps = { readonly children: ReactNode };
 export type ConversationLatestButtonProps = { readonly label: string; readonly onActivate?: () => void };
 
-const ViewportContext = createContext<RefObject<HTMLDivElement | null> | undefined>(undefined);
+type ConversationScroll = {
+  readonly controller: ScrollAreaController;
+  readonly viewport: RefObject<HTMLDivElement | null>;
+  /** Following starts once the reader is at the end, so a conversation opened elsewhere stays in reading mode. */
+  readonly reachEnd: () => void;
+};
 
+const ScrollContext = createContext<ConversationScroll | undefined>(undefined);
+
+function useConversationScroll(): ConversationScroll {
+  const scroll = useContext(ScrollContext);
+
+  if (scroll === undefined) {
+    throw new Error('Render the parts of a conversation inside Conversation.Root.');
+  }
+
+  return scroll;
+}
+
+function isAtEnd(element: HTMLElement): boolean {
+  return element.scrollHeight - element.clientHeight - element.scrollTop <= 1;
+}
+
+/** A conversation on the UI SDK scroll area: it follows the end while a reply grows, until the reader scrolls up. */
 function ConversationRoot({
   children,
   initialPosition = 'end',
@@ -107,6 +138,9 @@ function ConversationRoot({
   const fallbackViewport = useRef<HTMLDivElement>(null);
   const viewport = viewportRef ?? fallbackViewport;
   const [position] = useState(initialPosition);
+  const [controller] = useState(createScrollAreaController);
+  const [hasReachedEnd, setReachedEnd] = useState(position === 'end');
+  const [scroll] = useState<ConversationScroll>(() => ({ controller, viewport, reachEnd: () => setReachedEnd(true) }));
 
   useLayoutEffect(() => {
     if (typeof position === 'object') {
@@ -115,58 +149,74 @@ function ConversationRoot({
   }, [position, viewport]);
 
   return (
-    <ViewportContext.Provider value={viewport}>
-      <MessageScroller.Provider
-        autoScroll={shouldFollow}
-        defaultScrollPosition={typeof position === 'object' ? 'start' : position}
-      >
-        <MessageScroller.Root {...stylex.props(styles.root)}>{children}</MessageScroller.Root>
-      </MessageScroller.Provider>
-    </ViewportContext.Provider>
+    <ScrollContext.Provider value={scroll}>
+      <ScrollArea stickToEnd={shouldFollow && hasReachedEnd} controller={controller} {...stylex.props(styles.root)}>
+        {children}
+      </ScrollArea>
+    </ScrollContext.Provider>
   );
 }
 
 function ConversationViewport({ label, children, scrollRestorationId }: ConversationViewportProps): ReactNode {
-  const viewport = useContext(ViewportContext);
+  const { viewport, reachEnd } = useConversationScroll();
+
+  const attach = useCallback(
+    (node: HTMLDivElement | null) => {
+      viewport.current = node;
+
+      // A conversation that fits its viewport is already at the end, so it follows from the start.
+      if (node !== null && isAtEnd(node)) {
+        reachEnd();
+      }
+    },
+    [viewport, reachEnd],
+  );
 
   return (
-    <MessageScroller.Viewport
-      ref={viewport}
+    <ScrollAreaViewport
+      ref={attach}
+      role="region"
       aria-label={label}
+      tabIndex={0}
       data-scroll-restoration-id={scrollRestorationId}
+      onScroll={(event) => {
+        if (isAtEnd(event.currentTarget)) {
+          reachEnd();
+        }
+      }}
       {...stylex.props(styles.viewport)}
     >
       {children}
-    </MessageScroller.Viewport>
+    </ScrollAreaViewport>
   );
 }
 
 function ConversationContent({ children, isStreaming = false }: ConversationContentProps): ReactNode {
   return (
-    <MessageScroller.Content
+    <ScrollAreaContent
       aria-live="polite"
       aria-relevant="additions"
       aria-busy={isStreaming}
       {...stylex.props(styles.content)}
     >
       {children}
-    </MessageScroller.Content>
+    </ScrollAreaContent>
   );
 }
 
 function ConversationItem({ messageId, shouldRevealOnAppend = false, children }: ConversationItemProps): ReactNode {
-  const { scrollToEnd } = useMessageScroller();
+  const { controller } = useConversationScroll();
 
   useLayoutEffect(() => {
     if (shouldRevealOnAppend) {
-      scrollToEnd({ behavior: 'instant' });
+      controller.scrollToEnd({ behavior: 'instant' });
     }
-  }, [messageId, shouldRevealOnAppend, scrollToEnd]);
+  }, [messageId, shouldRevealOnAppend, controller]);
 
   return (
-    <MessageScroller.Item messageId={messageId} {...stylex.props(styles.item)}>
+    <div data-message-id={messageId} {...stylex.props(styles.item)}>
       {children}
-    </MessageScroller.Item>
+    </div>
   );
 }
 
@@ -174,35 +224,32 @@ function ConversationControls({ children }: ConversationControlsProps): ReactNod
   return <div {...stylex.props(styles.controls)}>{children}</div>;
 }
 
+/** Shows while the reader is away from the end. A press scrolls there, follows again and focuses the viewport. */
 function ConversationJumpToLatest({ label = 'Jump to latest' }: ConversationJumpProps): ReactNode {
-  const { end } = useMessageScrollerScrollable();
-
-  if (!end) {
-    return null;
-  }
-
   return (
-    <div {...stylex.props(styles.jump)}>
-      <ConversationLatestButton label={label} />
-    </div>
+    <ScrollAreaScrollToEnd
+      render={(props, { visible }) => (
+        <div hidden={!visible} {...stylex.props(styles.jump)}>
+          <Button {...props}>
+            <ArrowDown size={14} aria-hidden />
+            {label}
+          </Button>
+        </div>
+      )}
+    />
   );
 }
 
 function ConversationLatestButton({ label, onActivate }: ConversationLatestButtonProps): ReactNode {
-  const { scrollToEnd } = useMessageScroller();
-  const viewport = useContext(ViewportContext);
+  const { controller, viewport } = useConversationScroll();
 
   return (
     <Button
       onClick={() => {
         onActivate?.();
         requestAnimationFrame(() => {
-          const target = viewport?.current;
-
-          if (target !== undefined && target !== null) {
-            scrollToEnd({ behavior: 'instant' });
-            target.focus({ preventScroll: true });
-          }
+          controller.scrollToEnd({ behavior: 'instant' });
+          viewport.current?.focus({ preventScroll: true });
         });
       }}
     >

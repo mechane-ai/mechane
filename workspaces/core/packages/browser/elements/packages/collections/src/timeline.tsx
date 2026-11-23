@@ -1,4 +1,12 @@
 import * as stylex from '@stylexjs/stylex';
+import {
+  Timeline as SdkTimeline,
+  TimelineItem as SdkTimelineItem,
+  TimelineDescription,
+  TimelineMarker,
+  TimelineTime,
+  TimelineTitle,
+} from '@ui-sdk/react/timeline';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Collapsible } from '../../core/src/index.ts';
@@ -30,6 +38,13 @@ const styles = stylex.create({
     },
     ':last-child::before': { display: 'none' },
     ':last-child': { paddingBottom: 0 },
+    'outlineStyle': 'none',
+    ':focus-visible': {
+      outlineWidth: controls.focusWidth,
+      outlineStyle: 'solid',
+      outlineColor: colors.focus,
+      outlineOffset: 2,
+    },
   },
   icon: {
     display: 'flex',
@@ -78,11 +93,12 @@ export type TimelineItemProps = {
   | { readonly title: string; readonly details: ReactNode; readonly defaultOpen?: boolean }
 );
 
+/** An ordered list of dated events on the UI SDK timeline: one Tab stop, and arrow keys move between events. */
 function TimelineRoot({ label, children }: TimelineProps): ReactNode {
   return (
-    <ol aria-label={label} {...stylex.props(styles.list)}>
+    <SdkTimeline aria-label={label} render={<ol />} {...stylex.props(styles.list)}>
       {children}
-    </ol>
+    </SdkTimeline>
   );
 }
 
@@ -99,14 +115,18 @@ function TimelineItem({
 
   const header = (
     <div {...stylex.props(styles.header)}>
-      <div {...stylex.props(styles.title)}>
+      <TimelineTitle {...stylex.props(styles.title)}>
         {details === undefined ? (
           title
         ) : (
           <Collapsible.Trigger {...stylex.props(styles.trigger)}>{title}</Collapsible.Trigger>
         )}
-      </div>
-      {time !== undefined && time !== null && <div {...stylex.props(styles.time)}>{time}</div>}
+      </TimelineTitle>
+      {time !== undefined && time !== null && (
+        <TimelineTime render={<div />} {...stylex.props(styles.time)}>
+          {time}
+        </TimelineTime>
+      )}
     </div>
   );
 
@@ -116,17 +136,19 @@ function TimelineItem({
   const content = (
     <>
       {header}
-      {hasPreview && showPreview && <div {...stylex.props(styles.body)}>{children}</div>}
+      {hasPreview && showPreview && (
+        <TimelineDescription {...stylex.props(styles.body)}>{children}</TimelineDescription>
+      )}
       {metadata !== undefined && metadata !== null && <div {...stylex.props(styles.metadata)}>{metadata}</div>}
       {details !== undefined && <Collapsible.Panel>{details}</Collapsible.Panel>}
     </>
   );
 
   return (
-    <li {...stylex.props(styles.item)}>
-      <span aria-hidden {...stylex.props(styles.icon)}>
+    <SdkTimelineItem render={<li />} {...stylex.props(styles.item)}>
+      <TimelineMarker render={<span />} {...stylex.props(styles.icon)}>
         {icon}
-      </span>
+      </TimelineMarker>
       {details === undefined ? (
         <div {...stylex.props(styles.content)}>{content}</div>
       ) : (
@@ -134,7 +156,7 @@ function TimelineItem({
           {content}
         </Collapsible.Root>
       )}
-    </li>
+    </SdkTimelineItem>
   );
 }
 

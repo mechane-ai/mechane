@@ -162,6 +162,7 @@ function Chat({ scenario }: { scenario: Scenario }) {
         value={draft}
         onValueChange={setDraft}
         enterBehavior="submit"
+        history={turn === undefined ? [] : [turn.text]}
         isCompact
         isSubmitDisabled={draft.trim().length === 0 || active || turn?.phase === 'unconfirmed'}
         onStop={

@@ -1,4 +1,5 @@
 import * as stylex from '@stylexjs/stylex';
+import type { ChangeDetails } from '@ui-sdk/core';
 import { ChevronRight, CircleDashed, ListFilter } from 'lucide-react';
 import { useState } from 'react';
 import type { ComponentProps, ReactNode } from 'react';
@@ -7,6 +8,7 @@ import type { Badge } from '../../core/src/index.ts';
 import { Input } from '../../forms/src/index.ts';
 import { colors, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import { Menu } from '../../overlays/src/index.ts';
+import { useToolbarButton } from './control-toolbar.tsx';
 
 const styles = stylex.create({
   label: { paddingBlock: spacing.xs, paddingInline: spacing.sm },
@@ -51,6 +53,9 @@ function OptionIcon({ option }: { option: FilterOption }) {
   );
 }
 
+/** Why a filter changed: a menu option, its chip's remove button, or a call such as an agent's step. */
+export type CollectionFilterDetails = ChangeDetails<'item-press' | 'remove-press' | 'imperative'>;
+
 export type CollectionFilter = {
   readonly id: string;
   readonly label: string;
@@ -58,7 +63,7 @@ export type CollectionFilter = {
   readonly value: string;
   readonly defaultValue: string;
   readonly options: ReadonlyArray<FilterOption>;
-  readonly onChange: (value: string) => void;
+  readonly onChange: (value: string, details: CollectionFilterDetails) => void;
 };
 
 export function CollectionFilters({ groups }: { groups: ReadonlyArray<CollectionFilter> }) {
@@ -68,6 +73,8 @@ export function CollectionFilters({ groups }: { groups: ReadonlyArray<Collection
   const label =
     groups.length === 1 && groups[0] !== undefined ? `Filter by ${groups[0].label.toLowerCase()}` : 'Filters';
 
+  const trigger = useToolbarButton(<IconButton aria-label={label} title="Filters" />);
+
   return (
     <Menu.Root
       onOpenChange={(open) => {
@@ -76,7 +83,7 @@ export function CollectionFilters({ groups }: { groups: ReadonlyArray<Collection
         }
       }}
     >
-      <Menu.Trigger render={<IconButton aria-label={label} title="Filters" />}>
+      <Menu.Trigger render={trigger}>
         <ListFilter size={14} aria-hidden />
       </Menu.Trigger>
       <Menu.Popup align="end">

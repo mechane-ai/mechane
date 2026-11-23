@@ -7,8 +7,8 @@ import { PageLayout } from '../../layout/src/index.ts';
 import { useCommandShortcuts } from '../../navigation/src/commands/index.ts';
 import { CollectionToolbar } from './collection-controls.tsx';
 import { CollectionFilters } from './collection-filters.tsx';
+import type { DataTableColumn } from './data-table-layout.tsx';
 import { DataTable, DataTablePlaceholder } from './data-table.tsx';
-import type { DataTableColumn } from './data-table.tsx';
 import { TableQueryFrame } from './table-query.tsx';
 import { useCollectionControls } from './use-collection-controls.tsx';
 

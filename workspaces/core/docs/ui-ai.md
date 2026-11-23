@@ -7,7 +7,7 @@ the rest of Elements by Mechane.
 
 ## Conversations
 
-`Conversation` owns scrolling through the headless `@shadcn/react/message-scroller` primitive. Compose `Root`,
+`Conversation` owns scrolling through the UI SDK `scroll-area` primitive and its `stickToEnd` following. Compose `Root`,
 `Viewport`, `Content`, and stable `Item` rows. Add `JumpToLatest` inside the root. Give the viewport a descriptive label
 and each item a stable `messageId`. Key the root by conversation identity when switching conversations. Mark the locally
 submitted user item with `shouldRevealOnAppend` to return to the live edge when the user sends. Keep its ID through
@@ -15,8 +15,11 @@ acknowledgement.
 
 A height-constrained parent creates a scrolling transcript. Without that constraint, the content grows in ordinary
 document flow. `initialPosition="start"` and `shouldFollow={false}` suit a historical page. Live conversations default
-to the end and follow new content while the reader remains there. Prepending older rows preserves the reader's position.
-The jump action returns focus to the viewport. Updates and streamed text do not move focus.
+to the end and follow new content while the reader remains there. Scrolling up stops following, and reaching the end or
+the jump action follows again. A conversation opened at the start or a saved offset stays in reading mode until the
+reader reaches the end. Prepending older rows preserves the reader's position. The jump action returns focus to the
+viewport. Updates and streamed text do not move focus. An agent reads each `Message` as a `message` component with its
+author, kind and text.
 
 Pass `isStreaming` to `Content` while a reply is incomplete. The transcript announces added records and waits for a busy
 region to settle. It does not announce each text mutation. `Message` presents an author, metadata, content, attachments,
@@ -31,11 +34,6 @@ application chooses when delivery or generation is waiting and removes the indic
 only to the active Markdown message. Newly received prose fades briefly; completed renderers stay stable while later
 messages grow. The AI Chat catalog includes a tool reply, an interrupted send, retry and Stop.
 
-The scroller wrapper exposes ordinary live-edge following and prepend preservation. It does not expose the upstream
-anchored-turn mode. That mode has a known scrollbar-drag issue in the pinned dependency. This keeps one scroll owner
-without reproducing its engine in the UI package. See the
-[upstream report](https://github.com/shadcn-ui/ui/issues/12278).
-
 ## Prompt composition
 
 `PromptInput` receives `value`, `onValueChange`, and `onSubmit`. The application owns the draft, request identifier,
@@ -44,8 +42,13 @@ both the draft and the application's original request identity. Drafts use a sen
 requires human authorization for Send and Stop.
 
 Newline is the default Enter behavior. `enterBehavior="submit"` submits through the native form and its validation;
-Shift+Enter adds a line. Composition input and held Enter do not submit. Pending blocks submission while retaining
-editing and keyboard focus for the next draft. Explicitly disabled input retains normal disabled semantics.
+Shift+Enter adds a line. Command or Control with Enter submits in either mode, and the Send tooltip names the shortcut.
+Composition input and held Enter do not submit. Pending blocks submission while retaining editing and keyboard focus for
+the next draft. Explicitly disabled input retains normal disabled semantics.
+
+Pass `history` with earlier prompts, oldest first. Arrow Up on the first line brings back the previous prompt, and Arrow
+Down on the last line returns toward the draft, as a terminal does. The component asks for each change through
+`onValueChange`, which receives the UI SDK change details after the text.
 
 Use `isCompact` for a composer pinned below a conversation. Without additional controls or attachments it uses one
 action row and grows with its text up to a bounded height. The default suits a larger standalone prompt.

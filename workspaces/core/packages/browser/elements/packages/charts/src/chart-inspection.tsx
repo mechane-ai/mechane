@@ -18,7 +18,6 @@ type ChartInspectionProps = {
   readonly x: number;
   readonly width: number;
   readonly offset?: number | undefined;
-  readonly source: 'pointer' | 'keyboard' | undefined;
   readonly notes?: ReadonlyArray<string> | undefined;
   readonly hasSeriesSummary?: boolean | undefined;
   /** False for a plot whose axis labels name every mark, so the inspector replaces the legend at every width. */
@@ -163,7 +162,6 @@ export function ChartInspection({
   x,
   width,
   offset = 16,
-  source,
   notes = [],
   hasSeriesSummary = false,
   hasLegend = true,
@@ -205,7 +203,7 @@ export function ChartInspection({
           </ul>
         </div>
       )}
-      <span id={id} aria-live={source === 'keyboard' ? 'polite' : 'off'} {...stylex.props(styles.accessible)}>
+      <span id={id} {...stylex.props(styles.accessible)}>
         {inspectionReadout({ label, summary, rows, notes })}
       </span>
       {label !== undefined && (

@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Button, Stack } from '../../core/src/index.ts';
+import { Button, RouteLink, Stack } from '../../core/src/index.ts';
 import { PageNavigation, PageNavigationPlaceholder } from './page-navigation.tsx';
-import { RouteLink } from './route-link.tsx';
 import { Tabs } from './tabs.tsx';
 
 const meta = {

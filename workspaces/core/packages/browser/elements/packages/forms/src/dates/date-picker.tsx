@@ -43,6 +43,7 @@ export function DatePicker({
           <DateInput
             label="Date"
             value={draft}
+            locale={environment.locale}
             minimum={environment.minimum}
             maximum={environment.maximum}
             onValueChange={setDraft}

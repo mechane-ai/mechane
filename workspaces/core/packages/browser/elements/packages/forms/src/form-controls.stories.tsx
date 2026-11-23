@@ -3,7 +3,8 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Muted, Row, Stack } from '../../core/src/index.ts';
 import type { ControlDensity } from '../../core/src/index.ts';
-import { Fieldset, FilePicker, InputGroup, NumberField, Slider } from './form-controls.tsx';
+import { FilePicker } from './file-picker.tsx';
+import { Fieldset, InputGroup, NumberField, Slider } from './form-controls.tsx';
 import { Field } from './forms.tsx';
 
 const meta = {
@@ -89,19 +90,14 @@ function Settings({ density = 'standard' }: SettingsProps): ReactNode {
             density={density}
             multiple
             accept=".txt,.json,.md"
-            onChange={(event) => {
-              const names = Array.from(event.target.files ?? []).map((file) => file.name);
-
-              if (names.length === 0) {
-                setFileNames('No files selected.');
-
-                return;
-              }
-
-              setFileNames(names.join(', '));
-            }}
+            maxFiles={3}
+            onValueChange={(files) =>
+              setFileNames(files.length === 0 ? 'No files selected.' : files.map((file) => file.name).join(', '))
+            }
           />
-          <Field.Description>Text, JSON, or Markdown files. Nothing is uploaded by this example.</Field.Description>
+          <Field.Description>
+            Up to three text, JSON, or Markdown files. Nothing is uploaded by this example.
+          </Field.Description>
           <Muted>{fileNames}</Muted>
         </Field.Root>
       </Stack>

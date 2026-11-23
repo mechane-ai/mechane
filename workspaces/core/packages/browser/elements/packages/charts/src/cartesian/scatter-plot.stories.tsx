@@ -15,7 +15,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'ScatterPlot displays supplied coordinates without computing an embedding or interpreting distance. Applications declare axis meanings, units, domains, and formatters. Inspecting a point exposes its formatted axis readout while selected tracks the selection accepted by the application. Use selectItem when the plot supplies selection. Point selection and range selection are controlled independently. Drag an empty area with a mouse to select a rectangle; the two range sliders provide the same coordinate selection with keyboard and touch. Touch gestures on the plot scroll the page. The data disclosure preserves every supplied label and coordinate. Supply no more than 1,000 points. Invalid or out-of-domain coordinates produce an explicit error rather than a clamped mark. Windowing or sampling belongs to the application and must be described beside the plot.',
+          'ScatterPlot displays supplied coordinates without computing an embedding or interpreting distance. Applications declare axis meanings, units, domains, and formatters. Inspecting a point exposes its formatted axis readout while selected tracks the selection accepted by the application. Arrow keys move to the nearest point in their direction. Agents read every point with its exact values, inspect one, and select it when the plot supplies selection. Point selection and range selection are controlled independently. Drag an empty area with a mouse to select a rectangle; the two range sliders provide the same coordinate selection with keyboard and touch. Touch gestures on the plot scroll the page. The data disclosure preserves every supplied label and coordinate. Supply no more than 1,000 points. Invalid or out-of-domain coordinates produce an explicit error rather than a clamped mark. Windowing or sampling belongs to the application and must be described beside the plot.',
       },
     },
   },
@@ -100,7 +100,10 @@ export const SelectPointsAndRanges: Story = {
     plot.focus();
 
     const agent = createAgent();
-    const chart = agent.snapshot().find((entry) => entry.label === plot.getAttribute('aria-label'));
+
+    const chart = agent
+      .snapshot()
+      .find((entry) => entry.component === 'chart' && entry.label === 'Embedding inspection');
 
     if (chart === undefined) {
       throw new Error('The agent could not discover the rendered scatter plot.');
@@ -113,10 +116,11 @@ export const SelectPointsAndRanges: Story = {
       throw new Error('The rendered road passage could not be discovered.');
     }
 
-    const inspected = await agent.act({ steps: [{ ref: chart.ref, action: 'setValue', args: [point.value] }] });
+    const inspected = await agent.act({ steps: [{ ref: chart.ref, action: 'inspect', args: [point.value] }] });
 
     await expect(inspected.ok).toBe(true);
-    await expect(agent.snapshot().find((entry) => entry.ref === chart.ref)?.['readout']).toBe(point.label);
+    await expect(agent.snapshot().find((entry) => entry.ref === chart.ref)?.['inspected']).toBe(point.value);
+    await expect(plot).toHaveAccessibleDescription(point.label);
     await userEvent.keyboard('{Enter}');
 
     const detail = agent.snapshot().find((entry) => entry.label === 'Selected point · Passage');

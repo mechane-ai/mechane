@@ -1,5 +1,4 @@
 import * as stylex from '@stylexjs/stylex';
-import { Button as ChartButton } from '@ui-sdk/react/button';
 import { useId } from 'react';
 import type { ReactNode } from 'react';
 import { chartToneColors } from '../../../foundations/src/chart-tones.ts';
@@ -10,8 +9,8 @@ import { ChartData } from '../chart-data.tsx';
 import { ChartFrame, ChartReadout } from '../chart-frame.tsx';
 import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds } from '../chart-input.tsx';
-import { useChartNavigation } from '../chart-navigation.tsx';
-import { ChartSurface } from '../chart-surface.tsx';
+import { chartStyles } from '../chart-theme.ts';
+import { Chart, ChartMark, ChartPlot, inspectedLabel, plotLabel } from '../chart.tsx';
 
 export type RelationNode = {
   readonly id: string;
@@ -155,15 +154,12 @@ export function RelationGraph({
   selection,
   emptyLabel,
 }: RelationGraphProps): ReactNode {
-  const navigation = useChartNavigation({
-    title,
-    selection,
-    items: nodes.map((node) => ({
-      id: node.id,
-      label: [node.label, node.description].filter((part) => part !== undefined).join(', '),
-    })),
-  });
+  const items = nodes.map((node) => ({
+    id: node.id,
+    label: [node.label, node.description].filter((part) => part !== undefined).join(', '),
+  }));
 
+  const readoutId = useId();
   const markerId = useId();
   const problem = graphProblem({ nodes, edges, groups, width, height });
 
@@ -187,158 +183,165 @@ export function RelationGraph({
   }
 
   return (
-    <ChartFrame
-      title={title}
-      report={report}
-      description={description}
-      footer={<ChartReadout id={navigation.id}>{navigation.label ?? '\u00A0'}</ChartReadout>}
-    >
-      {hasNodes ? (
-        <ChartSurface {...navigation.props} {...stylex.props(styles.viewport)}>
-          <div {...stylex.props(styles.canvas(width, height))}>
-            <svg width={width} height={height} aria-hidden {...stylex.props(styles.svg)}>
-              <defs>
-                <marker
-                  id={markerId}
-                  markerWidth={8}
-                  markerHeight={8}
-                  refX={7}
-                  refY={4}
-                  orient="auto"
-                  markerUnits="userSpaceOnUse"
-                >
-                  <path d="M0,0 L8,4 L0,8 Z" {...stylex.props(styles.arrow)} />
-                </marker>
-              </defs>
-              {groups.map((group) => (
-                <g key={group.id}>
-                  <rect
-                    x={group.x}
-                    y={group.y}
-                    width={group.width}
-                    height={group.height}
-                    {...stylex.props(styles.group)}
-                  />
-                  <svg x={group.x} y={group.y} width={group.width} height={group.height} overflow="hidden">
-                    <text x={12} y={20} {...stylex.props(styles.groupLabel)}>
-                      {group.label}
-                    </text>
-                  </svg>
-                </g>
-              ))}
-              {links.map(({ edge, source, target }) => {
-                const isForward = source.x < target.x;
-                const startX = source.x + (isForward ? source.width : 0);
-                const endX = target.x + (isForward ? 0 : target.width);
-                const startY = source.y + source.height / 2;
-                const endY = target.y + target.height / 2;
-                const middleX = (startX + endX) / 2;
-                const loopX = source.x + source.width / 2;
+    <Chart
+      items={items}
+      place={(id) => {
+        const node = nodeMap.get(id);
 
-                const path =
-                  source.id === target.id
-                    ? `M${loopX - 12},${source.y} C${loopX - 48},${source.y - 36} ${loopX + 48},${source.y - 36} ${loopX + 12},${source.y}`
-                    : `M${startX},${startY} C${middleX},${startY} ${middleX},${endY} ${endX},${endY}`;
+        return node === undefined
+          ? undefined
+          : { left: node.x, top: node.y, right: node.x + node.width, bottom: node.y + node.height };
+      }}
+      selected={selection?.selectedId ?? null}
+      onSelect={selection?.onSelect}
+      render={(figure, { inspected, cursor }) => (
+        <ChartFrame
+          figure={figure}
+          title={title}
+          report={report}
+          description={description}
+          footer={<ChartReadout id={readoutId}>{inspectedLabel(items, inspected)}</ChartReadout>}
+        >
+          {hasNodes ? (
+            <ChartPlot
+              role="group"
+              aria-label={plotLabel({ title, isSelectable: selection !== undefined })}
+              aria-describedby={readoutId}
+              {...stylex.props(styles.viewport, stylex.defaultMarker())}
+            >
+              <div {...stylex.props(styles.canvas(width, height))}>
+                <svg width={width} height={height} aria-hidden {...stylex.props(styles.svg)}>
+                  <defs>
+                    <marker
+                      id={markerId}
+                      markerWidth={8}
+                      markerHeight={8}
+                      refX={7}
+                      refY={4}
+                      orient="auto"
+                      markerUnits="userSpaceOnUse"
+                    >
+                      <path d="M0,0 L8,4 L0,8 Z" {...stylex.props(styles.arrow)} />
+                    </marker>
+                  </defs>
+                  {groups.map((group) => (
+                    <g key={group.id}>
+                      <rect
+                        x={group.x}
+                        y={group.y}
+                        width={group.width}
+                        height={group.height}
+                        {...stylex.props(styles.group)}
+                      />
+                      <svg x={group.x} y={group.y} width={group.width} height={group.height} overflow="hidden">
+                        <text x={12} y={20} {...stylex.props(styles.groupLabel)}>
+                          {group.label}
+                        </text>
+                      </svg>
+                    </g>
+                  ))}
+                  {links.map(({ edge, source, target }) => {
+                    const isForward = source.x < target.x;
+                    const startX = source.x + (isForward ? source.width : 0);
+                    const endX = target.x + (isForward ? 0 : target.width);
+                    const startY = source.y + source.height / 2;
+                    const endY = target.y + target.height / 2;
+                    const middleX = (startX + endX) / 2;
+                    const loopX = source.x + source.width / 2;
 
-                return (
-                  <path
-                    key={edge.id}
-                    d={path}
-                    markerEnd={edge.direction === 'directed' ? `url(#${markerId})` : undefined}
-                    {...stylex.props(styles.edge)}
-                  >
-                    <title>{edge.label}</title>
-                  </path>
-                );
-              })}
-            </svg>
-            {nodes.map((node) => {
-              const isInspected = navigation.label !== undefined && navigation.activeId === node.id;
+                    const path =
+                      source.id === target.id
+                        ? `M${loopX - 12},${source.y} C${loopX - 48},${source.y - 36} ${loopX + 48},${source.y - 36} ${loopX + 12},${source.y}`
+                        : `M${startX},${startY} C${middleX},${startY} ${middleX},${endY} ${endX},${endY}`;
 
-              const groupLabels = groups.filter((group) => group.nodeIds.includes(node.id)).map((group) => group.label);
+                    return (
+                      <path
+                        key={edge.id}
+                        d={path}
+                        markerEnd={edge.direction === 'directed' ? `url(#${markerId})` : undefined}
+                        {...stylex.props(styles.edge)}
+                      >
+                        <title>{edge.label}</title>
+                      </path>
+                    );
+                  })}
+                </svg>
+                {nodes.map((node) => {
+                  const isMarked = selection?.selectedId === node.id || inspected === node.id;
 
-              const accessibleLabel = [...groupLabels, node.label, node.description]
-                .filter((part) => part !== undefined)
-                .join(', ');
+                  const groupLabels = groups
+                    .filter((group) => group.nodeIds.includes(node.id))
+                    .map((group) => group.label);
 
-              const appearance = stylex.props(
-                styles.node,
-                styles.position(node.x, node.y),
-                styles.size(node.width, node.height),
-                styles.tone(chartToneColors[node.tone]),
-                selection !== undefined && styles.action,
-                (selection?.selectedId === node.id || isInspected) && styles.selected,
-              );
+                  const accessibleLabel = [...groupLabels, node.label, node.description]
+                    .filter((part) => part !== undefined)
+                    .join(', ');
 
-              const content = (
-                <>
-                  <span {...stylex.props(styles.label)}>{node.label}</span>
-                  {node.description !== undefined && node.height >= 56 && (
-                    <span {...stylex.props(styles.detail)}>{node.description}</span>
-                  )}
-                </>
-              );
-
-              return selection === undefined ? (
-                <div
-                  key={node.id}
-                  onPointerEnter={() => navigation.inspect(node.id)}
-                  role="group"
-                  aria-label={accessibleLabel}
-                  title={accessibleLabel}
-                  {...appearance}
-                >
-                  {content}
-                </div>
-              ) : (
-                <ChartButton
-                  key={node.id}
-                  type="button"
-                  tabIndex={-1}
-                  onPointerEnter={() => navigation.inspect(node.id)}
-                  aria-label={accessibleLabel}
-                  title={accessibleLabel}
-                  aria-pressed={selection.selectedId === node.id}
-                  onClick={() => selection.onSelect(node.id)}
-                  {...appearance}
-                >
-                  {content}
-                </ChartButton>
-              );
-            })}
-          </div>
-        </ChartSurface>
-      ) : (
-        <p {...stylex.props(styles.empty)}>{emptyLabel}</p>
+                  return (
+                    <ChartMark
+                      key={node.id}
+                      value={node.id}
+                      render={
+                        selection === undefined ? (
+                          <div role="group" />
+                        ) : (
+                          <button type="button" tabIndex={-1} aria-pressed={selection.selectedId === node.id} />
+                        )
+                      }
+                      aria-label={accessibleLabel}
+                      title={accessibleLabel}
+                      {...stylex.props(
+                        styles.node,
+                        styles.position(node.x, node.y),
+                        styles.size(node.width, node.height),
+                        styles.tone(chartToneColors[node.tone]),
+                        selection !== undefined && styles.action,
+                        isMarked && styles.selected,
+                        !isMarked && cursor === node.id && chartStyles.cursor,
+                      )}
+                    >
+                      <span {...stylex.props(styles.label)}>{node.label}</span>
+                      {node.description !== undefined && node.height >= 56 && (
+                        <span {...stylex.props(styles.detail)}>{node.description}</span>
+                      )}
+                    </ChartMark>
+                  );
+                })}
+              </div>
+            </ChartPlot>
+          ) : (
+            <p {...stylex.props(styles.empty)}>{emptyLabel}</p>
+          )}
+          <ChartData
+            label={`${title} graph data`}
+            columns={[
+              { id: 'kind', label: 'Kind' },
+              { id: 'description', label: 'Description' },
+            ]}
+            rows={[
+              ...nodes.map((node) => ({
+                id: `node:${node.id}`,
+                values: ['Node', [node.label, node.description].filter((part) => part !== undefined).join(', ')],
+              })),
+              ...groups.map((group) => ({
+                id: `group:${group.id}`,
+                values: [
+                  'Group',
+                  `${group.label}: ${group.nodeIds.map((nodeId) => nodeMap.get(nodeId)?.label).join(', ')}`,
+                ],
+              })),
+              ...links.map(({ edge, source, target }) => ({
+                id: `edge:${edge.id}`,
+                values: [
+                  'Relationship',
+                  `${source.label + (edge.direction === 'directed' ? ' → ' : ' ↔ ') + target.label}: ${edge.label}`,
+                ],
+              })),
+            ]}
+          />
+        </ChartFrame>
       )}
-      <ChartData
-        label={`${title} graph data`}
-        columns={[
-          { id: 'kind', label: 'Kind' },
-          { id: 'description', label: 'Description' },
-        ]}
-        rows={[
-          ...nodes.map((node) => ({
-            id: `node:${node.id}`,
-            values: ['Node', [node.label, node.description].filter((part) => part !== undefined).join(', ')],
-          })),
-          ...groups.map((group) => ({
-            id: `group:${group.id}`,
-            values: [
-              'Group',
-              `${group.label}: ${group.nodeIds.map((nodeId) => nodeMap.get(nodeId)?.label).join(', ')}`,
-            ],
-          })),
-          ...links.map(({ edge, source, target }) => ({
-            id: `edge:${edge.id}`,
-            values: [
-              'Relationship',
-              `${source.label + (edge.direction === 'directed' ? ' → ' : ' ↔ ') + target.label}: ${edge.label}`,
-            ],
-          })),
-        ]}
-      />
-    </ChartFrame>
+    />
   );
 }
 

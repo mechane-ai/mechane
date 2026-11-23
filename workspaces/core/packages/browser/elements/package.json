@@ -69,13 +69,10 @@
     "storybook": "storybook dev -p 6006 --no-open"
   },
   "dependencies": {
-    "@base-ui/react": "1.9.0",
     "@pierre/diffs": "1.6.4",
     "@pierre/highlights": "0.4.0",
-    "@shadcn/react": "0.3.1",
     "@stylexjs/stylex": "0.19.1",
     "@tanstack/react-table": "9.3.1",
-    "@tanstack/react-virtual": "3.14.26",
     "@ui-sdk/core": "0.1.0-beta.13",
     "@ui-sdk/react": "0.1.0-beta.13",
     "@visx/hierarchy": "4.0.0",

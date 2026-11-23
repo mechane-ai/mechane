@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { Row, Stack } from '../../core/src/index.ts';
 import { Fieldset } from './form-controls.tsx';
 import { Field } from './forms.tsx';
-import { Checkbox, RadioGroup, Switch, ToggleGroup } from './selection.tsx';
+import { Checkbox, RadioGroup, SegmentedControl, Switch, ToggleGroup } from './selection.tsx';
 
 const meta = {
   title: 'Forms/Selection',
@@ -18,12 +18,14 @@ const meta = {
     SwitchThumb: Switch.Thumb,
     ToggleGroup: ToggleGroup.Root,
     ToggleItem: ToggleGroup.Item,
+    SegmentedControl: SegmentedControl.Root,
+    SegmentedControlItem: SegmentedControl.Item,
   },
   parameters: {
     docs: {
       description: {
         component:
-          'Supported. Checkbox represents a submitted choice; Switch represents an immediately applied setting. RadioGroup holds exclusive form values. ToggleGroup holds pressed view or formatting controls. Applications own selected values, permissions, and persistence. Use controlled values with their callback or an uncontrolled default, never both. Field.Label names each control. The compact visual marks retain larger touch targets.',
+          'Supported. Checkbox represents a submitted choice; Switch represents an immediately applied setting. RadioGroup holds exclusive form values. SegmentedControl switches between a few views, with exactly one checked. ToggleGroup holds independent pressed controls such as formatting or visible sections. Applications own selected values, permissions, and persistence. Use controlled values with their callback or an uncontrolled default, never both. Field.Label names each control. The compact visual marks retain larger touch targets.',
       },
     },
   },
@@ -35,7 +37,7 @@ type Story = StoryObj;
 function Selections(): ReactNode {
   const [isEnabled, setIsEnabled] = useState(true);
   const [format, setFormat] = useState('summary');
-  const [views, setViews] = useState(['table']);
+  const [view, setView] = useState<'table' | 'chart'>('table');
 
   return (
     <Stack>
@@ -85,10 +87,10 @@ function Selections(): ReactNode {
           </Field.Root>
         </RadioGroup.Root>
       </Fieldset.Root>
-      <ToggleGroup.Root value={views} onValueChange={setViews} aria-label="View">
-        <ToggleGroup.Item value="table">Table</ToggleGroup.Item>
-        <ToggleGroup.Item value="chart">Chart</ToggleGroup.Item>
-      </ToggleGroup.Root>
+      <SegmentedControl.Root value={view} onValueChange={setView} aria-label="View">
+        <SegmentedControl.Item value="table">Table</SegmentedControl.Item>
+        <SegmentedControl.Item value="chart">Chart</SegmentedControl.Item>
+      </SegmentedControl.Root>
     </Stack>
   );
 }

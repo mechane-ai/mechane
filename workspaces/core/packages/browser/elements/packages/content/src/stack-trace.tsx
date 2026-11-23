@@ -4,6 +4,7 @@ import { colors, spacing, typography } from '../../foundations/src/tokens.stylex
 import { CodeBlock } from './code/code-block.tsx';
 import { ContentLink } from './content-link.tsx';
 import { viewerStyles } from './viewer-styles.ts';
+import { Viewer } from './viewer.tsx';
 
 export type StackFrame = {
   readonly id: string;
@@ -53,7 +54,7 @@ const styles = stylex.create({
 
 export function StackTrace({ message, frames }: StackTraceProps): ReactNode {
   return (
-    <section aria-label="Stack trace" {...stylex.props(viewerStyles.root)}>
+    <Viewer kind="stack-trace" aria-label="Stack trace" {...stylex.props(viewerStyles.root)}>
       <p {...stylex.props(styles.message)}>{message}</p>
       {frames.length === 0 ? (
         <p {...stylex.props(styles.empty)}>No frames recorded.</p>
@@ -76,6 +77,6 @@ export function StackTrace({ message, frames }: StackTraceProps): ReactNode {
           })}
         </ol>
       )}
-    </section>
+    </Viewer>
   );
 }

@@ -46,12 +46,12 @@ available actions. After requesting a change, read the resulting state, includin
 data owner. Keep credentials and private values out of observable labels, descriptions, and results. The application
 authorizes data reads and mutations on the server.
 
-| What the agent needs    | What to look for in the mounted UI                                                                                                                                                                                                                                               |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Find and open a record  | Use the named `collection-query`, then re-read `collection-results` until its `status` is `ready`. A pending or failed read can retain the previous rows. Match the chosen item to a mounted `collection-record` by `collection` and `recordId`, then use its advertised action. |
-| Know where the user is  | Read the `page-title`, current `navigation-link` or tab, and the `page-section` at the reading position. Scrolling updates the section an agent can query.                                                                                                                       |
-| Inspect a chart or file | Query chart or tree items for the visible label and identifier. Read the chart's formatted `readout` after inspection. After selection, query the inspector's labeled `detail-field` entries.                                                                                    |
-| Complete a form         | Use visible field validation and `form-status` for pending, error, or success. Use `Field.Root isSensitive` to hide sensitive labels, values, and validation from the bridge. Put `ConfirmButton` on the action that performs a consequential mutation.                          |
+| What the agent needs    | What to look for in the mounted UI                                                                                                                                                                                                                                                                       |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Find and open a record  | Use the named `collection-query`, then re-read `collection-results` until its `status` is `ready`. A pending or failed read can retain the previous rows. Each item is a row named as a reader sees it. Use the `open`, `sort`, `select`, `previousPage` and `nextPage` actions of `collection-results`. |
+| Know where the user is  | Read the `page-title`, current `link` or tab, and the `page-section` at the reading position. Scrolling updates the section an agent can query.                                                                                                                                                          |
+| Inspect a chart or file | Query chart or tree items for the visible label and identifier. Read the chart's formatted `readout` after inspection. After selection, query the inspector's labeled `detail-field` entries.                                                                                                            |
+| Complete a form         | Use visible field validation and `form-status` for pending, error, or success. Use `Field.Root isSensitive` to hide sensitive labels, values, and validation from the bridge. Put `ConfirmButton` on the action that performs a consequential mutation.                                                  |
 
 ## Install
 
@@ -181,8 +181,14 @@ application owns which view is active and when to unmount it; use this for a dra
 inspection. `WorkbenchScroll` requires an accessible `label`; its `isFlush` mode leaves list insets to the table. Its
 `scrollRestorationId` identifies the actual scroll region for application-owned restoration. Layout wrappers leave
 sequential keyboard navigation to their controls. Tables and viewers add a named scroll stop when overflow needs one.
-Interactive Cartesian charts have one Tab stop, a local datum cursor, and arrow-key inspection. Enter or Space activates
-supplied selection; Escape dismisses details while retaining the cursor.
+Interactive charts have one Tab stop, a local datum cursor, and arrow-key inspection. Enter or Space activates supplied
+selection; Escape dismisses the readout while retaining the cursor.
+
+Change callbacks receive the UI SDK's change details after the value. `details.reason` names what happened, such as
+`input-change`, `clear-press` or `item-press`, and `details.source` says whether a pointer, the keyboard, an agent or
+code caused it. `Input` and `Textarea` `onValueChange`, a collection's `search.onChange` and `search.onSubmit`, a
+filter's `onChange`, `FilterChips` `onRemove`, a chart's `selection.onSelect` and a table's `onSortChange` and
+`onSelectionChange` all pass them.
 
 `Workbench` accepts an optional `inspector={{ label: 'Workspace', content: <WorkspaceFiles /> }}`. The application
 supplies the accessible name with the panel content and owns opening, closing, and focus restoration. The inspector
@@ -211,10 +217,15 @@ Set `rowSizing="content"` for records that need multiline cells; virtualization 
 belongs in a detail view or a deliberately content-sized row, not behind a clipped control. Use `DataTableText` for a
 primary string and optional secondary string inside one cell; both text elements own their ellipsis. Arbitrary nested
 layouts do not inherit text truncation. Give dates and numeric values sufficient column width or explicit content
-sizing. The table owns its cell insets, so an enclosing page should not add another gutter around its rows.
-`CollectionEnd` renders nothing when complete unless an explicit summary is supplied. `Timeline.Root` and
-`Timeline.Item` compose readable activity with supplied titles, icons, timestamps, metadata, and body content, without
-interpreting domain events.
+sizing. The table owns its cell insets, so an enclosing page should not add another gutter around its rows. A table's
+row actions share one Tab stop. Arrow keys move by a row, Page Up and Page Down by ten, and Home and End reach the first
+and last supplied row, including rows the window has not rendered. With `selectedIds`, a row's checkbox toggles it,
+Shift and a click select the range from the row chosen before, and the header checkbox selects every supplied row. The
+control row above a table is one UI SDK toolbar: applied filter chips, find, filters and display share a Tab stop, and
+arrow keys move between them. `CollectionEnd` renders nothing when complete unless an explicit summary is supplied.
+`Timeline.Root` and `Timeline.Item` compose readable activity with supplied titles, icons, timestamps, metadata, and
+body content, without interpreting domain events. The events share one Tab stop on the UI SDK timeline, and arrow keys
+move between them.
 
 `CommandActivity` from `/ai` presents a collapsed Bash command with supplied execution state. Its `CommandDetails` body
 is also available for an existing trace disclosure. Supply command and output text separately, with explicit omission

@@ -1,4 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
+import { definePrimitive } from '@ui-sdk/core';
+import { createParts } from '@ui-sdk/react/primitive';
 import { File } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { ContentLink } from '../../content/src/link.ts';
@@ -104,6 +106,24 @@ const kinds = { user: styles.user, assistant: styles.assistant, system: styles.s
 
 const chatKinds = { user: styles.bubble, assistant: styles.chatReply, system: null };
 
+function messageState({ kind }: { kind: MessageKind }) {
+  return { kind };
+}
+
+/** A message an agent reads: named by its author, with who it is from and the text it shows. */
+const message = definePrimitive({
+  name: 'message',
+  options: { kind: 'string' },
+  state: messageState,
+  sync: messageState,
+  controlled: ['kind'],
+  api: () => ({}),
+  agent: { actions: [] },
+  slots: (slot) => ({ root: slot({}), description: slot({}) }),
+});
+
+const { Root: MessageRoot, Description: MessageText } = createParts(message, { root: 'article', description: 'div' });
+
 export function Message({
   author,
   children,
@@ -128,13 +148,14 @@ export function Message({
   ) : null;
 
   return (
-    <article
-      id={id}
+    <MessageRoot
+      kind={kind}
+      {...(id !== undefined && { id })}
       aria-label={author}
       {...stylex.props(styles.root, kinds[kind], isChat && chatKinds[kind], stylex.defaultMarker())}
     >
       {header}
-      <div {...stylex.props(styles.content)}>{children}</div>
+      <MessageText {...stylex.props(styles.content)}>{children}</MessageText>
       {attachments !== undefined && <div {...stylex.props(styles.attachments)}>{attachments}</div>}
       {(actions !== undefined || shouldReserveActions) && (
         <footer
@@ -143,7 +164,7 @@ export function Message({
           {actions}
         </footer>
       )}
-    </article>
+    </MessageRoot>
   );
 }
 

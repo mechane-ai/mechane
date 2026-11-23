@@ -5,9 +5,10 @@ labels, validation, permissions, and save operations. Import these families from
 controls use `/forms/dates`.
 
 Use `Checkbox` for submitted choices, `Switch` for immediately applied settings, and `RadioGroup` for exclusive form
-choices. `ToggleGroup` represents pressed view or formatting controls. Compose their public parts inside `Field.Label`.
-Each controlled value requires its change callback. An uncontrolled default cannot accompany a controlled value.
-Checkbox, Switch, RadioGroup, and NumberField also support an explicit controlled `readOnly` mode.
+choices. `SegmentedControl` switches between a few views with exactly one checked, one Tab stop and arrow keys.
+`ToggleGroup` represents independent pressed controls. Compose their public parts inside `Field.Label`. Each controlled
+value requires its change callback. An uncontrolled default cannot accompany a controlled value. Checkbox, Switch,
+RadioGroup, and NumberField also support an explicit controlled `readOnly` mode.
 
 Use `SelectControl` for one choice from labeled string values. Supply `items` once, the controlled `value`, and
 `onValueChange`. Its `label` names the trigger without adding a visible label row. An enclosing `Field` still supplies
@@ -34,8 +35,11 @@ editable content in the input, and make noneditable prefixes clear in the associ
 precise entry and increment/decrement buttons. `Slider` supports a bounded value or range with one labelled thumb per
 bound. Both require a locale so formatting matches between server and browser.
 
-`FilePicker` preserves the native file input and change event. It does not upload or read files. The application owns
-accepted content, validation, storage, and progress. Use `Field.Description` for supported formats and limits.
+`FilePicker` uses the UI SDK file input. A button opens the picker, and the field also takes dropped and pasted files.
+It lists the chosen files with a remove action and says why a file was refused by `accept`, `maxSize`, `minSize` or
+`maxFiles`. `onValueChange` receives the files and the change details; `name` submits them with a form. It does not
+upload or read files. The application owns storage and progress. Use `Field.Description` for supported formats and
+limits.
 
 `Input` and `Textarea` expose `onValueChange` for controlled updates from either the user or an SDK action. Use
 `isSensitive` for credentials or private drafts. These controls keep native editing and omit the private field from SDK
@@ -62,6 +66,9 @@ The pickers keep an uncommitted draft in their popup. Apply commits one complete
 dismissal discard edits. A supplied preset commits its complete interval immediately. `CalendarRange` permits a partial
 inline selection; `DateRange` and `MonthRange` require both endpoints. Use `isClearable={false}` for required query
 periods.
+
+The day pickers take a typed date on the UI SDK date input: one field per unit in the locale's order, where digits fill
+a unit and the arrow keys step it. The month pickers keep the browser's month field.
 
 Supply locale, time zone, today, initial month, bounds and preset values explicitly. Civil values retain their calendar
 components across time zones. The application converts inclusive dates to its API's timestamps or exclusive bounds.
