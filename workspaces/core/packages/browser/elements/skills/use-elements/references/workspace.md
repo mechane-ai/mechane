@@ -11,9 +11,9 @@ At a wide desktop viewport, compare the right edge of a report header with its t
 Give repeatable tasks such as reviewing a queue a named navigation link with deep-link and Back support. Put filters in
 the toolbar. Keep drill-down on the data mark or row it explains.
 
-Use `ToggleGroup` from `/forms` for short sets of pressed choices. For a required selection, keep the active value when
-pressing the selected item returns an empty array. Put the group beside a native Elements field and select. Compare
-their outer heights with a fine pointer and a coarse pointer, and check wrapping at phone width.
+Use `SegmentedControl` from `/forms` to switch between a few views; one item is always checked. Use `ToggleGroup` for
+independent pressed choices. Both size to their content. Put either beside an Elements field and select, compare their
+outer heights with a fine pointer and a coarse pointer, and check wrapping at phone width.
 
 Use the shell's `railFooter.navigation` and `railFooter.menu` for persistent settings and account controls. Let the
 shell space and position both groups. Put route tabs and their actions in `PageLayout.navigation`. Wrap each report

@@ -9,9 +9,9 @@ Applications own queries, aggregation, ranking, sampling, normalization, and sci
 geometry, inspection, and presentation. A formatter must declare its locale, time zone, precision, and units. Titles and
 descriptions explain what was measured and which period or sample is shown.
 
-Interactive plots expose inspection through the shared UI SDK chart primitive. Its `setValue` action inspects an item,
-`clear` dismisses the readout, and a chart with an application-owned selection can expose `selectItem`. The chart
-retains ownership of its geometry and the application decides what a committed selection does.
+Interactive plots expose inspection through the shared UI SDK chart primitive. Its `inspect` action inspects an item,
+`dismiss` closes the readout, and a chart with an application-owned selection also offers `select`. The chart retains
+ownership of its geometry and the application decides what a committed selection does.
 
 ## Families
 

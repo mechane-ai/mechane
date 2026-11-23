@@ -11,18 +11,37 @@ navigation and modifier-key behavior.
 
 ## Build with an agent
 
-Use the [use-elements skill](skills/use-elements/SKILL.md) when building an app and the
-[extend-elements skill](skills/extend-elements/SKILL.md) when changing the library. Both ship with the package.
+The package ships skills that teach a coding agent this library, matched to the installed version. Copy them into the
+agent's skills directory from a project with Elements installed:
 
-Find a recipe by task from a project with Elements installed:
+```sh
+pnpm exec mechane-elements-catalog --install-skills .claude/skills
+```
+
+Use `.agents/skills` or another directory for an agent that reads skills from there. Run the command again after each
+upgrade; it replaces the three skills with the new version's copies.
+
+| Skill                                                | Use it to                                                                |
+| ---------------------------------------------------- | ------------------------------------------------------------------------ |
+| [use-elements](skills/use-elements/SKILL.md)         | Choose components and build a page, with a guide for each family.        |
+| [review-elements](skills/review-elements/SKILL.md)   | Check a page by keyboard, read state, width, theme and agent access.     |
+| [upgrade-elements](skills/upgrade-elements/SKILL.md) | Move an app to a new version, with the changes each release needs.       |
+| [extend-elements](skills/extend-elements/SKILL.md)   | Change the library itself. It stays in the package and is not installed. |
+
+An agent without skills can read the same files in place. Add one line to its instructions file, such as `AGENTS.md`:
+"Before building UI, read `node_modules/@mechane-ai/elements/skills/use-elements/SKILL.md`."
+
+Find a recipe by task, or a component by its export name:
 
 ```sh
 pnpm exec mechane-elements-catalog "searchable table with filters"
+pnpm exec mechane-elements-catalog segmentedcontrol
 ```
 
-The catalog connects a task to the example's TSX, public imports, and rendered Storybook story. Read the same index
-programmatically at `@mechane-ai/elements/catalog.json`. When running the local Elements Storybook, connect an MCP
-client to `http://localhost:6006/mcp` to explore the examples while developing.
+The catalog connects a task to the example's TSX, public imports, and rendered Storybook story, and a component to its
+import path and declaration file. Read the same index programmatically at `@mechane-ai/elements/catalog.json`. When
+running the local Elements Storybook, connect an MCP client to `http://localhost:6006/mcp` to explore the examples while
+developing.
 
 ## Enable an agent in an app
 
