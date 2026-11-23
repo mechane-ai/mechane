@@ -25,7 +25,7 @@ export type AuthenticationConfiguration = {
 
 export const BROWSER_SESSION_SECONDS = 3600;
 export const SIGN_IN_SECONDS = 600;
-export const DEVICE_APPROVAL_SECONDS = 600;
+export const DEVICE_APPROVAL_SECONDS = 86_400;
 export const DEVICE_POLL_SECONDS = 3;
 export const KEY_LIFETIME_MAX_SECONDS = 31_536_000;
 
