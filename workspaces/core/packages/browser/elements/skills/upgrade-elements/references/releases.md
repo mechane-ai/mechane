@@ -2,11 +2,10 @@
 
 Newest first. Each section lists what an application must change, then what it may adopt.
 
-## 0.49
+## 0.49.1
 
-Two things: a research kit with the form, text and layout parts it needed, and fixes from the first essay ported onto
-the teaching layers. No import changes. An essay written for 0.48 type checks unchanged; it prints less and behaves
-differently in the places below.
+Fixes from the first essay ported onto the teaching layers. No import changes. An essay written for 0.48 type checks
+unchanged; it prints less and behaves differently in the places below.
 
 ### Behavior to check
 
@@ -27,18 +26,11 @@ differently in the places below.
 - **`SceneCells` column labels wrap** above their column and a long word overhangs instead of being cut.
 - **The essay's text column keeps its measure** at wide widths. A beat's paragraphs were up to 93 characters wide and
   are 68 again.
-- **`Transport` and `ParamSlider` grow** to fill a flex row.
+- **`Transport` and `ParamSlider` grow** to fill a flex row. A `ParamSlider` wraps below 12rem of room.
 - **No scene text is under 12 px.** Small card corners and token captions were 11 px.
 
 ### Adopt
 
-- **A research kit.** `/kits/research` has `FindingCard`, `MilestonePath`, `SpecimenDiff` and `WorkHeartbeat`, for
-  tracking research milestones, paired specimen diffs, work reports and findings.
-- **`TokenInput`** from `/forms`, with `fromText`, `toText`, `toLabel` and `defaultCodec`.
-- **`TextMatch`** from `/content`, with `matchRanges`, `matchSegments` and `fuzzyScore`.
-- **`FigureGrid` and `SidebarBrand`** from `/layout`.
-- **Types:** `PanelProps` from the root entry, `MetricChange` from `/collections`, `ScatterDiagonal` from
-  `/charts/cartesian` and `LensLayerGroup` from `/kits/interpretability`.
 - **`Article` `hasContents={false}`** leaves the contents list out at every width, for a host with its own navigation.
   Control the beat through `lessonProps`.
 - **Framed figures.** The article `Figure` takes `header` and `footer` strips for a figure's own controls and draws one
@@ -56,6 +48,20 @@ differently in the places below.
 - **`SceneCells` cell `tone` and `isMuted`** color one cell with a chart tone or gray it out.
 - **`CaptionScope` and `useIsCaptioned`** from `/charts` are what the article `Figure` uses. A custom captioned
   container wraps its charts in `CaptionScope` to get the same rule.
+
+## 0.49
+
+A research kit with the form, text and layout parts it needed. Nothing to change.
+
+### Adopt
+
+- **A research kit.** `/kits/research` has `FindingCard`, `MilestonePath`, `SpecimenDiff` and `WorkHeartbeat`, for
+  tracking research milestones, paired specimen diffs, work reports and findings.
+- **`TokenInput`** from `/forms`, with `fromText`, `toText`, `toLabel` and `defaultCodec`.
+- **`TextMatch`** from `/content`, with `matchRanges`, `matchSegments` and `fuzzyScore`.
+- **`FigureGrid` and `SidebarBrand`** from `/layout`.
+- **Types:** `PanelProps` from the root entry, `MetricChange` from `/collections`, `ScatterDiagonal` from
+  `/charts/cartesian` and `LensLayerGroup` from `/kits/interpretability`.
 
 ## 0.48
 
