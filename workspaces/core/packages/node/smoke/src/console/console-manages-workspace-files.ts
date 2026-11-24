@@ -41,14 +41,13 @@ export async function consoleManagesWorkspaceFiles({ stack }: ScenarioInput): Pr
       await uploadButton.waitFor(ready);
       await uploadButton.click();
 
-      const fileInput = page.getByLabel('File', { exact: true });
+      const chooseFileButton = page.getByRole('button', { name: 'File Choose a file', exact: true });
 
-      await fileInput.waitFor(ready);
-      await fileInput.setInputFiles({
-        name: filename,
-        mimeType: MediaType.PlainText,
-        buffer: Buffer.from(body, 'utf8'),
-      });
+      await chooseFileButton.waitFor(ready);
+
+      const [fileChooser] = await Promise.all([page.waitForEvent('filechooser', ready), chooseFileButton.click()]);
+
+      await fileChooser.setFiles({ name: filename, mimeType: MediaType.PlainText, buffer: Buffer.from(body, 'utf8') });
 
       const [uploadRequest, uploadResponse] = await Promise.all([
         page.waitForRequest(
