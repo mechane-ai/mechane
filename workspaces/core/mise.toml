@@ -62,8 +62,8 @@ depends = [
 ]
 
 [tasks."server:native:check"]
-description = "Verify OpenID Connect discovery on workerd with local issuer responses"
-run = "node --test packages/worker/server/testing/*.ts"
+description = "Verify OpenID Connect discovery on workerd, sandbox providers, and managed runtime admission"
+run = "node --test packages/worker/server/testing/*.ts packages/worker/runtime/testing/*.ts"
 
 [tasks."sandbox:native:check"]
 description = "Check native container safety, transfer diagnostics and Gateway control-plane isolation without cloud credentials"

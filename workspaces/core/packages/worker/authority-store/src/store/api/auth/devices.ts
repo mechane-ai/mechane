@@ -30,6 +30,28 @@ type DeviceRow = {
 type TakeAttempt = { readonly bucket: string; readonly limitAttempts: number; readonly windowSeconds: number };
 type AttemptRow = { readonly attempts: number; readonly retry_after_seconds: number };
 
+const AUTH_ATTEMPT_CLEANUP_INTERVAL_MS = 300_000;
+
+function createAttemptCleanupGate() {
+  const schedule = { nextCleanupAtMs: 0 };
+
+  return {
+    shouldClean(): boolean {
+      const now = Date.now();
+
+      if (now < schedule.nextCleanupAtMs) {
+        return false;
+      }
+
+      schedule.nextCleanupAtMs = now + AUTH_ATTEMPT_CLEANUP_INTERVAL_MS;
+
+      return true;
+    },
+  };
+}
+
+const attemptCleanupGate = createAttemptCleanupGate();
+
 function deviceRecord(row: DeviceRow): DeviceApprovalRecord {
   return {
     id: row.id,
@@ -142,7 +164,9 @@ export function createDeviceStore(context: StoreContext) {
     },
 
     async takeAttempt({ bucket, limitAttempts, windowSeconds }: TakeAttempt): Promise<number | null> {
-      await context.client.query("DELETE FROM mechane.auth_attempts WHERE expires_at<now()-interval '1 day'");
+      if (attemptCleanupGate.shouldClean()) {
+        await context.client.query("DELETE FROM mechane.auth_attempts WHERE expires_at<now()-interval '1 day'");
+      }
 
       const result = await context.client.query<AttemptRow>(
         'INSERT INTO mechane.auth_attempts(bucket,window_start,expires_at,attempts) VALUES($1,now(),now()+make_interval(secs=>$2),1) ON CONFLICT(bucket) DO UPDATE SET attempts=CASE WHEN mechane.auth_attempts.expires_at<=now() THEN 1 ELSE mechane.auth_attempts.attempts+1 END,window_start=CASE WHEN mechane.auth_attempts.expires_at<=now() THEN now() ELSE mechane.auth_attempts.window_start END,expires_at=CASE WHEN mechane.auth_attempts.expires_at<=now() THEN now()+make_interval(secs=>$2) ELSE mechane.auth_attempts.expires_at END RETURNING attempts,greatest(1,ceil(extract(epoch FROM expires_at-now())))::int AS retry_after_seconds',

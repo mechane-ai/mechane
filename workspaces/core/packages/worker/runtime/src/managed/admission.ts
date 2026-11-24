@@ -181,7 +181,7 @@ async function acceptPrimaryInput(
     case 'system.message': {
       const admitted = await appendManagedEvent(transaction, { sessionId: state.id }, event);
 
-      if (state.waiting !== null || (state.activeEvent === null && state.pendingHead === state.pendingTail)) {
+      if (state.pendingHead === state.pendingTail && (state.waiting !== null || state.activeEvent === null)) {
         if (state.conversation === null) {
           throw new Error('Missing managed session conversation');
         }

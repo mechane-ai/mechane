@@ -18,6 +18,22 @@ import { DOMAIN_MIGRATIONS } from './schema.ts';
 const DEFAULT_MAX_CONNECTIONS = 8;
 const MIGRATION_LOCK = 1_823_944_617;
 
+function createSchemaValidationCache() {
+  const validated = new Set<string>();
+
+  return {
+    has: (databaseUrl: string): boolean => validated.has(databaseUrl),
+    mark: (databaseUrl: string): void => {
+      validated.add(databaseUrl);
+    },
+    invalidate: (databaseUrl: string): void => {
+      validated.delete(databaseUrl);
+    },
+  };
+}
+
+const validatedSchemas = createSchemaValidationCache();
+
 export type OpenControlStoreInput = DatabaseInput & {
   readonly keyring: CredentialKeyring;
   readonly maxConnections?: number;
@@ -48,19 +64,25 @@ export async function openControlStore({
   const pool = openPool({ databaseUrl, maxConnections: maxConnections ?? DEFAULT_MAX_CONNECTIONS });
   const store = createControlRecords(poolContext(pool), keyring);
 
-  try {
-    await store.schemaRevision();
-    await store.checkHealth();
-  } catch (error) {
-    await pool.end();
+  if (!validatedSchemas.has(databaseUrl)) {
+    try {
+      await store.schemaRevision();
+      await store.checkHealth();
+    } catch (error) {
+      await pool.end();
 
-    throw error;
+      throw error;
+    }
+
+    validatedSchemas.mark(databaseUrl);
   }
 
   return { ...store, close: async () => await pool.end() };
 }
 
 export async function migrateControlStore({ databaseUrl }: DatabaseInput): Promise<void> {
+  validatedSchemas.invalidate(databaseUrl);
+
   const pool = openPool({ databaseUrl, maxConnections: 1 });
 
   try {

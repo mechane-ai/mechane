@@ -185,6 +185,23 @@ function projectUsage(usage: UsageMeter, session: UsageMeter) {
   };
 }
 
+export function initialManagedSessionUsage(budgetCents: string | null) {
+  return {
+    budget: managedBudget(budgetCents),
+    reached: false,
+    threadActiveSeconds: 0,
+    usage: {
+      input_tokens: 0,
+      output_tokens: 0,
+      cache_read_input_tokens: 0,
+      cache_creation: { ephemeral_1h_input_tokens: 0, ephemeral_5m_input_tokens: 0 },
+      server_tool_use: { web_search_requests: 0, web_fetch_requests: 0 },
+      active_seconds: 0,
+      list_cost: { amount: '0', currency: 'USD' } as const,
+    },
+  };
+}
+
 export async function readManagedSessionUsage(context: StoreContext, scope: ManagedUsageScope) {
   const usage = await managedUsageMeter(context, scope);
 

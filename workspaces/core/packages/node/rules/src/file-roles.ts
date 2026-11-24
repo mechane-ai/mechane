@@ -18,7 +18,7 @@ export const FILE_ROLES = {
     'packages/shared/deployment/src/worker-deployment.ts',
     'packages/node/{stack,distribution,testing,smoke,sandbox-docker,worker-agent}/src/**',
     'packages/node/program/src/{start-process,finished-process,types}.ts',
-    'packages/worker/{agent-slot/src,authority-store/src,managed-store/src,model-gateway/src,runtime/src,server/src,control-store/src,sandbox/testing,sandbox-egress/testing}/**',
+    'packages/worker/{agent-slot/src,authority-store/src,managed-store/src,model-gateway/src,runtime,server/src,control-store/src,sandbox/testing,sandbox-egress/testing}/**',
     'packages/worker/server/testing/sandbox-providers.ts',
     'packages/worker/sandbox/src/service/**',
     'packages/worker/sandbox/src/providers/machine-object.ts',

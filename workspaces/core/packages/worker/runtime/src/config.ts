@@ -30,6 +30,33 @@ const DISABLED_SANDBOX_ORIGIN = 'https://sandbox.invalid';
 const DISABLED_SANDBOX_BEARER = 'disabled-sandbox-service-key';
 const WORKER_IDLE_MIN_MS = 1000;
 const WORKER_IDLE_MAX_MS = 3_600_000;
+const SECRET_CACHE_TTL_MS = 300_000;
+
+type CachedSecret = { readonly value: string; readonly expiresAtMs: number };
+type SecretBindingValue = typeof SecretBinding.Type;
+
+function createSecretCache() {
+  const entries = new WeakMap<object, CachedSecret>();
+
+  return {
+    async read(binding: SecretBindingValue): Promise<string> {
+      const cached = entries.get(binding);
+
+      if (cached !== undefined && Date.now() < cached.expiresAtMs) {
+        return cached.value;
+      }
+
+      const secret: unknown = await Reflect.apply(binding.get, binding, []);
+      const value = Schema.decodeUnknownSync(Schema.String)(secret);
+
+      entries.set(binding, { value, expiresAtMs: Date.now() + SECRET_CACHE_TTL_MS });
+
+      return value;
+    },
+  };
+}
+
+const secretCache = createSecretCache();
 
 export type SandboxRuntimeConfiguration = {
   readonly provider: PluggableSandboxProvider;
@@ -87,12 +114,21 @@ export async function resolveRuntimeEnvironment({
 }): Promise<RuntimeEnvironment> {
   const resolved: Record<string, unknown> = { ...environment };
 
-  for (const name of SECRET_SETTINGS) {
-    const binding = environment[name];
+  const entries = await Promise.all(
+    SECRET_SETTINGS.map(async (name) => {
+      const binding = environment[name];
 
-    if (Schema.is(SecretBinding)(binding)) {
-      const secret: unknown = await Reflect.apply(binding.get, binding, []);
-      resolved[name] = Schema.decodeUnknownSync(Schema.String)(secret);
+      if (!Schema.is(SecretBinding)(binding)) {
+        return null;
+      }
+
+      return [name, await secretCache.read(binding)] as const;
+    }),
+  );
+
+  for (const entry of entries) {
+    if (entry !== null) {
+      resolved[entry[0]] = entry[1];
     }
   }
 

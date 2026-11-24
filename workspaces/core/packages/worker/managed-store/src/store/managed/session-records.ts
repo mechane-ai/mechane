@@ -27,6 +27,7 @@ export const SessionRow = Schema.Struct({
   configuration: Configuration,
   child_runtime_mech_ids: Schema.Record(Text, Text),
   outcome_evaluations: Schema.Array(Document),
+  budget_cents: Schema.NullOr(Text),
   status: Schema.Literals(['running', 'idle', 'terminated']),
   status_at: Text,
 
@@ -132,6 +133,7 @@ async function buildOpenDescriptor(
       agent: row.configuration.agent,
     }),
     initialEvents,
+    hasBudget: row.budget_cents !== null,
     isArchived: row.archived_at !== null || row.status === 'terminated',
   };
 }

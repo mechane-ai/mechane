@@ -1,9 +1,9 @@
 import { BACKGROUND_CONTEXT } from '@earendil-works/chord/context';
 import type { Session, Tx } from '@earendil-works/pi-durable';
+import type { ControlStore } from '@mechane/control-store';
 import { serialCalls } from '@mechane/utilities';
 import { Schema } from 'effect';
 import { actorRecordCollection, actorRecordSet } from '../actor/record-store.ts';
-import type { WithControl } from '../actor/types.ts';
 import { sessionEvents } from './event-log/payload-storage.ts';
 import { appendManagedEvent } from './event-log/write.ts';
 import type { ManagedEvent } from './protocol.ts';
@@ -64,7 +64,13 @@ export async function queueSessionUsage(transaction: Tx, sessionId: string) {
   await queue(transaction, sessionId, { kind: 'session', id: event.id, at: event.processed_at, sessionId });
 }
 
-type Options = { readonly harness: Session; readonly workspaceId: string; readonly withControl: WithControl };
+type UsageControlStore = Pick<ControlStore, 'recordManagedThreadActivity' | 'getManagedSessionUsage'>;
+
+type Options = {
+  readonly harness: Session;
+  readonly workspaceId: string;
+  readonly withControl: <T>(operation: (store: UsageControlStore) => Promise<T>) => Promise<T>;
+};
 
 export function managedUsageProjector({ harness, workspaceId, withControl }: Options) {
   const calls = serialCalls();
@@ -72,67 +78,96 @@ export function managedUsageProjector({ harness, workspaceId, withControl }: Opt
   async function flushSession(localId: string) {
     const pending = receipts(localId);
 
-    async function apply(receipt: Receipt) {
-      const scope = { workspaceId, sessionId: receipt.sessionId };
+    async function applyPage(): Promise<boolean> {
+      const page = await pending.page(harness, { maxRows: 32 });
 
-      const snapshot = await withControl(async (store) => {
-        if (receipt.kind === 'activity') {
-          await store.recordManagedThreadActivity({
-            ...scope,
-            threadId: receipt.threadId,
-            eventId: receipt.id,
-            at: receipt.at,
-            isRunning: receipt.isRunning,
-          });
+      if (page.items.length === 0) {
+        await harness.commit(async (transaction) => {
+          if ((await pending.countInTransaction(transaction)) === 0) {
+            await dirty.remove(transaction, localId);
+          }
+        }, BACKGROUND_CONTEXT);
 
-          return null;
+        return false;
+      }
+
+      const settled = await withControl(async (store) => {
+        const snapshots: Array<{
+          readonly receipt: Receipt;
+          readonly snapshot: Awaited<ReturnType<typeof store.getManagedSessionUsage>> | null;
+        }> = [];
+
+        for (const receipt of page.items) {
+          const scope = { workspaceId, sessionId: receipt.sessionId };
+
+          if (receipt.kind === 'activity') {
+            await store.recordManagedThreadActivity({
+              ...scope,
+              threadId: receipt.threadId,
+              eventId: receipt.id,
+              at: receipt.at,
+              isRunning: receipt.isRunning,
+            });
+
+            snapshots.push({ receipt, snapshot: null });
+          } else if (receipt.kind === 'thread') {
+            const snapshot = await store.getManagedSessionUsage({
+              ...scope,
+              threadId: receipt.threadId,
+              asOf: receipt.at,
+            });
+
+            snapshots.push({ receipt, snapshot });
+          } else {
+            const snapshot = await store.getManagedSessionUsage({ ...scope, asOf: receipt.at });
+
+            snapshots.push({ receipt, snapshot });
+          }
         }
 
-        if (receipt.kind === 'thread') {
-          return await store.getManagedSessionUsage({ ...scope, threadId: receipt.threadId, asOf: receipt.at });
-        }
-
-        return await store.getManagedSessionUsage({ ...scope, asOf: receipt.at });
+        return snapshots;
       });
 
       await harness.commit(async (transaction) => {
-        if ((await pending.read(transaction, receipt.id)) === undefined) {
-          return;
-        }
-
-        if (receipt.kind === 'session' && snapshot !== null) {
-          const journal = sessionEvents(localId);
-          const row = await journal.read(transaction, receipt.id);
-
-          if (row?.event.type !== 'session.usage') {
-            throw new Error('Missing session usage event.');
+        async function commitSnapshot({ receipt, snapshot }: (typeof settled)[number]) {
+          if ((await pending.read(transaction, receipt.id)) === undefined) {
+            return;
           }
 
-          await journal.put(transaction, receipt.id, {
-            ...row,
-            event: { ...row.event, budget: snapshot.budget, usage: snapshot.usage },
-          });
-        }
+          if (receipt.kind === 'session' && snapshot !== null) {
+            const journal = sessionEvents(localId);
+            const row = await journal.read(transaction, receipt.id);
 
-        if (receipt.kind === 'thread' && snapshot !== null) {
-          const records = threadRecords(localId);
-          const thread = await records.read(transaction, receipt.threadId);
+            if (row?.event.type !== 'session.usage') {
+              throw new Error('Missing session usage event.');
+            }
 
-          if (thread?.usagePendingId === receipt.id) {
-            await records.put(transaction, thread.id, { ...thread, usage: snapshot.usage, usagePendingId: null });
+            await journal.put(transaction, receipt.id, {
+              ...row,
+              event: { ...row.event, budget: snapshot.budget, usage: snapshot.usage },
+            });
           }
+
+          if (receipt.kind === 'thread' && snapshot !== null) {
+            const records = threadRecords(localId);
+            const thread = await records.read(transaction, receipt.threadId);
+
+            if (thread?.usagePendingId === receipt.id) {
+              await records.put(transaction, thread.id, { ...thread, usage: snapshot.usage, usagePendingId: null });
+            }
+          }
+
+          await pending.remove(transaction, receipt.id);
         }
 
-        await pending.remove(transaction, receipt.id);
+        for (const entry of settled) {
+          await commitSnapshot(entry);
+        }
+
+        if (!page.hasMore && (await pending.countInTransaction(transaction)) === 0) {
+          await dirty.remove(transaction, localId);
+        }
       }, BACKGROUND_CONTEXT);
-    }
-
-    async function applyPage() {
-      const page = await pending.page(harness, { maxRows: 32 });
-
-      for (const receipt of page.items) {
-        await apply(receipt);
-      }
 
       return page.hasMore;
     }
@@ -142,12 +177,6 @@ export function managedUsageProjector({ harness, workspaceId, withControl }: Opt
     while (hasMore) {
       hasMore = await applyPage();
     }
-
-    await harness.commit(async (transaction) => {
-      if ((await pending.countInTransaction(transaction)) === 0) {
-        await dirty.remove(transaction, localId);
-      }
-    }, BACKGROUND_CONTEXT);
   }
 
   return async (localId?: string) =>

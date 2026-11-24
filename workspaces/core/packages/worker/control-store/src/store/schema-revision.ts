@@ -7,6 +7,10 @@ import { DOMAIN_MIGRATIONS } from './schema.ts';
 const MigrationRow = Schema.Struct({ version: Schema.Number, checksum: StoredChecksum });
 export type MigrationRow = typeof MigrationRow.Type;
 
+const EXPECTED_MIGRATION_CHECKSUMS: ReadonlyArray<string> = DOMAIN_MIGRATIONS.map((migration) =>
+  createHash('sha256').update(migration.sql).digest('hex'),
+);
+
 export function validateAppliedMigrations(applied: ReadonlyArray<MigrationRow>): void {
   for (const [index, migration] of DOMAIN_MIGRATIONS.entries()) {
     if (migration.version !== index + 1) {
@@ -19,14 +23,10 @@ export function validateAppliedMigrations(applied: ReadonlyArray<MigrationRow>):
       throw new Error('Database migration history is not contiguous');
     }
 
-    const migration = DOMAIN_MIGRATIONS[index];
+    const checksum = EXPECTED_MIGRATION_CHECKSUMS[index];
 
-    if (migration !== undefined) {
-      const checksum = createHash('sha256').update(migration.sql).digest('hex');
-
-      if (recorded.checksum !== checksum) {
-        throw new Error(`Applied database migration ${recorded.version} changed`);
-      }
+    if (checksum !== undefined && recorded.checksum !== checksum) {
+      throw new Error(`Applied database migration ${recorded.version} changed`);
     }
   }
 }

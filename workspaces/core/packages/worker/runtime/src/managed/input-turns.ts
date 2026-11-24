@@ -29,7 +29,7 @@ export async function pendingManagedCall(transaction: Tx, state: AdmissionSessio
 
   const receipt = await transaction.doc(CallReceipts, callKey(state.id, state.waiting), null);
 
-  return receipt.stage !== 'complete';
+  return receipt.stage !== 'complete' && (receipt.stage === 'approval' || receipt.nativeKind === 'custom');
 }
 
 export async function acceptManagedToolReply(

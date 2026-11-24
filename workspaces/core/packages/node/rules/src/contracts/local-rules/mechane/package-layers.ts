@@ -14,6 +14,7 @@ const VALUES = {
     '@mechane-ai/elements': ['packages', 'recipes', 'src', 'bin', 'scripts', '.storybook', 'vite.config.ts'],
     '@mechane/console': ['src', 'scripts', '.storybook', 'vite.config.ts', 'worker-licenses.ts'],
     '@mechane/distribution': ['src', 'testing'],
+    '@mechane/runtime': ['src', 'testing'],
     '@mechane/sandbox': ['src', 'testing'],
     '@mechane/sandbox-egress': ['src', 'testing'],
     '@mechane/server': ['src', 'testing', 'build'],

@@ -1,10 +1,10 @@
-import { managedBudgetCents, managedId, ManagedStoreError } from '@mechane/authority-store';
+import { initialManagedSessionUsage, managedBudgetCents, managedId, ManagedStoreError } from '@mechane/authority-store';
 import type { CredentialKeyring, ManagedDocument, ManagedScope, StoreContext } from '@mechane/authority-store';
 import { HttpStatusCode } from '@mechane/records';
 import { Schema } from 'effect';
 import { pinManagedAgent } from './agent-pins.ts';
 import { sessionAgent, sessionTitle } from './session-configuration.ts';
-import { readSession, sessionDocument } from './session-records.ts';
+import { readSession, renderSession } from './session-records.ts';
 import { describeSkillMounts } from './skill-mounts.ts';
 import { checkedMetadata } from './vault-fields.ts';
 import { prepareSessionResources, validateSessionVaults } from './vault-resources.ts';
@@ -153,5 +153,5 @@ export async function createSession(transaction: StoreContext, keyring: Credenti
 
   const row = await readSession(transaction, { scope, id });
 
-  return await sessionDocument(transaction, row);
+  return renderSession(row, initialManagedSessionUsage(budget));
 }

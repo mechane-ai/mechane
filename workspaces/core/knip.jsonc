@@ -115,7 +115,7 @@
     "packages/worker/control-store": { "project": ["src/**/*.{ts,tsx}!"] },
     "packages/worker/managed-store": { "project": ["src/**/*.{ts,tsx}!"] },
     "packages/worker/model-gateway": { "project": ["src/**/*.{ts,tsx}!"] },
-    "packages/worker/runtime": { "project": ["src/**/*.{ts,tsx}!"] },
+    "packages/worker/runtime": { "entry": ["testing/*.ts"], "project": ["src/**/*.{ts,tsx}!", "testing/**/*.ts"] },
     "packages/worker/sandbox": { "entry": ["testing/*.ts"], "project": ["src/**/*.{ts,tsx}!", "testing/**/*.ts"] },
     "packages/worker/sandbox-egress": {
       "entry": ["testing/*.ts"],

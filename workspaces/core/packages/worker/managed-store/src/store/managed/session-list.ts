@@ -110,42 +110,63 @@ export async function listSessions(context: StoreContext, { scope, query = {} }:
   const { isBackward, key } = await readPage(context, query);
   const isAscending = (query.order === 'asc') !== isBackward;
 
-  const result = await context.client.query(
-    `SELECT * FROM mechane.managed_sessions
-     WHERE workspace_id=$1 AND (creator_id=$2 OR $3::boolean)
-       AND (archived_at IS NULL OR $4::boolean)
-       AND ($18::text IS NULL OR strpos(lower(concat_ws(' ',id,configuration->>'title')),lower($18))>0)
-       AND ($5::text IS NULL OR agent_id=$5 AND ($6::int IS NULL OR agent_version=$6))
-       AND ($7::text[] IS NULL OR status=ANY($7)) AND $8::text IS NULL
-       AND ($9::text IS NULL OR configuration->'resources' @> jsonb_build_array(
-         jsonb_build_object('type','memory_store','memory_store_id',$9::text)))
-       AND ($10::timestamptz IS NULL OR created_at>=$10) AND ($11::timestamptz IS NULL OR created_at<=$11)
-       AND ($12::timestamptz IS NULL OR created_at>$12) AND ($13::timestamptz IS NULL OR created_at<$13)
-       AND ($14::timestamptz IS NULL OR CASE WHEN $16::boolean THEN (created_at,id)>($14,$15::text)
-         ELSE (created_at,id)<($14,$15::text) END)
-     ORDER BY CASE WHEN $16 THEN created_at END ASC, CASE WHEN $16 THEN id END ASC,
-       CASE WHEN NOT $16 THEN created_at END DESC, CASE WHEN NOT $16 THEN id END DESC LIMIT $17`,
-    [
-      scope.workspaceId,
-      scope.principalId,
-      scope.isAdmin,
-      query.includeArchived ?? false,
-      query.agentId ?? null,
-      query.agentVersion ?? null,
-      query.statuses ?? null,
-      query.deploymentId ?? null,
-      query.memoryStoreId ?? null,
-      query.createdAfter ?? null,
-      query.createdBefore ?? null,
-      query.createdAfterExclusive ?? null,
-      query.createdBeforeExclusive ?? null,
-      key?.createdAt ?? null,
-      key?.id ?? null,
-      isAscending,
-      limit + 1,
-      query.search?.trim() ?? null,
-    ],
-  );
+  const parameters = [
+    scope.workspaceId,
+    scope.principalId,
+    scope.isAdmin,
+    query.includeArchived ?? false,
+    query.agentId ?? null,
+    query.agentVersion ?? null,
+    query.statuses ?? null,
+    query.deploymentId ?? null,
+    query.memoryStoreId ?? null,
+    query.createdAfter ?? null,
+    query.createdBefore ?? null,
+    query.createdAfterExclusive ?? null,
+    query.createdBeforeExclusive ?? null,
+    key?.createdAt ?? null,
+    key?.id ?? null,
+    limit + 1,
+    query.search?.trim() ?? null,
+  ];
+
+  async function querySessions() {
+    if (isAscending) {
+      return await context.client.query(
+        `SELECT * FROM mechane.managed_sessions
+         WHERE workspace_id=$1 AND (creator_id=$2 OR $3::boolean)
+           AND (archived_at IS NULL OR $4::boolean)
+           AND ($17::text IS NULL OR strpos(lower(concat_ws(' ',id,configuration->>'title')),lower($17))>0)
+           AND ($5::text IS NULL OR agent_id=$5 AND ($6::int IS NULL OR agent_version=$6))
+           AND ($7::text[] IS NULL OR status=ANY($7)) AND $8::text IS NULL
+           AND ($9::text IS NULL OR configuration->'resources' @> jsonb_build_array(
+             jsonb_build_object('type','memory_store','memory_store_id',$9::text)))
+           AND ($10::timestamptz IS NULL OR created_at>=$10) AND ($11::timestamptz IS NULL OR created_at<=$11)
+           AND ($12::timestamptz IS NULL OR created_at>$12) AND ($13::timestamptz IS NULL OR created_at<$13)
+           AND ($14::timestamptz IS NULL OR (created_at,id)>($14,$15::text))
+         ORDER BY created_at ASC, id ASC LIMIT $16`,
+        parameters,
+      );
+    }
+
+    return await context.client.query(
+      `SELECT * FROM mechane.managed_sessions
+       WHERE workspace_id=$1 AND (creator_id=$2 OR $3::boolean)
+         AND (archived_at IS NULL OR $4::boolean)
+         AND ($17::text IS NULL OR strpos(lower(concat_ws(' ',id,configuration->>'title')),lower($17))>0)
+         AND ($5::text IS NULL OR agent_id=$5 AND ($6::int IS NULL OR agent_version=$6))
+         AND ($7::text[] IS NULL OR status=ANY($7)) AND $8::text IS NULL
+         AND ($9::text IS NULL OR configuration->'resources' @> jsonb_build_array(
+           jsonb_build_object('type','memory_store','memory_store_id',$9::text)))
+         AND ($10::timestamptz IS NULL OR created_at>=$10) AND ($11::timestamptz IS NULL OR created_at<=$11)
+         AND ($12::timestamptz IS NULL OR created_at>$12) AND ($13::timestamptz IS NULL OR created_at<$13)
+         AND ($14::timestamptz IS NULL OR (created_at,id)<($14,$15::text))
+       ORDER BY created_at DESC, id DESC LIMIT $16`,
+      parameters,
+    );
+  }
+
+  const result = await querySessions();
 
   const rows = Schema.decodeUnknownSync(Schema.Array(SessionRow))(result.rows);
   const visible = visiblePage(rows, limit, isBackward);

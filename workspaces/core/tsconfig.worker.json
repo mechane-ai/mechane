@@ -9,6 +9,7 @@
     "packages/worker/managed-store/src",
     "packages/worker/model-gateway/src",
     "packages/worker/runtime/src",
+    "packages/worker/runtime/testing",
     "packages/worker/sandbox/src",
     "packages/worker/sandbox/testing",
     "packages/worker/sandbox-egress/src",

@@ -66,6 +66,7 @@ const PUMP_MAX_STEP_COUNT = 32;
 
 export async function startManagedSessionEngine(options: StartOptions) {
   const pumps = serialCalls();
+  const unbudgetedSessions = new Set<string>();
   const identity = createExecutionGate(options.identitySlot, currentExecution);
 
   const generations = createGenerationRegistry();
@@ -158,6 +159,10 @@ export async function startManagedSessionEngine(options: StartOptions) {
     const state = await harness.snapshot(Sessions, id, context);
 
     if (state !== undefined) {
+      if (state.isUnbudgeted === true) {
+        unbudgetedSessions.add(state.publicSessionId);
+      }
+
       extensions.install(state, state);
     }
   }
@@ -239,6 +244,11 @@ export async function startManagedSessionEngine(options: StartOptions) {
       .join('\n\n');
 
     const tools = JSON.stringify(input.tools);
+
+    if (input.hasBudget === false) {
+      unbudgetedSessions.add(publicSessionId);
+    }
+
     const isBudgetReached = events.length > 0 && (await readBudgetScope(publicSessionId));
 
     await harness.commit(async (transaction) => {
@@ -286,6 +296,11 @@ export async function startManagedSessionEngine(options: StartOptions) {
         coordinator,
         mcpServers: projection.mcpServers,
       });
+
+      if (input.hasBudget === false) {
+        state.isUnbudgeted = true;
+      }
+
       await configure(transaction, native.id, {
         model: { provider: 'mechane', modelId: input.model },
         instructions,
@@ -322,11 +337,19 @@ export async function startManagedSessionEngine(options: StartOptions) {
   }
 
   async function readBudgetScope(sessionId: string): Promise<boolean> {
+    if (unbudgetedSessions.has(sessionId)) {
+      return false;
+    }
+
     await flushUsage();
 
-    const { reached } = await options.withControl((store) =>
+    const { budget, reached } = await options.withControl((store) =>
       store.getManagedSessionUsage({ workspaceId: options.scope.workspaceId, sessionId }),
     );
+
+    if (budget === null) {
+      unbudgetedSessions.add(sessionId);
+    }
 
     return reached;
   }
@@ -335,19 +358,47 @@ export async function startManagedSessionEngine(options: StartOptions) {
     const events = preflightManagedEvents(input.events);
 
     async function tryAdmission() {
-      const previous = await harness.commit(async (transaction) => {
+      const attempt = await harness.commit(async (transaction) => {
         const state = await sessionState(transaction, input.sessionId);
 
-        return { publicId: state.publicSessionId, revision: state.budgetRevision };
+        if (state.isUnbudgeted === true || unbudgetedSessions.has(state.publicSessionId)) {
+          if (state.isUnbudgeted !== true) {
+            state.isUnbudgeted = true;
+          }
+
+          return {
+            kind: 'admitted' as const,
+            admitted: await acceptInputs(
+              transaction,
+              {
+                sessionId: input.sessionId,
+                threadId: input.threadId,
+                workerLeaseId: input.workerLeaseId,
+                isBudgetReached: false,
+              },
+              events,
+            ),
+          };
+        }
+
+        return { kind: 'check-budget' as const, publicId: state.publicSessionId, revision: state.budgetRevision };
       }, context);
 
-      const reached = await readBudgetScope(previous.publicId);
+      if (attempt.kind === 'admitted') {
+        return attempt.admitted;
+      }
+
+      const reached = await readBudgetScope(attempt.publicId);
 
       return await harness.commit(async (transaction) => {
         const state = await sessionState(transaction, input.sessionId);
 
-        if (state.budgetRevision !== previous.revision) {
+        if (state.budgetRevision !== attempt.revision) {
           return null;
+        }
+
+        if (unbudgetedSessions.has(attempt.publicId)) {
+          state.isUnbudgeted = true;
         }
 
         return await acceptInputs(

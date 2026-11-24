@@ -30,7 +30,11 @@ export {
   ManagedStoreError,
   pageSize,
 } from './store/managed-record.ts';
-export { readManagedSessionUsage, readManagedSessionUsages } from './store/managed-session-usage.ts';
+export {
+  initialManagedSessionUsage,
+  readManagedSessionUsage,
+  readManagedSessionUsages,
+} from './store/managed-session-usage.ts';
 export type { ManagedDocument, ManagedPage, ManagedPageQuery, ManagedScope } from './store/managed-types.ts';
 export { openPool } from './store/postgres.ts';
 export type { DatabaseInput } from './store/postgres.ts';

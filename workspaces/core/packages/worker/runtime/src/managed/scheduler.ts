@@ -26,6 +26,7 @@ type SessionState = {
   readonly status: 'idle' | 'running' | 'terminated';
   readonly stopReason: string | null;
   readonly isBudgetReached: boolean;
+  readonly isUnbudgeted?: boolean;
   readonly budgetRevision: number;
   readonly isArchived: boolean;
   readonly pendingHead: number;

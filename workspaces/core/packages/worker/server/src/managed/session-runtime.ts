@@ -56,6 +56,7 @@ async function openSessionObject({
     multiagent: fields.multiagent,
     mcpServers: fields.mcp_servers,
     initialEvents: descriptor.initialEvents,
+    hasBudget: descriptor.hasBudget,
     isArchived: descriptor.isArchived,
   });
 

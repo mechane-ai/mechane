@@ -54,7 +54,9 @@ export async function advanceManagedFocus(owner: FocusOwner, id: string): Promis
     return false;
   }
 
-  const isBudgetReached = boundary.settled !== null && (await owner.readBudgetScope(native.publicSessionId));
+  const isBudgetReached =
+    boundary.settled !== null && native.isUnbudgeted !== true && (await owner.readBudgetScope(native.publicSessionId));
+
   const conversation = await owner.harness.conversation(boundary.physicalId, context);
 
   if (conversation === undefined) {

@@ -73,7 +73,13 @@ async function acceptSessionUpdate(
   }
 
   if (Object.hasOwn(changes, 'budget')) {
-    event['budget'] = document['budget'] ?? null;
+    const nextBudget = document['budget'] ?? null;
+    event['budget'] = nextBudget;
+
+    if (nextBudget === null) {
+      const state = await sessionState(transaction, input.sessionId);
+      state.isUnbudgeted = true;
+    }
   }
 
   await appendManagedEvent(

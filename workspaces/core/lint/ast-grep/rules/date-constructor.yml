@@ -18,7 +18,7 @@ ignores:
     'packages/node/{stack,distribution,testing,smoke,sandbox-docker,worker-agent}/src/**',
     'packages/shared/{bash,sandbox-provider,sandbox-tensorlake,sandbox-modal}/src/**',
     'packages/worker/server/testing/sandbox-providers.ts',
-    'packages/worker/{agent-slot/src,authority-store/src,managed-store/src,model-gateway/src,runtime/src,server/src,control-store/src,sandbox/testing,sandbox-egress/testing}/**',
+    'packages/worker/{agent-slot/src,authority-store/src,managed-store/src,model-gateway/src,runtime,server/src,control-store/src,sandbox/testing,sandbox-egress/testing}/**',
   ]
 rule:
   kind: new_expression
