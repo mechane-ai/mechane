@@ -18,7 +18,7 @@ export type {
   InterpretabilityChangeDetails,
 } from './features.ts';
 export { featureLimits } from './features.ts';
-export type { LensLayer, LensTrack, LogitLensLabels, LogitLensProps } from './logit-lens.tsx';
+export type { LensLayer, LensLayerGroup, LensTrack, LogitLensLabels, LogitLensProps } from './logit-lens.tsx';
 export { LogitLens } from './logit-lens.tsx';
 export type {
   SteeringCompletions,

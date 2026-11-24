@@ -11,19 +11,23 @@ import { colors, controls, spacing, typography } from '../../../foundations/src/
 import { ChartData } from '../chart-data.tsx';
 import { ChartReadout } from '../chart-frame.tsx';
 import { hasUniqueIds } from '../chart-input.ts';
+import { useLinkedInspection } from '../chart-link.tsx';
 import { chartStyles } from '../chart-theme.ts';
 import { Chart, ChartMark, inspectedLabel, plotLabel } from '../chart.tsx';
 import { formatValue } from '../figure/figure-format.ts';
 import { FigureEmpty, FigureFrame, FigureInvalid, FigureLoading } from '../figure/figure-frame.tsx';
 import type { FigureProps, FigureSelectionProps } from '../figure/figure-props.ts';
 import { useTones } from '../figure/tone-scope.tsx';
+import { linePath } from '../plot/path.ts';
 import { PlotAxes } from '../plot/plot-axes.tsx';
 import { axisTitle, fitDomain, numericPlot } from '../plot/plot-layout.ts';
 import type { NumericPlotLayout, PlotAxis, PlotHeight } from '../plot/plot-layout.ts';
-import { DotMark } from '../plot/plot-marks.tsx';
+import { DotMark, LabelMark, LineMark } from '../plot/plot-marks.tsx';
 import { PlotClip, PlotSurface, usePlotSize } from '../plot/plot-surface.tsx';
 import { outsideDomain, scaleDomainError } from '../plot/scale.ts';
 import type { NumericDomain } from '../plot/scale.ts';
+import { ReferenceMarks, validateReferenceLines } from './reference-lines.tsx';
+import type { ChartReferenceLine } from './reference-lines.tsx';
 
 /** One supplied coordinate pair with a stable id, so selection survives reordering. */
 export type ScatterPoint = {
@@ -42,11 +46,29 @@ type SliderDetails = Parameters<NonNullable<ComponentProps<typeof Slider.Root<[n
 /** Why the range changed: a drag on the plot, one of the bound sliders, or the clear button. */
 export type ScatterRangeDetails = ChangeDetails<'drag' | 'clear-press'> | SliderDetails;
 
+/** A dashed `y = x` identity reference line drawn across the overlapping x and y domains. */
+export type ScatterDiagonal = {
+  /** Caption drawn beside the diagonal line (such as `"y = x"`). */
+  readonly label?: string | undefined;
+  /** Quiet region caption in the upper-left (`y > x`) half of the plot. */
+  readonly aboveLabel?: string | undefined;
+  /** Quiet region caption in the lower-right (`y < x`) half of the plot. */
+  readonly belowLabel?: string | undefined;
+};
+
 export type ScatterPlotProps = FigureProps &
   FigureSelectionProps & {
     readonly points: ReadonlyArray<ScatterPoint>;
     readonly x: PlotAxis;
     readonly y: PlotAxis;
+    /** Optional `y = x` reference diagonal (true or labelled regions) for paired/generalization plots. */
+    readonly referenceDiagonal?: boolean | ScatterDiagonal | undefined;
+    /** Optional dashed horizontal reference lines on the y axis (such as a baseline or ceiling). */
+    readonly referenceLines?: ReadonlyArray<ChartReferenceLine> | undefined;
+    /** Ordered point ids connected by a dashed Pareto/frontier line. Computed by the application. */
+    readonly frontier?: ReadonlyArray<string> | undefined;
+    /** Point ids that carry a direct haloed label beside their mark. */
+    readonly labeledIds?: ReadonlyArray<string> | undefined;
     /** The coordinate range the application holds, or null for none. */
     readonly range?: ScatterRange | null | undefined;
     /** Asks the application to set or clear the range. With it, the plot offers a drag and two range sliders. */
@@ -73,6 +95,19 @@ const styles = stylex.create({
     stroke: colors.focus,
     strokeWidth: 1,
     strokeDasharray: '4 3',
+    pointerEvents: 'none',
+  },
+  diagonal: {
+    stroke: colors.muted,
+    strokeWidth: 1,
+    strokeDasharray: '4 4',
+    pointerEvents: 'none',
+    vectorEffect: 'non-scaling-stroke',
+  },
+  regionLabel: {
+    fill: colors.muted,
+    fontFamily: typography.fontFamily,
+    fontSize: typography.captionSize,
     pointerEvents: 'none',
   },
   target: {
@@ -203,6 +238,10 @@ export function ScatterPlot(props: ScatterPlotProps): ReactNode {
     points,
     x,
     y,
+    referenceDiagonal,
+    referenceLines = [],
+    frontier = [],
+    labeledIds = [],
     range,
     onRangeChange,
     rangeStep,
@@ -217,6 +256,7 @@ export function ScatterPlot(props: ScatterPlotProps): ReactNode {
   const readoutId = useId();
   const size = usePlotSize(height);
   const tones = useTones();
+  const link = useLinkedInspection();
   const [gesture, setGesture] = useState<Gesture | null>(null);
   const releaseDrag = useRef<(() => void) | null>(null);
 
@@ -228,7 +268,11 @@ export function ScatterPlot(props: ScatterPlotProps): ReactNode {
 
   const xDomain = x.domain ?? fitDomain({ values: points.map((point) => point.x), scale: x.scale });
   const yDomain = y.domain ?? fitDomain({ values: points.map((point) => point.y), scale: y.scale });
-  const problem = scatterProblem({ points, x, y, xDomain, yDomain, range, onRangeChange, rangeStep });
+
+  const problem =
+    scatterProblem({ points, x, y, xDomain, yDomain, range, onRangeChange, rangeStep }) ??
+    (referenceLines.length > 0 ? validateReferenceLines({ lines: referenceLines, domain: yDomain }) : undefined);
+
   const selectedRange = range ?? null;
 
   if (problem !== undefined) {
@@ -319,8 +363,31 @@ export function ScatterPlot(props: ScatterPlotProps): ReactNode {
     });
   }
 
+  const byId = new Map(drawn.map((point) => [point.id, point]));
+
+  const frontierPoints = frontier
+    .map((id) => byId.get(id))
+    .filter((point): point is NonNullable<typeof point> => point !== undefined);
+
+  const frontierPath =
+    frontierPoints.length >= 2 ? linePath(frontierPoints.map((point) => ({ x: point.left, y: point.top }))) : '';
+
+  const labeledSet = new Set(labeledIds);
+
+  const diagonalSpec: ScatterDiagonal | null =
+    referenceDiagonal === true
+      ? { label: 'y = x' }
+      : referenceDiagonal === false || referenceDiagonal === undefined
+        ? null
+        : referenceDiagonal;
+
+  const diagLow = Math.max(xDomain[0], yDomain[0]);
+  const diagHigh = Math.min(xDomain[1], yDomain[1]);
+  const hasDiagonal = diagonalSpec !== null && diagHigh > diagLow;
+
   return (
     <Chart
+      {...link}
       items={items}
       place={(id) => places.get(id)}
       selected={selected ?? null}
@@ -377,7 +444,12 @@ export function ScatterPlot(props: ScatterPlotProps): ReactNode {
                   {...stylex.props(styles.brush)}
                 />
               )}
-              <PlotClip box={box}>
+              <PlotClip box={box} pad={6}>
+                {hasDiagonal && <DiagonalMarks spec={diagonalSpec} low={diagLow} high={diagHigh} plot={plot} />}
+                {referenceLines.length > 0 && (
+                  <ReferenceMarks lines={referenceLines} box={box} position={plot.y.position} valueText={yText} />
+                )}
+                {frontierPath !== '' && <LineMark d={frontierPath} tone="series1" stroke="dashed" />}
                 {shownRange !== null && shownRange !== undefined && <RangeMark range={shownRange} plot={plot} />}
                 {drawn.map((point) => (
                   <DotMark
@@ -390,6 +462,23 @@ export function ScatterPlot(props: ScatterPlotProps): ReactNode {
                     isSelected={selected === point.id}
                   />
                 ))}
+                {drawn
+                  .filter((point) => labeledSet.has(point.id))
+                  .map((point) => {
+                    const isNearRight = point.left > box.right - 90;
+                    const isNearTop = point.top < box.top + 18;
+
+                    return (
+                      <LabelMark
+                        key={`label-${point.id}`}
+                        x={point.left + (isNearRight ? -8 : 8)}
+                        y={point.top + (isNearTop ? 14 : -6)}
+                        anchor={isNearRight ? 'end' : 'start'}
+                      >
+                        {point.label}
+                      </LabelMark>
+                    );
+                  })}
               </PlotClip>
             </PlotSurface>
           )}
@@ -417,6 +506,43 @@ export function ScatterPlot(props: ScatterPlotProps): ReactNode {
         </FigureFrame>
       )}
     />
+  );
+}
+
+function DiagonalMarks({
+  spec,
+  low,
+  high,
+  plot,
+}: {
+  readonly spec: ScatterDiagonal;
+  readonly low: number;
+  readonly high: number;
+  readonly plot: NumericPlotLayout;
+}): ReactNode {
+  const { box } = plot;
+  const x2 = plot.x.position(high);
+  const y2 = plot.y.position(high);
+
+  return (
+    <g>
+      <line x1={plot.x.position(low)} y1={plot.y.position(low)} x2={x2} y2={y2} {...stylex.props(styles.diagonal)} />
+      {spec.label !== undefined && (
+        <LabelMark x={x2 - 6} y={y2 + 14} anchor="end">
+          {spec.label}
+        </LabelMark>
+      )}
+      {spec.aboveLabel !== undefined && (
+        <text x={box.left + 8} y={box.top + 14} {...stylex.props(styles.regionLabel)}>
+          {spec.aboveLabel}
+        </text>
+      )}
+      {spec.belowLabel !== undefined && (
+        <text x={box.right - 8} y={box.bottom - 8} textAnchor="end" {...stylex.props(styles.regionLabel)}>
+          {spec.belowLabel}
+        </text>
+      )}
+    </g>
   );
 }
 

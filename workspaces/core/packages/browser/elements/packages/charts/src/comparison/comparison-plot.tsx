@@ -200,7 +200,9 @@ export function ComparisonFigure({
                     xTitle={axisTitle(value)}
                     grid={grid}
                   />
-                  <PlotClip box={box}>{renderMarks({ plot, inspected, selected: chosen })}</PlotClip>
+                  <PlotClip box={box} pad={6}>
+                    {renderMarks({ plot, inspected, selected: chosen })}
+                  </PlotClip>
                   {cursor !== undefined && (
                     <rect
                       x={box.left}

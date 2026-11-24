@@ -5,6 +5,8 @@ export type { NavigationRailLink, NavigationRailProps } from './navigation-rail.
 export { NavigationRailMenu } from './navigation-rail-menu.tsx';
 export type { NavigationRailMenuProps } from './navigation-rail-menu.tsx';
 export { DetailPage } from './detail-page.tsx';
+export type { FigureGridLayout, FigureGridProps } from './figure-grid.tsx';
+export { FigureGrid } from './figure-grid.tsx';
 export { FocusPage } from './focus-page.tsx';
 export { Workbench, WorkbenchScroll, WorkbenchFooter } from './workbench.tsx';
 export { ViewStack } from './view-stack.tsx';
@@ -22,11 +24,13 @@ export type {
 export { RecordPage } from './record-page.tsx';
 export type { ResizableRootProps, ResizablePaneProps, ResizableHandleProps } from './resizable.tsx';
 export { Resizable } from './resizable.tsx';
+export type { SidebarBrandProps } from './sidebar.tsx';
 export {
   Navigation,
   NavigationSection,
   NavigationItem,
   NavigationLink,
+  SidebarBrand,
   SidebarLabel,
   SidebarFooter,
 } from './sidebar.tsx';

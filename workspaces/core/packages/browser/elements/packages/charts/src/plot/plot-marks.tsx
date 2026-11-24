@@ -38,10 +38,10 @@ const styles = stylex.create({
 const strokes = stylex.create({ solid: {}, dashed: { strokeDasharray: '5 4' } });
 
 /** The emphasis of a line: context thins it, and a receded line fades while another holds the reader's attention. */
-const lineEmphasis = stylex.create({ normal: {}, context: { strokeWidth: 1 }, receded: { opacity: 0.32 } });
+const lineEmphasis = stylex.create({ normal: {}, context: { strokeWidth: 1 }, receded: { opacity: 0.45 } });
 
 /** The emphasis of a filled mark. Context changes its color, not its shape. */
-const fillEmphasis = stylex.create({ normal: {}, context: {}, receded: { opacity: 0.32 } });
+const fillEmphasis = stylex.create({ normal: {}, context: {}, receded: { opacity: 0.45 } });
 
 /**
  * The gray of context marks: between the faint and muted text colors. It recedes behind the subject on a light surface

@@ -4,6 +4,7 @@ import type { FigureProps, ValueFormat } from '../../../charts/src/index.ts';
 import { quoteToken, TokenGrid, tokenGridCellId } from '../../../charts/src/text/index.ts';
 import type { TokenGridCell, TokenGridColumn } from '../../../charts/src/text/index.ts';
 import { CurveChart } from '../../../charts/src/trend/index.ts';
+import { Badge, Row } from '../../../core/src/index.ts';
 import type { InterpretabilityChangeDetails } from './features.ts';
 import { kitStyles } from './kit-styles.ts';
 
@@ -13,6 +14,14 @@ export type LensLayer = {
   readonly label: string;
   /** The layer's number, the horizontal position of its point in the curve. */
   readonly depth: number;
+};
+
+/** A contiguous depth band (such as a loop pass or prelude/coda stage) marked along the lens curve. */
+export type LensLayerGroup = {
+  readonly id: string;
+  readonly label: string;
+  readonly fromDepth: number;
+  readonly toDepth: number;
 };
 
 /** The probability of one chosen token at one position, read at each layer in `layers` order. */
@@ -45,6 +54,8 @@ export type LogitLensProps = Pick<
   readonly cells: ReadonlyArray<TokenGridCell>;
   /** The tokens to follow through the layers, for any positions the application chose. */
   readonly tracks?: ReadonlyArray<LensTrack> | undefined;
+  /** Optional contiguous depth bands (such as loop passes) marked on the trajectory curve. */
+  readonly layerGroups?: ReadonlyArray<LensLayerGroup> | undefined;
   /** How probabilities are written. Absent writes a percent. */
   readonly valueFormat?: ValueFormat | undefined;
   /** The cell in focus, as `tokenGridCellId(layerId, columnId)`. Its position's tracks are drawn as curves. */
@@ -74,6 +85,7 @@ export function LogitLens({
   layers,
   cells,
   tracks = [],
+  layerGroups = [],
   valueFormat = percent,
   selected = null,
   onSelectedChange,
@@ -84,9 +96,24 @@ export function LogitLens({
   const position = columns.find((column) => layers.some((layer) => tokenGridCellId(layer.id, column.id) === selected));
   const shown = position === undefined ? [] : tracks.filter((track) => track.columnId === position.id);
   const depths = layers.map((layer) => layer.depth);
+  const minDepth = depths.length > 0 ? Math.min(...depths) : 0;
+  const maxDepth = depths.length > 0 ? Math.max(...depths) : 0;
+
+  const groupMarkers = layerGroups
+    .filter((group) => group.fromDepth >= minDepth && group.fromDepth <= maxDepth)
+    .map((group) => ({ x: group.fromDepth, label: group.label }));
 
   return (
     <div {...stylex.props(kitStyles.stack)}>
+      {layerGroups.length > 0 && (
+        <Row>
+          {layerGroups.map((group) => (
+            <Badge key={group.id} tone="neutral">
+              {group.label} ({group.fromDepth}–{group.toDepth})
+            </Badge>
+          ))}
+        </Row>
+      )}
       <TokenGrid
         {...figure}
         columns={columns}
@@ -108,13 +135,10 @@ export function LogitLens({
           locale={figure.locale}
           status={figure.status}
           height="compact"
-          x={{
-            label: labels.layer,
-            domain: [Math.min(...depths), Math.max(...depths)],
-            format: { maximumFractionDigits: 0 },
-          }}
+          x={{ label: labels.layer, domain: [minDepth, maxDepth], format: { maximumFractionDigits: 0 } }}
           y={{ label: labels.probability, domain: [0, 1], format: valueFormat }}
           labels="legend"
+          markers={groupMarkers.length > 0 ? groupMarkers : undefined}
           series={shown.map((track) => ({
             id: track.id,
             label: quoteToken(track.token),

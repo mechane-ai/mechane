@@ -8,3 +8,5 @@ export type { StackFrame, StackTraceProps } from './stack-trace.tsx';
 export { StackTrace } from './stack-trace.tsx';
 export type { TraceStatus, TraceRootProps, TraceGroupProps, TraceItemProps } from './trace.tsx';
 export { Trace } from './trace.tsx';
+export type { MatchRange, MatchSegment, TextMatchMode, TextMatchProps, TextMatchTone } from './text-match.tsx';
+export { fuzzyScore, matchRanges, matchSegments, TextMatch } from './text-match.tsx';

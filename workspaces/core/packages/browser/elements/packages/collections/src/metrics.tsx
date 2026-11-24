@@ -2,7 +2,7 @@ import * as stylex from '@stylexjs/stylex';
 import { mergeProps } from '@ui-sdk/react/primitive';
 import type { ComponentProps, ReactElement, ReactNode } from 'react';
 import { SkeletonText } from '../../feedback/src/index.ts';
-import { colors, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { colors, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 
 const styles = stylex.create({
   grid: { display: 'flex', flexWrap: 'wrap', rowGap: spacing.sm, columnGap: spacing.xl, minWidth: 0, margin: 0 },
@@ -59,8 +59,34 @@ const styles = stylex.create({
     overflowWrap: 'anywhere',
   },
   inlineDetail: { flexBasis: '100%' },
+  valueRow: { display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: spacing.sm, minWidth: 0 },
+  change: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    paddingBlock: spacing.xxs,
+    paddingInline: spacing.xs,
+    borderRadius: radii.sm,
+    fontSize: typography.captionSize,
+    lineHeight: typography.captionLineHeight,
+    fontWeight: typography.mediumWeight,
+    fontVariantNumeric: 'tabular-nums',
+    backgroundColor: colors.canvas,
+    color: colors.muted,
+  },
+  changePositive: { backgroundColor: colors.accentSoft, color: colors.accent },
+  changeNegative: { backgroundColor: colors.dangerSoft, color: colors.danger },
+  target: {
+    margin: 0,
+    minWidth: 0,
+    fontSize: typography.captionSize,
+    lineHeight: typography.captionLineHeight,
+    color: colors.muted,
+    fontVariantNumeric: 'tabular-nums',
+  },
   trend: { margin: 0, minWidth: 0, width: '100%', alignSelf: 'stretch' },
 });
+
+export type MetricChange = { readonly value: string; readonly tone?: 'positive' | 'negative' | 'neutral' };
 
 type MetricLayout = 'inline' | 'columns';
 
@@ -92,6 +118,10 @@ export type MetricProps = Omit<ComponentProps<'div'>, 'children' | 'dangerouslyS
   readonly label: string;
   readonly variant?: MetricVariant;
   readonly trend?: ReactElement;
+  /** Optional signed delta badge drawn beside the value (such as `+20.9% vs starter`). */
+  readonly change?: MetricChange | undefined;
+  /** Optional target or ceiling reference shown quietly below the detail line. */
+  readonly target?: string | undefined;
 } & (
     | { readonly isLoading?: false; readonly value: string; readonly detail?: string; readonly hasDetail?: never }
     | { readonly isLoading: true; readonly value?: never; readonly detail?: never; readonly hasDetail?: boolean }
@@ -105,6 +135,8 @@ export function Metric({
   label,
   value,
   detail,
+  change,
+  target,
   isLoading = false,
   hasDetail = false,
   variant = 'inline',
@@ -113,17 +145,30 @@ export function Metric({
 }: MetricProps): ReactNode {
   const appearance = variants[variant];
 
+  const changeTone =
+    change?.tone === 'positive'
+      ? styles.changePositive
+      : change?.tone === 'negative'
+        ? styles.changeNegative
+        : undefined;
+
   return (
     <div {...mergeProps(stylex.props(styles.metric, appearance.metric), props)}>
       <dt {...stylex.props(styles.label, appearance.label)}>{label}</dt>
       <dd {...stylex.props(styles.value, appearance.value)}>
-        {isLoading ? <SkeletonText width={appearance.valueWidth} /> : value}
+        <span {...stylex.props(styles.valueRow)}>
+          <span>{isLoading ? <SkeletonText width={appearance.valueWidth} /> : value}</span>
+          {!isLoading && change !== undefined && (
+            <span {...stylex.props(styles.change, changeTone)}>{change.value}</span>
+          )}
+        </span>
       </dd>
       {(isLoading ? hasDetail : detail !== undefined) && (
         <dd {...stylex.props(styles.detail, appearance.detail)}>
           {isLoading ? <SkeletonText width="24ch" /> : detail}
         </dd>
       )}
+      {!isLoading && target !== undefined && <dd {...stylex.props(styles.target)}>{target}</dd>}
       {trend !== undefined && <dd {...stylex.props(styles.trend)}>{trend}</dd>}
     </div>
   );

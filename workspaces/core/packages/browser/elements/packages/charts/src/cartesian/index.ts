@@ -14,7 +14,13 @@ export { BreakdownBar } from './breakdown-bar.tsx';
 export type { BridgeChartProps, BridgeStep } from './bridge-chart.tsx';
 export { BridgeChart } from './bridge-chart.tsx';
 export type { ChartReferenceLine } from './reference-lines.tsx';
-export type { ScatterPoint, ScatterRange, ScatterRangeDetails, ScatterPlotProps } from './scatter-plot.tsx';
+export type {
+  ScatterDiagonal,
+  ScatterPoint,
+  ScatterRange,
+  ScatterRangeDetails,
+  ScatterPlotProps,
+} from './scatter-plot.tsx';
 export { ScatterPlot, scatterLimits } from './scatter-plot.tsx';
 export type { SparklineLayout, SparklineProps, SparklinePoint } from './sparkline.tsx';
 export { Sparkline } from './sparkline.tsx';

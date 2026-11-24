@@ -82,6 +82,7 @@ const VALUES = {
       './kits/training': './packages/kits/src/training/index.ts',
       './kits/operations': './packages/kits/src/operations/index.ts',
       './kits/interpretability': './packages/kits/src/interpretability/index.ts',
+      './kits/research': './packages/kits/src/research/index.ts',
       './theme': './packages/foundations/src/theme.ts',
       './agent': './packages/foundations/src/agent/index.ts',
       './csp': './packages/foundations/src/csp/index.ts',

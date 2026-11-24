@@ -58,5 +58,5 @@ export const chartStyles = stylex.create({
     transitionDuration: { 'default': motion.duration, '@media (prefers-reduced-motion: reduce)': '0ms' },
     transitionTimingFunction: motion.easing,
   },
-  receded: { opacity: 0.32 },
+  receded: { opacity: 0.45 },
 });

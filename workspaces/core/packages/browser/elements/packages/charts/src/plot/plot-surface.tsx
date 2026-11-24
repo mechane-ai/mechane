@@ -75,14 +75,28 @@ export function PlotSurface({
 }
 
 /** Keeps marks inside the axes. Wrap the marks, never the axes or the labels beside them. */
-export function PlotClip({ box, children }: { readonly box: PlotBox; readonly children: ReactNode }): ReactNode {
+export function PlotClip({
+  box,
+  pad = 0,
+  children,
+}: {
+  readonly box: PlotBox;
+  /** Optional pixel margin around the plot inner area so boundary dot marks are not half-clipped. */
+  readonly pad?: number | undefined;
+  readonly children: ReactNode;
+}): ReactNode {
   const clipId = useId();
 
   return (
     <>
       <defs>
         <clipPath id={clipId}>
-          <rect x={box.left} y={box.top} width={box.innerWidth} height={box.innerHeight} />
+          <rect
+            x={box.left - pad}
+            y={box.top - pad}
+            width={box.innerWidth + pad * 2}
+            height={box.innerHeight + pad * 2}
+          />
         </clipPath>
       </defs>
       <g clipPath={`url(#${clipId})`}>{children}</g>

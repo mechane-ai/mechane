@@ -18,12 +18,13 @@ An explorable essay is not a kit: it uses the teaching layers in [teaching](teac
 explainers kit. The rules for kits are
 [contract 141](https://github.com/mechane-ai/mechane/blob/main/workspaces/core/.contracts/141-ui-domain-kits/CONTRACT.md).
 
-| Kit              | Entry                    | Use it for                                                                 |
-| ---------------- | ------------------------ | -------------------------------------------------------------------------- |
-| Training         | `/kits/training`         | Watching and comparing training runs.                                      |
-| Operations       | `/kits/operations`       | The health, budgets and events of a service.                               |
-| Evaluation       | `/kits/evaluation`       | Ranking and comparing models on benchmarks.                                |
-| Interpretability | `/kits/interpretability` | Reading learned features, attribution, attention, logit lens and steering. |
+| Kit              | Entry                    | Use it for                                                                   |
+| ---------------- | ------------------------ | ---------------------------------------------------------------------------- |
+| Training         | `/kits/training`         | Watching and comparing training runs.                                        |
+| Operations       | `/kits/operations`       | The health, budgets and events of a service.                                 |
+| Evaluation       | `/kits/evaluation`       | Ranking and comparing models on benchmarks.                                  |
+| Interpretability | `/kits/interpretability` | Reading learned features, attribution, attention, logit lens and steering.   |
+| Research         | `/kits/research`         | Tracking research milestones, paired specimen diffs, work reports, findings. |
 
 ## Training
 

@@ -1,6 +1,6 @@
 {
   "name": "@mechane-ai/elements",
-  "version": "0.48.0",
+  "version": "0.49.0",
   "description": "Elements by Mechane — React components for applications, AI interfaces, and analytical graphics",
   "license": "Apache-2.0",
   "repository": {
@@ -71,6 +71,7 @@
     "./kits/training": "./packages/kits/src/training/index.ts",
     "./kits/operations": "./packages/kits/src/operations/index.ts",
     "./kits/interpretability": "./packages/kits/src/interpretability/index.ts",
+    "./kits/research": "./packages/kits/src/research/index.ts",
     "./theme": "./packages/foundations/src/theme.ts",
     "./agent": "./packages/foundations/src/agent/index.ts",
     "./csp": "./packages/foundations/src/csp/index.ts",

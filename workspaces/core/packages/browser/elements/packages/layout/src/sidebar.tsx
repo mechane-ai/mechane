@@ -121,6 +121,23 @@ const styles = stylex.create({
     flexShrink: 0,
   },
   label: { minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  brand: { display: 'flex', alignItems: 'center', gap: spacing.sm, minWidth: 0, flex: 1 },
+  brandText: { display: 'flex', flexDirection: 'column', minWidth: 0, lineHeight: 1.2 },
+  brandTitle: {
+    fontSize: typography.bodySize,
+    fontWeight: typography.mediumWeight,
+    color: colors.ink,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  brandSubtitle: {
+    fontSize: typography.captionSize,
+    color: colors.muted,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
   grow: { display: 'flex', alignItems: 'center', gap: spacing.sm, flex: 1 },
   collapsedLabel: { display: { default: 'none', [frameConditions.sidebarMobile]: 'inline-flex' } },
   footer: {
@@ -369,6 +386,32 @@ export function NavigationLink({
         {children}
       </span>
     </RouteLink>
+  );
+}
+
+export type SidebarBrandProps = {
+  readonly title: string;
+  readonly subtitle?: string | undefined;
+  readonly icon?: ReactNode;
+};
+
+/** Fits a workspace title, optional subtitle, and optional icon cleanly inside the 48px sidebar header. */
+export function SidebarBrand({ title, subtitle, icon }: SidebarBrandProps): ReactNode {
+  const sidebar = useContext(SidebarContext);
+  const isCollapsed = sidebar !== null && !sidebar.isExpanded;
+
+  return (
+    <div {...stylex.props(styles.brand)}>
+      {icon !== undefined && icon !== null && (
+        <span aria-hidden {...stylex.props(styles.icon)}>
+          {icon}
+        </span>
+      )}
+      <div {...stylex.props(styles.brandText, isCollapsed && styles.collapsedLabel)}>
+        <span {...stylex.props(styles.brandTitle)}>{title}</span>
+        {subtitle !== undefined && <span {...stylex.props(styles.brandSubtitle)}>{subtitle}</span>}
+      </div>
+    </div>
   );
 }
 

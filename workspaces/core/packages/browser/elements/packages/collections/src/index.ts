@@ -21,7 +21,7 @@ export type { InspectorProps } from './inspector.tsx';
 export { Inspector, Details } from './inspector.tsx';
 export { ListFooter } from './list-footer.tsx';
 export { MetricGrid, Metric } from './metrics.tsx';
-export type { MetricGridProps, MetricProps } from './metrics.tsx';
+export type { MetricChange, MetricGridProps, MetricProps } from './metrics.tsx';
 export type { TimestampProps } from './timestamp.tsx';
 export { Timestamp } from './timestamp.tsx';
 export { Timeline } from './timeline.tsx';

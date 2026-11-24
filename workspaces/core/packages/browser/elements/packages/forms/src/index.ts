@@ -17,3 +17,13 @@ export type { SettingsRowProps } from './settings-row.tsx';
 export { SettingsRow } from './settings-row.tsx';
 export type { SettingsSectionProps } from './settings-section.tsx';
 export { SettingsSection } from './settings-section.tsx';
+export type {
+  Token,
+  TokenInputEditorProps,
+  TokenInputRootProps,
+  TokenInputTokenProps,
+  TokenInputTokenRemoveProps,
+  TokenInputValue,
+  TokenInputValueChangeDetails,
+} from './token-input.tsx';
+export { defaultCodec, fromText, toLabel, TokenInput, toText } from './token-input.tsx';
