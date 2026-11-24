@@ -12,12 +12,13 @@ For a scene whose box is a coordinate plane. All positions and values are in dat
   label. Leave the axes out of a diagram whose positions mean nothing.
 - `SceneCurve`: `of` (a function of x) or `points` (`[x, y]` pairs, x increasing), `resolution`, `fillTo`, `isDashed`
   for a modelled curve, `thickness`. A new `of` eases from the old shape.
-- `ScenePoint`: `at`, `text`, and `sets` to make it draggable and movable by the arrow keys. `sets` names the number
-  params its position writes, as `{ x: 'bias' }`; a move sets them in one change, on each param's step grid and inside
-  its range. `along` (`'x'`, `'y'` or a function of x) limits the move, and a point bound on one axis moves along it.
-  `snap` sets the step of an axis no param owns. The point stays at `at`, read from the lesson. Reach for
-  `onMove(position, details)` only when a move is not a plain param write, and set a lesson param there, never component
-  state.
+- `ScenePoint`: `at`, `text`, and `sets` to make it a slider: the reader drags it, or reaches it with Tab and moves it
+  with the arrow keys, Home and End, and it speaks each bound value in its param's format. On a point that sets `x` and
+  `y`, Left and Right move x and Up and Down move y. `sets` names the number params its position writes, as
+  `{ x: 'bias' }`; a move sets them in one change, on each param's step grid and inside its range. `along` (`'x'`, `'y'`
+  or a function of x) limits the move, and a point bound on one axis moves along it. `snap` sets the step of an axis no
+  param owns. The point stays at `at`, read from the lesson. Reach for `onMove(position, details)` only when a move is
+  not a plain param write, and set a lesson param there, never component state.
 - `SceneVector`: `to`, `from` (defaults to the origin), `text`, `isDashed` for a step not yet taken.
 - `SceneProjection`: `of` (a point's id) or `at`, dashed lines to both axes with the values written there.
 - `SceneRegion`: one of `between` (two x values), `above`, `below` (a y value) or `points` (a polygon). Keep it pale.
@@ -63,14 +64,17 @@ export function ConfidenceScene(): ReactNode {
 - `SceneCard`: `rank` (`'A'`, `'2'` to `'10'`, `'J'`, `'Q'`, `'K'`) with `suit` (`'heart'`, `'diamond'`, `'spade'`,
   `'club'`) for a playing card, or `text` for a generic card. `isFaceUp` turns it over (default true), `lift` raises it,
   `tilt` leans it, `size` is `'small'`, `'medium'` or `'large'`, and `children` go on the face, even a chart. Its tone
-  defaults to its suit's (`suitTones`), and its back stays neutral so it hides the suit. A face-down playing card reads
-  "A card, face down" unless you give it a `label`. Place it with `at`, or list it in one `SceneStack`.
+  defaults to its suit's (`suitTones`), and its back stays neutral so it hides the suit. A face-down card renders only
+  its back and reads "A card, face down", so leave out `label` and keep its `id` free of its rank and suit. To turn it
+  when pressed, give the `Scene` `selected={null}` and `onSelectedChange` (see the scene reference). Place it with `at`,
+  or list it in one `SceneStack`.
 - `SceneStack`: `id`, `at`, `cards` (ids, bottom of a pile first), `layout` (`'pile'`, `'fan'`, `'row'`, `'column'`),
   `gap`, `size`, `stagger`. Move a card between stacks by moving its id from one list to the other. `stagger`
   (`'short'`, `'regular'`, `'long'`) deals in turn: cards that arrive or move in the same update start that step apart,
   in stack order, and a lone card starts at once. Use it, not a card's `delay`, to deal. A card in two stacks, or a card
   with no place, shows an error.
-- `SceneSlot`: an empty bay a card is dealt to, with `text`, `size` and `isActive` for the one that matters now.
+- `SceneSlot`: an empty bay a card is dealt to, with `text`, `size` and `isActive` for the one that matters now. A
+  slot's `isActive` only draws its outline and tint; nothing else recedes.
 
 A deal is two lists of ids. Changing the hand moves the cards, flips them and deals them in turn, with no motion code:
 
@@ -111,9 +115,10 @@ export function HandScene(): ReactNode {
 
 `SceneCells` draws a small vector or matrix: `values` (a flat list is one row; a list of lists is a matrix) or `cells`
 (`{ id?, text?, value?, label? }` rows), `direction`, `format`, `palette` (`'sequential'` or `'diverging'`) with
-`domain`, `rowLabels`, `columnLabels`, `highlight` (`{ row?, column? }`) and `size`. A cell's id is
-`${id}.${row}.${column}`, so a wire or callout can name one. Changed values ease. For a large grid with axes, use the
-`Matrix` chart.
+`domain`, `rowLabels`, `columnLabels` (they wrap, and a long word overhangs rather than being cut), `highlight`
+(`{ row?, column? }`) and `size`. A cell also takes `tone`, such as its suit's hue, and `isMuted` to gray one already
+dealt. A cell's id is `${id}.${row}.${column}`, so a wire or callout can name one. Changed values ease. For a large grid
+with axes, use the `Matrix` chart.
 
 ```tsx
 /** The weights and the bias as cells, shaded around zero. */

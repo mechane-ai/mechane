@@ -12,7 +12,7 @@ export { articleChecks } from './article-checks.ts';
 export { answerSources, articleOutline } from './article-outline.ts';
 export type { BeatProps } from './beat.tsx';
 export { Beat } from './beat.tsx';
-export type { FigureProps, FigureReferenceProps, FigureSize, RevealProps } from './figure.tsx';
+export type { FigureFraming, FigureProps, FigureReferenceProps, FigureSize, RevealProps } from './figure.tsx';
 export { Figure, FigureReference, Reveal, useRevealed } from './figure.tsx';
 export type { AsideProps, CiteProps, FootnoteProps, ReferencesProps } from './notes.tsx';
 export type { ArticleOutline, OutlineBeat, OutlineFigure, OutlinePrediction, ReferenceItem } from './outline-types.ts';

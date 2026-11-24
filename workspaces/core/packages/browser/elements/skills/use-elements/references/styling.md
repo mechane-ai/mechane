@@ -18,6 +18,29 @@ export function Document({ isDark, children }: { readonly isDark: boolean; reado
 Apply the theme to the document root so portaled menus, dialogs and tooltips inherit it. The application stores the
 preference; there is no theme provider. A themed wrapper suits an isolated preview only.
 
+`themeProps.dark` is a `className` and a `style`. Spread with your own styles, the later `className` wins and the theme
+is lost without an error: `{...themeProps.dark} {...stylex.props(styles.root)}` leaves the page half dark. Put the theme
+on an element of its own, or join both class names and styles:
+
+```tsx
+import { themeProps } from '@mechane-ai/elements/theme';
+import * as stylex from '@stylexjs/stylex';
+import type { ReactNode } from 'react';
+
+const styles = stylex.create({ root: { minHeight: '100dvh' } });
+
+export function ThemedRoot({ isDark, children }: { readonly isDark: boolean; readonly children: ReactNode }) {
+  const theme = themeProps[isDark ? 'dark' : 'light'];
+  const own = stylex.props(styles.root);
+
+  return (
+    <div className={`${theme.className ?? ''} ${own.className ?? ''}`} style={{ ...theme.style, ...own.style }}>
+      {children}
+    </div>
+  );
+}
+```
+
 ## Appearance comes from the components
 
 - Choose a named `variant`, `tone` or `density`. There is no size, padding or radius prop.

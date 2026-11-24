@@ -24,6 +24,11 @@ const styles = stylex.create({
     fontWeight: typography.mediumWeight,
   },
   segments: { alignSelf: 'start', maxWidth: '100%' },
+  /**
+   * In a row of controls, such as a framed figure's strip, the slider takes the room the row has. The floor is a width
+   * and not a flex basis, so a slider in a column keeps its own height.
+   */
+  slider: { flex: '1 1 0%', minWidth: 'min(12rem, 100%)' },
 });
 
 export type ParamControlProps = {
@@ -91,6 +96,7 @@ export function ParamSlider({ name }: ParamControlProps): ReactNode {
         isLog ? (at) => formatValue({ value: valueOf(at), locale: scope.locale, format: param.format }) : param.format
       }
       disabled={scope.state.isReadOnly}
+      xstyle={styles.slider}
     >
       <Row shouldSpaceBetween>
         <Slider.Label>{param.label}</Slider.Label>

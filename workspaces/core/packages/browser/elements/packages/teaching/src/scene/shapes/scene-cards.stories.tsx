@@ -43,12 +43,12 @@ type Story = StoryObj;
 type Playing = { readonly id: string; readonly rank: CardRank; readonly suit: CardSuit };
 
 const hand: ReadonlyArray<Playing> = [
-  { id: 'queen-hearts', rank: 'Q', suit: 'heart' },
-  { id: 'king-spades', rank: 'K', suit: 'spade' },
-  { id: 'ace-diamonds', rank: 'A', suit: 'diamond' },
-  { id: 'seven-clubs', rank: '7', suit: 'club' },
-  { id: 'jack-hearts', rank: 'J', suit: 'heart' },
-  { id: 'three-spades', rank: '3', suit: 'spade' },
+  { id: 'card-1', rank: 'Q', suit: 'heart' },
+  { id: 'card-2', rank: 'K', suit: 'spade' },
+  { id: 'card-3', rank: 'A', suit: 'diamond' },
+  { id: 'card-4', rank: '7', suit: 'club' },
+  { id: 'card-5', rank: 'J', suit: 'heart' },
+  { id: 'card-6', rank: '3', suit: 'spade' },
 ];
 
 const ids = hand.map((card) => card.id);
@@ -65,14 +65,14 @@ type DealStep = {
 const steps: ReadonlyArray<DealStep> = [
   { id: 'deck', label: 'Deck', deck: ids, row: [], bay: [], faceUp: [] },
   { id: 'deal', label: 'Deal three', deck: ids.slice(0, 3), row: ids.slice(3), bay: [], faceUp: [] },
-  { id: 'flip', label: 'Flip one', deck: ids.slice(0, 3), row: ids.slice(3), bay: [], faceUp: ['jack-hearts'] },
+  { id: 'flip', label: 'Flip one', deck: ids.slice(0, 3), row: ids.slice(3), bay: [], faceUp: ['card-5'] },
   {
     id: 'bay',
     label: 'Move to the bay',
     deck: ids.slice(0, 3),
-    row: ['seven-clubs', 'three-spades'],
-    bay: ['jack-hearts'],
-    faceUp: ['jack-hearts'],
+    row: ['card-4', 'card-6'],
+    bay: ['card-5'],
+    faceUp: ['card-5'],
   },
   { id: 'return', label: 'Return all', deck: ids, row: [], bay: [], faceUp: [] },
 ];
@@ -206,6 +206,52 @@ function FanTable(): ReactNode {
   );
 }
 
+const table: ReadonlyArray<Playing> = [
+  { id: 'left', rank: 'Q', suit: 'heart' },
+  { id: 'middle', rank: '7', suit: 'club' },
+  { id: 'right', rank: 'A', suit: 'diamond' },
+];
+
+/** Each card turns over when pressed. The scene's selection request is the press. The app keeps which face is up. */
+function PressToTurn(): ReactNode {
+  const [faceUp, setFaceUp] = useState<ReadonlySet<string>>(new Set());
+
+  function turn(id: string): void {
+    setFaceUp(new Set(faceUp.has(id) ? [...faceUp].filter((up) => up !== id) : [...faceUp, id]));
+  }
+
+  return (
+    <Scene
+      title="Turn a card over"
+      description="Synthetic cards, dealt face down. Press a card, or step to it with the arrow keys and press Enter or Space, to turn it."
+      locale="en-US"
+      x={[0, 3]}
+      y={[0, 1]}
+      height="tall"
+      selected={null}
+      onSelectedChange={turn}
+      labels={{ press: 'Press Enter or Space to turn the card over.' }}
+    >
+      <SceneStack id="table" at={[1.5, 0.5]} layout="row" cards={table.map((card) => card.id)} />
+      {table.map((card) => (
+        <SceneCard key={card.id} id={card.id} rank={card.rank} suit={card.suit} isFaceUp={faceUp.has(card.id)} />
+      ))}
+    </Scene>
+  );
+}
+
+export const PressToTurnOver: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'A card acts when pressed through the scene’s `onSelectedChange`: a press, or Enter or Space on the keyboard cursor, asks for the card’s id, and the app turns it. `selected={null}` keeps the press an action rather than a lasting selection. A face-down card renders only its back, so neither a screen reader nor an agent can name it, and its id names a place, not the card.',
+      },
+    },
+  },
+  render: () => <PressToTurn />,
+};
+
 export const Fan: Story = {
   parameters: {
     docs: {
@@ -324,12 +370,12 @@ export const AuthorErrors: Story = {
   render: () => (
     <div {...stylex.props(styles.list)}>
       <Scene title="A card in two stacks" locale="en-US" x={[0, 4]} y={[0, 2]}>
-        <SceneStack id="left" at={[1, 1]} layout="row" cards={['queen-hearts']} />
-        <SceneStack id="right" at={[3, 1]} layout="row" cards={['queen-hearts']} />
+        <SceneStack id="left" at={[1, 1]} layout="row" cards={['card-1']} />
+        <SceneStack id="right" at={[3, 1]} layout="row" cards={['card-1']} />
         <SceneCard id="queen-hearts" rank="Q" suit="heart" />
       </Scene>
       <Scene title="A stack that lists a missing card" locale="en-US" x={[0, 4]} y={[0, 2]}>
-        <SceneStack id="deck" at={[2, 1]} layout="row" cards={['queen-hearts', 'ace-diamonds']} />
+        <SceneStack id="deck" at={[2, 1]} layout="row" cards={['card-1', 'card-3']} />
         <SceneCard id="queen-hearts" rank="Q" suit="heart" />
       </Scene>
       <Scene title="A card with no place" locale="en-US" x={[0, 4]} y={[0, 2]}>

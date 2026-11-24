@@ -5,16 +5,63 @@ import { conditions } from '../../../foundations/src/constants.stylex.ts';
 import { colors, controls, radii, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { useLessonContext } from '../lesson/use-lesson.ts';
 import type { ArticleScope } from './article-context.ts';
-import { articleLayout } from './article-layout.stylex.ts';
+import { articleLayout, articleSticky } from './article-layout.stylex.ts';
 import { lessonBeat } from './beat.tsx';
 import { ArticleNotes } from './notes.tsx';
 
 /** The band of the viewport, from the top, where the beat being read sits: a thin line a third of the way down. */
 const READING_BAND = '-33% 0px -62% 0px';
 
+/** The room, in pixels, left between the compact contents bar and an element moved out from under it. */
+const UNCOVER_GAP = 8;
+
+const SCROLLERS: ReadonlySet<string> = new Set(['auto', 'scroll']);
+
+/** The nearest ancestor that scrolls `element` vertically, or the page. */
+function scrollerOf(element: Element): Element | null {
+  const parent = element.parentElement;
+
+  if (parent === null) {
+    return document.scrollingElement;
+  }
+
+  const isScroller = SCROLLERS.has(getComputedStyle(parent).overflowY) && parent.scrollHeight > parent.clientHeight;
+
+  return isScroller ? parent : scrollerOf(parent);
+}
+
+/** Scrolls `target` out from under the sticky compact contents bar, when the bar shows and covers it. */
+function uncover(bar: HTMLElement, target: Element): void {
+  if (bar.contains(target) || !bar.checkVisibility()) {
+    return;
+  }
+
+  const barBox = bar.getBoundingClientRect();
+  const box = target.getBoundingClientRect();
+  const isCovered = box.top < barBox.bottom && box.bottom > barBox.top;
+
+  if (isCovered) {
+    scrollerOf(target)?.scrollBy({ top: box.top - barBox.bottom - UNCOVER_GAP, behavior: 'instant' });
+  }
+}
+
+/** Uncovers the element the address bar's hash names, when it is in the essay. */
+function uncoverHash(root: HTMLElement, bar: HTMLElement): void {
+  const target =
+    location.hash === '' ? null : document.querySelector(`#${CSS.escape(decodeURIComponent(location.hash.slice(1)))}`);
+
+  if (target !== null && root.contains(target)) {
+    uncover(bar, target);
+  }
+}
+
 const styles = stylex.create({
   layout: {
     display: 'grid',
+    [articleSticky.top]: {
+      default: '0px',
+      [articleLayout.withoutContents]: `calc(2 * ${spacing.sm} + ${typography.bodyLineHeight} + 1px)`,
+    },
     gridTemplateColumns: {
       default: 'minmax(0, 1fr)',
       [articleLayout.withContents]: `${articleLayout.contentsWidth} minmax(0, 1fr)`,
@@ -28,6 +75,7 @@ const styles = stylex.create({
     insetBlockStart: spacing.xl,
     paddingBlockStart: spacing.xs,
   },
+  plain: { gridTemplateColumns: 'minmax(0, 1fr)', [articleSticky.top]: '0px' },
   main: { minWidth: 0 },
   compact: {
     display: { default: 'block', [articleLayout.withContents]: 'none' },
@@ -126,7 +174,8 @@ export type ViewProps = {
 
 /**
  * The article view: a scrolling essay with a contents list that follows the reading position. Scrolling a beat into the
- * reading band makes it the lesson's beat, and a beat set elsewhere, such as by an agent, scrolls into view.
+ * reading band makes it the lesson's beat, and a beat set elsewhere, such as by an agent, scrolls into view. Below
+ * `withContents` the list folds into a sticky bar, which a focused element or a linked target is never left under.
  */
 export function EssayView({ article, header, children }: ViewProps): ReactNode {
   const { beat, goTo } = useLessonContext();
@@ -190,6 +239,44 @@ export function EssayView({ article, header, children }: ViewProps): ReactNode {
 
     return () => observer.disconnect();
   }, [article.lesson]);
+
+  useEffect(() => {
+    const root = rootRef.current;
+    const bar = detailsRef.current;
+
+    if (root === null || bar === null) {
+      return;
+    }
+
+    const listening = new AbortController();
+
+    root.addEventListener(
+      'focusin',
+      (event) => {
+        if (event.target instanceof Element) {
+          uncover(bar, event.target);
+        }
+      },
+      { signal: listening.signal },
+    );
+
+    globalThis.addEventListener('hashchange', () => uncoverHash(root, bar), { signal: listening.signal });
+    uncoverHash(root, bar);
+
+    return () => listening.abort();
+  }, [article.hasContents]);
+
+  if (!article.hasContents) {
+    return (
+      <div ref={rootRef} {...stylex.props(styles.layout, styles.plain)}>
+        <div {...stylex.props(styles.main)}>
+          {header}
+          {children}
+          <ArticleNotes />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div ref={rootRef} {...stylex.props(styles.layout)}>

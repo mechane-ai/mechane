@@ -24,7 +24,7 @@ function idle(): void {
 }
 
 /** Fast at first and settling gently, the curve the motion tokens use for interface transitions. */
-function eased(progress: number): number {
+export function eased(progress: number): number {
   return 1 - (1 - progress) ** EASE_POWER;
 }
 

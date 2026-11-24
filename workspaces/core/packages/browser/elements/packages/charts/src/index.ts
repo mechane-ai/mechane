@@ -17,6 +17,8 @@ export type { ChartGridProps } from './chart-grid.tsx';
 export { ChartGrid } from './chart-grid.tsx';
 export type { ChartLinkControl, ChartLinkInspectChange, ChartLinkProps } from './chart-link.tsx';
 export { ChartLink, useChartLinkControl, useLinkedInspection } from './chart-link.tsx';
+export type { CaptionScopeProps } from './figure/caption-scope.tsx';
+export { CaptionScope, useIsCaptioned } from './figure/caption-scope.tsx';
 export type { TimeFormat, ValueFormat } from './figure/figure-format.ts';
 export { MISSING_VALUE_TEXT, formatTime, formatValue, tickFormat } from './figure/figure-format.ts';
 export type {

@@ -101,14 +101,14 @@ that names the problem when a param's default is out of range, a name is declare
 that is not a param or an earlier derived value, a derived function does not return a number, or a beat state names an
 undeclared param.
 
-| Declared     | Fields                                                                                                                                                    |
-| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Number param | `kind: 'number'`, `label`, `value`, `min`, `max`, `step`, `format` (`Intl` options or a function), optional `scale: 'linear' \| 'log'`.                   |
-| Choice param | `kind: 'choice'`, `label`, `value` (an option id), `options` of `{ id, label }`.                                                                          |
-| Toggle param | `kind: 'toggle'`, `label`, `value` (a boolean).                                                                                                           |
-| Derived      | `label`, `format`, and `from`, a pure function of the params and the derived values declared before it.                                                   |
-| Beat         | `id`, `title`, optional `goal`, `misconception`, `hints` (tutor notes, never shown to the reader), `steps` (reveal steps after the first view), `states`. |
-| State        | `id`, `label` and `values`, the params it sets. Plain data.                                                                                               |
+| Declared     | Fields                                                                                                                                                                                                                    |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Number param | `kind: 'number'`, `label`, `value`, `min`, `max`, `step`, `format` (`Intl` options or a function), optional `scale: 'linear' \| 'log'`.                                                                                   |
+| Choice param | `kind: 'choice'`, `label`, `value` (an option id), `options` of `{ id, label }`.                                                                                                                                          |
+| Toggle param | `kind: 'toggle'`, `label`, `value` (a boolean).                                                                                                                                                                           |
+| Derived      | `label`, `format`, and `from`, a pure function of the params and the derived values declared before it.                                                                                                                   |
+| Beat         | `id`, `title`, optional `goal`, `misconception`, `hints` (tutor notes, never shown to the reader), `steps` (reveal steps after the first view), `states`, `params` (the params it owns; by default those its states set). |
+| State        | `id`, `label` and `values`, the params it sets. Plain data.                                                                                                                                                               |
 
 The definition also holds `defaults`, `initial` (every value at the opening), `compute` and `reads`, the names each
 derived value reads, found by running it over the defaults and every beat state. `lessonGraph(lesson)` returns those
@@ -142,13 +142,17 @@ names the param and its bounds.
 | `BoundValue`                                | The number control inside `Param`, usable alone: `min`, `max`, `step`, `scale`, `locale`, `format`, `label`. |
 | `Playback name from? to? pace? isLooping?`  | Drives a number param one step at a time. It renders nothing.                                                |
 | `Transport for labels?`                     | Play or pause, step back, step forward, a scrub slider and the value, for the `Playback` of a param.         |
-| `useLesson(lesson)`                         | Typed `values`, `set`, `setMany`, `show`, `reset`, `beat`, `step`, `goTo`, `next`, `previous`, `locale`.     |
+| `useLesson(lesson)`                         | Typed `values`, `set`, `setMany`, `show`, `reset`, `resetBeat`, `beat`, `step`, `goTo`, `next`, `previous`.  |
 | `useLessonContext()`                        | The same, untyped, for a part that works in any lesson.                                                      |
 | `usePlayback(name)`                         | `isPlaying`, `play`, `pause`, `toggle`, `stepBy` and `seek`, for a custom transport.                         |
 
-`pace` is `'fast'` (12 steps a second), `'regular'` (6) or `'slow'` (2); `playbackPaces` holds the numbers. A player
-stops at its end, or starts over from `from` when `isLooping` is set. It stops when the tab is hidden or the reader
-changes its value. With reduced motion, play shows the end at once.
+`pace` is `'fast'` (12 steps a second), `'regular'` (6) or `'slow'` (2); `playbackPaces` holds the numbers. A pace can
+also be a timed run, `{ run, isEased? }`: `run` is `'short'`, `'regular'` or `'long'` (2, 5 or 10 seconds for the whole
+range, from `playbackRuns`), so a 320-step training run and a 10-step one take the same time. `isEased` starts the run
+fast and settles it on the tween curve. A run started part of the way along takes its share of the time. Both kinds move
+on the one clock, land on the param's step grid and report the reason `playback`. A player stops at its end, or starts
+over from `from` when `isLooping` is set. It stops when the tab is hidden or the reader changes its value. With reduced
+motion, play shows the end at once.
 
 ## How values flow
 
@@ -162,6 +166,11 @@ change path, so it carries its reason and source and the application can refuse 
   as the whole picture: every param the state does not name takes the lesson's opening value. A state looks the same
   live, on the sheet and in a tour. `setMany` changes the params you name and keeps the rest. Both are one change, so
   readers see one move and not one per param. `showState` looks in the current beat first.
+- **Resets** come in two sizes. `reset()` returns every param of the lesson to its opening value, the reader's work in
+  every beat included. `resetBeat(beat)` returns only the params that beat owns: its `params`, or else every param its
+  states set. Both are one change with the reason `reset`, and a player moving a reset param stops. A figure's Reset
+  button is a `resetBeat`; `reset` is for starting the whole essay over. `show` keeps its meaning: it shows a state as
+  the whole picture, so it too sets params outside the beat.
 - **Beats and steps** are where the reader is. `setBeat(id, step)`, `next` and `previous` move through reveal steps and
   then beats. Moving to a beat does not apply its states.
 - **Playback** moves one number param along its grid on the shared clock. Its changes have the reason `playback`, and a
@@ -193,7 +202,7 @@ selection props, and:
 | `height` or `aspect` | A plot height by name, or the width divided by the height for a scene that keeps its proportions. |
 | `focus`              | The camera: an id or ids to zoom to, or `null` for the whole box.                                 |
 | `pace`               | How fast changes ease. A part may override it with its own `pace`.                                |
-| `minWidth`           | The narrowest plot in pixels. Below it the plot scrolls inside the frame.                         |
+| `minWidth`           | The narrowest plot in pixels; below it the plot scrolls. Left out, the width the drawing needs.   |
 | `weightMax`          | The wire weight drawn thickest. Weights must lie within plus or minus this. Defaults to 1.        |
 | `locale`, `labels`   | `locale` falls back to the nearest `Lesson`. `labels` is a partial `SceneLabels`.                 |
 
@@ -204,16 +213,24 @@ selection props, and:
   are reported as an error. A scene draws at most `sceneLimits.objects` (1200).
 - **Position.** `at` is the center in data units as `[x, y]`. `offset` shifts it in pixels, across then down. A node's
   box comes from a named size (`small`, `medium`, `large`) or an exact `{ width, height }`, never from measuring
-  content. The scene makes room so objects on one row do not touch, unless an object is `isFloating`.
+  content. The scene makes room so objects on one row do not touch and each wire keeps room for its arrow and text,
+  unless an object is `isFloating`. That derived width is the narrowest legible one, so leave `minWidth` out. A wire
+  runs straight between its ends and does not avoid what lies between them: give it `bend` to bow it around.
 - **Motion.** Change a prop and the object moves. `delay` waits before a change starts, as milliseconds or
   `{ index, step }` in a stagger (`sceneStaggers`: short, regular, long). A `stagger` deals in turn: on a `SceneStack`
   (a step name) or a `SceneNode` (a group, an `index` and a `step`), members that change in the same update start one
   step apart, and one that moves alone starts at once. `isShown={false}` fades an object out and takes it out of the
   keyboard order. `turn`, `lift`, `tilt` and `rotate` are states of a node.
-- **Attention.** `isActive` keeps an object at full strength while the rest recede. `emphasis="context"` draws it gray.
-  `SceneHighlight`, `SceneCallout` and the camera `focus` point the reader.
+- **Attention.** `isActive` keeps an object at full strength while the rest recede; a `SceneSlot`'s only outlines it.
+  `emphasis="context"` draws it gray. `SceneHighlight`, `SceneCallout` and the camera `focus` point the reader; a
+  highlight marks one object without dimming the rest.
 - **Readout.** An object with a `label` is an item the arrow keys reach and the readout names. The label is the full
   sentence; `text` is what is drawn.
+- **Presses.** `selected` and `onSelectedChange` on the `Scene` make labelled objects act when pressed: a press, or
+  Enter or Space on the keyboard cursor, calls `onSelectedChange` with the object's id. `selected={null}` keeps the
+  press an action, such as turning a card: `onSelectedChange={(id) => set('faceUp', id)}`, and a pointer press then dims
+  nothing. `labels.press` ends the plot's accessible name with what a press does, such as "Press Enter or Space to turn
+  the card over."; the default is "Press Enter or Space to activate a part."
 - **Escape hatch.** `SceneCustom` hands a function the scene's scales, box, view, `tone` and `color`, and draws SVG in
   plot pixels. New parts build on `useSceneObject`.
 
@@ -228,21 +245,26 @@ selection props, and:
 
 `SceneNode` takes `id`, `at`, `text`, `label`, `size`, `shape` (`box`, `pill`, `circle`, `plain`), `tone`, `isCode`,
 `back` and `children` for rich content such as a compact chart. `SceneWire` takes `from`, `to`, `weight` (thickness
-shows its size, hue its sign), `text`, `shape` (`straight`, `curve`, `elbow`), `isDashed` and `hasArrow`, and follows
-its ends on every frame. `SceneGroup` outlines the ids in `around`; `SceneBracket` spans the ids in `of` on a `side`.
+shows its size, hue its sign), `text`, `shape` (`straight`, `curve`, `elbow`), `bend` in pixels, `isDashed` and
+`hasArrow`, and follows its ends on every frame. `SceneGroup` outlines the ids in `around`; `SceneBracket` spans the ids
+in `of` on a `side`.
 
 The plane parts draw in data units. `SceneCurve` takes `points` or a function `of`, with `fillTo`; `ScenePoint` takes
-`at` and is movable when it gets `onMove` or `sets`, with `snap` and `along`. `sets={{ x: 'weight' }}` names the lesson
-number params a move writes, in one change, on each param's step grid and inside its range (the type `ScenePointSets` is
+`at` and is a slider when it gets `onMove` or `sets`, with `snap` and `along`: the reader drags it, or reaches it with
+Tab and moves it with the arrow keys, Home and End, and it speaks its values in each param's format. A point that sets
+both `x` and `y` moves x with Left and Right and y with Up and Down. `sets={{ x: 'weight' }}` names the lesson number
+params a move writes, in one change, on each param's step grid and inside its range (the type `ScenePointSets` is
 exported); `SceneRegion` takes `between`, `above`, `below` or `points`; `SceneRule` takes `x` or `y`; `SceneVector`
 takes `to` and `from`; `SceneProjection` follows a point with `of`.
 
 `SceneCard` is a playing card (`rank` and `suit`) or a generic card (`text`), with `isFaceUp`, `lift`, `tilt` and
-`size`. A face-down card reads "A card, face down". `SceneNode` takes `backTone` for the hue of its back face. A
-`SceneStack` places the cards it lists in `cards` as a `pile`, `fan`, `row` or `column`, and takes `stagger` to deal
-them, and a `SceneSlot` marks a place. `SceneCells` draws a vector or matrix from `values` or `cells`, with `palette`
-(`sequential` or `diverging`) and `highlight`. `SceneTokens` lays a text out as tokens, each with an optional `tokenId`
-and `probability`.
+`size`. A face-down card reads "A card, face down" and renders only its back, so neither a screen reader nor an agent
+can name it; keep its `id` free of its rank and suit, since ids reach the page and agents. `SceneNode` takes `backTone`
+for the hue of its back face. A `SceneStack` places the cards it lists in `cards` as a `pile`, `fan`, `row` or `column`,
+and takes `stagger` to deal them, and a `SceneSlot` marks a place. `SceneCells` draws a vector or matrix from `values`
+or `cells`, with `palette` (`sequential` or `diverging`) and `highlight`; each cell takes a `tone` and `isMuted`, and
+column labels wrap and overhang rather than being cut. `SceneTokens` lays a text out as tokens, each with an optional
+`tokenId` and `probability`.
 
 `SceneFlow` draws a lesson's derivation: each param and derived value is a node in layers, wired to what it reads.
 Params are inline controls, and a change glows through what it touches. `MorphScope` takes `figures` by name and `show`;
@@ -263,14 +285,21 @@ link for you.
 | `progress`, `defaultProgress`, `onProgressChange` | The reader's progress, held by the application.                                                        |
 | `labels`                                          | The words the article writes around the content, `defaultArticleLabels` by default.                    |
 | `lessonProps`                                     | Props for the `Lesson`: controlled values, beat and step, address bar sync.                            |
+| `hasContents`                                     | `false` leaves the contents list out of the article and static views, at every width.                  |
 
 Structure: a `Beat` takes the id of a beat the lesson declares, and its title, tutor notes, reveal steps and states come
 from the lesson. `Figure` takes `id`, `caption`, `description`, `reads` and `size` (`'wide'` by default or `'text'`),
-and numbers figures in reading order. `FigureReference to` writes "Figure 2" as a link. `Reveal at` shows its content
-from a reveal step in the present view and at once in the others, and `useRevealed(at)` gives a figure the same answer
-for parts it reveals itself. `Scrolly figure` keeps one figure in view while `ScrollyStep` children, each with `values`
-or a `state`, set the lesson as the reader scrolls. `Aside`, `Footnote id`, `Cite id` and `References items` carry notes
-and sources. `TeX` writes TeX source, inline or with `isDisplay`. `Term inspects` and `DiagramPart inspects label` point
+and numbers figures in reading order. Its `header` and `footer` hold the figure's controls: either one sets the figure
+in a hairline frame, with a strip above or below the visual ruled off from it. `isFramed` frames a figure that has no
+controls, so an essay that frames its figures frames them all; a figure with a strip cannot set `isFramed={false}`. The
+static view and the sheet make the strips inert, and a chart's `report` frame inside stands in for the figure's border.
+A chart or scene inside a `Figure` sits in a `CaptionScope` from `/charts`: it keeps its title as its accessible name
+and prints neither the title nor the description. The figure's number and caption are printed, and its `description` is
+the text the static view prints. `FigureReference to` writes "Figure 2" as a link. `Reveal at` shows its content from a
+reveal step in the present view and at once in the others, and `useRevealed(at)` gives a figure the same answer for
+parts it reveals itself. `Scrolly figure` keeps one figure in view while `ScrollyStep` children, each with `values` or a
+`state`, set the lesson as the reader scrolls. `Aside`, `Footnote id`, `Cite id` and `References items` carry notes and
+sources. `TeX` writes TeX source, inline or with `isDisplay`. `Term inspects` and `DiagramPart inspects label` point
 from prose or a hand-drawn SVG into the figures, and back.
 
 `Predict` takes an `id`, a `prompt`, and either `options` with an `answer` id, or `min`, `max`, `step`, `format` and an
@@ -285,7 +314,7 @@ another.
 
 | View      | What it is                                                                                                                                                                                                                                                                                                                                                         |
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `article` | A scrolling essay with a contents list. Scrolling a beat into the reading band makes it the lesson's beat; scrolling never changes values.                                                                                                                                                                                                                         |
+| `article` | A scrolling essay with a contents list; below 1,120 px it folds into a sticky bar that never covers a focused control or a linked target. Scrolling a beat into the reading band makes it the lesson's beat; scrolling never changes values.                                                                                                                       |
 | `present` | One beat fills the screen. Right or Space shows the next reveal step or beat, Left goes back. A beat the presenter moves to opens at its first declared state. A `Scrolly` in the beat shows its figure beside a short list of its steps, which are walked before the reveal steps, and the beat's footnotes sit on its slide. Keys inside a control stay with it. |
 | `static`  | Every beat open at its first state, every reveal shown, each figure followed by its description. It needs no script to be read.                                                                                                                                                                                                                                    |
 | `sheet`   | For authors, reviewers and agents: every beat at each declared state, read-only and scaled to fit, with its tutor notes, then a list of checks.                                                                                                                                                                                                                    |
@@ -298,6 +327,13 @@ of its beat, and a `Predict` or `Challenge` outside every `Beat`. `articleOutlin
 so figure numbers agree on the server and in the browser. It cannot see into a component of your own, so a `Beat`,
 `Figure`, `Predict` or `Challenge` written inside one shows an inline error. Write them directly in the `Article`'s
 children.
+
+### A host that holds the beat
+
+An application whose own navigation lists the beats, such as a rail in an `AppShell`, holds the beat: it passes `beat`
+and `onBeatChange` through `lessonProps`, and `hasContents={false}` leaves the article's own list out at every width
+without changing the text's measure. Scrolling a beat into the reading band reports it to the host with the reason
+`scroll`, and a beat the host sets scrolls into view.
 
 ### Progress counts only the reader
 

@@ -52,7 +52,8 @@ In order of what matters most to a learner:
 11. **Narrow width.** At 360 pixels the prose and controls fit, and a scene scrolls inside its own frame rather than the
     page.
 12. **Keyboard.** Every `Param` takes arrow keys; each scene and chart is one Tab stop whose arrow keys reach every
-    labelled object; a draggable `ScenePoint` moves with the arrow keys; in the present view Right, Space and Left move.
+    labelled object; a draggable `ScenePoint` is its own Tab stop, a slider the arrow keys move; a pressable card turns
+    on Enter or Space; in the present view Right, Space and Left move.
 
 ## 3. Read the code once
 

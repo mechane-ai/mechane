@@ -8,7 +8,7 @@ import { Lesson } from '../lesson/lesson.tsx';
 import { useLessonContext } from '../lesson/use-lesson.ts';
 import { BeatContext, useArticle } from './article-context.ts';
 import { BlockError, outsideText, unlistedText } from './article-error.tsx';
-import { articleLayout } from './article-layout.stylex.ts';
+import { articleLayout, articleSticky } from './article-layout.stylex.ts';
 import { beatPlace } from './beat-steps.ts';
 import { ArticleNotes } from './notes.tsx';
 
@@ -16,6 +16,7 @@ const styles = stylex.create({
   hidden: { display: 'none' },
   beat: {
     display: 'block',
+    boxSizing: 'border-box',
     minWidth: 0,
     maxWidth: {
       default: articleLayout.measure,
@@ -23,7 +24,7 @@ const styles = stylex.create({
     },
     paddingInlineEnd: { default: 0, [articleLayout.withMargin]: articleLayout.marginSpan },
     marginBlockEnd: spacing.xxl,
-    scrollMarginBlockStart: spacing.xl,
+    scrollMarginBlockStart: `calc(${articleSticky.top} + ${spacing.xl})`,
     color: colors.ink,
     fontFamily: typography.fontFamily,
     fontSize: typography.sectionSize,

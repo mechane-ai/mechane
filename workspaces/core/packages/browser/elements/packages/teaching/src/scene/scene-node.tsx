@@ -39,7 +39,10 @@ export type SceneNodeProps = {
   readonly isShown?: boolean | undefined;
   /** True keeps the node at full strength while the parts it is not connected to recede. */
   readonly isActive?: boolean | undefined;
-  /** 0 shows the front, 1 the back; values between are mid-flip. */
+  /**
+   * 0 shows the front, 1 the back; values between are mid-flip. Only the face toward the reader is rendered, so a
+   * turned-away face reaches no screen reader or agent, and its content remounts when it turns back.
+   */
   readonly turn?: number | undefined;
   /** 0 rests on the page, 1 is raised toward the reader: larger, with a deeper shadow. */
   readonly lift?: number | undefined;
@@ -72,6 +75,8 @@ export type SceneNodeProps = {
 };
 
 const HALF_TURN = 180;
+/** The share of a turn past which the back faces the reader. */
+const HALF_TURN_SHARE = 0.5;
 const LIFT_DEPTH = 48;
 const LIFT_SCALE = 0.08;
 const LIFTED_ORDER = 1000;
@@ -273,6 +278,8 @@ export function SceneNode({
         text={text}
         isCode={isCode}
         hasBack={back !== undefined || !isFlat}
+        isBackShown={values.turn >= HALF_TURN_SHARE}
+        isFrontHidden={turn >= HALF_TURN_SHARE}
         back={back}
         focusPlot={object.focusPlot}
       >
@@ -294,6 +301,10 @@ type NodeCardProps = {
   readonly text: string | undefined;
   readonly isCode: boolean;
   readonly hasBack: boolean;
+  /** Whether the back faces the reader now. Only that face's content is rendered. */
+  readonly isBackShown: boolean;
+  /** Whether the node is turning or turned away from its front, so the front is kept from assistive technology. */
+  readonly isFrontHidden: boolean;
   readonly back: ReactNode;
   readonly focusPlot: () => void;
   readonly children: ReactNode;
@@ -315,6 +326,8 @@ function NodeFaces({
   text,
   isCode,
   hasBack,
+  isBackShown,
+  isFrontHidden,
   back,
   focusPlot,
   children,
@@ -339,15 +352,25 @@ function NodeFaces({
         radiusOnly[shape],
       )}
     >
-      <div {...stylex.props(styles.face(color), shapes[shape], hasContent && styles.rich)}>
-        {text !== undefined && (
+      <div
+        aria-hidden={isFrontHidden ? true : undefined}
+        {...stylex.props(styles.face(color), shapes[shape], hasContent && styles.rich)}
+      >
+        {text !== undefined && !isBackShown && (
           <span aria-hidden {...stylex.props(styles.text, isCode && styles.code)}>
             {text}
           </span>
         )}
-        {hasContent && <div {...stylex.props(styles.content)}>{children}</div>}
+        {hasContent && !isBackShown && <div {...stylex.props(styles.content)}>{children}</div>}
       </div>
-      {hasBack && <div {...stylex.props(styles.face(backColor), shapes[shape], styles.backFace)}>{back}</div>}
+      {hasBack && (
+        <div
+          aria-hidden={isFrontHidden ? undefined : true}
+          {...stylex.props(styles.face(backColor), shapes[shape], styles.backFace)}
+        >
+          {isBackShown ? back : null}
+        </div>
+      )}
     </ChartMark>
   );
 }

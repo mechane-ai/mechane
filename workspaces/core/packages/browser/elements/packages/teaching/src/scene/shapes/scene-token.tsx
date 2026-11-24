@@ -65,7 +65,8 @@ export type SceneTokenProps = {
 /** How a token writes its probability unless told otherwise. */
 export const tokenPercent: ValueFormat = { style: 'percent', maximumFractionDigits: 1 };
 
-const captionMetrics = { size: 11, line: '14px' } as const;
+/** The caption under a token's text keeps to the caption size on a line tight enough for two lines in the box. */
+const CAPTION_LINE = '16px';
 
 const styles = stylex.create({
   token: {
@@ -96,8 +97,8 @@ const styles = stylex.create({
   caption: {
     color: colors.muted,
     fontFamily: typography.monoFamily,
-    fontSize: captionMetrics.size,
-    lineHeight: captionMetrics.line,
+    fontSize: typography.captionSize,
+    lineHeight: CAPTION_LINE,
     fontVariantNumeric: 'tabular-nums',
     whiteSpace: 'nowrap',
   },

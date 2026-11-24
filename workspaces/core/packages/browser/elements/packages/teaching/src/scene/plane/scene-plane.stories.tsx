@@ -47,7 +47,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'The parts a math explanation draws inside a Scene, all on the plot kernel. SceneAxes draws the ticks, titles and grid of the data box and follows the camera. SceneCurve draws points or a function and eases from the old shape to the new one. ScenePoint marks a position and, with onMove, is grabbed by a pointer or moved by the arrow keys. SceneVector is an arrow whose ends ease. SceneRegion is a pale wash for a zone. SceneRule is a dashed threshold or asymptote with a short label. SceneProjection drops dashed lines from a point to the axes and writes its values there. Every part takes a stable id, a tone and an optional label that makes it a keyboard item; the author supplies states, never animations.',
+          'The parts a math explanation draws inside a Scene, all on the plot kernel. SceneAxes draws the ticks, titles and grid of the data box and follows the camera. SceneCurve draws points or a function and eases from the old shape to the new one. ScenePoint marks a position and, with sets or onMove, is a slider: a pointer drags it, and Tab reaches it for the arrow keys, Home and End. SceneVector is an arrow whose ends ease. SceneRegion is a pale wash for a zone. SceneRule is a dashed threshold or asymptote with a short label. SceneProjection drops dashed lines from a point to the axes and writes its values there. Every part takes a stable id, a tone and an optional label that makes it a keyboard item; the author supplies states, never animations.',
       },
     },
   },
@@ -88,7 +88,7 @@ function SigmoidScene(): ReactNode {
   return (
     <Scene
       title="Grab the point on the sigmoid"
-      description="Synthetic function σ(z) = 1 / (1 + e^−z). Drag the point, or focus the plot and use the arrow keys. The arrow is the tangent, and the dashed lines read the point's values off the axes."
+      description="Synthetic function σ(z) = 1 / (1 + e^−z). Drag the point, or Tab to it and use the arrow keys. The arrow is the tangent, and the dashed lines read the point's values off the axes."
       locale="en-US"
       x={[-6, 6]}
       y={[0, 1]}
@@ -203,6 +203,68 @@ function ActivationScene(): ReactNode {
 }
 
 export const Stepped: Story = { render: () => <ActivationScene /> };
+
+const slopeAndBias = defineLesson({
+  id: 'line',
+  title: 'A slope and a bias',
+  params: {
+    slope: {
+      kind: 'number',
+      label: 'Slope',
+      value: 0.5,
+      min: -2,
+      max: 2,
+      step: 0.25,
+      format: { maximumFractionDigits: 2 },
+    },
+    bias: { kind: 'number', label: 'Bias', value: 1, min: -2, max: 2, step: 0.5, format: { maximumFractionDigits: 1 } },
+  },
+});
+
+function SlopeBiasScene(): ReactNode {
+  const { values } = useLesson(slopeAndBias);
+
+  return (
+    <Scene
+      title="One point, two params"
+      description="Synthetic params. The point's x is the slope and its y the bias; the dashed lines read both off the axes."
+      locale="en-US"
+      x={[-2, 2]}
+      y={[-2, 2]}
+    >
+      <SceneAxes x={{ label: 'Slope' }} y={{ label: 'Bias' }} grid="both" />
+      <ScenePoint
+        id="params"
+        at={[values.slope, values.bias]}
+        sets={{ x: 'slope', y: 'bias' }}
+        tone="series2"
+        label="The slope and the bias"
+      />
+      <SceneProjection id="read" of="params" />
+    </Scene>
+  );
+}
+
+export const TwoParams: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'A point that sets two params is one slider for both. Tab reaches it; Left and Right step the slope, Up and Down the bias, Home and End take the slope to its ends, and Page Up and Down take ten bias steps. It speaks both values, each in its param’s format.',
+      },
+    },
+  },
+  render: () => (
+    <Lesson lesson={slopeAndBias} locale="en-US">
+      <div {...stylex.props(styles.column)}>
+        <p {...stylex.props(styles.sentence)}>
+          Slope <Value name="slope" />, bias <Value name="bias" />.
+        </p>
+        <SlopeBiasScene />
+      </div>
+    </Lesson>
+  ),
+};
 
 const START = -1.6;
 const LAST_STEP = 8;

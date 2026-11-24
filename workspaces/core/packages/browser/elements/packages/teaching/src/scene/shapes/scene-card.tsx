@@ -164,7 +164,7 @@ const faceMetrics = {
   cornerSmall: 12,
   cornerMedium: 16,
   cornerLarge: 24,
-  glyphSmall: 11,
+  glyphSmall: 12,
   glyphMedium: 15,
   glyphLarge: 22,
   pipSmall: 26,

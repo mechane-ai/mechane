@@ -3,12 +3,15 @@ import { formatNumber } from '@ui-sdk/core/number';
 import type { ComponentProps, ReactNode } from 'react';
 import { Badge } from '../../../core/src/index.ts';
 import { Notice, Skeleton } from '../../../feedback/src/index.ts';
+import { accessibility } from '../../../foundations/src/accessibility.ts';
+import { conditions } from '../../../foundations/src/constants.stylex.ts';
 import { colors, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { ChartFrame } from '../chart-frame.tsx';
 import type { ChartLegendItem } from '../chart-frame.tsx';
 import { ChartInspectionTitle } from '../chart-inspection.tsx';
 import { plotHeights } from '../plot/plot-layout.ts';
 import type { PlotHeight } from '../plot/plot-layout.ts';
+import { useIsCaptioned } from './caption-scope.tsx';
 import type { FigureCoverage, FigureFrameInput } from './figure-props.ts';
 
 const styles = stylex.create({
@@ -21,6 +24,12 @@ const styles = stylex.create({
   },
   footnote: { display: 'grid', gap: spacing.xs, minWidth: 0 },
   note: { margin: 0, minWidth: 0, overflowWrap: 'anywhere' },
+  compactDetail: {
+    display: { default: 'none', [conditions.compactText]: 'block' },
+    margin: 0,
+    color: colors.ink,
+    overflowWrap: 'anywhere',
+  },
   empty: { margin: 0, color: colors.muted, fontSize: typography.bodySize, lineHeight: typography.bodyLineHeight },
 });
 
@@ -60,7 +69,8 @@ export type FigureFrameProps = FigureFrameInput & {
 
 /**
  * The frame every figure shares: title, description, the plot, then the readout and one footnote. The footnote names
- * the source, how much of the data is drawn and what was done to it. A partial figure also says so beside its title.
+ * the source, how much of the data is drawn and what was done to it. In a `CaptionScope` the title is only the
+ * accessible name, and the description is not printed.
  */
 export function FigureFrame({
   title,
@@ -80,26 +90,30 @@ export function FigureFrame({
   scaleLegend,
   children,
 }: FigureFrameProps): ReactNode {
+  const isCaptioned = useIsCaptioned();
   const isPartial = coverage !== undefined && coverage.shown < coverage.total;
   const partial = isPartial ? coverageText(coverage, locale) : undefined;
-  const notes = [source, ...transforms].filter((note) => note !== undefined);
-  const hasFooter = footer !== undefined || notes.length > 0;
+  const notes = [isCaptioned ? partial : undefined, source, ...transforms].filter((note) => note !== undefined);
+  const detail = isCaptioned ? titleDetail : undefined;
+  const hasFooter = footer !== undefined || detail !== undefined || notes.length > 0;
   const heading = <ChartInspectionTitle title={title} detail={titleDetail} />;
+  const reportMark = report === undefined ? {} : { 'data-figure-report': '' };
+
+  const shownTitle =
+    partial === undefined ? (
+      heading
+    ) : (
+      <span {...stylex.props(styles.title)}>
+        {heading}
+        <Badge>{partial}</Badge>
+      </span>
+    );
 
   return (
     <ChartFrame
-      figure={{ ...figure, 'aria-busy': status === 'ready' ? undefined : true }}
-      title={
-        partial === undefined ? (
-          heading
-        ) : (
-          <span {...stylex.props(styles.title)}>
-            {heading}
-            <Badge>{partial}</Badge>
-          </span>
-        )
-      }
-      description={description}
+      figure={{ ...figure, ...reportMark, 'aria-busy': status === 'ready' ? undefined : true }}
+      title={isCaptioned ? <span {...stylex.props(accessibility.hidden)}>{title}</span> : shownTitle}
+      description={isCaptioned ? undefined : description}
       report={report}
       actions={actions}
       series={series}
@@ -108,12 +122,18 @@ export function FigureFrame({
       footer={
         hasFooter ? (
           <div {...stylex.props(styles.footnote)}>
+            {detail !== undefined && (
+              <p aria-hidden {...stylex.props(styles.compactDetail)}>
+                {detail}
+              </p>
+            )}
             {footer}
             {notes.length > 0 && <p {...stylex.props(styles.note)}>{notes.join(' · ')}</p>}
           </div>
         ) : undefined
       }
     >
+      {isCaptioned && description !== undefined && <p {...stylex.props(accessibility.hidden)}>{description}</p>}
       {children}
     </ChartFrame>
   );

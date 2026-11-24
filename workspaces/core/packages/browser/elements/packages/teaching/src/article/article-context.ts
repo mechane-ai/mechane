@@ -24,6 +24,8 @@ export type ChallengeRegistry = {
 export type ArticleScope = {
   readonly view: ArticleView;
   readonly title: string;
+  /** Whether the article and static views list the beats. False when the host's own navigation lists them. */
+  readonly hasContents: boolean;
   readonly lesson: AnyLesson;
   readonly locale: string;
   readonly labels: ArticleLabels;

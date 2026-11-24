@@ -8,7 +8,7 @@ import { useLessonContext } from '../lesson/use-lesson.ts';
 import { useArticle, useBeat } from './article-context.ts';
 import type { ArticleView } from './article-context.ts';
 import { BlockError, outsideText } from './article-error.tsx';
-import { articleLayout } from './article-layout.stylex.ts';
+import { articleLayout, articleSticky } from './article-layout.stylex.ts';
 import { FigureColumn, FigureCopy } from './figure.tsx';
 import { stateValues, valuesProblem } from './lesson-values.ts';
 import { walkMarkup } from './walk.ts';
@@ -34,7 +34,7 @@ const styles = stylex.create({
   },
   figure: {
     position: 'sticky',
-    insetBlockStart: 0,
+    insetBlockStart: articleSticky.top,
     zIndex: 1,
     gridRow: { default: 1, [WIDE]: 1 },
     gridColumn: { default: 1, [WIDE]: 2 },

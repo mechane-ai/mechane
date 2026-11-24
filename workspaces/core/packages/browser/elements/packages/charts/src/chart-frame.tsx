@@ -8,6 +8,7 @@ import { ChartHeading } from './chart-heading.tsx';
 import { ChartSeriesMarker } from './chart-series-marker.tsx';
 import { ChartSeriesSummary } from './chart-series-summary.tsx';
 import type { ChartLegendItem } from './chart-theme.ts';
+import { useIsCaptioned } from './figure/caption-scope.tsx';
 
 type ChartReportHeading = { readonly meta?: ReactNode; readonly actions?: ReactNode };
 
@@ -69,6 +70,7 @@ const styles = stylex.create({
     gap: spacing.md,
     paddingBlockEnd: spacing.lg,
   },
+  unprinted: { paddingBlockEnd: 0 },
   title: { flex: '1 1 0', minWidth: 0, overflowWrap: 'anywhere' },
   caption: {
     margin: 0,
@@ -147,6 +149,7 @@ export function ChartFrame({
   scaleLegend,
 }: ChartFrameProps): ReactNode {
   const titleId = useId();
+  const isHeadingUnprinted = useIsCaptioned() && actions === undefined;
 
   const body = (
     <>
@@ -191,7 +194,7 @@ export function ChartFrame({
 
   return (
     <figure {...mergeProps(figure, { 'aria-labelledby': titleId }, stylex.props(styles.frame))}>
-      <figcaption {...stylex.props(styles.heading)}>
+      <figcaption {...stylex.props(styles.heading, isHeadingUnprinted && styles.unprinted)}>
         <div {...stylex.props(styles.title)}>
           <p id={titleId} {...stylex.props(styles.caption)}>
             {title}

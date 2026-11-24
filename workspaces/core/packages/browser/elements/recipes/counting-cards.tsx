@@ -592,9 +592,9 @@ export const countingEssay = (
         caption="The dealt cards, on the table or counted by suit."
         description="The deal scene, or a stacked bar chart with one bar per suit, where each dealt card becomes one segment of its suit's bar."
         reads={['dealt']}
+        footer={<ParamChoice name="arrangement" />}
       >
         <CountedCards />
-        <ParamChoice name="arrangement" />
       </Figure>
     </Beat>
     <Beat id="practice">
@@ -602,14 +602,14 @@ export const countingEssay = (
         Play the deal with the weight at <Param name="trust" />. At card <Value name="dealt" /> the model gives the next
         suit <Value name="chance" />, a surprise of <Value name="surprise" />.
       </p>
+      <Playback name="dealt" pace="slow" />
       <Figure
         id="deal-run"
         caption="The deal played card by card, and the model’s surprise at each card."
         description="Play controls, the deal scene and a curve of the model's surprise at each of the twelve cards, against a flat line at two bits for an even guess."
         reads={['dealt', 'trust']}
+        header={<Transport for="dealt" />}
       >
-        <Playback name="dealt" pace="slow" />
-        <Transport for="dealt" />
         <DealScene />
         <SurpriseCurve />
       </Figure>

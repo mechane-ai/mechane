@@ -29,16 +29,18 @@ export function StaticView({ article, header, children }: ViewProps): ReactNode 
   return (
     <div {...stylex.props(styles.root)}>
       {header}
-      <nav aria-label={article.labels.contents} {...stylex.props(styles.contents)}>
-        <p {...stylex.props(styles.heading)}>{article.labels.contents}</p>
-        <ol {...stylex.props(styles.list)}>
-          {beats.map((beat) => (
-            <li key={beat.id}>
-              <a href={`#${encodeURIComponent(beat.id)}`}>{beat.title}</a>
-            </li>
-          ))}
-        </ol>
-      </nav>
+      {article.hasContents ? (
+        <nav aria-label={article.labels.contents} {...stylex.props(styles.contents)}>
+          <p {...stylex.props(styles.heading)}>{article.labels.contents}</p>
+          <ol {...stylex.props(styles.list)}>
+            {beats.map((beat) => (
+              <li key={beat.id}>
+                <a href={`#${encodeURIComponent(beat.id)}`}>{beat.title}</a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      ) : null}
       {children}
       <ArticleNotes />
     </div>

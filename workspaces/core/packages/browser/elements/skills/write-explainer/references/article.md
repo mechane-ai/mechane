@@ -15,6 +15,7 @@ arranges the same children four ways. It renders the `Lesson`, a `ChartLink` and
 | `storageKey`                                      | Keeps the values and the reader's progress across visits.                              |
 | `progress`, `defaultProgress`, `onProgressChange` | The reader's predictions, challenges, hints and visits, if the application holds them. |
 | `lessonProps`                                     | Passed to the `Lesson`: controlled values, beat and step, `shouldSyncUrl`.             |
+| `hasContents`                                     | `false` leaves the contents list out, when the host's own navigation lists the beats.  |
 | `labels`                                          | The article's own words, with English defaults.                                        |
 
 ## Markup the article reads
@@ -34,7 +35,16 @@ components to look inside them. So:
 
 - `Beat`: `id` and children. Its title, tutor notes, reveal steps and states come from the lesson.
 - `Figure`: `id` (unique, and different from every beat id), `caption`, `description` (the figure in words, printed in
-  the static view), `reads`, `size` (`'wide'`, the default, reaches into the margin; `'text'` keeps the column).
+  the static view), `reads`, `size` (`'wide'`, the default, reaches into the margin; `'text'` keeps the column), and
+  `header` and `footer` for the figure's controls. Either one sets the figure in a hairline frame with a strip above or
+  below the visual; put a `Transport` in `header` and a `ParamChoice` or a reset button in `footer`, never loose under
+  the figure. `isFramed` frames a figure with no controls; if one figure in an essay is framed, frame them all. A figure
+  with a strip is always framed, and `isFramed={false}` with one is an authoring error. The static view and the sheet
+  keep the strips but make them inert. A chart with a `report` frame inside keeps its own border, and the figure draws
+  no second one.
+- A chart or scene inside a `Figure` keeps its `title` as its accessible name but prints neither the title nor its
+  description: the caption is what the reader sees. So never repeat the beat heading in the caption or the title. The
+  beat heading names the idea, the caption says what to look at, and the title names the drawing for a screen reader.
 - `FigureReference`: `to`, a figure id. Writes "Figure 2" as a link. Never write a figure number by hand.
 - `Reveal`: `at`, a reveal step from 0 up to the beat's declared `steps`. It hides content only in the present view; the
   other views show everything. `useRevealed(at)` gives the same answer to a figure that reveals its own parts: true in
@@ -134,6 +144,44 @@ export function BiasArticle({ view, math }: { readonly view: ArticleView; readon
 }
 ```
 
+## A host that holds the beat
+
+An application whose own navigation lists the beats, such as a rail in an `AppShell`, holds the beat and passes it in
+through `lessonProps`. Give `Article` `hasContents={false}` so the reader sees one list, not two. The text keeps its
+measure.
+
+```tsx
+import { Article } from '@mechane-ai/elements/article';
+import type { ReactNode } from 'react';
+import { lesson } from './lesson.ts';
+
+type BeatId = (typeof lesson.beats)[number]['id'];
+
+export function HostedEssay({
+  beat,
+  onBeat,
+  children,
+}: {
+  readonly beat: BeatId;
+  readonly onBeat: (beat: BeatId) => void;
+  readonly children: ReactNode;
+}): ReactNode {
+  return (
+    <Article
+      lesson={lesson}
+      locale="en-US"
+      title="A neuron is a weighted vote"
+      hasContents={false}
+      lessonProps={{ beat, onBeatChange: (next) => next !== null && onBeat(next) }}
+    >
+      {children}
+    </Article>
+  );
+}
+```
+
+Scrolling a beat into view reports it through `onBeatChange`, and a beat the host sets scrolls into view.
+
 ## The four views
 
 The same children, arranged four ways. In the essay starter, `?view=present`, `?view=static` and `?view=sheet` choose
@@ -141,7 +189,7 @@ one.
 
 | View      | What it is                                                                                                                                                                                                                                                                 |
 | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `article` | The scrolling essay, with a contents list that follows the reading position and sets the lesson's beat.                                                                                                                                                                    |
+| `article` | The scrolling essay, with a contents list that follows the reading position and sets the lesson's beat. Below 1,120 px the list folds into a sticky bar, which never covers a focused control or a linked target.                                                          |
 | `present` | One beat at a time, opened at its first declared state each time the presenter reaches it. Right or Space runs `next` (the next reveal step, then the next beat); Left goes back. A `Scrolly` shows its figure beside its steps, which are walked before the reveal steps. |
 | `static`  | Every beat open at its first state, every reveal shown, each figure followed by its description, no motion.                                                                                                                                                                |
 | `sheet`   | Every beat at each of its states, read-only and scaled to fit its cell, with its tutor notes, then "Checks".                                                                                                                                                               |

@@ -18,6 +18,7 @@ import {
   usePlotSize,
   useTones,
 } from '../../../charts/src/plot/index.ts';
+import type { ChartInspectDetails, ChartInspectReason } from '../../../charts/src/plot/index.ts';
 import { colors, controls, radii, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { useLessonLocale } from '../lesson/lesson-locale.ts';
 import { onFrame } from '../time/clock.ts';
@@ -50,7 +51,7 @@ export type SceneProps = Omit<FigureProps, 'locale'> &
     readonly pace?: Pace | undefined;
     /**
      * The narrowest plot in pixels; below it the plot scrolls inside the frame. Left out, it is the width at which no
-     * two objects on the same row touch. Set it only to keep more room than the objects need.
+     * two objects on one row touch and each wire keeps room for its arrow and text. Set it only to keep more room.
      */
     readonly minWidth?: number | undefined;
     /** The wire weight magnitude drawn thickest. Weights must lie within plus or minus this. Defaults to 1. */
@@ -128,7 +129,10 @@ function framesOf(registry: SceneRegistry, id: string): ReadonlyArray<SceneFrame
   });
 }
 
-/** The ids at full strength: the inspected and active objects, what attaches to them, and what they attach to. */
+/**
+ * The ids at full strength: the inspected and active objects, what attaches to them, and what they attach to. Pass null
+ * for `inspected` when the inspection should leave the rest at full strength.
+ */
 function litIds(list: ReadonlyArray<SceneMember>, inspected: string | null): ReadonlySet<string> | null {
   const base = new Set([
     ...list.flatMap((member) => (member.isActive && member.isShown ? [member.id] : [])),
@@ -191,6 +195,7 @@ export function Scene(props: SceneProps): ReactNode {
   const readoutId = useId();
   const tones = useTones();
   const link = useLinkedInspection();
+  const [inspectedBy, setInspectedBy] = useState<ChartInspectReason | null>(null);
   const [registry] = useState(createSceneRegistry);
   const [camera] = useState(() => createTween({ x0: x[0], x1: x[1], y0: y[0], y1: y[1] }));
   const members = useSyncExternalStore(registry.subscribe, registry.members, registry.members);
@@ -332,6 +337,17 @@ export function Scene(props: SceneProps): ReactNode {
         )
       : [];
 
+  /**
+   * Remembers why an object is inspected. A pointer press on a scene whose presses act leaves the rest at full
+   * strength, so the action dims nothing; the keyboard cursor and a hover still light their object.
+   */
+  function onInspectedChange(id: string | null, details: ChartInspectDetails): void {
+    setInspectedBy(id === null ? null : details.reason);
+    link.onInspectedChange?.(id, details);
+  }
+
+  const isPressAction = onSelectedChange !== undefined && inspectedBy === 'item-press';
+
   function rectNow(id: string): SceneRect | undefined {
     const member = registry.member(id);
     const scales = setup.scalesFor(camera.get());
@@ -375,6 +391,7 @@ export function Scene(props: SceneProps): ReactNode {
   return (
     <Chart
       {...link}
+      onInspectedChange={onInspectedChange}
       items={items}
       place={place}
       selected={selected ?? null}
@@ -396,11 +413,10 @@ export function Scene(props: SceneProps): ReactNode {
                 <ChartPlot
                   ref={plotRef}
                   role="group"
-                  aria-label={plotLabel({
-                    title: frame.title,
-                    marks: labels.objects,
-                    isSelectable: onSelectedChange !== undefined,
-                  })}
+                  aria-label={[
+                    plotLabel({ title: frame.title, marks: labels.objects, isSelectable: false }),
+                    ...(onSelectedChange === undefined ? [] : [labels.press]),
+                  ].join(' ')}
                   aria-describedby={readoutId}
                   onFocus={(event) => setKeyboardFocused(event.currentTarget.matches(':focus-visible'))}
                   onBlur={() => setKeyboardFocused(false)}
@@ -413,9 +429,10 @@ export function Scene(props: SceneProps): ReactNode {
                     viewBox={`0 0 ${stageWidth} ${stageHeight}`}
                     {...stylex.props(styles.svg)}
                   >
-                    <g ref={setBack} />
-                    <g ref={setWires} />
-                    <g ref={setFront} />
+                    {/* Portals listen for focus on their container, which makes an SVG group a Tab stop in Chromium. */}
+                    <g ref={setBack} tabIndex={-1} />
+                    <g ref={setWires} tabIndex={-1} />
+                    <g ref={setFront} tabIndex={-1} />
                   </svg>
                 </ChartPlot>
                 <div {...stylex.props(styles.layer)}>
@@ -425,7 +442,7 @@ export function Scene(props: SceneProps): ReactNode {
                         inspected: view.inspected,
                         selected: view.selected,
                         cursor: view.cursor,
-                        lit: litIds(members.list, view.inspected),
+                        lit: litIds(members.list, isPressAction ? null : view.inspected),
                         isKeyboardFocused,
                         focusPlot: () => plotRef.current?.focus({ preventScroll: true }),
                       }}

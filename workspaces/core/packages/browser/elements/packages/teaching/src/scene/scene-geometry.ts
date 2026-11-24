@@ -69,8 +69,8 @@ export const sceneCircleSizes = { small: 32, medium: 48, large: 72 } as const;
 const HALF = 0.5;
 const EDGE_GAP = 8;
 const NODE_GAP = 8;
-/** The least room a wire keeps between its ends, for its arrow and a short text. */
-const WIRE_ROOM = 64;
+/** The room kept between the ends of a joining object that names none of its own, such as a custom wire. */
+const WIRE_ROOM = 16;
 const SETTLE_ROUNDS = 4;
 const ZOOM_MAX = 8;
 const SIDES = 2;
@@ -449,7 +449,7 @@ export function sceneMinWidth({
   readonly frames: ReadonlyArray<SceneFrame>;
   /** The frames the margins keep whole: `frames`, and the room drawn around some of them, such as a group's outline. */
   readonly edged: ReadonlyArray<SceneFrame>;
-  /** The ends of each wire. Wired nodes keep room between them for the wire, its arrow and its text. */
+  /** The ends of each wire, with the room the wire asks for between them: its stroke, its arrow and its text. */
   readonly links: ReadonlyArray<SceneLink>;
   readonly domain: SceneDomain;
   readonly innerHeight: number;
@@ -468,7 +468,7 @@ export function sceneMinWidth({
     ),
   );
 
-  const wired = links.map((link) => pixelsPerUnit(link.from, link.to, Math.max(WIRE_ROOM, link.room ?? 0)));
+  const wired = links.map((link) => pixelsPerUnit(link.from, link.to, link.room ?? WIRE_ROOM));
   const perUnitX = Math.max(0, ...needs, ...wired);
 
   if (perUnitX === 0) {

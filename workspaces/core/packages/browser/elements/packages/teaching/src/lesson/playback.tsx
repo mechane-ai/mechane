@@ -5,7 +5,7 @@ import type { NumberParam } from './define-lesson.ts';
 import { useLessonScope } from './lesson-context.ts';
 import type { LessonScope } from './lesson-context.ts';
 import { failLesson, LessonError } from './lesson-error.tsx';
-import type { PlaybackPace, PlayOrigin } from './lesson-player.ts';
+import type { PlaybackPace, PlaybackRun, PlayOrigin } from './lesson-player.ts';
 import type { LessonChangeOrigin } from './lesson-store.ts';
 import { lessonParam } from './param.tsx';
 
@@ -16,8 +16,11 @@ export type PlaybackProps = {
   readonly from?: number | undefined;
   /** Where play ends. Defaults to the param's max. */
   readonly to?: number | undefined;
-  /** How many steps a second: `fast`, `regular` or `slow`. */
-  readonly pace?: PlaybackPace | undefined;
+  /**
+   * How many steps a second, by name, or a timed run. A run of `long` crosses the whole range in ten seconds however
+   * many steps it has. Its `isEased` lets it start fast and settle.
+   */
+  readonly pace?: PlaybackPace | PlaybackRun | undefined;
   /** Starts over from `from` at the end instead of stopping there. */
   readonly isLooping?: boolean | undefined;
 };
@@ -77,12 +80,15 @@ function playbackProblem({
 }
 
 /**
- * Drives a number param over time, one step at a time on the lesson's shared clock: a training step, a token index, a
- * temperature sweep. It renders nothing; a `Transport` or `usePlayback` plays it. It pauses when the tab is hidden or
- * the reader changes the value, and with reduced motion play shows the end at once.
+ * Drives a number param over time on the lesson's shared clock, a step at a time or as one timed run: a training step,
+ * a token index, a temperature sweep. It renders nothing; a `Transport` or `usePlayback` plays it. It pauses when the
+ * tab is hidden or the reader changes the value, and with reduced motion play shows the end at once.
  */
 export function Playback({ name, from, to, pace = 'regular', isLooping = false }: PlaybackProps): ReactNode {
   const scope = useLessonScope('Playback');
+  // Primitives, so a pace written inline does not register the player again on every render.
+  const [steps, run] = typeof pace === 'string' ? ([pace, undefined] as const) : ([undefined, pace.run] as const);
+  const isEased = typeof pace !== 'string' && pace.isEased === true;
   const problem = playbackProblem({ scope, name, from, to });
   const found = lessonParam(scope, name);
   const bounds = 'param' in found && found.param.kind === 'number' ? found.param : { min: 0, max: 0 };
@@ -95,8 +101,8 @@ export function Playback({ name, from, to, pace = 'regular', isLooping = false }
       return;
     }
 
-    return api.register({ name, from: start, to: end, pace, isLooping });
-  }, [api, problem, name, start, end, pace, isLooping]);
+    return api.register({ name, from: start, to: end, pace: run === undefined ? steps : { run, isEased }, isLooping });
+  }, [api, problem, name, start, end, steps, run, isEased, isLooping]);
 
   return problem === undefined ? null : <LessonError>{problem}</LessonError>;
 }

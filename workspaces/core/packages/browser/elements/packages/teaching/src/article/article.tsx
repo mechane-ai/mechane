@@ -100,6 +100,11 @@ export type ArticleProps<Params extends LessonParams, Derived extends string, Be
   /** Hears each change of the reader's progress. A change an agent makes is refused before it gets here. */
   readonly onProgressChange?: ((progress: LessonProgress, details: ProgressChangeDetails) => void) | undefined;
   readonly labels?: Partial<ArticleLabels> | undefined;
+  /**
+   * Whether the article and static views show their contents list. Set it to false when the host's own navigation lists
+   * the beats, such as a rail that sets the beat through `lessonProps`. The text column keeps its measure.
+   */
+  readonly hasContents?: boolean | undefined;
   /** Passed to the `Lesson` the article renders: controlled values, beat and step, or address bar sync. */
   readonly lessonProps?:
     | Omit<LessonProps<Params, Derived, Beat>, 'lesson' | 'locale' | 'storageKey' | 'children'>
@@ -234,6 +239,7 @@ export function Article<Params extends LessonParams, Derived extends string, Bea
   defaultProgress,
   onProgressChange,
   labels,
+  hasContents = true,
   lessonProps,
   children,
 }: ArticleProps<Params, Derived, Beat>): ReactNode {
@@ -274,6 +280,7 @@ export function Article<Params extends LessonParams, Derived extends string, Bea
       const scope: ArticleScope = {
         view,
         title,
+        hasContents,
         lesson,
         locale,
         labels: words,

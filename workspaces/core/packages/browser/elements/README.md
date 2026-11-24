@@ -309,6 +309,17 @@ The default theme is light, with system fonts and a compact spacing scale. Impor
 `@mechane-ai/elements/theme` and spread `themeProps.light` or `themeProps.dark` onto the document root. Portaled content
 then inherits the same theme. The application owns the preference; no theme provider is required.
 
+`themeProps.dark` is a `className` and a `style`. A later spread with its own `className`, such as
+`{...themeProps.dark} {...stylex.props(styles.root)}`, replaces the theme's class without an error, and the page is half
+dark. Give the theme an element of its own, or join the class names:
+
+```tsx
+const theme = themeProps[isDark ? 'dark' : 'light'];
+const own = stylex.props(styles.root);
+
+<div className={`${theme.className ?? ''} ${own.className ?? ''}`} style={{ ...theme.style, ...own.style }} />;
+```
+
 For custom StyleX styles and themes, import variables from `@mechane-ai/elements/tokens.stylex` and compile-time
 constants from `@mechane-ai/elements/constants.stylex`. The archive preserves both defining paths. Variables retain the
 same names as the packaged CSS; constants need their source compiled with the consuming styles. The ordinary `/tokens`
@@ -647,7 +658,8 @@ the lesson. The idea:
   its ends, and an object with the same `id` is the same thing in every state. Every move runs on one shared clock
   (`createTween` and `useTween`), and a reader who asked for reduced motion gets the end state at once.
 - **One kernel.** A `Scene` draws with the plot kernel, so a diagram has the chart's tones, readout and keyboard cursor.
-  Every labelled object is an item the arrow keys reach.
+  Every labelled object is an item the arrow keys reach, and with the scene's `onSelectedChange` a press or Enter acts
+  on it, such as turning a card.
 - **Four views of one essay.** An `Article` renders the same children as a scrolling essay, a presentation, a static
   page or a beat sheet. The views differ in arrangement only.
 - **Only the reader's acts count.** Predictions, challenges and hints change the reader's progress only when the reader
@@ -731,7 +743,10 @@ export function BatchPage() {
 
 A state is the whole picture. `showState` (and `show` from `useLesson`) sets every param the state does not name back to
 the lesson's opening value, so a state looks the same live, on the beat sheet and in a tour. `setMany` changes some
-params and keeps the rest.
+params and keeps the rest. `show` and `reset` act on the whole lesson: a figure's Reset button that calls `reset` clears
+what the reader did in every other beat. Call `resetBeat(beat)` instead. It returns only the params that beat owns to
+their opening values, in one change with the reason `reset`. A beat owns the params its `params` lists, or else those
+its states set.
 
 `useLesson(lesson)` types the values from the definition, so `values.noise` is a number and `set('batch', 'high')` does
 not compile. `shouldSyncUrl` keeps the values in the address bar, and `storageKey` keeps them across visits. A `Scene`
@@ -781,11 +796,34 @@ export function BatchEssay() {
 }
 ```
 
+A figure with controls takes them as `header` or `footer`. The figure then sits in one hairline frame, with a strip
+above or below the visual, ruled off from it. `isFramed` frames a figure with no controls, so every figure in an essay
+can share the frame; a figure with a strip is always framed. A chart or scene inside an article `Figure` keeps its title
+as its accessible name, but prints neither the title nor the description: the figure's number and caption say what it
+is. Write the caption for the reader and the chart's title as its name.
+
 Give `Article` a `view` of `'article'` (the default scrolling essay with a contents list), `'present'` (one beat at a
 time; Right or Space goes on, and a beat opens at its first declared state), `'static'` (every beat open at its first
 state, each figure followed by its description, no script needed) or `'sheet'` (every beat in each declared state, each
 figure scaled to fit, its tutor notes, and a list of checks). The sheet names a beat with no figure, a figure with no
 description, a player with no `Transport` and a sentence control that changes no figure.
+
+An application whose own navigation lists the beats, such as a rail in an `AppShell`, holds the beat and passes it
+through `lessonProps`, and sets `hasContents={false}` so the article shows no second list:
+
+```tsx
+<Article
+  lesson={lesson}
+  locale="en-US"
+  title="Why a bigger batch is quieter"
+  hasContents={false}
+  lessonProps={{ beat, onBeatChange: (next) => next !== null && setBeat(next) }}
+>
+  {essay}
+</Article>
+```
+
+Scrolling the essay then moves the rail, and a press in the rail scrolls the essay to that beat.
 
 `recipes/counting-cards.tsx` (story `Recipes/Counting Cards`) is a full example on every layer, and
 `recipes/explorable-essay.tsx` is a short one.

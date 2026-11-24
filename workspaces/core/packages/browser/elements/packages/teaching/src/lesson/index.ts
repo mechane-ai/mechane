@@ -33,8 +33,15 @@ export type {
   LessonValuesChangeDetails,
   LessonValuesChangeReason,
 } from './lesson-store.ts';
-export type { LessonPlayer, LessonPlayingChangeReason, PlayOrigin, PlaybackPace } from './lesson-player.ts';
-export { playbackPaces } from './lesson-player.ts';
+export type {
+  LessonPlayer,
+  LessonPlayingChangeReason,
+  PlayOrigin,
+  PlaybackLength,
+  PlaybackPace,
+  PlaybackRun,
+} from './lesson-player.ts';
+export { playbackPaces, playbackRuns } from './lesson-player.ts';
 export type { LessonProps } from './lesson.tsx';
 export { Lesson } from './lesson.tsx';
 export type { LessonControls } from './use-lesson.ts';

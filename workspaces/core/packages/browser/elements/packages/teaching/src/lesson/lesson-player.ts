@@ -1,7 +1,8 @@
 import type { ChangeSource } from '@ui-sdk/core';
-import { stepValue } from '@ui-sdk/core/number';
+import { scrubTo, stepValue } from '@ui-sdk/core/number';
 import type { StepRange } from '@ui-sdk/core/number';
 import { isMotionReduced, onFrame } from '../time/clock.ts';
+import { eased } from '../time/tween.ts';
 
 /** How fast a player moves its param, in steps per second. */
 export const playbackPaces = { fast: 12, regular: 6, slow: 2 } as const;
@@ -9,12 +10,24 @@ export const playbackPaces = { fast: 12, regular: 6, slow: 2 } as const;
 /** A player's pace, from `playbackPaces`. */
 export type PlaybackPace = keyof typeof playbackPaces;
 
+/** How long a timed run takes from `from` to `to`, in seconds, whatever the number of steps between. */
+export const playbackRuns = { short: 2, regular: 5, long: 10 } as const;
+
+/** A timed run's length, from `playbackRuns`. */
+export type PlaybackLength = keyof typeof playbackRuns;
+
+/**
+ * A whole run from `from` to `to` in a set time, such as a 320-step training run that takes `long`. With `isEased` the
+ * value starts fast and settles, on the curve every tween uses.
+ */
+export type PlaybackRun = { readonly run: PlaybackLength; readonly isEased?: boolean | undefined };
+
 /** A number param that a `Playback` drives: where it starts, where it ends and how fast it goes. */
 export type LessonPlayer = {
   readonly name: string;
   readonly from: number;
   readonly to: number;
-  readonly pace: PlaybackPace;
+  readonly pace: PlaybackPace | PlaybackRun;
   readonly isLooping: boolean;
 };
 
@@ -56,12 +69,12 @@ function idle(): void {
 }
 
 /**
- * Makes a lesson's players. A player advances its param one step at a time at its pace, stops at its end or starts over
- * from `from`, and stops when the tab is hidden. With reduced motion, play shows the end at once.
+ * Makes a lesson's players. A player advances its param a step at a time at its pace, or along a timed run. It stops at
+ * its end or starts over, and when the tab is hidden; with reduced motion, play shows the end at once.
  */
 export function createPlayers(host: PlayerHost): LessonPlayers {
   const players = new Map<string, LessonPlayer>();
-  const loop = { stop: idle, last: -1, budget: 0 };
+  const loop = { stop: idle, last: -1, budget: 0, started: -1, start: 0 };
 
   function pause(origin?: PlayOrigin): void {
     loop.stop();
@@ -99,12 +112,49 @@ export function createPlayers(host: PlayerHost): LessonPlayers {
     }
   }
 
+  /** Moves a timed run to where its clock says, on the param's grid, and ends or loops it at its end. */
+  function runTo(player: LessonPlayer, run: PlaybackRun, now: number): void {
+    if (loop.started < 0) {
+      loop.started = now;
+
+      return;
+    }
+
+    const share = (player.to - loop.start) / (player.to - player.from);
+    const progress = Math.min(1, (now - loop.started) / (playbackRuns[run.run] * MS_PER_SECOND * share));
+    const travelled = run.isEased === true ? eased(progress) : progress;
+    const next = scrubTo(loop.start + (player.to - loop.start) * travelled, host.grid(player)).value;
+
+    if (next !== host.value(player.name)) {
+      host.move(player.name, next);
+    }
+
+    if (progress < 1) {
+      return;
+    }
+
+    if (player.isLooping) {
+      host.move(player.name, player.from);
+
+      loop.started = now;
+      loop.start = player.from;
+    } else {
+      finish();
+    }
+  }
+
   function frame(now: number): void {
     const playing = host.playing();
     const player = playing === null ? undefined : players.get(playing);
 
     if (player === undefined) {
       finish();
+
+      return;
+    }
+
+    if (typeof player.pace !== 'string') {
+      runTo(player, player.pace, now);
 
       return;
     }
@@ -153,6 +203,8 @@ export function createPlayers(host: PlayerHost): LessonPlayers {
 
     loop.last = -1;
     loop.budget = 0;
+    loop.started = -1;
+    loop.start = host.value(player.name);
 
     const stopFrames = onFrame(frame);
 

@@ -112,8 +112,8 @@ export function NeuronScene(): ReactNode {
 | `focus`                                      | The camera: an id or ids to zoom to, or `null` for the whole box.                             |
 | `pace`                                       | `'instant'`, `'fast'`, `'regular'` or `'slow'`. Reduced motion always jumps.                  |
 | `weightMax`                                  | The wire weight drawn thickest. Every weight must lie within plus or minus it. Defaults to 1. |
-| `selected`, `onSelectedChange`               | Selection, as on a chart.                                                                     |
-| `minWidth`, `labels`                         | Rarely needed. Below its width the scene scrolls inside its own frame.                        |
+| `selected`, `onSelectedChange`               | Selection, as on a chart, and presses: see Pressable objects below.                           |
+| `minWidth`, `labels`                         | Leave `minWidth` out: the derived width is the narrowest at which the drawing is legible.     |
 
 An object placed outside the box, a weight beyond `weightMax`, or a wire to an id that does not exist shows an error in
 the figure instead of a guess.
@@ -131,7 +131,9 @@ readout and assistive technology, and makes the object an item the arrow keys re
   keeps its state as the node moves.
 - `SceneWire`: `from`, `to`, `id` (defaults to `from>to`), `weight` (thickness by size, hue by sign), `text`, `textSide`
   (`'auto'` above a level wire and right of an upright one, or a side), `shape` (`'straight'`, `'curve'`, `'elbow'`),
-  `isDashed` for a modelled connection, `hasArrow` (default true).
+  `isDashed` for a modelled connection, `hasArrow` (default true), and `bend`: pixels a straight wire's middle bows off
+  its line, positive above an across wire. A wire does not avoid other objects, so bend one that would cross a node
+  between its ends, or put one end on another row.
 - `SceneGroup`: `id`, `around` (ids), `label`, `text`, `padding`. An outline that follows its members.
 - `SceneBracket`: `of` (ids), `side` (`'top'`, `'right'`, `'bottom'`, `'left'`), `label`, `text`.
 - `SceneCallout`: `to` (an id), `side` (`'auto'` or a side), `width`, and one sentence of prose as children.
@@ -141,6 +143,26 @@ readout and assistive technology, and makes the object an item the arrow keys re
 update start one `step` apart (`'short'`, `'regular'` or `'long'`, default `'regular'`) in `index` order, and a node
 that changes alone starts at once. Cards take it from their `SceneStack`. `delay` is a fixed wait on every change, in
 milliseconds or as `{ index, step }`; it also delays a lone move, so prefer `stagger` for a deal or a cascade.
+
+## Pressable objects
+
+A card that turns or a node that acts when pressed needs no handler of its own. Give the `Scene` `onSelectedChange`: a
+press on a labelled object, or Enter or Space on the keyboard cursor, calls it with that object's id. `selected={null}`
+keeps the press an action rather than a lasting selection, and a pointer press then dims nothing. Say what the press
+does in `labels.press`, which ends the plot's accessible name (default "Press Enter or Space to activate a part.").
+
+```tsx
+<Scene
+  title="The first card"
+  x={[0, 2]}
+  y={[0, 1]}
+  selected={null}
+  onSelectedChange={() => set('isRevealed', !isRevealed)}
+  labels={{ press: 'Press Enter or Space to turn the card over.' }}
+>
+  <SceneCard id="first" at={[1, 0.5]} rank="Q" suit="heart" isFaceUp={isRevealed} />
+</Scene>
+```
 
 ## Identity
 

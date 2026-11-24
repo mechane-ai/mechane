@@ -1,17 +1,23 @@
 import * as stylex from '@stylexjs/stylex';
 import { bindDrag, dragThreshold } from '@ui-sdk/core';
-import { clamp, scrubTo } from '@ui-sdk/core/number';
+import { clamp, scrubTo, stepFromKey } from '@ui-sdk/core/number';
 import { use, useEffect, useRef, useState } from 'react';
-import type { MouseEvent as ReactMouseEvent, ReactNode, PointerEvent as ReactPointerEvent } from 'react';
-import { useScopedTone } from '../../../../charts/src/index.ts';
+import type {
+  KeyboardEvent as ReactKeyboardEvent,
+  MouseEvent as ReactMouseEvent,
+  ReactNode,
+  PointerEvent as ReactPointerEvent,
+} from 'react';
+import { formatValue, useScopedTone } from '../../../../charts/src/index.ts';
 import type { ChartTone } from '../../../../charts/src/index.ts';
 import { ChartMark, DotMark } from '../../../../charts/src/plot/index.ts';
 import type { MarkEmphasis } from '../../../../charts/src/plot/index.ts';
+import { colors, controls } from '../../../../foundations/src/tokens.stylex.ts';
 import type { NumberParam } from '../../lesson/define-lesson.ts';
 import { LessonContext } from '../../lesson/lesson-context.ts';
 import type { LessonScope } from '../../lesson/lesson-context.ts';
 import type { Pace } from '../../time/tween.ts';
-import { SceneMarksContext, useSceneContext, useSceneObject } from '../scene-context.ts';
+import { useSceneContext, useSceneObject } from '../scene-context.ts';
 import type { SceneContextValue } from '../scene-context.ts';
 import { rectCenter } from '../scene-geometry.ts';
 import type { ScenePosition } from '../scene-geometry.ts';
@@ -24,7 +30,7 @@ import { PlaneLabel, spotsAround } from './plane-label.tsx';
 import { planeLabels } from './plane-labels.ts';
 import type { ScenePlaneLabels } from './plane-labels.ts';
 
-/** Why a point moved: a pointer drag, or an arrow key. A cancelled drag reports `drag` with the starting position. */
+/** Why a point moved: a pointer drag, or a key. A cancelled drag reports `drag` with the starting position. */
 export type ScenePointMoveDetails = {
   readonly reason: 'drag' | 'step-key';
   readonly event: PointerEvent | KeyboardEvent;
@@ -54,8 +60,8 @@ export type ScenePointProps = {
   /** True keeps the point and what attaches to it at full strength while the rest recede. */
   readonly isActive?: boolean | undefined;
   /**
-   * Makes the point movable by a pointer and by the arrow keys when it is the keyboard cursor. It is told where the
-   * reader wants the point; the point stays where `at` says until the application moves it.
+   * Makes the point a slider the reader drags or reaches with Tab and moves with the keys. It is told where the reader
+   * wants the point; the point stays where `at` says until the application moves it.
    */
   readonly onMove?: ((position: ScenePosition, details: ScenePointMoveDetails) => void) | undefined;
   /**
@@ -77,14 +83,10 @@ const HIT_SIZE = 28;
 const HIT_HALF = 14;
 const KEY_STEPS = 100;
 const LARGE_STEP = 10;
-const PLOT = '[role="group"][tabindex]';
-
-const keyDirections: Readonly<Record<string, readonly [number, number] | undefined>> = {
-  ArrowRight: [1, 0],
-  ArrowLeft: [-1, 0],
-  ArrowUp: [0, 1],
-  ArrowDown: [0, -1],
-};
+/** How an axis no param owns writes its value for the slider's spoken value. */
+const FREE_FORMAT = { maximumFractionDigits: 2 } as const;
+/** The keys that move the y axis of a point that moves on both. */
+const verticalKeys: ReadonlySet<string> = new Set(['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown']);
 
 const styles = stylex.create({
   target: (transform: string) => ({
@@ -96,7 +98,13 @@ const styles = stylex.create({
     transform,
     pointerEvents: 'auto',
   }),
-  movable: { cursor: 'grab', touchAction: 'none' },
+  movable: {
+    'cursor': 'grab',
+    'touchAction': 'none',
+    'borderRadius': '50%',
+    'outlineStyle': 'none',
+    ':focus-visible': { outlineWidth: controls.focusWidth, outlineStyle: 'solid', outlineColor: colors.focus },
+  },
   dragging: { cursor: 'grabbing' },
   mark: { position: 'absolute', inset: 0, borderRadius: '50%', outlineStyle: 'none' },
 });
@@ -166,33 +174,66 @@ function constrain(raw: ScenePosition, { at, grids, along }: Constraint): SceneP
   return [across, along === 'x' ? at[1] : landed(raw[1], grids.y)];
 }
 
-/** The position an arrow key asks for, or undefined when the key is not one this point uses. */
+/** The axes a movable point moves on: one it follows, or both when nothing keeps it to a line. */
+function movingAxes(along: ScenePointAlong | undefined): ReadonlyArray<'x' | 'y'> {
+  if (along === undefined) {
+    return ['x', 'y'];
+  }
+
+  return along === 'y' ? ['y'] : ['x'];
+}
+
+/**
+ * The position a key asks for, as on a slider: the arrows step, Shift and Page Up or Down take ten steps, and Home and
+ * End go to the ends. On a point that moves on both axes, Up, Down and the page keys move y and the rest move x.
+ */
 function keyMove(event: KeyboardEvent, constraint: Constraint): ScenePosition | undefined {
-  const direction = keyDirections[event.key];
-  const hasModifier = event.altKey || event.ctrlKey || event.metaKey;
   const { at, grids, along } = constraint;
+  const axes = movingAxes(along);
+  const [first] = axes;
+  const axis = axes.length > 1 && verticalKeys.has(event.key) ? 'y' : (first ?? 'x');
+  const arrows = axes.length > 1 ? (axis === 'y' ? 'vertical' : 'horizontal') : 'all';
+  const step = stepFromKey(event, { arrows, orientation: axis === 'y' ? 'vertical' : 'horizontal' });
+  const hasModifier = event.ctrlKey || event.metaKey;
 
-  if (direction === undefined || hasModifier) {
+  if (step === null || hasModifier) {
     return undefined;
   }
 
-  const isAcross = direction[0] !== 0;
-  const isLockedY = along === 'x' && !isAcross;
-  const isLockedX = along === 'y' && isAcross;
+  const grid = grids[axis];
+  const index = axis === 'x' ? 0 : 1;
+  const current = at[index];
+  const unit = grid.step ?? (grid.max - grid.min) / KEY_STEPS;
+  const bounded = step.bound === 'min' ? grid.min : grid.max;
+  const stepped = current + (step.direction ?? 0) * unit * (step.size === 'large' ? LARGE_STEP : 1);
+  const value = step.bound === undefined ? stepped : bounded;
 
-  if (isLockedY || isLockedX) {
-    return undefined;
-  }
+  return constrain(axis === 'x' ? [value, at[1]] : [at[0], value], constraint);
+}
 
-  const size = event.shiftKey ? LARGE_STEP : 1;
-  const stepX = (grids.x.step ?? (grids.x.max - grids.x.min) / KEY_STEPS) * size;
-  const stepY = (grids.y.step ?? (grids.y.max - grids.y.min) / KEY_STEPS) * size;
+/** What the slider says its value is: each axis it moves on, a bound one by its param's name and format. */
+function spokenValue({
+  at,
+  axes,
+  params,
+  locale,
+  labels,
+}: {
+  readonly at: ScenePosition;
+  readonly axes: ReadonlyArray<'x' | 'y'>;
+  readonly params: { readonly x?: NumberParam; readonly y?: NumberParam };
+  readonly locale: string;
+  readonly labels: ScenePlaneLabels;
+}): string {
+  return axes
+    .map((axis) => {
+      const param = params[axis];
+      const value = at[axis === 'x' ? 0 : 1];
+      const written = formatValue({ value, locale, format: param?.format ?? FREE_FORMAT });
 
-  if (typeof along === 'function') {
-    return constrain([at[0] + (direction[0] + direction[1]) * stepX, at[1]], constraint);
-  }
-
-  return constrain([at[0] + direction[0] * stepX, at[1] + direction[1] * stepY], constraint);
+      return param === undefined ? written : fillLabel(labels.pointValue, { name: param.label, value: written });
+    })
+    .join(', ');
 }
 
 type Live = {
@@ -203,9 +244,8 @@ type Live = {
 };
 
 /**
- * A point at a position in the scene, with optional text beside it. Give it `sets` or `onMove` and the reader grabs it
- * with a pointer, or moves it with the arrow keys while it is the keyboard cursor. It follows the pointer at once and
- * eases only when the application moves it.
+ * A point at a position in the scene, with optional text beside it. Give it `sets` or `onMove` and it is a slider: the
+ * reader drags it, or reaches it with Tab and moves it with the arrow keys, Home and End. It eases only when moved.
  */
 export function ScenePoint({
   id,
@@ -224,11 +264,9 @@ export function ScenePoint({
   labels: labelInput,
 }: ScenePointProps): ReactNode {
   const scene = useSceneContext();
-  const marks = use(SceneMarksContext);
   const scopedTone = useScopedTone(id);
   const labels = { ...planeLabels, ...labelInput };
   const [isDragging, setDragging] = useState(false);
-  const wrapper = useRef<HTMLDivElement>(null);
   const stop = useRef<(() => void) | null>(null);
   const lessonScope = use(LessonContext);
   const isMovable = onMove !== undefined || sets !== undefined;
@@ -284,48 +322,35 @@ export function ScenePoint({
 
   useObstacle({ id, line: isDrawn ? [{ x: across, y: up }] : [] });
 
-  const isCursor = marks.cursor === id;
-  const isKeyed = isMovable && isCursor && object.isVisible;
-
   useEffect(() => {
     live.current = { scene, constraint, move };
   });
 
   useEffect(() => () => stop.current?.(), []);
 
-  useEffect(() => {
-    if (!isKeyed) {
+  function onKeyDown(event: ReactKeyboardEvent<HTMLDivElement>): void {
+    const next = isMovable ? keyMove(event.nativeEvent, constraint) : undefined;
+
+    if (next === undefined) {
       return;
     }
 
-    function onKey(event: KeyboardEvent): void {
-      const figure = wrapper.current?.closest('figure');
-      const { target } = event;
-      const isPlot = target instanceof Element && figure?.contains(target) === true && target.matches(PLOT);
-      const next = isPlot ? keyMove(event, live.current.constraint) : undefined;
-
-      if (next === undefined) {
-        return;
-      }
-
-      event.preventDefault();
-      event.stopPropagation();
-
-      const current = live.current.constraint.at;
-
-      if (next[0] !== current[0] || next[1] !== current[1]) {
-        live.current.move(next, { reason: 'step-key', event });
-      }
-    }
-
-    document.addEventListener('keydown', onKey, true);
-
-    return () => document.removeEventListener('keydown', onKey, true);
-  }, [isKeyed]);
-
-  function onMouseDown(event: ReactMouseEvent): void {
     event.preventDefault();
-    object.focusPlot();
+    event.stopPropagation();
+
+    if (next[0] !== at[0] || next[1] !== at[1]) {
+      move(next, { reason: 'step-key', event: event.nativeEvent });
+    }
+  }
+
+  function onMouseDown(event: ReactMouseEvent<HTMLDivElement>): void {
+    event.preventDefault();
+
+    if (isMovable) {
+      event.currentTarget.focus({ preventScroll: true });
+    } else {
+      object.focusPlot();
+    }
   }
 
   function onPointerDown(event: ReactPointerEvent<HTMLDivElement>): void {
@@ -386,6 +411,22 @@ export function ScenePoint({
 
   const { x: dotX, y: dotY } = rectCenter(object.rect);
   const resolved = tone ?? scopedTone ?? 'series1';
+  const axes = movingAxes(constraint.along);
+  const primary = axes.length === 1 && axes[0] === 'y' ? 'y' : 'x';
+
+  const slider = isMovable
+    ? {
+        'role': 'slider',
+        'tabIndex': 0,
+        'aria-label': label,
+        'aria-orientation': primary === 'y' ? ('vertical' as const) : ('horizontal' as const),
+        'aria-valuenow': at[primary === 'x' ? 0 : 1],
+        'aria-valuemin': constraint.grids[primary].min,
+        'aria-valuemax': constraint.grids[primary].max,
+        'aria-valuetext': spokenValue({ at, axes, params, locale: scene.locale, labels }),
+        onKeyDown,
+      }
+    : {};
 
   return (
     <>
@@ -410,7 +451,7 @@ export function ScenePoint({
       </PlaneMarks>
       {label !== undefined && isShown && (
         <div
-          ref={wrapper}
+          {...slider}
           data-scene-point={id}
           onMouseDown={onMouseDown}
           onPointerDown={onPointerDown}

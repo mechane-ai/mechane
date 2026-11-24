@@ -109,10 +109,9 @@ const book: Readonly<Record<ExplainerPart, GuideText>> = {
     entry: LESSON,
     question: 'How does the figure change as I sweep this value?',
     guidance:
-      'Use it under a figure for a number param the reader sweeps through its range. Inside a sentence, use Param; for a time-like param the lesson plays, use Transport.',
-    example: `<Figure id="bars" caption="Probabilities after the softmax." description="Four bars, one per token, that sum to one." reads={['temperature']}>
+      "Use it in a figure's header or footer for a number param the reader sweeps through its range. Inside a sentence, use Param; for a time-like param the lesson plays, use Transport.",
+    example: `<Figure id="bars" caption="Probabilities after the softmax." description="Four bars, one per token, that sum to one." reads={['temperature']} footer={<ParamSlider name="temperature" />}>
   <TokenBars />
-  <ParamSlider name="temperature" />
 </Figure>`,
   },
   ParamChoice: {
@@ -133,7 +132,7 @@ const book: Readonly<Record<ExplainerPart, GuideText>> = {
     entry: LESSON,
     question: 'How does this unfold over time?',
     guidance:
-      'Use it to drive a number param step by step, such as training steps or tokens generated. It renders nothing: pair it with a Transport so the reader can pause and scrub.',
+      "Use it to drive a number param step by step, such as training steps or tokens generated, or as one timed run with pace={{ run: 'long' }}, eased for a blend. It renders nothing: pair it with a Transport so the reader can pause and scrub.",
     example: `<Playback name="trainStep" pace="regular" />
 <Transport for="trainStep" />`,
   },
@@ -141,8 +140,10 @@ const book: Readonly<Record<ExplainerPart, GuideText>> = {
     entry: LESSON,
     question: 'Can I pause it, step through it, or go back?',
     guidance:
-      'Use it beside every Playback. It plays, pauses, steps and scrubs the same param. Use ParamSlider when the value has no natural order in time.',
-    example: `<Transport for="trainStep" />`,
+      'Use it beside every Playback, in the header of the figure it drives. It plays, pauses, steps and scrubs the same param. Use ParamSlider when the value has no natural order in time.',
+    example: `<Figure id="run" caption="The loss as training runs." description="A falling loss curve." reads={['trainStep']} header={<Transport for="trainStep" />}>
+  <LossCurve />
+</Figure>`,
   },
   Scene: {
     entry: SCENE,
@@ -168,7 +169,7 @@ const book: Readonly<Record<ExplainerPart, GuideText>> = {
     entry: SCENE,
     question: 'What feeds into what, and how strongly?',
     guidance:
-      'Use it between two nodes; weight sets its thickness and it stays attached while they move. Its text sits beside the stroke, above a level wire and right of an upright one; set textSide when that side collides. Use SceneFlow for a whole derivation graph.',
+      'Use it between two nodes; weight sets its thickness and it stays attached while they move. Its text sits beside the stroke, above a level wire and right of an upright one; set textSide when that side collides. A wire runs straight through what lies between its ends; give it a bend in pixels to bow it around a node. Use SceneFlow for a whole derivation graph.',
     example: `<SceneWire from="queen" to="sum" label="Weight 0.8" weight={0.8} text="0.8" textSide="bottom" hasArrow />`,
   },
   SceneGroup: {
@@ -231,7 +232,7 @@ const book: Readonly<Record<ExplainerPart, GuideText>> = {
     entry: SCENE,
     question: 'Where is this one value on the plane, and what if I move it?',
     guidance:
-      'Use it for a single marked point. With sets, the reader drags it or moves it with the arrow keys and it writes lesson params on their step grid; at reads them back, and along keeps it on a curve. Use ScatterPlot for many records.',
+      'Use it for a single marked point. With sets it is a slider: the reader drags it, or reaches it with Tab and moves it with the arrow keys, Home and End, and it writes lesson params on their step grid; at reads them back, and along keeps it on a curve. Use ScatterPlot for many records.',
     example: `<ScenePoint id="probe" at={[values.temperature, values.entropy]} along={entropyOf} sets={{ x: 'temperature' }} label={\`Temperature \${values.temperature.toFixed(2)}\`} />`,
   },
   SceneVector: {
@@ -266,8 +267,10 @@ const book: Readonly<Record<ExplainerPart, GuideText>> = {
     entry: SCENE,
     question: 'What is on the other side of this, and which comes first?',
     guidance:
-      'Use it for an object that turns over, lifts or deals out, like a playing card or a hidden answer. Use SceneNode for a flat label, and SceneStack to lay several out.',
-    example: `<SceneCard id="queen" at={[1, 1]} rank="Q" suit="heart" isFaceUp={isRevealed} label="Queen of Hearts" />`,
+      'Use it for an object that turns over, lifts or deals out, like a playing card or a hidden answer. A face-down card shows and says nothing of its face, so leave out label and keep its id free of the card. To turn it when pressed, give the Scene selected={null} and onSelectedChange. Use SceneNode for a flat label, and SceneStack to lay several out.',
+    example: `<Scene title="The first card" x={[0, 2]} y={[0, 1]} selected={null} onSelectedChange={() => set('isRevealed', !isRevealed)}>
+  <SceneCard id="first" at={[1, 0.5]} rank="Q" suit="heart" isFaceUp={isRevealed} />
+</Scene>`,
   },
   SceneStack: {
     entry: SCENE,
@@ -287,7 +290,7 @@ const book: Readonly<Record<ExplainerPart, GuideText>> = {
     entry: SCENE,
     question: 'What is inside this vector or matrix, cell by cell?',
     guidance:
-      'Use it for a small grid of values that moves and changes inside a scene: a flat list is one row, a list of lists is a matrix. Use Matrix for a large grid with axes and a scale legend.',
+      'Use it for a small grid of values that moves and changes inside a scene: a flat list is one row, a list of lists is a matrix. Each cell takes a tone, such as its suit, and isMuted for one already used. Use Matrix for a large grid with axes and a scale legend.',
     example: `<SceneCells id="weights" at={[2, 1]} values={[[0.2, -0.4, 0.1], [0.7, 0.3, -0.2]]} rowLabels={['h1', 'h2']} format={{ maximumFractionDigits: 1 }} label="Weight matrix" />`,
   },
   SceneToken: {
@@ -354,7 +357,7 @@ const book: Readonly<Record<ExplainerPart, GuideText>> = {
     entry: ARTICLE,
     question: 'What am I looking at here?',
     guidance:
-      'Wrap every scene or chart in a beat with a Figure: a caption, a description for the static view, and the values it reads. Size text keeps it to the prose column.',
+      'Wrap every scene or chart in a beat with a Figure: a caption, a description for the static view, and the values it reads. Its header and footer frame the figure with its controls, and isFramed frames one with no controls, so an essay frames all its figures or none. A chart or scene inside prints only the caption and keeps its title as its name, so never repeat the beat heading. Size text keeps it to the prose column.',
     example: `<Figure id="bet-split" caption="Your bet, split across the two cards." description="Two cards with the share of the bet on each." reads={['bet']} size="text">
   <BetScene />
 </Figure>`,

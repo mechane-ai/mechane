@@ -1,8 +1,10 @@
 import * as stylex from '@stylexjs/stylex';
+import { RotateCcw } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { BarChart } from '../../packages/charts/src/cartesian/bar-chart.tsx';
 import { formatValue } from '../../packages/charts/src/figure/figure-format.ts';
 import { CurveChart } from '../../packages/charts/src/trend/curve-chart.tsx';
+import { Button } from '../../packages/core/src/actions.tsx';
 import { spacing } from '../../packages/foundations/src/tokens.stylex.ts';
 import type { ArticleMath } from '../../packages/teaching/src/article/article-context.ts';
 import { Beat } from '../../packages/teaching/src/article/beat.tsx';
@@ -138,6 +140,7 @@ export const temperatureLesson = defineLesson({
       id: 'training',
       title: 'Training sharpens the scores',
       steps: 1,
+      params: ['trainStep'],
       states: [
         { id: 'untrained', label: 'Step 0', values: { trainStep: 0, temperature: 1 } },
         { id: 'trained', label: 'Step 40', values: { trainStep: TRAIN_STEPS, temperature: 1 } },
@@ -184,6 +187,23 @@ function TokenBars({ title }: { readonly title: string }): ReactNode {
       valueLabel="Probability"
       height="compact"
     />
+  );
+}
+
+const RESET_ICON = 14;
+
+/** Puts the training run back to step 0, and leaves the temperature the reader set in other beats. */
+function ResetTraining(): ReactNode {
+  const { resetBeat } = useLesson(temperatureLesson);
+
+  return (
+    <Button
+      variant="ghost"
+      density="compact"
+      onClick={(event) => resetBeat('training', { reason: 'reset', event: event.nativeEvent })}
+    >
+      <RotateCcw size={RESET_ICON} aria-hidden /> Reset the run
+    </Button>
   );
 }
 
@@ -488,9 +508,10 @@ export const temperatureEssay = (
         caption="The candidates as training sharpens the scores, at a fixed temperature."
         description="Four bars. As training proceeds, Paris grows and the other three shrink, as if the temperature were lowered."
         reads={['trainStep']}
+        header={<Transport for="trainStep" />}
+        footer={<ResetTraining />}
       >
         <TokenBars title="Next-token probabilities during training" />
-        <Transport for="trainStep" />
       </Figure>
       <Reveal at={1}>
         <p>

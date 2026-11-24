@@ -22,8 +22,13 @@ export type LessonControls<Params extends LessonParams, Derived extends string, 
   readonly setMany: (values: Partial<ParamValues<Params>>, origin?: LessonChangeOrigin) => boolean;
   /** Shows a state a beat declares, by its id, in one change. Params it does not name take their opening values. */
   readonly show: (state: string, origin?: LessonChangeOrigin) => boolean;
-  /** Puts every param back to its opening value. */
-  readonly reset: () => boolean;
+  /** Puts every param of the whole lesson back to its opening value, the reader's work in every beat included. */
+  readonly reset: (origin?: LessonChangeOrigin) => boolean;
+  /**
+   * Puts the params one beat owns back to their opening values in one change: its `params`, or those its states set.
+   * Use it for a figure's reset button, so the other beats keep the reader's values.
+   */
+  readonly resetBeat: (beat: Beat, origin?: LessonChangeOrigin) => boolean;
   readonly beat: Beat | null;
   /** The reveal step inside the beat, from 0. */
   readonly step: number;
@@ -48,7 +53,8 @@ function controlsOf<Params extends LessonParams, Derived extends string, Beat ex
     set: (name, value, origin) => api.apply(name, value, origin ?? { reason: 'imperative' }),
     setMany: (values, origin) => api.setParams(values, origin),
     show: (id, origin) => api.showState(id, origin),
-    reset: () => api.reset(),
+    reset: (origin) => api.reset(origin),
+    resetBeat: (beat, origin) => api.resetBeat(beat, origin),
     beat: lesson.beats.find((item) => item.id === state.beat)?.id ?? null,
     step: state.step,
     goTo: (beat, step, origin) => api.setBeat(beat, step ?? 0, origin),

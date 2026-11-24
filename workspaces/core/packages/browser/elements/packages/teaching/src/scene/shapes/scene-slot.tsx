@@ -26,7 +26,7 @@ export type SceneSlotProps = {
   readonly text?: string | undefined;
   /** The readout sentence. With one, the arrow keys reach the slot; Left and Right step on to a card sitting on it. */
   readonly label?: string | undefined;
-  /** True draws the slot as the place that matters now: a solid outline and a tint. */
+  /** True draws the slot as the place that matters now: a solid outline and a tint. Nothing else recedes. */
   readonly isActive?: boolean | undefined;
   /** The hue of the outline while active. Defaults to neutral. */
   readonly tone?: ChartTone | undefined;
@@ -117,7 +117,6 @@ export function SceneSlot({
     values: {},
     label,
     isShown,
-    isActive,
     emphasis,
     order: SLOT_ORDER,
   });

@@ -47,6 +47,11 @@ export type SceneWireProps = {
   readonly tone?: ChartTone | undefined;
   /** How the wire runs between its ends. Defaults to `straight`. */
   readonly shape?: SceneWireShape | undefined;
+  /**
+   * Pixels the wire's middle bows off the line between its ends. Positive is above a wire that runs across and right of
+   * an upright one. A wire does not avoid other objects, so bow it around a node between its ends.
+   */
+  readonly bend?: number | undefined;
   /** Dashed for a modelled or proposed connection. */
   readonly isDashed?: boolean | undefined;
   /** Draws an arrowhead at the `to` end. Defaults to true. */
@@ -63,6 +68,10 @@ const WIDTH_MIN = 1.25;
 const WIDTH_MAX = 6;
 const ARROW_LENGTH = 7;
 const ARROW_HALF = 3.5;
+/** The shortest stroke that still reads as a wire between two objects, in pixels. */
+const STROKE_MIN = 16;
+/** The pixels a wire's text keeps from the objects at either end, past its estimated width. */
+const TEXT_END_GAP = 4;
 const TEXT_OFFSET = 7;
 /** How far along a straight wire its text sits: before the middle, where wires into one node are still apart. */
 const TEXT_ALONG = 0.4;
@@ -124,11 +133,22 @@ function textSpot(
   return { x: point.x, y: normal.y < -SIDE_LEAN ? point.y - TEXT_DESCENT : below, anchor };
 }
 
-/** The pixels a straight wire keeps between its ends so that its text fits beside it, arrow included. */
-function textRoom(text: string): number {
-  const box = labelBox({ x: 0, y: 0, anchor: 'start', text });
+/**
+ * The pixels a wire keeps between its ends: a stroke long enough to read as a wire, or to hold its text beside it, and
+ * its arrow. Text sits before the middle, so the stroke is long enough that the text clears both ends by a gap.
+ */
+function wireRoom(text: string | undefined, hasArrow: boolean): number {
+  const arrow = hasArrow ? ARROW_LENGTH : 0;
 
-  return Math.ceil((box.right - box.left) / (SIDES * Math.min(TEXT_ALONG, 1 - TEXT_ALONG)) + ARROW_LENGTH);
+  if (text === undefined) {
+    return STROKE_MIN + arrow;
+  }
+
+  const box = labelBox({ x: 0, y: 0, anchor: 'start', text });
+  const width = box.right - box.left + SIDES * TEXT_END_GAP;
+  const reach = Math.ceil(width / (SIDES * Math.min(TEXT_ALONG, 1 - TEXT_ALONG)));
+
+  return Math.max(STROKE_MIN, reach) + arrow;
 }
 
 function defaultTone(weight: number | undefined): ChartTone {
@@ -153,6 +173,7 @@ export function SceneWire({
   weight,
   tone,
   shape = 'straight',
+  bend = 0,
   isDashed = false,
   hasArrow = true,
   isShown = true,
@@ -176,10 +197,10 @@ export function SceneWire({
   const object = useSceneObject({
     id,
     kind: 'wire',
-    values: { weight: weight ?? 0 },
+    values: { weight: weight ?? 0, bend: shape === 'straight' ? bend : 0 },
     label,
     attaches: [from, to],
-    room: text === undefined ? undefined : textRoom(text),
+    room: wireRoom(text, hasArrow),
     isShown,
     isActive,
     emphasis,
@@ -214,32 +235,41 @@ export function SceneWire({
   const delta = axis === 'x' ? targetCenter.x - sourceCenter.x : targetCenter.y - sourceCenter.y;
   const sign = delta < 0 ? -1 : 1;
   const isStraight = shape === 'straight';
+  const bow = textNormal(unit(sourceCenter, targetCenter), 'auto');
+  const bowed = object.values.bend * SIDES;
+  const middle = { x: (sourceCenter.x + targetCenter.x) * HALF, y: (sourceCenter.y + targetCenter.y) * HALF };
+  const control = { x: middle.x + bow.x * bowed, y: middle.y + bow.y * bowed };
+  const isBowed = isStraight && object.values.bend !== 0;
 
   const start = isStraight
-    ? edgePoint({ rect: sourceRect, shape: source.member.shape, toward: targetCenter })
+    ? edgePoint({ rect: sourceRect, shape: source.member.shape, toward: isBowed ? control : targetCenter })
     : sidePoint({ rect: sourceRect, axis, sign });
 
   const end = isStraight
-    ? edgePoint({ rect: targetRect, shape: target.member.shape, toward: sourceCenter })
+    ? edgePoint({ rect: targetRect, shape: target.member.shape, toward: isBowed ? control : sourceCenter })
     : sidePoint({ rect: targetRect, axis, sign: -sign });
 
   const axisDirection = axis === 'x' ? { x: sign, y: 0 } : { x: 0, y: sign };
   const direction = isStraight ? unit(start, end) : axisDirection;
-  const stop = hasArrow ? { x: end.x - direction.x * ARROW_LENGTH, y: end.y - direction.y * ARROW_LENGTH } : end;
+  const arriving = isBowed ? unit(control, end) : direction;
+  const stop = hasArrow ? { x: end.x - arriving.x * ARROW_LENGTH, y: end.y - arriving.y * ARROW_LENGTH } : end;
 
-  const path = isStraight
-    ? linePath([start, stop])
-    : linkPath({ x1: start.x, y1: start.y, x2: stop.x, y2: stop.y, axis, shape });
+  const bowedPath = `M${start.x},${start.y}Q${control.x},${control.y} ${stop.x},${stop.y}`;
+  const straightPath = isBowed ? bowedPath : linePath([start, stop]);
+
+  const path = isStraight ? straightPath : linkPath({ x1: start.x, y1: start.y, x2: stop.x, y2: stop.y, axis, shape });
 
   const resolved = tone ?? defaultTone(weight);
   const color = object.emphasis === 'context' ? sceneContextColor : chartToneColors[resolved];
   const magnitude = Math.min(1, Math.abs(object.values.weight) / scene.weightMax);
   const width = weight === undefined ? WIDTH_MIN : WIDTH_MIN + magnitude * (WIDTH_MAX - WIDTH_MIN);
   const along = isStraight ? TEXT_ALONG : HALF;
-  const middle = { x: start.x + (stop.x - start.x) * along, y: start.y + (stop.y - start.y) * along };
-  const normal = { x: -direction.y, y: direction.x };
+  const onChord = { x: start.x + (stop.x - start.x) * along, y: start.y + (stop.y - start.y) * along };
+  const lift = isBowed ? SIDES * along * (1 - along) * bowed : 0;
+  const anchor = { x: onChord.x + bow.x * lift, y: onChord.y + bow.y * lift };
+  const normal = { x: -arriving.y, y: arriving.x };
   const side = textNormal(direction, textSide);
-  const spot = textSpot({ x: middle.x + side.x * TEXT_OFFSET, y: middle.y + side.y * TEXT_OFFSET }, side);
+  const spot = textSpot({ x: anchor.x + side.x * TEXT_OFFSET, y: anchor.y + side.y * TEXT_OFFSET }, side);
 
   const arrow = [
     `M${end.x},${end.y}`,

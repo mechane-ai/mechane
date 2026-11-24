@@ -1,13 +1,14 @@
 import * as stylex from '@stylexjs/stylex';
 import { createContext, use, useId } from 'react';
 import type { ReactNode } from 'react';
+import { CaptionScope } from '../../../charts/src/index.ts';
 import { accessibility } from '../../../foundations/src/accessibility.ts';
 import { conditions } from '../../../foundations/src/constants.stylex.ts';
 import { colors, controls, radii, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { LessonError } from '../lesson/lesson-error.tsx';
 import { useArticle, useBeat } from './article-context.ts';
 import { BlockError, outsideText, unlistedText } from './article-error.tsx';
-import { articleLayout } from './article-layout.stylex.ts';
+import { articleLayout, articleSticky, framedFigure } from './article-layout.stylex.ts';
 
 const styles = stylex.create({
   figure: {
@@ -17,10 +18,49 @@ const styles = stylex.create({
     marginInline: 0,
     marginBlock: spacing.xl,
     clear: 'both',
-    scrollMarginBlockStart: spacing.xl,
+    scrollMarginBlockStart: `calc(${articleSticky.top} + ${spacing.xl})`,
     breakInside: 'avoid',
   },
   cell: { marginBlock: 0 },
+  /** The hairline frame. A chart's report frame inside stands in for it, so the frame and its rules give way. */
+  frame: {
+    display: 'grid',
+    minWidth: 0,
+    borderWidth: { 'default': 1, ':has([data-figure-report])': 0 },
+    borderStyle: 'solid',
+    borderColor: colors.line,
+    borderRadius: radii.md,
+    backgroundColor: colors.surface,
+  },
+  strip: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'center',
+    columnGap: spacing.md,
+    rowGap: spacing.sm,
+    minWidth: 0,
+    paddingBlock: spacing.sm,
+    paddingInline: { default: spacing.md, [articleLayout.withMargin]: spacing.lg },
+    borderColor: colors.line,
+    borderStyle: 'solid',
+    borderWidth: 0,
+  },
+  top: { borderBlockEndWidth: { default: 1, [stylex.when.ancestor(':has([data-figure-report])', framedFigure)]: 0 } },
+  bottom: {
+    borderBlockStartWidth: { default: 1, [stylex.when.ancestor(':has([data-figure-report])', framedFigure)]: 0 },
+  },
+  visual: {
+    minWidth: 0,
+    padding: {
+      default: spacing.md,
+      [articleLayout.withMargin]: {
+        default: spacing.lg,
+        [stylex.when.ancestor(':has([data-figure-report])', framedFigure)]: 0,
+      },
+      [stylex.when.ancestor(':has([data-figure-report])', framedFigure)]: 0,
+    },
+  },
   caption: {
     margin: 0,
     maxWidth: articleLayout.measure,
@@ -70,7 +110,27 @@ const sizes = stylex.create({
   wide: { marginInlineEnd: { default: 0, [articleLayout.withMargin]: `calc(-1 * ${articleLayout.marginSpan})` } },
 });
 
-export type FigureProps = {
+/** The frame a figure takes: given a strip it is framed, and without one `isFramed` frames the visual alone. */
+export type FigureFraming =
+  | {
+      /** Frames a figure that has no strip, so it matches the framed figures beside it. Defaults to false. */
+      readonly isFramed?: boolean | undefined;
+      readonly header?: undefined;
+      readonly footer?: undefined;
+    }
+  | {
+      /** A figure with a strip is always framed: its controls belong to the frame. */
+      readonly isFramed?: true | undefined;
+      /**
+       * Controls above the visual, such as a `Transport`. Given this or `footer`, the figure sits in a hairline frame
+       * with a strip for each, ruled off from the visual.
+       */
+      readonly header?: ReactNode;
+      /** Controls below the visual, such as a `ParamChoice` or a reset button, in the framed figure's bottom strip. */
+      readonly footer?: ReactNode;
+    };
+
+export type FigureProps = FigureFraming & {
   /** The figure's id, unique in the article. It is the element id, so `#id` links land on the figure. */
   readonly id: string;
   /** What the reader should see in the figure, after its number. */
@@ -84,9 +144,12 @@ export type FigureProps = {
   readonly reads?: ReadonlyArray<string> | undefined;
   /** Wide figures, the default, reach into the margin column on wide screens. */
   readonly size?: FigureSize | undefined;
-  /** The chart, scene or image. */
+  /** The chart, scene or image. A chart or scene inside keeps its title as its name and prints only the caption. */
   readonly children: ReactNode;
 };
+
+/** The views where a figure's controls cannot act, so its strips are inert. */
+const frozenViews: ReadonlySet<string> = new Set(['static', 'sheet']);
 
 /** A figure's number in its article, counted from 1 in reading order, or undefined when the article has none. */
 function useFigureNumber(id: string): number | undefined {
@@ -104,21 +167,42 @@ function missingText(id: string): string {
  * are numbered in reading order. Give each a `description` so the static view and assistive technology can say what it
  * shows.
  */
-export function Figure({ id, caption, description, size = 'wide', children }: FigureProps): ReactNode {
+export function Figure({
+  id,
+  caption,
+  description,
+  size = 'wide',
+  header,
+  footer,
+  isFramed: isFramedProp,
+  children,
+}: FigureProps): ReactNode {
   const article = useArticle();
   const number = useFigureNumber(id);
   const descriptionId = useId();
   const isCopy = use(FigureCopy);
   const isInColumn = use(FigureColumn);
 
+  const hasStrip = header !== undefined || footer !== undefined;
+
   if (article === null) {
     return <BlockError>{outsideText('Figure')}</BlockError>;
+  }
+
+  // The type forbids this; MDX does not check types, so an essay written there learns it here.
+  if (isFramedProp === false && hasStrip) {
+    return (
+      <BlockError>A Figure with a header or footer keeps its frame, so it cannot set isFramed to false.</BlockError>
+    );
   }
 
   const { view, labels } = article;
   const isCell = view === 'sheet';
   const isDescriptionShown = view === 'static';
   const hasDescription = description !== undefined;
+  const isFramed = isFramedProp ?? hasStrip;
+  const isFrozen = frozenViews.has(view);
+  const visual = <CaptionScope>{children}</CaptionScope>;
 
   return (
     <figure
@@ -126,7 +210,23 @@ export function Figure({ id, caption, description, size = 'wide', children }: Fi
       aria-describedby={hasDescription ? descriptionId : undefined}
       {...stylex.props(styles.figure, !isCell && sizes[isInColumn ? 'text' : size], isCell && styles.cell)}
     >
-      {children}
+      {isFramed ? (
+        <div {...stylex.props(styles.frame, framedFigure)}>
+          {header === undefined ? null : (
+            <div inert={isFrozen} {...stylex.props(styles.strip, styles.top)}>
+              {header}
+            </div>
+          )}
+          <div {...stylex.props(styles.visual)}>{visual}</div>
+          {footer === undefined ? null : (
+            <div inert={isFrozen} {...stylex.props(styles.strip, styles.bottom)}>
+              {footer}
+            </div>
+          )}
+        </div>
+      ) : (
+        visual
+      )}
       <figcaption {...stylex.props(styles.caption)}>
         {number === undefined ? (
           <LessonError>{unlistedText('Figure', id)}</LessonError>

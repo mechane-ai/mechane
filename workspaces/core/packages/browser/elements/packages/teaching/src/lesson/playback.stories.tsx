@@ -147,6 +147,16 @@ export const WithHook: Story = {
   ),
 };
 
+/** A timed run: the whole range in the `short` two seconds, starting fast and settling, on the shared clock. */
+export const TimedRun: Story = {
+  render: () => (
+    <Run>
+      <Playback name="trainStep" pace={{ run: 'short', isEased: true }} />
+      <Transport for="trainStep" />
+    </Run>
+  ),
+};
+
 export const InvalidRange: Story = {
   render: () => (
     <Run>

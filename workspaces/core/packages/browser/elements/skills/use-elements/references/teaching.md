@@ -16,6 +16,19 @@ The ideas, in one breath: one lesson store holds every value the reader, the app
 object with a stable id eases to its new props by itself, so you describe states and never write an animation; an
 article renders the same beats as a scrolling essay, a presentation, a static page and a beat sheet.
 
+## Four things a port gets wrong
+
+- `show` and `reset` act on the whole lesson. A figure's Reset button calls `resetBeat(beat)`, which returns only the
+  params that beat owns (its `params`, or those its states set) to their opening values.
+- A host whose own rail lists the beats holds the beat through `Article`'s `lessonProps` (`beat` and `onBeatChange`) and
+  sets `hasContents={false}`, so the page has one contents list.
+- A figure's controls go in the article `Figure`'s `header` or `footer`, which frame it. A chart or scene inside keeps
+  its title only as its accessible name; the caption is printed, so do not repeat the beat heading in it.
+- A card that turns, or a node that acts, when pressed needs no click handler of its own: give the `Scene`
+  `selected={null}` and `onSelectedChange={(id) => ...}`. A press, or Enter or Space on the keyboard cursor, calls it
+  with the labelled object's id. A face-down `SceneCard` renders only its back, so keep its id free of its rank and
+  suit.
+
 ## When to switch skills
 
 - Asked to explain a topic, a paper or a result interactively: follow the `plan-lesson` skill before writing a

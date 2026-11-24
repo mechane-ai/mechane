@@ -59,6 +59,8 @@ export type LessonBeat = {
   readonly steps?: number | undefined;
   /** The states worth seeing on a beat sheet and in the static view. The first is the beat's opening state. */
   readonly states?: ReadonlyArray<LessonState> | undefined;
+  /** The params this beat owns, which `resetBeat` returns to their opening values. Defaults to those its states set. */
+  readonly params?: ReadonlyArray<string> | undefined;
 };
 
 /** A derived value as a lesson keeps it: its label and format. */
@@ -234,12 +236,19 @@ function beatProblems(beat: LessonBeat, params: LessonParams): ReadonlyArray<str
   const steps = beat.steps ?? 0;
   const isWhole = Number.isInteger(steps) && steps >= 0;
   const repeatedState = duplicate((beat.states ?? []).map((state) => state.id));
+  const unknownParam = (beat.params ?? []).find((name) => !Object.hasOwn(params, name));
 
   return [
     ...(isWhole ? [] : [`beat "${beat.id}" needs a whole number of steps, not ${steps}.`]),
     ...(repeatedState === undefined ? [] : [`beat "${beat.id}" has two states with the id "${repeatedState}".`]),
+    ...(unknownParam === undefined ? [] : [`beat "${beat.id}" owns "${unknownParam}", which is not a param.`]),
     ...stateProblems(beat, params),
   ];
+}
+
+/** The params a beat owns: the ones it declares, or else every param its states set. */
+export function beatParams(beat: LessonBeat): ReadonlyArray<string> {
+  return beat.params ?? [...new Set((beat.states ?? []).flatMap((state) => Object.keys(state.values)))];
 }
 
 function lessonProblems({

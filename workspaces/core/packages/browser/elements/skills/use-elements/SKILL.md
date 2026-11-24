@@ -31,7 +31,9 @@ callbacks. Do not guess a prop from another library. The same index is at `@mech
 
 - Import `@mechane-ai/elements/styles.css` once at the app entry. Ordinary React apps need no StyleX compiler.
 - Spread `themeProps.light` or `themeProps.dark` from `/theme` onto the document root, so portaled menus and dialogs
-  inherit the theme. The app stores the preference.
+  inherit the theme. The app stores the preference. The spread is a `className`: a later `className` on the same element
+  replaces it silently, so give the theme its own element or join the class names (see
+  [styling](references/styling.md)).
 - Mount one `Toaster` from `/feedback` at the root when the app reports outcomes with `toast`.
 - Supply the app's own reset and fonts. See [styling](references/styling.md) for layers, tokens and a nonce policy.
 

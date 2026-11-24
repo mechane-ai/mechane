@@ -1,7 +1,7 @@
 import { createChange } from '@ui-sdk/core';
 import type { ChangeDetails, ChangeSource, PrimitiveContext } from '@ui-sdk/core';
 import { scrubTo } from '@ui-sdk/core/number';
-import { paramProblem } from './define-lesson.ts';
+import { beatParams, paramProblem } from './define-lesson.ts';
 import type { AnyLesson, LessonBeat, LessonParam, LessonValue, NumberParam } from './define-lesson.ts';
 import { failLesson } from './lesson-error.tsx';
 import { coercedValue, connectPersistence } from './lesson-persistence.ts';
@@ -114,6 +114,8 @@ export type LessonApi = {
   readonly showState: (state: string, origin?: LessonChangeOrigin) => boolean;
   /** Puts every param back to the value the lesson opened with. */
   readonly reset: (origin?: LessonChangeOrigin) => boolean;
+  /** Puts the params one beat owns back to their opening values in one change, and leaves every other param alone. */
+  readonly resetBeat: (beat: string, origin?: LessonChangeOrigin) => boolean;
   /** Moves to a beat, at its first reveal step unless `step` says otherwise. */
   readonly setBeat: (beat: string, step?: number, origin?: LessonPlaceOrigin) => boolean;
   /** Shows the next reveal step, or the next beat at its first step. */
@@ -170,6 +172,16 @@ export function lessonApi(context: PrimitiveContext<LessonStoreOptions, LessonSt
   /** The values the lesson opened with, which `reset` returns to and a state fills its unnamed params from. */
   function opening(): LessonParamValues {
     return context.options().defaultValues ?? lesson().defaults;
+  }
+
+  /** The beat with this id. An unknown id is refused with the lesson's beats listed. */
+  function beatNamed(beat: string): LessonBeat {
+    const beats = lesson().beats;
+
+    return (
+      beats.find((candidate) => candidate.id === beat) ??
+      refuse(`there is no beat "${beat}". Its beats: ${beats.map((item) => item.id).join(', ')}.`)
+    );
   }
 
   /** The last step of a beat: its declared reveal steps and any the markup adds. */
@@ -313,19 +325,36 @@ export function lessonApi(context: PrimitiveContext<LessonStoreOptions, LessonSt
 
       return change('values', opening(), detailsOf(origin ?? { reason: 'reset' }));
     },
+    /**
+     * Puts the params one beat owns back to their opening values in one change: its declared `params`, or those its
+     * states set. Every other param keeps the reader's value. A player moving one of them stops.
+     */
+    resetBeat(beat: string, origin?: LessonChangeOrigin): boolean {
+      writable();
+
+      const target = beatNamed(beat);
+
+      const names = beatParams(target);
+
+      if (names.length === 0) {
+        refuse(`beat "${beat}" owns no params. Give it \`params\` or states that set them.`);
+      }
+
+      const { playing } = store.get();
+
+      if (playing !== null && names.includes(playing)) {
+        players.pause();
+      }
+
+      const start = new Map(Object.entries(opening()));
+
+      return applyAll(Object.fromEntries(names.map((name) => [name, start.get(name)])), origin ?? { reason: 'reset' });
+    },
     /** Moves to a beat, at its first reveal step unless `step` says otherwise. */
     setBeat(beat: string, step = 0, origin?: LessonPlaceOrigin): boolean {
       writable();
 
-      const target = lesson().beats.find((candidate) => candidate.id === beat);
-
-      if (target === undefined) {
-        refuse(
-          `there is no beat "${beat}". Its beats: ${lesson()
-            .beats.map((item) => item.id)
-            .join(', ')}.`,
-        );
-      }
+      const target = beatNamed(beat);
 
       const isWholeStep = Number.isInteger(step) && step >= 0;
       const isStepKnown = isWholeStep && step <= lastStep(target);

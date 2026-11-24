@@ -1,4 +1,4 @@
-import type { NumericDomain } from '../../../../charts/src/index.ts';
+import type { ChartTone, NumericDomain } from '../../../../charts/src/index.ts';
 import type { HeatmapPalette } from '../../../../charts/src/matrix/index.ts';
 import type { SceneOffset } from '../scene-geometry.ts';
 
@@ -25,6 +25,10 @@ export type SceneCellInput = {
   readonly value?: number | undefined;
   /** The readout sentence. Left out, the cell says its row, column and value. */
   readonly label?: string | undefined;
+  /** The hue of the cell's text and tint, such as a card's suit. A palette's fill still wins. */
+  readonly tone?: ChartTone | undefined;
+  /** True draws the cell gray and unfilled, such as a card already dealt. Its value and label stay. */
+  readonly isMuted?: boolean | undefined;
 };
 
 /** The numbers of a vector or a matrix: a flat list, or a list of rows. */

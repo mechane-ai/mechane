@@ -2,6 +2,61 @@
 
 Newest first. Each section lists what an application must change, then what it may adopt.
 
+## 0.49
+
+Two things: a research kit with the form, text and layout parts it needed, and fixes from the first essay ported onto
+the teaching layers. No import changes. An essay written for 0.48 type checks unchanged; it prints less and behaves
+differently in the places below.
+
+### Behavior to check
+
+- **A chart or scene inside an article `Figure` no longer prints its title or description.** The `Figure` caption names
+  the figure, and the chart's `title` stays its accessible name. Remove any caption you shortened to avoid the
+  repetition, and move words a reader needs from a chart `description` into the caption or the prose.
+- **A turned-away face is not rendered.** A `SceneNode` or `SceneCard` draws only the face toward the reader, so a
+  face-down card has no rank or suit in its text or its accessible name. A face with rich content remounts after a turn.
+  A card's `id` still reaches the page: keep it free of the rank and suit when the card may be face down.
+- **`ScenePoint` with `sets` or `onMove` is a slider.** It is its own Tab stop with `role="slider"`, moves on the step
+  grid with the arrow keys, takes ten steps with Shift or Page Up and Page Down, and goes to the ends with Home and End.
+  It no longer moves while it is the plot's arrow-key cursor.
+- **Scenes are narrower before they scroll.** A wire now asks for the room its stroke, text and arrow need, not a fixed
+  64 px. Remove a `minWidth` you set to stop a small diagram scrolling on a phone.
+- **`SceneSlot` `isActive` only marks the slot.** Other objects no longer recede.
+- **A pointer press that acts leaves nothing dimmed.** In a `Scene` with `onSelectedChange`, pressing an object with a
+  pointer no longer fades the others. The arrow-key cursor keeps its emphasis.
+- **`SceneCells` column labels wrap** above their column and a long word overhangs instead of being cut.
+- **The essay's text column keeps its measure** at wide widths. A beat's paragraphs were up to 93 characters wide and
+  are 68 again.
+- **`Transport` and `ParamSlider` grow** to fill a flex row.
+- **No scene text is under 12 px.** Small card corners and token captions were 11 px.
+
+### Adopt
+
+- **A research kit.** `/kits/research` has `FindingCard`, `MilestonePath`, `SpecimenDiff` and `WorkHeartbeat`, for
+  tracking research milestones, paired specimen diffs, work reports and findings.
+- **`TokenInput`** from `/forms`, with `fromText`, `toText`, `toLabel` and `defaultCodec`.
+- **`TextMatch`** from `/content`, with `matchRanges`, `matchSegments` and `fuzzyScore`.
+- **`FigureGrid` and `SidebarBrand`** from `/layout`.
+- **Types:** `PanelProps` from the root entry, `MetricChange` from `/collections`, `ScatterDiagonal` from
+  `/charts/cartesian` and `LensLayerGroup` from `/kits/interpretability`.
+- **`Article` `hasContents={false}`** leaves the contents list out at every width, for a host with its own navigation.
+  Control the beat through `lessonProps`.
+- **Framed figures.** The article `Figure` takes `header` and `footer` strips for a figure's own controls and draws one
+  hairline frame around the strips and the visual. `isFramed` frames a figure that has no controls. The strips are inert
+  in the static view and the sheet.
+- **`resetBeat`.** `useLesson(lesson).resetBeat(beat)` returns one beat's params to their opening values in one change.
+  A beat owns the params its states name, or the ones listed in its new `params` field. `reset()` and `show()` still act
+  on the whole lesson.
+- **Timed and eased playback.** `Playback` `pace` also takes `{ run: 'short' | 'regular' | 'long', isEased? }`: the
+  whole range plays in 2, 5 or 10 seconds on the shared clock, with an ease-out when asked.
+- **Pressable scene parts.** `Scene` `onSelectedChange` with `selected={null}` makes a press an action, such as turning
+  a card over. The new `labels.press` says what a press does in the plot's accessible name.
+- **`SceneWire` `bend`** bows a wire off its line by a signed number of pixels, to pass a node that sits between its
+  ends.
+- **`SceneCells` cell `tone` and `isMuted`** color one cell with a chart tone or gray it out.
+- **`CaptionScope` and `useIsCaptioned`** from `/charts` are what the article `Figure` uses. A custom captioned
+  container wraps its charts in `CaptionScope` to get the same rule.
+
 ## 0.48
 
 Elements has a teaching family: lessons, diagrams with identity, explorable essays and tutor tools. It adds six entries

@@ -16,6 +16,8 @@ export type ScenePlaneLabels = {
   readonly pointParam: string;
   /** Added after a movable point's label in the readout. */
   readonly pointMovable: string;
+  /** A bound axis in a movable point's spoken value. `{name}` is the param's label and `{value}` its written value. */
+  readonly pointValue: string;
   /** `{id}` names the region. */
   readonly regionShape: string;
   /** `{id}` names the rule. */
@@ -35,7 +37,8 @@ export const planeLabels = {
   pointLabel: 'The point "{id}" can be moved, so it needs a `label` for the readout.',
   pointOutsideLesson: 'The point "{id}" sets lesson params, so it must be inside a Lesson.',
   pointParam: 'The point "{id}" sets "{name}", which lesson "{lesson}" does not declare as a number param.',
-  pointMovable: ' Use the arrow keys to move it.',
+  pointMovable: ' Tab to it and use the arrow keys to move it.',
+  pointValue: '{name} {value}',
   regionShape: 'The region "{id}" needs one of `between`, `above`, `below` or `points`.',
   ruleAxis: 'The rule "{id}" needs `x` or `y`, and not both.',
   projectionSource: 'The projection "{id}" needs `of` or `at`, and not both.',

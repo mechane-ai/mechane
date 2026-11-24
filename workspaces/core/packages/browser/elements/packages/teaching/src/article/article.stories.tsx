@@ -9,10 +9,14 @@ import {
   temperatureLesson,
   temperatureTones,
 } from '../../../../src/stories/temperature-essay.tsx';
-import { spacing } from '../../../foundations/src/tokens.stylex.ts';
+import { BarChart, Sparkline } from '../../../charts/src/cartesian/index.ts';
+import { Button } from '../../../core/src/index.ts';
+import { colors, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import type { LessonValuesChangeDetails } from '../lesson/lesson-store.ts';
-import { Param } from '../lesson/param.tsx';
+import { ParamSlider } from '../lesson/param-controls.tsx';
+import { Param, Value } from '../lesson/param.tsx';
 import { Playback } from '../lesson/playback.tsx';
+import { useLesson } from '../lesson/use-lesson.ts';
 import type { ArticleView } from './article-context.ts';
 import { Article } from './article.tsx';
 import { Beat } from './beat.tsx';
@@ -42,6 +46,23 @@ type Story = StoryObj;
 const styles = stylex.create({
   page: { paddingBlock: spacing.xl, paddingInline: spacing.lg },
   stack: { display: 'grid', gap: spacing.xxl },
+  shell: {
+    display: 'grid',
+    gridTemplateColumns: { 'default': 'minmax(0, 1fr)', '@media (min-width: 720px)': '200px minmax(0, 1fr)' },
+    columnGap: spacing.xl,
+    alignItems: 'start',
+  },
+  rail: {
+    display: 'grid',
+    gap: spacing.xxs,
+    position: { 'default': 'static', '@media (min-width: 720px)': 'sticky' },
+    insetBlockStart: spacing.xl,
+    marginBlockEnd: spacing.xl,
+    color: colors.muted,
+    fontFamily: typography.fontFamily,
+    fontSize: typography.bodySize,
+  },
+  railHeading: { margin: 0, color: colors.ink, fontWeight: typography.strongWeight },
 });
 
 function Essay({
@@ -107,6 +128,167 @@ export const AgentPlay: Story = {
 };
 
 export const Sheet: Story = { render: () => <Essay view="sheet" /> };
+
+/** A host's own rail lists the beats and holds the beat, so the article leaves its contents list out at every width. */
+function HostNavigationEssay(): ReactNode {
+  const [beat, setBeat] = useState<string>('scores');
+
+  return (
+    <div {...stylex.props(styles.page, styles.shell)}>
+      <nav aria-label="Lesson" {...stylex.props(styles.rail)}>
+        <p {...stylex.props(styles.railHeading)}>Lesson</p>
+        {temperatureLesson.beats.map((item) => (
+          <Button
+            key={item.id}
+            variant={item.id === beat ? 'outline' : 'ghost'}
+            density="compact"
+            aria-current={item.id === beat ? 'location' : undefined}
+            onClick={() => setBeat(item.id)}
+          >
+            {item.title}
+          </Button>
+        ))}
+      </nav>
+      <Article
+        lesson={temperatureLesson}
+        locale="en-US"
+        title="What a softmax temperature does"
+        tones={temperatureTones}
+        math={standInMath}
+        hasContents={false}
+        lessonProps={{ beat, onBeatChange: (next) => next !== null && setBeat(next) }}
+      >
+        {temperatureEssay}
+      </Article>
+    </div>
+  );
+}
+
+export const HostNavigation: Story = { render: () => <HostNavigationEssay /> };
+
+/** Puts the temperature back to where the beat opened, and nothing else. */
+function ResetScores(): ReactNode {
+  const { resetBeat } = useLesson(temperatureLesson);
+
+  return (
+    <Button
+      variant="ghost"
+      density="compact"
+      onClick={(event) => resetBeat('scores', { reason: 'reset', event: event.nativeEvent })}
+    >
+      Reset
+    </Button>
+  );
+}
+
+/** The four probabilities as a report chart, whose own frame stands in for the figure's. */
+function ReportBars(): ReactNode {
+  const { values, locale } = useLesson(temperatureLesson);
+
+  return (
+    <BarChart
+      title="Next-token probabilities"
+      description="Synthetic scores after the softmax."
+      report={{
+        meta: (
+          <>
+            T = <Value name="temperature" />
+          </>
+        ),
+      }}
+      locale={locale}
+      categories={[{ id: 'top', label: 'Paris' }]}
+      series={[{ id: 'probability', label: 'Probability', tone: 'series1', values: [values.top] }]}
+      domain={[0, 1]}
+      valueFormat={{ style: 'percent', maximumFractionDigits: 1 }}
+      valueLabel="Probability"
+      height="compact"
+    />
+  );
+}
+
+/** Figures in a hairline frame, with controls in a strip above or below the visual, or framed with no strip. */
+const framedEssay = (
+  <Beat id="scores">
+    <p>
+      The temperature is <Param name="temperature" />. The figure keeps its own slider above the chart and a reset below
+      it, inside one frame.
+    </p>
+    <Figure
+      id="framed-bars"
+      caption="Paris’s probability at the current temperature."
+      description="One bar, taller at low temperatures."
+      reads={['temperature']}
+      header={<ParamSlider name="temperature" />}
+      footer={<ResetScores />}
+    >
+      <TemperatureBar />
+    </Figure>
+    <Figure
+      id="framed-report"
+      caption="The same probability, as a report chart in a framed figure: one border, not two."
+      description="One bar in a bordered report."
+      reads={['temperature']}
+      footer={<ResetScores />}
+    >
+      <ReportBars />
+    </Figure>
+    <Figure
+      id="framed-trend"
+      caption="A figure with no controls, framed so it matches the figures above."
+      description="A line that falls from 1.6 to 0.4 over six steps."
+      isFramed
+    >
+      <Sparkline
+        title="Loss over six steps"
+        summary="Six synthetic observations fall from 1.6 to 0.4."
+        unit="nats"
+        timestampUnit="seconds"
+        series={{
+          id: 'loss',
+          label: 'Loss',
+          tone: 'series1',
+          points: [1.6, 1.1, 0.8, 0.6, 0.5, 0.4].map((value, index) => ({ timestamp: index, value })),
+        }}
+        valueDomain={[0, 2]}
+        markedPoints={['last']}
+        layout="figure"
+      />
+    </Figure>
+  </Beat>
+);
+
+/** The plain bar of Paris's probability, for the framed figure. */
+function TemperatureBar(): ReactNode {
+  const { values, locale } = useLesson(temperatureLesson);
+
+  return (
+    <BarChart
+      title="Paris’s probability"
+      description="Synthetic scores after the softmax."
+      locale={locale}
+      categories={[{ id: 'top', label: 'Paris' }]}
+      series={[{ id: 'probability', label: 'Probability', tone: 'series1', values: [values.top] }]}
+      domain={[0, 1]}
+      valueFormat={{ style: 'percent', maximumFractionDigits: 1 }}
+      valueLabel="Probability"
+      height="compact"
+    />
+  );
+}
+
+export const FramedFigures: Story = {
+  render: () => (
+    <div {...stylex.props(styles.page, styles.stack)}>
+      <Article lesson={temperatureLesson} locale="en-US" title="Framed figures">
+        {framedEssay}
+      </Article>
+      <Article lesson={temperatureLesson} locale="en-US" title="Framed figures, static" view="static">
+        {framedEssay}
+      </Article>
+    </div>
+  ),
+};
 
 const choices = [
   { id: 'sharper', label: 'Sharper' },

@@ -263,6 +263,33 @@ function LargeGrid(): ReactNode {
 
 export const Large: Story = { render: () => <LargeGrid /> };
 
+export const WireAroundANode: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'A wire runs straight between the edges of its ends and does not avoid what lies between them. Here the skip connection from the input to the output would cross the layer, so `bend` bows it 36 pixels above the row; a negative bend would bow it below. Its arrow and text follow the curve.',
+      },
+    },
+  },
+  render: () => (
+    <Scene
+      title="A skip connection"
+      description="Synthetic block. The input feeds the layer and also skips around it to the output."
+      locale="en-US"
+      x={[0, 4]}
+      y={[0, 2]}
+    >
+      <SceneNode id="input" at={[0.5, 1]} size="small" text="x" label="The input" />
+      <SceneNode id="layer" at={[2, 1]} size="small" text="f(x)" label="The layer" tone="series1" />
+      <SceneNode id="output" at={[3.5, 1]} size="small" text="x + f(x)" label="The output" />
+      <SceneWire from="input" to="layer" label="The input enters the layer" />
+      <SceneWire from="layer" to="output" label="The layer's result goes to the output" />
+      <SceneWire from="input" to="output" bend={36} text="skip" label="The input skips the layer" />
+    </Scene>
+  ),
+};
+
 export const Invalid: Story = {
   render: () => (
     <div {...stylex.props(styles.list)}>

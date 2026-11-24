@@ -9,6 +9,11 @@ export type SceneLabels = {
   readonly objects: string;
   /** The header of the exact-value table. */
   readonly objectColumn: string;
+  /**
+   * Ends the plot's accessible name when a press acts, with `onSelectedChange`. Name the action, such as "Press Enter
+   * to turn the card over."
+   */
+  readonly press: string;
   readonly missingLocale: string;
   readonly invalidBox: string;
   readonly invalidAspect: string;
@@ -32,6 +37,7 @@ export type SceneLabels = {
 export const sceneLabels = {
   objects: 'diagram parts',
   objectColumn: 'Part',
+  press: 'Press Enter or Space to activate a part.',
   missingLocale: 'This scene needs a locale. Pass `locale`, or place it inside a Lesson.',
   invalidBox: 'The scene box needs two finite, increasing values on each axis.',
   invalidAspect: 'The scene aspect must be a positive, finite ratio of width to height.',

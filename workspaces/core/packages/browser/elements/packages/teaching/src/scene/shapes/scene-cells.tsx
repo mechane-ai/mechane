@@ -1,6 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
-import { formatValue } from '../../../../charts/src/index.ts';
+import { chartToneColors, formatValue } from '../../../../charts/src/index.ts';
 import type { NumericDomain, ValueFormat } from '../../../../charts/src/index.ts';
 import type { HeatmapPalette } from '../../../../charts/src/matrix/index.ts';
 import { ChartMark, labelBox } from '../../../../charts/src/plot/index.ts';
@@ -9,7 +9,7 @@ import { colors, radii, typography } from '../../../../foundations/src/tokens.st
 import { useSceneObject } from '../scene-context.ts';
 import type { ScenePosition } from '../scene-geometry.ts';
 import { SceneOutside } from '../scene-layer.tsx';
-import { sceneOutlines } from '../scene-style.ts';
+import { sceneContextColor, sceneOutlines } from '../scene-style.ts';
 import { fillLabel } from '../scene-validate.ts';
 import { cellFill } from './cell-color.ts';
 import { cellGap, cellGrid, cellOffset, cellsDomain, cellsExtent, sceneCellSizes } from './cell-grid.ts';
@@ -74,7 +74,7 @@ export type SceneCellsProps = {
   readonly size?: SceneCellSizeName | undefined;
   /** One caption per row, drawn left of the grid in a column as wide as the longest. */
   readonly rowLabels?: ReadonlyArray<string> | undefined;
-  /** One caption per column, drawn above the grid. */
+  /** One caption per column, drawn above the grid. A long caption wraps, and a word wider than its column overhangs. */
   readonly columnLabels?: ReadonlyArray<string> | undefined;
   /** A row, a column, or one cell where both are given, drawn with a strong outline. Indices count from 0. */
   readonly highlight?: { readonly row?: number | undefined; readonly column?: number | undefined } | undefined;
@@ -88,8 +88,14 @@ export type SceneCellsProps = {
 };
 
 const LABEL_GAP = 6;
-const LABEL_ROOM = 20;
+/** The pixels between the grid's top edge and the last line of its column labels. */
+const COLUMN_LABEL_GAP = 2;
+/** The height of one line of a label, the caption line height in pixels. */
+const LABEL_LINE = 18;
+/** How strongly a cell's tone tints its fill, in percent, as a node's face is tinted. */
+const TONE_TINT = 10;
 const DEFAULT_FORMAT: ValueFormat = { maximumFractionDigits: 2 };
+const HALF = 0.5;
 const RING = 3;
 
 const styles = stylex.create({
@@ -119,6 +125,7 @@ const styles = stylex.create({
     outlineStyle: 'none',
   }),
   highlighted: { borderColor: colors.ink, borderWidth: 2 },
+  ink: (color: string) => ({ color }),
   label: {
     position: 'absolute',
     overflow: 'hidden',
@@ -131,7 +138,17 @@ const styles = stylex.create({
     textAlign: 'center',
     pointerEvents: 'none',
   },
-  columnLabel: (left: number, width: number) => ({ left, width, top: -LABEL_ROOM }),
+  columnLabel: (left: number, width: number, bottom: number) => ({
+    left,
+    width,
+    bottom,
+    display: 'flex',
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    overflow: 'visible',
+    whiteSpace: 'normal',
+  }),
+  columnText: { overflowWrap: 'normal', textAlign: 'center' },
   rowLabel: (top: number, height: number, width: number) => ({
     top,
     height,
@@ -197,7 +214,14 @@ function CellView({
   const text =
     cell.text ?? (cell.value === undefined ? '' : formatValue({ value: eased, locale: object.scene.locale, format }));
 
-  const fill = cellFill({ value: cell.value === undefined ? undefined : eased, palette, domain });
+  const scaled = cellFill({ value: cell.value === undefined ? undefined : eased, palette, domain });
+  const toneColor = cell.tone === undefined ? undefined : chartToneColors[cell.tone];
+
+  const tint =
+    toneColor === undefined ? undefined : `color-mix(in srgb, ${toneColor} ${TONE_TINT}%, ${colors.surface})`;
+
+  const fill = cell.isMuted === true ? undefined : (scaled ?? tint);
+  const ink = cell.isMuted === true ? sceneContextColor : toneColor;
 
   return (
     <ChartMark
@@ -205,6 +229,7 @@ function CellView({
       render={<div role="img" aria-label={cell.label ?? name} data-scene-cell={id} />}
       {...stylex.props(
         styles.cell(fill, Math.max(0, Math.min(1, object.values.opacity)) * object.strength),
+        ink !== undefined && styles.ink(ink),
         isHighlighted && styles.highlighted,
         !object.isVisible && styles.gone,
         ...sceneOutlines(object),
@@ -215,15 +240,55 @@ function CellView({
   );
 }
 
+/** The estimated width of a caption, with the label kernel's clearance. */
+function textWidth(text: string): number {
+  const box = labelBox({ x: 0, y: 0, anchor: 'start', text });
+
+  return box.right - box.left;
+}
+
 /** The width of the row label column: the estimated width of the longest label, or 0 without labels. */
 function rowLabelWidth(rowLabels: ReadonlyArray<string> | undefined): number {
-  const widths = (rowLabels ?? []).map((text) => {
-    const box = labelBox({ x: 0, y: 0, anchor: 'start', text });
+  return Math.ceil(Math.max(0, ...(rowLabels ?? []).map(textWidth)));
+}
 
-    return box.right - box.left;
-  });
+/** The lines words take when they wrap at `width`, with a word wider than that on a line of its own. */
+function lineCount(words: ReadonlyArray<string>, width: number): number {
+  if (words.length === 0) {
+    return 0;
+  }
 
-  return Math.ceil(Math.max(0, ...widths));
+  const overflow = words.findIndex((_, index) => index > 0 && textWidth(words.slice(0, index + 1).join(' ')) > width);
+
+  return overflow === -1 ? 1 : 1 + lineCount(words.slice(overflow), width);
+}
+
+/**
+ * The room the column labels take outside the grid. Above it is the most lines any label wraps to. At either end it is
+ * how far the first or last label's widest word overhangs its column.
+ */
+function columnLabelRoom({
+  columnLabels,
+  width,
+}: {
+  readonly columnLabels: ReadonlyArray<string> | undefined;
+  readonly width: number;
+}): { readonly top: number; readonly left: number; readonly right: number } {
+  if (columnLabels === undefined || columnLabels.length === 0) {
+    return { top: 0, left: 0, right: 0 };
+  }
+
+  const words = columnLabels.map((text) => text.split(/\s+/u).filter((word) => word.length > 0));
+
+  function overhang(index: number): number {
+    const widest = Math.max(0, ...(words[index] ?? []).map(textWidth));
+
+    return Math.ceil(Math.max(0, (widest - width) * HALF));
+  }
+
+  const lines = Math.max(1, ...words.map((list) => lineCount(list, width)));
+
+  return { top: lines * LABEL_LINE + COLUMN_LABEL_GAP, left: overhang(0), right: overhang(words.length - 1) };
 }
 
 function problemOf({
@@ -272,7 +337,7 @@ export function SceneCells(props: SceneCellsProps): ReactNode {
   const problem = problemOf({ grid, props, labels });
   const labelWidth = rowLabelWidth(rowLabels);
   const rowRoom = rowLabels === undefined ? 0 : labelWidth + LABEL_GAP;
-  const columnRoom = columnLabels === undefined ? 0 : LABEL_ROOM;
+  const columnRoom = columnLabelRoom({ columnLabels, width: sceneCellSizes[size].width });
 
   const object = useSceneObject({
     id,
@@ -282,7 +347,7 @@ export function SceneCells(props: SceneCellsProps): ReactNode {
       y: at[1],
       width: extent.width,
       height: extent.height,
-      outset: { left: rowRoom, top: columnRoom },
+      outset: { left: Math.max(rowRoom, columnRoom.left), right: columnRoom.right, top: columnRoom.top },
     },
     values: {},
     label,
@@ -327,11 +392,11 @@ export function SceneCells(props: SceneCellsProps): ReactNode {
           aria-hidden
           {...stylex.props(
             styles.label,
-            styles.columnLabel(entry.index * (box.width + cellGap), box.width),
+            styles.columnLabel(entry.index * (box.width + cellGap), box.width, extent.height + COLUMN_LABEL_GAP),
             highlight?.column === entry.index && styles.strong,
           )}
         >
-          {entry.text}
+          <span {...stylex.props(styles.columnText)}>{entry.text}</span>
         </span>
       ))}
       {rowEntries.map((entry) => (

@@ -7,7 +7,7 @@ import { LessonError } from '../lesson/lesson-error.tsx';
 import { useLessonContext } from '../lesson/use-lesson.ts';
 import { useArticle } from './article-context.ts';
 import { BlockError, outsideText } from './article-error.tsx';
-import { articleLayout } from './article-layout.stylex.ts';
+import { articleLayout, articleSticky } from './article-layout.stylex.ts';
 import type { ReferenceItem } from './outline-types.ts';
 
 const focusRing = {
@@ -69,7 +69,7 @@ const styles = stylex.create({
     fontWeight: typography.strongWeight,
   },
   list: { display: 'grid', gap: spacing.sm, margin: 0, paddingInlineStart: spacing.xl },
-  item: { scrollMarginBlockStart: spacing.xl, paddingInlineStart: spacing.xs },
+  item: { scrollMarginBlockStart: `calc(${articleSticky.top} + ${spacing.xl})`, paddingInlineStart: spacing.xs },
   slide: {
     gap: spacing.xs,
     marginBlockStart: spacing.lg,

@@ -230,6 +230,90 @@ export const ColorMeanings: Story = {
   ),
 };
 
+const suits = [
+  { id: 'heart', glyph: '♥', tone: 'negative' },
+  { id: 'spade', glyph: '♠', tone: 'series1' },
+] as const;
+
+const trayRanks = [
+  { rank: 'A', name: 'Ace' },
+  { rank: '2', name: 'Two' },
+  { rank: '3', name: 'Three' },
+  { rank: '4', name: 'Four' },
+  { rank: '5', name: 'Five' },
+  { rank: '6', name: 'Six' },
+] as const;
+
+const dealtCards: ReadonlySet<string> = new Set(['heart-3', 'spade-1', 'spade-5']);
+
+export const TonesAndMuted: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'A cell takes its own `tone`, here a suit’s hue on its text and a light tint, and `isMuted`, which grays a card already dealt while its label still names it. Column labels wrap and size their band to the text, so a long caption is never cut.',
+      },
+    },
+  },
+  render: () => (
+    <Scene
+      title="The cards still in the tray"
+      description="Synthetic tray of twelve cards in two suits. Three are dealt and gray."
+      locale="en-US"
+      x={[0, 1]}
+      y={[0, 1]}
+      height="compact"
+    >
+      <SceneCells
+        id="tray"
+        at={[0.5, 0.45]}
+        size="small"
+        rowLabels={suits.map((suit) => suit.glyph)}
+        columnLabels={['Ace', 'Two', 'Three', 'Four', 'Five', 'Six of either suit']}
+        cells={suits.map((suit) =>
+          trayRanks.map((card, index) => {
+            const isDealt = dealtCards.has(`${suit.id}-${index}`);
+
+            return {
+              id: `tray-${suit.id}-${index}`,
+              text: `${card.rank}${suit.glyph}`,
+              tone: suit.tone,
+              isMuted: isDealt,
+              label: `${card.name} of ${suit.id}s, ${isDealt ? 'dealt' : 'in the tray'}`,
+            };
+          }),
+        )}
+        label="Twelve cards, three dealt"
+      />
+    </Scene>
+  ),
+};
+
+export const LongColumnLabels: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'One column labelled with a word wider than its cell: the label overhangs both sides evenly and the scene makes room for it, rather than cutting it to an ellipsis.',
+      },
+    },
+  },
+  render: () => (
+    <Scene title="Accuracy per position" locale="en-US" x={[0, 1]} y={[0, 1]} height="compact">
+      <SceneCells
+        id="accuracy"
+        at={[0.5, 0.45]}
+        size="small"
+        cells={[[{ text: '82%' }], [{ text: '64%' }], [{ text: '—' }]]}
+        rowLabels={['Card 1', 'Card 2', 'Card 3']}
+        columnLabels={['Accuracy']}
+        highlight={{ row: 1 }}
+        label="Accuracy for each card position"
+      />
+    </Scene>
+  ),
+};
+
 export const Narrow: Story = {
   parameters: {
     docs: {

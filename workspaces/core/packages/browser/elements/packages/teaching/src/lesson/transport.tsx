@@ -19,6 +19,7 @@ const styles = stylex.create({
     alignItems: 'center',
     columnGap: spacing.sm,
     rowGap: spacing.xs,
+    flexGrow: 1,
     minWidth: 0,
   },
   buttons: { display: 'flex', alignItems: 'center', gap: spacing.xs, flexShrink: 0 },

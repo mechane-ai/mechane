@@ -1,9 +1,11 @@
 import * as stylex from '@stylexjs/stylex';
 import { useId } from 'react';
 import type { ReactNode } from 'react';
+import { accessibility } from '../../../foundations/src/accessibility.ts';
 import { chartToneColors } from '../../../foundations/src/chart-tones.ts';
 import { colors, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { ChartFrame } from '../chart-frame.tsx';
+import { useIsCaptioned } from '../figure/caption-scope.tsx';
 import { useTones } from '../figure/tone-scope.tsx';
 import { usePlotWidth } from '../plot-width.ts';
 import { continuousScale, isFiniteDomain } from '../plot/scale.ts';
@@ -114,6 +116,7 @@ export function Sparkline({
   const height = isFigure ? sizes.figure.height : sizes.inline.height;
   const descriptionId = useId();
   const tones = useTones();
+  const isCaptioned = useIsCaptioned();
   const issue = validateSparkline({ title, summary, unit, series, valueDomain, markedPoints, baseline });
   const observed = series.points.some((point) => point.value !== null);
 
@@ -183,7 +186,10 @@ export function Sparkline({
   }
 
   return (
-    <ChartFrame title={title} description={summary}>
+    <ChartFrame
+      title={isCaptioned ? <span {...stylex.props(accessibility.hidden)}>{title}</span> : title}
+      description={isCaptioned ? undefined : summary}
+    >
       <div ref={measured.ref} {...stylex.props(styles.fill)}>
         {mark}
       </div>
