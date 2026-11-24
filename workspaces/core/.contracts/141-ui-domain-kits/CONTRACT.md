@@ -39,11 +39,6 @@ Hover one model, run or feature and confirm every figure of the component marks 
 Render the loading, empty, partial and invalid states and compare them with the same states of a single chart.
 Search a changed kit for an SVG element, a color literal and an import of a family's internal file.
 
-## Local adaptations
-
-The explainers kit arranges prose and figures for a reader and owns reading order, numbering and references. Its
-components take content slots where the other kits take data.
-
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
 No rule of the registry decides this contract; review does.

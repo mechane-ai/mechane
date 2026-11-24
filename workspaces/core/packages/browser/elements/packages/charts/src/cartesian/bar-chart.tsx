@@ -636,6 +636,10 @@ export function BarChart({
                         return null;
                       }
 
+                      if (mode === 'stacked' && value === 0) {
+                        return null;
+                      }
+
                       const base =
                         mode === 'stacked'
                           ? series
@@ -658,6 +662,7 @@ export function BarChart({
                           height={Math.max(value === 0 ? 1 : 0, Math.abs(end - start))}
                           tone={toneOf(item.id)}
                           emphasis={isMuted || isReceded(category.id) ? 'receded' : 'normal'}
+                          mark={series.length === 1 ? category.id : `${category.id}:${item.id}`}
                         />
                       );
                     });

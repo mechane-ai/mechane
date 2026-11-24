@@ -458,6 +458,7 @@ const chart = definePrimitive({
       attrs: (state, { key }) => ({
         'data-inspected': state.inspected === key ? '' : undefined,
         'data-selected': state.selected === key ? '' : undefined,
+        'data-chart-mark': key,
       }),
       selects: selects({
         items: () => [],

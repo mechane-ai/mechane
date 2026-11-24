@@ -43,6 +43,7 @@ export const FILE_ROLES = {
     'packages/browser/elements/vite.config.ts',
     'packages/browser/console/src/router.tsx',
     'packages/browser/console/src/vite-env.d.ts',
+    'packages/browser/elements/templates/essay/src/mdx.d.ts',
     'packages/browser/*/.storybook/*.ts',
     'packages/browser/*/src/**/*.stories.tsx',
     'packages/browser/elements/packages/**/*.stories.tsx',

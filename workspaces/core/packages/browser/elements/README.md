@@ -19,13 +19,16 @@ pnpm exec mechane-elements-catalog --install-skills .claude/skills
 ```
 
 Use `.agents/skills` or another directory for an agent that reads skills from there. Run the command again after each
-upgrade; it replaces the three skills with the new version's copies.
+upgrade; it replaces the six skills with the new version's copies.
 
 | Skill                                                | Use it to                                                                |
 | ---------------------------------------------------- | ------------------------------------------------------------------------ |
 | [use-elements](skills/use-elements/SKILL.md)         | Choose components and build a page, with a guide for each family.        |
 | [review-elements](skills/review-elements/SKILL.md)   | Check a page by keyboard, read state, width, theme and agent access.     |
 | [upgrade-elements](skills/upgrade-elements/SKILL.md) | Move an app to a new version, with the changes each release needs.       |
+| [plan-lesson](skills/plan-lesson/SKILL.md)           | Plan an explorable essay as a checked lesson plan before writing code.   |
+| [write-explainer](skills/write-explainer/SKILL.md)   | Write the essay from a valid plan with the teaching layers.              |
+| [review-explainer](skills/review-explainer/SKILL.md) | Review an essay as a learner, in all four views.                         |
 | [extend-elements](skills/extend-elements/SKILL.md)   | Change the library itself. It stays in the package and is not installed. |
 
 An agent without skills can read the same files in place. Add one line to its instructions file, such as `AGENTS.md`:
@@ -149,7 +152,12 @@ Every path below belongs to `@mechane-ai/elements`. There is one package, versio
 | `/charts/transforms`     | Bins, densities, fits, quantiles, ranks, smoothing, and sampling that an application calls before drawing.     |
 | `/charts/plot`           | The plot kernel: scales, ticks, axes, marks, and states for a chart the library lacks.                         |
 | `/charts/figure`         | Figure specs as JSON: validate a spec, draw it, describe it, and read the chart guide.                         |
-| `/kits/explainers`       | Numbered figures, linked terms, bound values, and guided steps.                                                |
+| `/lesson`                | Lessons: named values with ranges, controls in prose, players, one shared clock, and tweens.                   |
+| `/lesson/spec`           | Lesson plans and defined lessons as data: checks, outlines, teaching advice, and the explainer guide.          |
+| `/lesson/agent`          | Tutor tools, a learner trace, and guided tours over the agent bridge.                                          |
+| `/scene`                 | Diagrams whose objects keep their identity: nodes, wires, plane marks, cards, cells, tokens, and flows.        |
+| `/article`               | Explorable essays: beats, figures, predictions, challenges, notes, and four views of one essay.                |
+| `/mdx`                   | An essay written as one MDX file, with every teaching part available without imports.                          |
 | `/kits/training`         | A run dashboard, a run table, and a sweep overview.                                                            |
 | `/kits/operations`       | Service health, budgets against objectives, and an incident timeline.                                          |
 | `/kits/evaluation`       | A model leaderboard, a score breakdown, and a two-model comparison.                                            |
@@ -608,9 +616,9 @@ scale or axis.
 ### Kits
 
 A kit composes charts into a page for one domain: `/kits/training` for runs, `/kits/evaluation` for model comparison,
-`/kits/operations` for service health, `/kits/interpretability` for features, attribution, attention and steering, and
-`/kits/explainers` for long articles. A kit adds no marks. It decides which figures answer the question and shares one
-tone scope and one linked inspection between them. The application supplies every value. The `use-elements` skill's
+`/kits/operations` for service health, `/kits/interpretability` for features, attribution, attention and steering. A kit
+adds no marks. It decides which figures answer the question and shares one tone scope and one linked inspection between
+them. The application supplies every value. The `use-elements` skill's
 [kits guide](skills/use-elements/references/kits.md) lists each component and the data it takes.
 
 ### Renderer limits
@@ -622,6 +630,281 @@ input above it with a message that names the limit. `BarChart`, `BridgeChart`, `
 WebGL up to 1,000,000, and `DensityMap` draws its grid on canvas. A canvas or WebGL plot keeps the same inspection,
 selection, readout and text alternative as an SVG plot. The WebGL figure was measured in a headless software renderer,
 not on a GPU.
+
+## Explorable explanations
+
+A lesson is a set of named values a reader can change, such as a batch size or a temperature, and everything that reads
+them: the sentences, the controls, the figures and an agent. Six entries build an essay in layers. `/lesson` holds the
+values, `/scene` draws diagrams, `/article` arranges beats of prose and figures, and `/mdx` lets one file hold the
+essay. `/lesson/spec` checks a plan before any component exists, and `/lesson/agent` lets a tutor model read and move
+the lesson. The idea:
+
+- **One store.** `defineLesson` declares each param with its range, step and format, each derived value as a pure
+  function of the values before it, and each beat with its states as plain data. `Lesson` holds the values in one UI SDK
+  primitive. A number in a sentence, a slider, a figure, a player and an agent read and set the same names. A value
+  outside a param's range is refused with an error that names the param and its bounds.
+- **States, not animations.** You say where things are. A `Scene` object given new props eases to them, a wire follows
+  its ends, and an object with the same `id` is the same thing in every state. Every move runs on one shared clock
+  (`createTween` and `useTween`), and a reader who asked for reduced motion gets the end state at once.
+- **One kernel.** A `Scene` draws with the plot kernel, so a diagram has the chart's tones, readout and keyboard cursor.
+  Every labelled object is an item the arrow keys reach.
+- **Four views of one essay.** An `Article` renders the same children as a scrolling essay, a presentation, a static
+  page or a beat sheet. The views differ in arrangement only.
+- **Only the reader's acts count.** Predictions, challenges and hints change the reader's progress only when the reader
+  makes them. A change an agent makes never commits a prediction or reaches a challenge.
+- **Agents use the bridge.** The lesson and the reader's progress appear in the UI SDK agent snapshot. Tutor tools, the
+  learner trace and tours read and act through `createAgent` and nothing else.
+
+Define a lesson, then put its values in a sentence and a diagram. `Param` is a number the reader drags in place, and
+`Value` writes a value in its declared format:
+
+```tsx
+import { defineLesson, Lesson, Param, ParamSlider, useLesson, Value } from '@mechane-ai/elements/lesson';
+import { Scene, SceneNode, SceneWire } from '@mechane-ai/elements/scene';
+
+const lesson = defineLesson({
+  id: 'batch-noise',
+  title: 'Why a bigger batch is quieter',
+  params: {
+    batch: {
+      kind: 'number',
+      label: 'Batch size',
+      value: 4,
+      min: 1,
+      max: 256,
+      step: 1,
+      scale: 'log',
+      format: { maximumFractionDigits: 0 },
+    },
+  },
+  derived: {
+    noise: {
+      label: 'Gradient noise',
+      format: { style: 'percent', maximumFractionDigits: 0 },
+      from: ({ batch }) => 1 / Math.sqrt(batch),
+    },
+  },
+  beats: [
+    {
+      id: 'noise',
+      title: 'Noise falls with the square root',
+      goal: 'Find that four times the examples halves the noise.',
+      states: [
+        { id: 'four', label: 'Four examples', values: { batch: 4 } },
+        { id: 'sixty-four', label: 'Sixty-four examples', values: { batch: 64 } },
+      ],
+    },
+  ],
+});
+
+function BatchScene() {
+  const { values } = useLesson(lesson);
+
+  return (
+    <Scene title="From a batch to a gradient" x={[0, 2]} y={[0, 1]} height="compact">
+      <SceneNode id="batch" at={[0.5, 0.5]} text={`${values.batch} examples`} />
+      <SceneNode
+        id="gradient"
+        at={[1.5, 0.5]}
+        shape="pill"
+        text="gradient"
+        label={`The averaged gradient, ${Math.round(values.noise * 100)}% as noisy as one example`}
+        tone={values.noise > 0.5 ? 'negative' : 'positive'}
+      />
+      <SceneWire from="batch" to="gradient" label="The examples are averaged" />
+    </Scene>
+  );
+}
+
+export function BatchPage() {
+  return (
+    <Lesson lesson={lesson} locale="en-US" shouldSyncUrl>
+      <p>
+        A gradient from <Param name="batch" /> examples is <Value name="noise" /> as noisy as one example.
+      </p>
+      <BatchScene />
+      <ParamSlider name="batch" />
+    </Lesson>
+  );
+}
+```
+
+A state is the whole picture. `showState` (and `show` from `useLesson`) sets every param the state does not name back to
+the lesson's opening value, so a state looks the same live, on the beat sheet and in a tour. `setMany` changes some
+params and keeps the rest.
+
+`useLesson(lesson)` types the values from the definition, so `values.noise` is a number and `set('batch', 'high')` does
+not compile. `shouldSyncUrl` keeps the values in the address bar, and `storageKey` keeps them across visits. A `Scene`
+without a `locale` takes the locale of the `Lesson` around it.
+
+An `Article` renders the `Lesson` for you and arranges its children as beats. A `Beat` takes the id of a beat the lesson
+declares, so its title, tutor notes, reveal steps and states stay in the definition. `Figure` numbers a figure, gives it
+a caption and a text description, and `Predict` asks the reader to commit a guess before the answer shows:
+
+```tsx
+import { Article, Beat, Figure, Predict } from '@mechane-ai/elements/article';
+
+export function BatchEssay() {
+  return (
+    <Article
+      lesson={lesson}
+      locale="en-US"
+      title="Why a bigger batch is quieter"
+      summary="The gradient of a batch is an average. See how its noise falls as the batch grows."
+      storageKey="batch-noise"
+    >
+      <Beat id="noise">
+        <p>
+          With <Param name="batch" /> examples, the gradient is <Value name="noise" /> as noisy as one example.
+        </p>
+        <Predict
+          id="quadruple"
+          prompt="Four times the examples: how does the noise change?"
+          options={[
+            { id: 'quarter', label: 'It falls to a quarter' },
+            { id: 'half', label: 'It halves' },
+          ]}
+          answer="half"
+        >
+          <p>Noise falls with the square root of the batch size, so four times the examples halves it.</p>
+        </Predict>
+        <Figure
+          id="batch-scene"
+          caption="A batch of examples is averaged into one gradient."
+          description="Two boxes joined by an arrow: the batch of examples and the gradient they average into."
+        >
+          <BatchScene />
+        </Figure>
+      </Beat>
+    </Article>
+  );
+}
+```
+
+Give `Article` a `view` of `'article'` (the default scrolling essay with a contents list), `'present'` (one beat at a
+time; Right or Space goes on, and a beat opens at its first declared state), `'static'` (every beat open at its first
+state, each figure followed by its description, no script needed) or `'sheet'` (every beat in each declared state, each
+figure scaled to fit, its tutor notes, and a list of checks). The sheet names a beat with no figure, a figure with no
+description, a player with no `Transport` and a sentence control that changes no figure.
+
+`recipes/counting-cards.tsx` (story `Recipes/Counting Cards`) is a full example on every layer, and
+`recipes/explorable-essay.tsx` is a short one.
+
+### Choose an entry
+
+Every part has a question it answers; `explainerGuide` from `/lesson/spec` lists them with when to use each and an
+example. The
+[teaching guide](https://github.com/mechane-ai/mechane/blob/main/workspaces/core/docs/ui-teaching.md#choose-a-part)
+writes the guide out.
+
+| Entry           | Main exports                                                                                                       | The author asks                                                 |
+| --------------- | ------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------- |
+| `/lesson`       | `defineLesson`, `Lesson`, `useLesson`, `Param`, `Value`, `ParamSlider`, `Playback`, `Transport`, `createTween`     | Which values can the reader change, and who reads them?         |
+| `/scene`        | `Scene`, `SceneNode`, `SceneWire`, `SceneAxes`, `SceneCurve`, `SceneCard`, `SceneCells`, `SceneFlow`, `MorphScope` | What is where, and what moves when a value changes?             |
+| `/article`      | `Article`, `Beat`, `Figure`, `Scrolly`, `Predict`, `Challenge`, `Term`, `DiagramPart`, `Footnote`, `References`    | What is the order of the argument, and what does the reader do? |
+| `/mdx`          | `Essay`, `essayComponents`                                                                                         | Is the essay mostly prose?                                      |
+| `/lesson/spec`  | `validateLessonPlan`, `checkLesson`, `describeLesson`, `lessonWalk`, `explainerGuide`                              | Is the plan sound before any component exists?                  |
+| `/lesson/agent` | `tutorTools`, `createLearnerTrace`, `summarizeTrace`, `playTour`, `validateTour`, `tourFromTrace`                  | What can a tutor read and do beside the reader?                 |
+
+### Write an essay as MDX
+
+`/mdx` is for an essay that is mostly prose. `Essay` renders a compiled `.mdx` file inside an `Article`, and
+`essayComponents` lets the file use Markdown and every teaching part with no imports. The application brings its own MDX
+compiler, such as `@mdx-js/rollup`, and a math typesetter if it wants one. Start from the starter:
+
+```sh
+pnpm exec mechane-elements-catalog --new-essay my-essay
+cd my-essay
+pnpm install
+pnpm dev
+```
+
+The command copies the starter into a new or empty directory, names the package after it and pins `^` this version of
+Elements. It writes `package.json`, `tsconfig.json`, `vite.config.ts`, `index.html`, `plan.json` (the lesson as plain
+data), `AGENTS.md`, `README.md` and a `src` folder with `lesson.ts`, `figures.tsx`, `essay.mdx`, `main.tsx` and
+`mdx.d.ts`. `pnpm dev` serves the essay at `/`, and `?view=present`, `?view=static` and `?view=sheet` show the other
+views of the same file. In `main.tsx`, `<Essay lesson={lesson} content={Content} locale="en-US" {...meta} />` renders
+the file, and `Content` and `meta` come from `import Content, { meta } from './essay.mdx'`.
+
+For math, an essay file uses `<TeX>` (the article's math part, exported as `TeX`), and `Article` typesets it through its
+`math` prop. In the file, a sentence reads `At a rate of <Param name="rate" /> the loss is <Value name="loss" />.` and a
+figure is `<Figure id="curve" caption="…" description="…">…</Figure>` inside `<Beat id="…">`. The `view` address
+parameter chooses the view unless `Essay` gets a `view` prop.
+
+### Plan and check
+
+Draft the lesson as plain JSON before writing components. A `LessonPlan` names the audience, the one idea, the params,
+the derived values and the beats, and each beat may name the figure it shows and what it asks of the reader.
+`validateLessonPlan` returns every finding with a path and a sentence, and `checkLesson` gives teaching advice on a
+defined lesson. An error means `defineLesson` would refuse it. Advice, such as a beat with no goal or a beat that
+introduces two params at once, you may decline:
+
+```ts
+import { checkLesson, validateLessonPlan } from '@mechane-ai/elements/lesson/spec';
+
+const result = validateLessonPlan(plan);
+
+for (const finding of [...result.findings, ...checkLesson(lesson)]) {
+  console.log(`${finding.severity} at ${finding.path}: ${finding.message}`);
+}
+```
+
+Three skills cover this work: `plan-lesson`, `write-explainer` and `review-explainer`. `--install-skills` installs them
+with the others.
+
+### Teach with an agent
+
+The lesson appears in the UI SDK agent snapshot as a `lesson` entry named by the lesson's title, with the values, the
+beat, the reveal step and the running player. Its actions are `setParam`, `setParams`, `showState`, `reset`, `setBeat`,
+`next`, `previous`, `play` and `pause`. An `Article` adds a `lesson-progress` entry that an agent can read and cannot
+change. `/lesson/agent` builds on that bridge:
+
+- `tutorTools({ agent, lesson, locale, article, answers })` returns tools a model can call: `read_outline`,
+  `read_place`, `set_param`, `set_params`, `show_state`, `go_to_beat`, `next`, `previous`, `play`, `pause` and
+  `inspect_figure`. Each has a name, a description, an `inputSchema` as JSON Schema and an async `run` that returns a
+  plain result.
+- `answerSources(articleOutline(children))` from `/article` maps each `Predict` that takes its answer from a lesson
+  value (`answerFrom`) to that value. Pass it as `answers`, and the tools leave the value out until the reader commits.
+- `createLearnerTrace` records what the reader did, and `summarizeTrace` writes it as plain facts for a tutor prompt.
+  Changes an agent makes are left out.
+- `playTour` plays a list of steps (`beat`, `step`, `state`, `values`, `say`, `hold`) through the bridge and pauses when
+  the reader acts. `validateTour` checks a tour against its lesson, and `tourFromTrace` turns a recorded demonstration
+  into one.
+
+```ts
+import { createAgent } from '@mechane-ai/elements/agent';
+import { answerSources, articleOutline } from '@mechane-ai/elements/article';
+import type { LessonTour } from '@mechane-ai/elements/lesson/agent';
+import {
+  createLearnerTrace,
+  playTour,
+  summarizeTrace,
+  tutorTools,
+  validateTour,
+} from '@mechane-ai/elements/lesson/agent';
+
+const agent = createAgent();
+const title = 'Why a bigger batch is quieter';
+
+// `essay` is the node passed as the children of the `Article`.
+const answers = answerSources(articleOutline(essay));
+const tools = tutorTools({ agent, lesson, locale: 'en-US', article: title, answers });
+const trace = createLearnerTrace({ agent, lesson, article: title });
+
+const tour: LessonTour = [
+  { beat: 'noise', state: 'four', say: 'Four examples give a noisy gradient.', hold: 'regular' },
+  { beat: 'noise', values: { batch: 64 }, say: 'Sixty-four examples cut the noise to an eighth.', hold: 'long' },
+];
+
+const findings = validateTour(tour, lesson);
+const player = playTour({ agent, lesson, tour, onSay: (line) => console.log(line) });
+const facts = summarizeTrace({ record: trace.read(), lesson, locale: 'en-US', answers });
+```
+
+A tutor model calls `tools[0].run()` to read the outline and the others to act. The model never receives a `Predict`
+answer before the reader commits it. The
+[teaching guide](https://github.com/mechane-ai/mechane/blob/main/workspaces/core/docs/ui-teaching.md) has the full
+reference for every entry.
 
 ## Develop and release
 

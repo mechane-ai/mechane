@@ -142,6 +142,7 @@ from 101 are Mechane's own.
 - [PostgreSQL Hyperdrive pooling](139-postgres-hyperdrive-pooling/CONTRACT.md): uncached TLS-required Hyperdrive pooling with bounded per-isolate `pg` connection ceilings.
 - [Data display](140-ui-data-display/CONTRACT.md): one plot kernel, shared figure props, and one meaning per visual channel across chart families.
 - [Domain kits](141-ui-domain-kits/CONTRACT.md): domain components composed from the Elements families through public entries, with no marks of their own.
+- [Teaching layers](142-ui-teaching-layers/CONTRACT.md): lessons, scenes and articles on one store, one clock and the plot kernel, with states described and motion supplied.
 - [Durable agent runtime](124-durable-agent-runtime/CONTRACT.md): one Pi execution owner, guarded tools, and metered provider attempts.
 - [Notification and communication boundaries](125-channel-delivery/CONTRACT.md): generic authenticated producers and explicit addressed communication tools.
 - [Structured presentation](126-structured-presentation/CONTRACT.md): explicit public messages with one bounded catalog and an Elements renderer.

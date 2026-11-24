@@ -107,6 +107,8 @@ export type DotMarkProps = MarkState & {
   /** True for a value that is missing, masked or excluded: an outline with no fill. */
   readonly isHollow?: boolean | undefined;
   readonly emphasis?: MarkEmphasis | undefined;
+  /** The record's id, written as `data-chart-mark` so a figure outside the chart can find this mark. */
+  readonly mark?: string | undefined;
 };
 
 /** One observation at a position. */
@@ -119,11 +121,13 @@ export function DotMark({
   emphasis = 'normal',
   isInspected = false,
   isSelected = false,
+  mark,
 }: DotMarkProps): ReactNode {
   const color = toneColor(tone, emphasis);
 
   return (
     <circle
+      data-chart-mark={mark}
       cx={x}
       cy={y}
       r={radius}
@@ -149,6 +153,8 @@ export type BarMarkProps = MarkState & {
   readonly tone: ChartTone;
   readonly isHollow?: boolean | undefined;
   readonly emphasis?: MarkEmphasis | undefined;
+  /** The record's id, written as `data-chart-mark` so a figure outside the chart can find this mark. */
+  readonly mark?: string | undefined;
 };
 
 /** A rectangle whose length carries an amount from a zero baseline, or whose area fills a cell. */
@@ -162,11 +168,13 @@ export function BarMark({
   emphasis = 'normal',
   isInspected = false,
   isSelected = false,
+  mark,
 }: BarMarkProps): ReactNode {
   const color = toneColor(tone, emphasis);
 
   return (
     <rect
+      data-chart-mark={mark}
       x={x}
       y={y}
       width={Math.max(0, width)}
@@ -230,11 +238,13 @@ export function SymbolMark({
   emphasis = 'normal',
   isInspected = false,
   isSelected = false,
+  mark,
 }: SymbolMarkProps): ReactNode {
   const color = toneColor(tone, emphasis);
 
   return (
     <path
+      data-chart-mark={mark}
       d={symbolOutline({ shape, x, y, radius })}
       fill={color}
       stroke={isHollow ? color : chartToneOutlines[tone]}

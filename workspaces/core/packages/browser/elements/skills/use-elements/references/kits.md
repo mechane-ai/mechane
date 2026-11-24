@@ -14,34 +14,16 @@ interpretability kits:
 - computes nothing. The application supplies means, intervals, ranks and deltas, or calls
   `@mechane-ai/elements/charts/transforms` first. A list may sort and filter the rows it is given.
 
-The explainers kit takes content slots, not data, and its pieces take only what they need. The rules are
+An explorable essay is not a kit: it uses the teaching layers in [teaching](teaching.md), which replace the old
+explainers kit. The rules for kits are
 [contract 141](https://github.com/mechane-ai/mechane/blob/main/workspaces/core/.contracts/141-ui-domain-kits/CONTRACT.md).
 
 | Kit              | Entry                    | Use it for                                                                 |
 | ---------------- | ------------------------ | -------------------------------------------------------------------------- |
-| Explainers       | `/kits/explainers`       | A long page whose prose, figures and diagrams point at each other.         |
 | Training         | `/kits/training`         | Watching and comparing training runs.                                      |
 | Operations       | `/kits/operations`       | The health, budgets and events of a service.                               |
 | Evaluation       | `/kits/evaluation`       | Ranking and comparing models on benchmarks.                                |
 | Interpretability | `/kits/interpretability` | Reading learned features, attribution, attention, logit lens and steering. |
-
-## Explainers
-
-For a paper-like page. Give every thing one id and every figure one `id` in the explainer's list.
-
-- `Explainer` takes `figures`, the ids of every numbered figure in reading order, and the article as `children`.
-- `NumberedFigure` takes `id`, `caption` and a chart or diagram as `children`. It shows "Figure 2".
-- `FigureReference` takes `to`, a figure id, and writes "Figure 2" as a link.
-- `Term` takes `inspects`, an id the figures use, and words. Hovering or focusing it highlights that record in every
-  `ChartLink` figure.
-- `DiagramPart` takes `inspects`, a `label` and SVG shapes, so a hand-drawn diagram links to the figures both ways.
-- `BoundValue` is a number in a sentence the reader changes in place. It takes `value` with `onValueChange` or
-  `defaultValue`, `min`, `max`, `step`, optional `scale` (`'linear'` or `'log'`), `locale`, `format` and `label`.
-- `StorySteps` walks through `steps` (`id`, `title`, `body`, optional `inspected`) beside the figures it takes as
-  `children`. It takes `step` with `onStepChange` or `defaultStep`, a `label` that names the walk, and `labels` for the
-  words of its controls. Each step points the linked figures at its `inspected` record.
-
-The application supplies the prose, the figures and the ids. Put a `ChartLink` and a `ToneScope` around the article.
 
 ## Training
 

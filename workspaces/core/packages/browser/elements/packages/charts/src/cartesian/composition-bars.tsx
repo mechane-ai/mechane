@@ -55,7 +55,8 @@ export function CompositionBars({
     const start = y(base);
     const end = y(base + value);
     const top = Math.min(start, end);
-    const height = Math.max(value === 0 ? 1 : 0, Math.abs(end - start));
+    const isTick = value === 0 && base === 0;
+    const height = Math.max(isTick ? 1 : 0, Math.abs(end - start));
 
     return `translateY(${top}px) scaleY(${height})`;
   }

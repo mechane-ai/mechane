@@ -469,16 +469,19 @@ The [package README](../packages/browser/elements/README.md#describe-a-figure-as
 
 ## Kits
 
-A kit under `packages/kits/src/<kit>` composes charts for a domain: `explainers`, `training`, `operations`, `evaluation`
-and `interpretability`. It adds no marks, scales or axes. It decides which figures answer the question, shares one tone
+A kit under `packages/kits/src/<kit>` composes charts for a domain: `training`, `operations`, `evaluation` and
+`interpretability`. It adds no marks, scales or axes. It decides which figures answer the question, shares one tone
 scope and one linked inspection, and writes the words. Kit components take `locale`, declared formats, `status` and a
-partial `labels` object, and compute nothing. The explainers kit takes content slots in place of data. Import other
-families only through their public entries. The rules are [contract 141](../.contracts/141-ui-domain-kits/CONTRACT.md).
+partial `labels` object, and compute nothing. Import other families only through their public entries. The rules are
+[contract 141](../.contracts/141-ui-domain-kits/CONTRACT.md).
 
 The interpretability kit, `@mechane-ai/elements/kits/interpretability`, has `FeatureCard`, `FeatureList`,
 `AttributionWorkbench`, `AttentionHeadGrid`, `LogitLens`, `EmbeddingAtlas` and `SteeringPanel`. A feature keeps one id
 in the list, the card, the map and the attribution graph. The application supplies activations, attributions, attention
 weights and decoded layers. The kit never runs a model.
+
+Explorable essays are not a kit. Numbered figures, linked terms, bound values and steps live in
+[teaching](ui-teaching.md), and a `Scene` there draws with this kernel.
 
 ## Appearance
 

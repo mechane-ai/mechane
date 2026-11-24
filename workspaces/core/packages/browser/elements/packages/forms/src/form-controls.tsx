@@ -44,6 +44,10 @@ import type { InputProps } from './forms.tsx';
 const InputGroupDensityContext = createContext<ControlDensity>('standard');
 const NumberFieldDensityContext = createContext<ControlDensity>('standard');
 
+/** The slider thumb's side. The thumb centers on the track's ends, so the control keeps half of it outside each end. */
+const THUMB_SIZE = 16;
+const THUMB_HALF = THUMB_SIZE / 2;
+
 const styles = stylex.create({
   fieldContext: { display: 'contents' },
   fieldset: {
@@ -123,7 +127,14 @@ const styles = stylex.create({
     'minHeight': { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
     'touchAction': 'none',
     'userSelect': 'none',
-    ':is([data-orientation="vertical"])': { width: controls.coarseTarget, minHeight: 160, justifyContent: 'center' },
+    'marginInline': THUMB_HALF,
+    ':is([data-orientation="vertical"])': {
+      width: controls.coarseTarget,
+      minHeight: 160,
+      justifyContent: 'center',
+      marginInline: 0,
+      marginBlock: THUMB_HALF,
+    },
   },
   track: {
     'position': 'relative',
@@ -143,8 +154,8 @@ const styles = stylex.create({
   thumb: {
     'display': 'block',
     'boxSizing': 'border-box',
-    'width': 16,
-    'height': 16,
+    'width': THUMB_SIZE,
+    'height': THUMB_SIZE,
     'borderWidth': 1,
     'borderStyle': 'solid',
     'borderColor': colors.ink,
@@ -158,13 +169,14 @@ const styles = stylex.create({
       outlineColor: colors.focus,
       outlineOffset: 2,
     },
+    // A touch-sized target across the track; along it the control takes presses, so the target stays in the slider.
     '::after': {
       content: '""',
       position: 'absolute',
       top: '50%',
       left: '50%',
       transform: 'translate(-50%, -50%)',
-      width: controls.coarseTarget,
+      width: THUMB_SIZE,
       height: controls.coarseTarget,
     },
   },

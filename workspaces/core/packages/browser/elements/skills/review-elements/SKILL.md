@@ -9,7 +9,8 @@ description:
 # Review an Elements page
 
 Run the page in a browser and use it. A passing type check says nothing about focus, loading or layout. Report what you
-checked, what failed and what you could not check.
+checked, what failed and what you could not check. For an explorable essay built with the teaching layers, also follow
+the `review-explainer` skill, which checks whether it teaches.
 
 ## 1. Keyboard alone
 
@@ -46,7 +47,8 @@ Check 360 pixels wide, a tablet width and a wide desktop.
 
 - Switch to the dark theme and open every menu, dialog, popover and tooltip. A portaled panel in the wrong theme means
   the theme is not on the document root.
-- Turn on reduced motion. Fades and slides stop, and nothing waits for an animation to finish.
+- Turn on reduced motion. Fades and slides stop, and nothing waits for an animation to finish. A scene lands on its new
+  state at once and a `Playback` jumps to its end.
 
 ## 5. Honest content
 

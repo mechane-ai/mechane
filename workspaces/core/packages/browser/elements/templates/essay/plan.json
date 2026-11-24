@@ -1,0 +1,96 @@
+{
+  "id": "learning-rate",
+  "title": "Why a big learning rate blows up",
+  "audience": "Readers who know a model is trained by gradient descent but have not seen why the learning rate has an upper limit.",
+  "idea": "Each step multiplies the loss by (1 - 2 × rate) squared, so it falls for rates under 1 and grows past it.",
+  "params": {
+    "rate": {
+      "kind": "number",
+      "label": "Learning rate",
+      "value": 0.1,
+      "min": 0.05,
+      "max": 1.2,
+      "step": 0.05,
+      "format": { "maximumFractionDigits": 2 }
+    },
+    "steps": {
+      "kind": "number",
+      "label": "Steps taken",
+      "value": 0,
+      "min": 0,
+      "max": 10,
+      "step": 1,
+      "format": { "maximumFractionDigits": 0 }
+    }
+  },
+  "derived": {
+    "weight": {
+      "label": "Weight",
+      "format": { "maximumSignificantDigits": 3 },
+      "reads": ["rate", "steps"],
+      "formula": "(1 - 2 × rate) to the power of steps"
+    },
+    "loss": {
+      "label": "Loss",
+      "format": { "maximumSignificantDigits": 2 },
+      "reads": ["weight"],
+      "formula": "the weight squared"
+    },
+    "factor": {
+      "label": "Loss factor per step",
+      "format": { "maximumFractionDigits": 2 },
+      "reads": ["rate"],
+      "formula": "(1 - 2 × rate) squared"
+    }
+  },
+  "beats": [
+    {
+      "id": "update",
+      "title": "One step of gradient descent",
+      "goal": "See that a step moves the weight against its slope by a fixed fraction of that slope.",
+      "misconception": "That a bigger step always gets to the minimum sooner.",
+      "states": [
+        { "id": "start", "label": "Before the first step", "values": { "rate": 0.1, "steps": 0 } },
+        { "id": "one-step", "label": "After one step", "values": { "rate": 0.1, "steps": 1 } }
+      ],
+      "figure": {
+        "part": "Scene",
+        "question": "How does one step turn a weight into the next weight?",
+        "shows": ["weight", "rate"]
+      }
+    },
+    {
+      "id": "rate",
+      "title": "The rate sets how fast the loss falls",
+      "goal": "Connect a larger rate with a smaller loss factor, up to the rate that lands on the minimum.",
+      "states": [
+        { "id": "slow", "label": "Rate 0.1, ten steps", "values": { "rate": 0.1, "steps": 10 } },
+        { "id": "fast", "label": "Rate 0.4, ten steps", "values": { "rate": 0.4, "steps": 10 } }
+      ],
+      "figure": {
+        "part": "CurveChart",
+        "question": "How fast does the loss fall at this rate?",
+        "shows": ["loss", "rate"]
+      },
+      "ask": { "kind": "predict", "prompt": "After ten steps, which learning rate leaves the smaller loss?" }
+    },
+    {
+      "id": "blowup",
+      "title": "Past a rate of one, the loss grows",
+      "goal": "Find the rate where each step stops shrinking the loss and starts growing it.",
+      "states": [
+        { "id": "edge", "label": "Rate 1, ten steps", "values": { "rate": 1, "steps": 10 } },
+        { "id": "blown", "label": "Rate 1.1, ten steps", "values": { "rate": 1.1, "steps": 10 } }
+      ],
+      "figure": {
+        "part": "CurveChart",
+        "question": "Does the loss fall, stay flat or climb at this rate?",
+        "shows": ["loss", "rate", "factor"]
+      },
+      "ask": {
+        "kind": "challenge",
+        "prompt": "Find the largest learning rate on the slider that still makes the loss fall."
+      }
+    }
+  ]
+}

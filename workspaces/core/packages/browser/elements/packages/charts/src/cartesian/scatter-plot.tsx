@@ -382,6 +382,7 @@ export function ScatterPlot(props: ScatterPlotProps): ReactNode {
                 {drawn.map((point) => (
                   <DotMark
                     key={point.id}
+                    mark={point.id}
                     x={point.left}
                     y={point.top}
                     tone={point.tone}

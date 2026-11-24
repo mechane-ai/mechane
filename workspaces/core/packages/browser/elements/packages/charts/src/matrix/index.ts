@@ -9,6 +9,7 @@ export { ConfusionMatrix, confusionMatrixLimits } from './confusion-matrix.tsx';
 export type { CorrelationMatrixProps, CorrelationVariable } from './correlation-matrix.tsx';
 export { CorrelationMatrix, correlationMatrixLimits } from './correlation-matrix.tsx';
 export type { HeatmapPalette, HeatmapScale } from './heatmap-scale.ts';
+export { heatmapColor } from './heatmap-scale.ts';
 export { matrixLimits } from './matrix-figure.tsx';
 export type {
   MatrixAxisItem,

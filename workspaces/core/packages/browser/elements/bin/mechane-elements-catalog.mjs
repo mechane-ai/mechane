@@ -1,12 +1,19 @@
-import { cpSync, readFileSync, rmSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { cpSync, existsSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { basename, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 
 const ignored = new Set(['a', 'an', 'and', 'are', 'build', 'for', 'in', 'of', 'on', 'page', 'the', 'to', 'with']);
 
 /** The skills for an application that uses Elements. The package also ships a skill for changing the library. */
-const appSkills = ['use-elements', 'review-elements', 'upgrade-elements'];
+const appSkills = [
+  'use-elements',
+  'review-elements',
+  'upgrade-elements',
+  'plan-lesson',
+  'write-explainer',
+  'review-explainer',
+];
 
 /** @import {Catalog} from './catalog.d.mts' */
 
@@ -27,6 +34,81 @@ function installSkills(catalog, directory) {
   });
 
   return { package: catalog.package, version: catalog.version, installed };
+}
+
+const gitignore = 'node_modules\ndist\n';
+
+/** Starter files kept under another name so the repository does not read them as its own, and the names they take. */
+const renamedFiles = {
+  'package.template.json': 'package.json',
+  'tsconfig.template.json': 'tsconfig.json',
+  'vite.config.template.txt': 'vite.config.ts',
+};
+
+/**
+ * The package name an npm package may have, taken from the name of the directory it lives in.
+ *
+ * @param {string} directory The new project directory.
+ */
+function packageNameOf(directory) {
+  const name = basename(directory)
+    .toLowerCase()
+    .replaceAll(/[^a-z0-9._-]+/g, '-')
+    .replaceAll(/^[._-]+|-+$/g, '');
+
+  return name === '' ? 'essay' : name;
+}
+
+/**
+ * Copies the essay starter into a new directory and names the package after it. The starter pins this version of
+ * Elements, and the directory must not exist or must be empty.
+ *
+ * @param {Catalog} catalog The catalog built from the public package.
+ * @param {string} directory The new project directory.
+ */
+function newEssay(catalog, directory) {
+  const target = resolve(directory);
+
+  if (existsSync(target) && readdirSync(target).length > 0) {
+    throw new Error(`Choose a new or empty directory: ${directory} already has files.`);
+  }
+
+  cpSync(fileURLToPath(new URL('../templates/essay', import.meta.url)), target, { recursive: true });
+
+  for (const [from, to] of Object.entries(renamedFiles)) {
+    renameSync(join(target, from), join(target, to));
+  }
+
+  const name = packageNameOf(target);
+  const manifest = join(target, 'package.json');
+
+  writeFileSync(
+    manifest,
+    readFileSync(manifest, 'utf8')
+      .replaceAll('__PACKAGE_NAME__', name)
+      .replaceAll('__ELEMENTS_VERSION__', `^${catalog.version}`),
+  );
+  writeFileSync(join(target, '.gitignore'), gitignore);
+
+  const written = readdirSync(target, { recursive: true, withFileTypes: true })
+    .filter((entry) => entry.isFile())
+    .map((entry) => relative(target, join(entry.parentPath, entry.name)))
+    .toSorted();
+
+  return {
+    package: catalog.package,
+    version: catalog.version,
+    name,
+    directory: target,
+    written,
+    next: [
+      `cd ${directory}`,
+      'pnpm install',
+      'pnpm dev',
+      'pnpm skills',
+      'Open /?view=sheet to read the beat sheet and its checks.',
+    ],
+  };
 }
 
 /**
@@ -71,28 +153,38 @@ function lookup(catalog, query) {
 const usage = [
   'Usage: mechane-elements-catalog [task or public export name]',
   '       mechane-elements-catalog --install-skills <directory>',
+  '       mechane-elements-catalog --new-essay <directory>',
   '',
   'With a task, prints the matching recipes, public exports and the best example as JSON.',
   'With --install-skills, copies the Elements skills into an agent skills directory such as .claude/skills.',
+  'With --new-essay, copies the explorable essay starter into a new or empty directory and prints what it wrote.',
 ].join('\n');
 
 /** @param {Catalog} catalog The catalog built from the public package. */
 export function runCatalog(catalog) {
   const { positionals, values } = parseArgs({
     allowPositionals: true,
-    options: { 'help': { type: 'boolean', short: 'h', default: false }, 'install-skills': { type: 'string' } },
+    options: {
+      'help': { type: 'boolean', short: 'h', default: false },
+      'install-skills': { type: 'string' },
+      'new-essay': { type: 'string' },
+    },
   });
-
-  const directory = values['install-skills'];
 
   if (values.help) {
     process.stdout.write(`${usage}\n`);
-  } else {
-    const result =
-      directory === undefined
-        ? lookup(catalog, positionals.join(' ').trim().toLowerCase())
-        : installSkills(catalog, directory);
 
-    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+    return;
+  }
+
+  const skills = values['install-skills'];
+  const essay = values['new-essay'];
+
+  if (skills !== undefined) {
+    process.stdout.write(`${JSON.stringify(installSkills(catalog, skills), null, 2)}\n`);
+  } else if (essay === undefined) {
+    process.stdout.write(`${JSON.stringify(lookup(catalog, positionals.join(' ').trim().toLowerCase()), null, 2)}\n`);
+  } else {
+    process.stdout.write(`${JSON.stringify(newEssay(catalog, essay), null, 2)}\n`);
   }
 }

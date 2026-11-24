@@ -50,21 +50,22 @@ persistence and every asynchronous operation.
 
 ## Pick the component
 
-| The page needs                                    | Use                                                                                                               | Read                                         |
-| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| An app frame, a page, sections, a record page     | `AppShell`, `PageLayout`, `PageSection`, `RecordPage`                                                             | [workspace](references/workspace.md)         |
-| Records compared across columns, search, filters  | `DataTable` with a `query`                                                                                        | [collections](references/collections.md)     |
-| A selected record's fields beside its list        | `Inspector`, `Details`                                                                                            | [collections](references/collections.md)     |
-| Fields, choices, dates, files, a save             | `Field`, the `/forms` controls, `FormActions`, `ConfirmButton`                                                    | [forms](references/forms.md)                 |
-| A trend, comparison, distribution or relationship | One chart from a `/charts/*` entry                                                                                | [charts](references/charts.md)               |
-| A figure an agent or a server writes as JSON      | `Figure`, `validateFigureSpec`, `describeFigure` and `chartGuide` from `/charts/figure`                           | [figures](references/figures.md)             |
-| A run, evaluation, service, feature or explainer  | A kit from `/kits/training`, `/kits/evaluation`, `/kits/operations`, `/kits/explainers`, `/kits/interpretability` | [kits](references/kits.md)                   |
-| A first read, a refresh, an empty or failed read  | `AsyncRegion`, `LoadingScope`, `EmptyState`, `Notice`                                                             | [reports](references/reports.md)             |
-| A command menu, a decision, an anchored panel     | `Menu`, `AlertDialog`, `Dialog`, `Drawer`, `Popover`, `Tooltip`                                                   | the catalog                                  |
-| Route destinations or panels inside one view      | `PageNavigation` for links, `Tabs` or `ContentTabs` for panels                                                    | [workspace](references/workspace.md)         |
-| A transcript, a prompt, tool activity, approvals  | `Conversation`, `Message`, `PromptInput`, `Approval`                                                              | [conversations](references/conversations.md) |
-| Markdown, source, a diff, a file tree, a log      | `/content/markdown`, `/content/code`, `/content/diff`, `/content/tree`, `/content`                                | the catalog                                  |
-| A model or browser agent that reads and acts      | `createAgent` and `registerTools` from `/agent`                                                                   | [agent access](references/agent.md)          |
+| The page needs                                    | Use                                                                                           | Read                                         |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| An app frame, a page, sections, a record page     | `AppShell`, `PageLayout`, `PageSection`, `RecordPage`                                         | [workspace](references/workspace.md)         |
+| Records compared across columns, search, filters  | `DataTable` with a `query`                                                                    | [collections](references/collections.md)     |
+| A selected record's fields beside its list        | `Inspector`, `Details`                                                                        | [collections](references/collections.md)     |
+| Fields, choices, dates, files, a save             | `Field`, the `/forms` controls, `FormActions`, `ConfirmButton`                                | [forms](references/forms.md)                 |
+| A trend, comparison, distribution or relationship | One chart from a `/charts/*` entry                                                            | [charts](references/charts.md)               |
+| A figure an agent or a server writes as JSON      | `Figure`, `validateFigureSpec`, `describeFigure` and `chartGuide` from `/charts/figure`       | [figures](references/figures.md)             |
+| A run, evaluation, service or feature             | A kit from `/kits/training`, `/kits/evaluation`, `/kits/operations`, `/kits/interpretability` | [kits](references/kits.md)                   |
+| An explorable essay, a lesson, a moving diagram   | `/lesson`, `/scene`, `/article` and `/mdx`, planned with `/lesson/spec`                       | [teaching](references/teaching.md)           |
+| A first read, a refresh, an empty or failed read  | `AsyncRegion`, `LoadingScope`, `EmptyState`, `Notice`                                         | [reports](references/reports.md)             |
+| A command menu, a decision, an anchored panel     | `Menu`, `AlertDialog`, `Dialog`, `Drawer`, `Popover`, `Tooltip`                               | the catalog                                  |
+| Route destinations or panels inside one view      | `PageNavigation` for links, `Tabs` or `ContentTabs` for panels                                | [workspace](references/workspace.md)         |
+| A transcript, a prompt, tool activity, approvals  | `Conversation`, `Message`, `PromptInput`, `Approval`                                          | [conversations](references/conversations.md) |
+| Markdown, source, a diff, a file tree, a log      | `/content/markdown`, `/content/code`, `/content/diff`, `/content/tree`, `/content`            | the catalog                                  |
+| A model or browser agent that reads and acts      | `createAgent` and `registerTools` from `/agent`                                               | [agent access](references/agent.md)          |
 
 ## Start from a recipe
 
@@ -90,4 +91,5 @@ a running Elements Storybook, an MCP client can also discover components and exa
 ## Before you finish
 
 Check the page with the `review-elements` skill: keyboard alone, every read state, a phone width, the dark theme, and
-what an agent sees. After a package upgrade, follow the `upgrade-elements` skill.
+what an agent sees. Check an explorable essay with the `review-explainer` skill too. After a package upgrade, follow the
+`upgrade-elements` skill.

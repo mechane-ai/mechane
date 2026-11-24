@@ -120,6 +120,8 @@ from synthetic inputs. Lazy loading renderer code and packaged assets is compone
 - dependency-cruiser `ui-charts-dependencies` (065): enforced: Compose independent areas in the application, such as `<AppShell>{chart}</AppShell>`
 - dependency-cruiser `ui-kits-public-entry` (065): enforced: Import another Elements family through its public entry, such as `../../core/src/index.ts`; shared foundation definitions have explicit internal entries
 - dependency-cruiser `ui-kits-dependencies` (065): enforced: Compose independent areas in the application, such as `<AppShell>{chart}</AppShell>`
+- dependency-cruiser `ui-teaching-public-entry` (065): enforced: Import another Elements family through its public entry, such as `../../core/src/index.ts`; shared foundation definitions have explicit internal entries
+- dependency-cruiser `ui-teaching-dependencies` (065): enforced: Compose independent areas in the application, such as `<AppShell>{chart}</AppShell>`
 - dependency-cruiser `ui-sdk-element-owner` (065): enforced: Compose Elements controls, such as `Button` from `@mechane-ai/elements`; the family owns UI SDK behavior
 - dependency-cruiser `ui-tables-vendor-owner` (065): enforced: Import the Elements tables API, such as `@mechane-ai/elements/collections`, instead of its implementation dependency
 - dependency-cruiser `ui-content-vendor-owner` (065): enforced: Import the Elements content API, such as `@mechane-ai/elements/content`, instead of its implementation dependency

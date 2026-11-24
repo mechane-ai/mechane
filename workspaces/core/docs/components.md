@@ -72,6 +72,7 @@ fixed region an explicit divider; content must not scroll behind an unseparated 
 | Source, changes, and recorded output     | [Content](ui-content.md): UI SDK file navigation, code and diff views, and bounded inspection.                                                                                   |
 | Conversations and agent workflows        | [AI](ui-ai.md): prompt composition, live-edge scrolling, citations, approvals, and recipes.                                                                                      |
 | Trends, distributions, and relationships | [Charts](ui-charts.md): explicit measurements, values, and linked inspection.                                                                                                    |
+| Explorable explanations and lessons      | [Teaching](ui-teaching.md): one lesson store, diagrams with identity, essays and tutor tools.                                                                                    |
 | Shared visual roles                      | [Token foundations](../packages/browser/elements/packages/foundations/src/tokens.stories.tsx).                                                                                   |
 
 Each family’s metadata describes its root and public parts, their alternatives, and the decisions the application must

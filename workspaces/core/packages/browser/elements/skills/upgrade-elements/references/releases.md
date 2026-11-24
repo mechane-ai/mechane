@@ -2,6 +2,71 @@
 
 Newest first. Each section lists what an application must change, then what it may adopt.
 
+## 0.48
+
+Elements has a teaching family: lessons, diagrams with identity, explorable essays and tutor tools. It adds six entries
+and removes one. The only breaking change is that the `/kits/explainers` entry is gone. Its exports moved to the new
+entries or were removed, with no aliases: change each import.
+
+### Change
+
+- **`/kits/explainers` is removed.** Each export has a new home or is gone, as the table shows. An essay is not a kit
+  any more. It is an `Article` on a lesson, from `/article`, `/lesson` and `/scene`.
+
+  | Old import from `/kits/explainers`                            | New import                               | What changed                                                                                                                                                                                                      |
+  | ------------------------------------------------------------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | `BoundValue`                                                  | `BoundValue` from `/lesson`              | Nothing. Same props and types (`BoundValueProps`, `BoundValueScale`, `BoundValueChangeDetails`). Inside a lesson, `<Param name="…" />` is the bound value of a declared param.                                    |
+  | `Explainer`                                                   | `Article` from `/article`                | The `figures` list is gone: figures are numbered in reading order from each `Figure`. `Article` needs `lesson` (from `defineLesson`), `locale` and `title`, and renders the lesson, tone scope and chart link.    |
+  | `NumberedFigure`                                              | `Figure` from `/article`                 | `id`, `caption` and `children` are the same. It adds `description`, `reads` and `size`. It must sit inside an `Article`; outside one it shows an error.                                                           |
+  | `FigureReference`                                             | `FigureReference` from `/article`        | Same `to` prop. The number comes from the article's `Figure`s.                                                                                                                                                    |
+  | `Term`                                                        | `Term` from `/article`                   | Same `inspects` and `children`. It adds an optional `labels` prop with the hint text.                                                                                                                             |
+  | `DiagramPart`                                                 | `DiagramPart` from `/article`            | Same `inspects`, `label` and `children`. It adds an optional `labels` prop.                                                                                                                                       |
+  | `StorySteps`                                                  | `Scrolly` and `ScrollyStep`, or `Reveal` | Removed with its types `StoryStep`, `StoryStepChangeDetails`, `StoryStepsLabels` and `StoryStepsProps`. `ScrollyStep` sets lesson values (`values` or `state`) as the reader scrolls. It has no `inspected` prop. |
+  | types `ExplainerProps`, `NumberedFigureProps`                 | `ArticleProps`, `FigureProps`            | Renamed with their components.                                                                                                                                                                                    |
+  | types `TermProps`, `DiagramPartProps`, `FigureReferenceProps` | the same names from `/article`           | Moved. `TermProps` and `DiagramPartProps` add `labels`.                                                                                                                                                           |
+
+  An essay that kept its numbers in React state moves them into `defineLesson`, and its prose reads them through `Param`
+  and `Value`.
+
+  ```tsx
+  // Before
+  import { Explainer, NumberedFigure, Term } from '@mechane-ai/elements/kits/explainers';
+  <Explainer figures={['loss']}>
+    <NumberedFigure id="loss" caption="Loss by step.">
+      <CurveChart {...props} />
+    </NumberedFigure>
+  </Explainer>;
+  // After
+  import { Article, Beat, Figure } from '@mechane-ai/elements/article';
+  <Article lesson={lesson} locale="en-US" title="Loss by step">
+    <Beat id="training">
+      <Figure id="loss" caption="Loss by step." description="A falling line.">
+        <CurveChart {...props} />
+      </Figure>
+    </Beat>
+  </Article>;
+  ```
+
+- **Chart marks carry their record id.** Marks a figure draws now write `data-chart-mark`, and `DotMark`, `BarMark` and
+  `SymbolMark` from `/charts/plot` take a `mark` prop. A stylesheet or a script that matched marks by their other
+  attributes can match this one. The attribute is added to `BarChart`, `ScatterPlot`, `DotPlot` and `StripPlot` marks
+  and to every chart item the `Chart` primitive renders.
+
+### Adopt
+
+- **Six entries.** `/lesson` (`defineLesson`, `Lesson`, `Param`, `Value`, `Playback`, `Transport`, tweens), `/scene`
+  (`Scene`, nodes, wires, plane marks, cards, cells, tokens, `SceneFlow`, `MorphScope`), `/article` (`Article`, `Beat`,
+  `Figure`, `Scrolly`, `Predict`, `Challenge`, notes, `TeX`), `/mdx` (`Essay`, `essayComponents`), `/lesson/spec`
+  (`validateLessonPlan`, `checkLesson`, `explainerGuide`) and `/lesson/agent` (`tutorTools`, `createLearnerTrace`,
+  `playTour`).
+- **`heatmapColor`** is exported from `/charts/matrix`, so a scene or an application colors a value on a matrix chart's
+  scale.
+- **Start an essay.** `pnpm exec mechane-elements-catalog --new-essay <directory>` copies an MDX essay starter into a
+  new or empty directory.
+- **A full example.** `recipes/counting-cards.tsx` (story `Recipes/Counting Cards`) is one essay that uses every layer.
+- **Three skills.** `plan-lesson`, `write-explainer` and `review-explainer` ship in the package, and `--install-skills`
+  installs them with the others.
+
 ## 0.47
 
 Elements has a data display system. Every chart is built from one plot kernel and takes the same figure props. This

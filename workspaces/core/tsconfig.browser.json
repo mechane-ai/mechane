@@ -19,6 +19,7 @@
     "packages/browser/console-views/src",
     "packages/browser/elements/packages",
     "packages/browser/elements/recipes",
+    "packages/browser/elements/templates",
     "packages/browser/elements/src",
     "packages/browser/elements/bin",
     "packages/browser/elements/scripts",

@@ -1,0 +1,61 @@
+import type { FigureChart } from '../../../charts/src/spec/index.ts';
+
+/**
+ * Every chart a figure spec can name, kept as data so a lesson plan's figures are checked without loading the charts.
+ * The type lists each chart exactly once, so a chart added to the figure spec fails here until it is named.
+ */
+const charts: Readonly<Record<FigureChart, FigureChart>> = {
+  BarChart: 'BarChart',
+  BridgeChart: 'BridgeChart',
+  BreakdownBar: 'BreakdownBar',
+  ScatterPlot: 'ScatterPlot',
+  LineChart: 'LineChart',
+  AreaChart: 'AreaChart',
+  SmallMultiples: 'SmallMultiples',
+  Sparkline: 'Sparkline',
+  Histogram: 'Histogram',
+  ECDF: 'ECDF',
+  IntervalPlot: 'IntervalPlot',
+  RankedBars: 'RankedBars',
+  BoxPlot: 'BoxPlot',
+  ViolinPlot: 'ViolinPlot',
+  StripPlot: 'StripPlot',
+  Ridgeline: 'Ridgeline',
+  Matrix: 'Matrix',
+  TokenHeatmap: 'TokenHeatmap',
+  ConfusionMatrix: 'ConfusionMatrix',
+  CorrelationMatrix: 'CorrelationMatrix',
+  AttentionMatrix: 'AttentionMatrix',
+  CalendarHeatmap: 'CalendarHeatmap',
+  RelationGraph: 'RelationGraph',
+  FlowDiagram: 'FlowDiagram',
+  AttributionGraph: 'AttributionGraph',
+  TreeDiagram: 'TreeDiagram',
+  Treemap: 'Treemap',
+  Icicle: 'Icicle',
+  Waterfall: 'Waterfall',
+  EventStrip: 'EventStrip',
+  CurveChart: 'CurveChart',
+  RunsChart: 'RunsChart',
+  SlopeChart: 'SlopeChart',
+  BumpChart: 'BumpChart',
+  HorizonChart: 'HorizonChart',
+  DotPlot: 'DotPlot',
+  DumbbellPlot: 'DumbbellPlot',
+  BulletBar: 'BulletBar',
+  ContourPlot: 'ContourPlot',
+  ScatterMatrix: 'ScatterMatrix',
+  ParallelCoordinates: 'ParallelCoordinates',
+  EmbeddingMap: 'EmbeddingMap',
+  DensityMap: 'DensityMap',
+  TokenExamples: 'TokenExamples',
+  TokenPredictions: 'TokenPredictions',
+  TokenGrid: 'TokenGrid',
+  TokenLinks: 'TokenLinks',
+  ImageGrid: 'ImageGrid',
+  AttributionOverlay: 'AttributionOverlay',
+  ImageAtlas: 'ImageAtlas',
+};
+
+/** The names of every chart a lesson figure may be. */
+export const chartNames: ReadonlyArray<string> = Object.values(charts);

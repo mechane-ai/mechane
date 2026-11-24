@@ -1,0 +1,97 @@
+export const meta = {
+  title: 'Why a big learning rate blows up',
+  authors: ['Your name'],
+  date: '2026-11-23',
+  summary:
+    'Gradient descent on the simplest loss there is, and the one number that decides whether it settles or explodes. The numbers are synthetic.',
+};
+
+import { LossCurve, UpdateRule } from './figures.tsx';
+
+<Beat id="update">
+
+Training moves a weight `w` to make a loss small. Take the loss `w²`: its slope is `2w`, and one step of gradient
+descent moves the weight against the slope by a fraction of it, the **learning rate**.
+
+At a learning rate of <Param name="rate" /> the weight after <Param name="steps" /> steps is <Value name="weight" />
+(<FigureReference to="update-rule" />).
+
+<Figure
+  id="update-rule"
+  caption="One step: read the weight, take its slope, move against it."
+  description="Three boxes joined by arrows: the weight, its slope, and the weight after the step. The arrow into the last box carries the learning rate."
+  reads={['rate', 'steps']}
+>
+  <UpdateRule />
+</Figure>
+
+<Aside>
+  Real networks have millions of weights, but each one moves by the same rule: its own slope times the rate.
+</Aside>
+
+</Beat>
+
+<Beat id="rate">
+
+Every step multiplies the weight by `1 − 2 × rate`, so the loss, which is the weight squared, shrinks by a factor
+of <Value name="factor" /> per step. Press play to run ten steps.<Footnote id="quadratic">This is exact only for a
+loss of `w²`. Other losses bend, but near a minimum they look the same.</Footnote>
+
+<Playback name="steps" pace="slow" />
+
+<Figure
+  id="loss-curve"
+  caption="Loss at each step on a log scale. A straight line down means a constant factor per step."
+  description="A line falling steadily from a loss of 1 toward zero. A larger learning rate makes the line steeper."
+  reads={['rate']}
+>
+  <LossCurve />
+  <Transport for="steps" />
+</Figure>
+
+<Predict
+  id="faster"
+  prompt="After ten steps, which learning rate leaves the smaller loss?"
+  options={[
+    { id: 'slow', label: 'A rate of 0.1' },
+    { id: 'fast', label: 'A rate of 0.4' },
+    { id: 'same', label: 'The same' },
+  ]}
+  answer="fast"
+>
+
+A rate of 0.4 multiplies the loss by 0.04 each step, a rate of 0.1 by 0.64. After ten steps one is about 10⁻¹⁴ and the
+other about 10⁻². A rate of 0.5 lands on zero in one step.
+
+</Predict>
+
+</Beat>
+
+<Beat id="blowup">
+
+Nothing so far says a bigger rate is worse, so push it. The loss factor is `(1 − 2 × rate)²`. It stays below 1 for
+every rate under 1, equals 1 at 1, and grows past it. At <Param name="rate" /> the factor is <Value name="factor" />
+and the loss after <Value name="steps" /> steps is <Value name="loss" />.
+
+<Figure
+  id="blowup-curve"
+  caption="The same curve at a rate the reader can push past one."
+  description="A line that falls, stays flat or climbs depending on whether the learning rate is under, at or over one."
+  reads={['rate']}
+>
+  <LossCurve />
+</Figure>
+
+<Challenge
+  id="largest-rate"
+  prompt="Find the largest learning rate on the slider that still makes the loss fall."
+  isReached={(values) => Number(values.rate) > 0.9 && Number(values.factor) < 1}
+  hints={['The loss falls while the factor is under 1.', 'The factor is exactly 1 at a rate of 1.']}
+>
+
+The slider moves in steps of 0.05, so 0.95 is the last rate that falls. At 1 the weight flips sign and never gets
+smaller.
+
+</Challenge>
+
+</Beat>

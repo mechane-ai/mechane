@@ -192,6 +192,7 @@ export function DotPlot(props: DotPlotProps): ReactNode {
                         emphasis={emphasis}
                         isInspected={row.id === inspected}
                         isSelected={row.id === chosen}
+                        mark={drawn.length === 1 ? row.id : `${row.id}:${item.id}`}
                       />
                     )}
                   </g>

@@ -160,3 +160,24 @@ axes or colors. If you want to draw an SVG mark, use or request a chart instead.
 - Compute no statistic. The application supplies means, intervals, ranks and deltas.
 - Write one stories file titled `Kits/<Kit name>` with a story per component, one page that composes them and a `States`
   story. Export the components from the kit's `index.ts` and add the entry to `package.json`.
+
+## A teaching part
+
+The teaching layers live in `packages/teaching/src`: `lesson`, `time`, `scene`, `article`, `mdx`, `spec` and `agent`.
+Read contract `workspaces/core/.contracts/142-ui-teaching-layers/CONTRACT.md` first. A part an essay keeps drawing by
+hand, with `SceneCustom` or raw SVG, is a candidate.
+
+- Put a scene part in the scene folder that owns its kind: `scene/plane` for coordinate marks, `scene/shapes` for cards,
+  cells and tokens, `scene/flow` and `scene/morph`, or the folder root for a core part. Copy `scene/scene-node.tsx` for
+  a part on the HTML layer, or `scene/scene-bracket.tsx` for an SVG one.
+- Register the object with `useSceneObject` and draw from the eased values it returns. Never start a frame loop, a timer
+  or a keyframe: the one clock in `time/clock.ts` moves everything, and reduced motion takes the end state.
+- Give it a stable `id`, `isShown`, a `label` that makes it a keyboard item, `tone` resolved through the tone scope, and
+  a `labels` prop for its own words. Report author errors with `problem`, not by throwing.
+- Inside `packages/teaching/src`, import the defining file, never a folder's `index.ts`. Export the part from its
+  folder's `index.ts`, which is the public entry.
+- Add it to `explainerParts` and the guide in `spec/explainer-guide.ts` with the reader's `question`, `guidance` that
+  names the better part otherwise, and an `example` that compiles. Add it to `essayComponents` in
+  `mdx/essay-components.ts` so MDX essays can use it.
+- Write `Teaching/<Name>` stories beside it: a default with synthetic machine-learning content said to be synthetic,
+  states, narrow and reduced motion. Describe it in the `write-explainer` skill's scene references.

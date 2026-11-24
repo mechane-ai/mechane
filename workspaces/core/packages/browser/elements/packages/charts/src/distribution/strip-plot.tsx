@@ -204,7 +204,7 @@ export function StripPlot(props: StripPlotProps): ReactNode {
         <>
           <g {...stylex.props(styles.dots)}>
             {dots.map((dot) => (
-              <DotMark key={dot.id} x={dot.x} y={dot.y} tone={dot.group.tone} radius={DOT_RADIUS} />
+              <DotMark key={dot.id} mark={dot.id} x={dot.x} y={dot.y} tone={dot.group.tone} radius={DOT_RADIUS} />
             ))}
           </g>
           {placed.map((group) => {

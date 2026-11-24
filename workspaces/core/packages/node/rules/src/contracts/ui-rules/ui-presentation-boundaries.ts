@@ -63,6 +63,10 @@ const MODULES: ReadonlyArray<ModuleBoundary> = [
       'charts',
     ],
   },
+  {
+    name: 'teaching',
+    dependencies: ['foundations', 'core', 'forms', 'overlays', 'feedback', 'navigation', 'layout', 'content', 'charts'],
+  },
 ];
 
 const VENDORS = [

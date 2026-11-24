@@ -30,6 +30,7 @@ import { uiConversationState } from './ui-conversation-state.ts';
 import { uiDataDisplay } from './ui-data-display.ts';
 import { uiDomainKits } from './ui-domain-kits.ts';
 import { uiStylexComposition } from './ui-stylex-composition.ts';
+import { uiTeachingLayers } from './ui-teaching-layers.ts';
 import { uiWaterfallCharts } from './ui-waterfall-charts.ts';
 
 /** The registry's entry for each contract of Mechane's own section, in the order of their folders. */
@@ -64,4 +65,5 @@ export const MECHANE_CONTRACTS = {
   'postgres-hyperdrive-pooling': postgresHyperdrivePooling,
   'ui-data-display': uiDataDisplay,
   'ui-domain-kits': uiDomainKits,
+  'ui-teaching-layers': uiTeachingLayers,
 } as const satisfies Readonly<Partial<Record<ContractName, ContractEnforcement>>>;

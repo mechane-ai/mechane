@@ -113,6 +113,7 @@ export const CONTRACT_NAMES = [
   'postgres-hyperdrive-pooling',
   'ui-data-display',
   'ui-domain-kits',
+  'ui-teaching-layers',
   'test-curation',
   'test-assertion-integrity',
   'ci-reproducible-checks',
