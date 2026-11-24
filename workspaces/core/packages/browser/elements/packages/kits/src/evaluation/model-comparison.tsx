@@ -75,9 +75,9 @@ const defaultLabels: ModelComparisonLabels = {
   interval: 'Interval',
   reading: 'Reading',
   ahead: 'ahead',
-  unclear: 'No clear difference',
-  untested: 'Not tested',
-  noInterval: 'None given',
+  unclear: '—',
+  untested: '—',
+  noInterval: '—',
 };
 
 const PLACEHOLDER_ROWS = 4;
@@ -160,6 +160,8 @@ function ComparisonBody(props: ModelComparisonProps): ReactNode {
     return `${isBAhead ? b.label : a.label} ${labels.ahead}`;
   }
 
+  const hasIntervals = rows.some((row) => row.interval !== undefined);
+
   const columns: ReadonlyArray<DataTableColumn<ComparisonRow> & { readonly canSort?: false }> = [
     { id: 'benchmark', label: labels.benchmark, role: 'primary', cell: (row) => row.label },
     {
@@ -176,16 +178,20 @@ function ComparisonBody(props: ModelComparisonProps): ReactNode {
         />
       ),
     },
-    {
-      id: 'interval',
-      label: labels.interval,
-      role: 'number',
-      width: columnWidths.interval,
-      cell: (row) =>
-        row.interval === undefined
-          ? labels.noInterval
-          : `${formatValue({ value: row.interval.low, locale, format })} to ${formatValue({ value: row.interval.high, locale, format })}`,
-    },
+    ...(hasIntervals
+      ? [
+          {
+            id: 'interval',
+            label: labels.interval,
+            role: 'number' as const,
+            width: columnWidths.interval,
+            cell: (row: ComparisonRow) =>
+              row.interval === undefined
+                ? labels.noInterval
+                : `${formatValue({ value: row.interval.low, locale, format })} to ${formatValue({ value: row.interval.high, locale, format })}`,
+          },
+        ]
+      : []),
     {
       id: 'reading',
       label: labels.reading,
@@ -212,6 +218,7 @@ function ComparisonBody(props: ModelComparisonProps): ReactNode {
       {frame.status === 'loading' ? (
         <DataTablePlaceholder
           caption={`${labels.caption} ${b.label} minus ${a.label}`}
+          hideCaption
           columns={columns}
           rows={PLACEHOLDER_ROWS}
           rowSizing="content"
@@ -224,6 +231,7 @@ function ComparisonBody(props: ModelComparisonProps): ReactNode {
             columns={columns}
             getRowId={(row) => row.id}
             caption={`${labels.caption} ${b.label} minus ${a.label}`}
+            hideCaption
             empty={null}
             rowSizing="content"
             activeRowId={link?.inspected ?? undefined}

@@ -95,6 +95,7 @@ type PageSectionProps = SectionHeadingProps &
 
 export function PageSection({ children, summary, breakdown, ...heading }: PageSectionProps): ReactNode {
   const hasSummary = summary !== null && summary !== undefined && summary !== false;
+  const hasChildren = children !== null && children !== undefined && children !== false;
   const generatedId = useId();
   const id = heading.id ?? generatedId;
 
@@ -106,7 +107,7 @@ export function PageSection({ children, summary, breakdown, ...heading }: PageSe
       <div {...stylex.props(styles.sectionContent)}>
         {hasSummary && <PageContent>{summary}</PageContent>}
         {breakdown}
-        {children}
+        {hasChildren && <PageContent>{children}</PageContent>}
       </div>
     </ReadingSection>
   );

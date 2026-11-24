@@ -1,6 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
-import { spacing } from '../../foundations/src/tokens.stylex.ts';
+import { pageGeometry, spacing } from '../../foundations/src/tokens.stylex.ts';
 import { frame, frameConditions } from './frame.stylex.ts';
 
 const styles = stylex.create({
@@ -14,11 +14,25 @@ const styles = stylex.create({
     paddingTop: { default: frame.detailTop, [frameConditions.detailMobile]: frame.detailMobileTop },
     paddingBottom: { default: frame.detailBottom, [frameConditions.detailMobile]: frame.detailMobileBottom },
   },
-  wide: { width: '100%', maxWidth: 'none', paddingInline: 0, paddingTop: 0, paddingBottom: 0 },
+  wide: {
+    width: '100%',
+    maxWidth: 'none',
+    paddingInline: pageGeometry.inset,
+    paddingTop: pageGeometry.inset,
+    paddingBottom: pageGeometry.inset,
+  },
+  bleed: { paddingInline: 0, paddingTop: 0, paddingBottom: 0 },
 });
 
-type DetailPageProps = { readonly children: ReactNode; readonly isWide?: boolean };
+type DetailPageProps = {
+  readonly children: ReactNode;
+  readonly isWide?: boolean;
+  /** Remove outer inset on a wide edge-to-edge canvas. Defaults to false so wide content aligns with page headers. */
+  readonly isBleed?: boolean;
+};
 
-export function DetailPage({ children, isWide = false }: DetailPageProps): ReactNode {
-  return <div {...stylex.props(styles.detail, isWide && styles.wide)}>{children}</div>;
+export function DetailPage({ children, isWide = false, isBleed = false }: DetailPageProps): ReactNode {
+  return (
+    <div {...stylex.props(styles.detail, isWide && styles.wide, isWide && isBleed && styles.bleed)}>{children}</div>
+  );
 }

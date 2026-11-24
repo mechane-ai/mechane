@@ -8,6 +8,8 @@ import { ChartSeriesMarker } from './chart-series-marker.tsx';
 
 export type ChartInspectionRow = ChartLegendItem & { readonly value: string };
 
+export type ChartInspectionMode = 'inline' | 'floating';
+
 type ChartInspectionProps = {
   readonly id: string;
   readonly label: string | undefined;
@@ -22,6 +24,8 @@ type ChartInspectionProps = {
   readonly hasSeriesSummary?: boolean | undefined;
   /** False for a plot whose axis labels name every mark, so the inspector replaces the legend at every width. */
   readonly hasLegend?: boolean | undefined;
+  /** Inline readout inside the legend row (default) avoids floating cards that obscure or clip over the plot. */
+  readonly mode?: ChartInspectionMode | undefined;
 };
 
 const styles = stylex.create({
@@ -36,6 +40,7 @@ const styles = stylex.create({
     display: { default: 'flex', [conditions.compactText]: 'grid' },
     gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
     flexWrap: 'wrap',
+    alignItems: 'baseline',
     columnGap: spacing.md,
     rowGap: spacing.xs,
     margin: 0,
@@ -44,6 +49,31 @@ const styles = stylex.create({
     color: colors.muted,
     fontSize: typography.captionSize,
     lineHeight: typography.captionLineHeight,
+  },
+  inlineLabel: {
+    color: colors.ink,
+    fontWeight: typography.mediumWeight,
+    fontVariantNumeric: 'tabular-nums',
+    whiteSpace: 'nowrap',
+  },
+  inlineValue: {
+    marginInlineStart: spacing.xs,
+    color: colors.ink,
+    fontWeight: typography.mediumWeight,
+    fontVariantNumeric: 'tabular-nums',
+    whiteSpace: 'nowrap',
+  },
+  inlineReadoutBar: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'baseline',
+    columnGap: spacing.md,
+    rowGap: spacing.xs,
+    minHeight: typography.captionLineHeight,
+    color: colors.muted,
+    fontSize: typography.captionSize,
+    lineHeight: typography.captionLineHeight,
+    fontVariantNumeric: 'tabular-nums',
   },
   item: { display: 'flex', alignItems: 'baseline', gap: spacing.xs, minWidth: 0, overflowWrap: 'anywhere' },
   itemText: { minWidth: 0 },
@@ -165,48 +195,94 @@ export function ChartInspection({
   notes = [],
   hasSeriesSummary = false,
   hasLegend = true,
+  mode = 'inline',
 }: ChartInspectionProps): ReactNode {
   const showsLegend = hasLegend && !hasSeriesSummary;
-  const inspectorWidth = Math.min(260, width);
+  const isInline = mode === 'inline';
+  const hasLabel = label !== undefined;
+  const showsInlineHeader = isInline && hasLabel;
+  const showsInlineBar = !showsLegend && isInline;
+  const showsFloatingCard = !isInline && hasLabel;
+  const inspectorWidth = Math.min(260, Math.max(0, width));
   const preferredLeft = x > width / 2 ? x - inspectorWidth - offset : x + offset;
-  const left = Math.max(0, Math.min(width - inspectorWidth, preferredLeft));
+  const left = Math.max(0, Math.min(Math.max(0, width - inspectorWidth), preferredLeft));
+
+  const legendBlock = showsLegend ? (
+    <div {...stylex.props(styles.legends)}>
+      {layoutLegend === undefined ? null : (
+        <ul aria-hidden inert {...stylex.props(styles.legend, styles.legendLayer, styles.reserved)}>
+          {layoutLegend.map((item) => (
+            <li key={item.id} {...stylex.props(styles.item)}>
+              <ChartSeriesMarker tone={item.tone} shape={item.shape} />
+              <span {...stylex.props(styles.itemText)}>
+                {item.label}
+                <span {...stylex.props(styles.mobileValue)} />
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+      <ul aria-label="Legend" {...stylex.props(styles.legend, styles.legendLayer)}>
+        {showsInlineHeader ? (
+          <li {...stylex.props(styles.inlineLabel)}>
+            {label}
+            {summary === undefined ? '' : ` · ${summary}`}
+          </li>
+        ) : null}
+        {legend.map((item) => {
+          const value = label === undefined ? undefined : (rows.find((row) => row.id === item.id)?.value ?? '—');
+
+          const valueNode = isInline ? (
+            value === undefined ? null : (
+              <span {...stylex.props(styles.inlineValue)}>{value}</span>
+            )
+          ) : (
+            <span {...stylex.props(styles.mobileValue)}>{value ?? ''}</span>
+          );
+
+          return (
+            <li key={item.id} {...stylex.props(styles.item)}>
+              <ChartSeriesMarker tone={item.tone} shape={item.shape} />
+              <span {...stylex.props(styles.itemText)}>
+                {item.label}
+                {valueNode}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  ) : null;
 
   return (
     <div {...stylex.props(styles.frame)}>
-      {showsLegend && (
-        <div {...stylex.props(styles.legends)}>
-          {layoutLegend !== undefined && (
-            <ul aria-hidden inert {...stylex.props(styles.legend, styles.legendLayer, styles.reserved)}>
-              {layoutLegend.map((item) => (
-                <li key={item.id} {...stylex.props(styles.item)}>
-                  <ChartSeriesMarker tone={item.tone} shape={item.shape} />
-                  <span {...stylex.props(styles.itemText)}>
-                    {item.label}
-                    <span {...stylex.props(styles.mobileValue)} />
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-          <ul aria-label="Legend" {...stylex.props(styles.legend, styles.legendLayer)}>
-            {legend.map((item) => (
-              <li key={item.id} {...stylex.props(styles.item)}>
-                <ChartSeriesMarker tone={item.tone} shape={item.shape} />
-                <span {...stylex.props(styles.itemText)}>
-                  {item.label}
-                  <span {...stylex.props(styles.mobileValue)}>
-                    {label === undefined ? '' : (rows.find((row) => row.id === item.id)?.value ?? '—')}
-                  </span>
+      {legendBlock}
+      {showsInlineBar && (
+        <div aria-hidden {...stylex.props(styles.inlineReadoutBar)}>
+          {hasLabel && (
+            <>
+              <span {...stylex.props(styles.inlineLabel)}>
+                {label}
+                {summary === undefined ? '' : ` · ${summary}`}
+              </span>
+              {rows.map((row) => (
+                <span key={row.id} {...stylex.props(styles.item)}>
+                  <ChartSeriesMarker tone={row.tone} shape={row.shape} />
+                  {row.label}
+                  <span {...stylex.props(styles.inlineValue)}>{row.value}</span>
                 </span>
-              </li>
-            ))}
-          </ul>
+              ))}
+              {notes.map((note) => (
+                <span key={note}>{note}</span>
+              ))}
+            </>
+          )}
         </div>
       )}
       <span id={id} {...stylex.props(styles.accessible)}>
         {inspectionReadout({ label, summary, rows, notes })}
       </span>
-      {label !== undefined && (
+      {showsFloatingCard && (
         <div aria-hidden {...stylex.props(styles.anchor)}>
           <div
             {...stylex.props(

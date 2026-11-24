@@ -14,7 +14,8 @@ import { Sidebar, SidebarClose, SidebarContext } from './sidebar.tsx';
 const styles = stylex.create({
   shell: {
     boxSizing: 'border-box',
-    minHeight: '100dvh',
+    height: '100dvh',
+    overflow: 'hidden',
     display: 'flex',
     backgroundColor: colors.surface,
     color: colors.ink,
@@ -42,7 +43,15 @@ const styles = stylex.create({
   railBody: { flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehaviorY: 'contain' },
   railFooter: { flexShrink: 0, paddingBottom: 'env(safe-area-inset-bottom, 0px)' },
   hidden: { display: 'none' },
-  main: { minWidth: 0, flex: 1 },
+  main: {
+    minWidth: 0,
+    minHeight: 0,
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    overflowY: 'auto',
+    overscrollBehaviorY: 'none',
+  },
   drawer: { width: frame.sidebarWidth, maxWidth: 'calc(100vw - 48px)' },
 });
 

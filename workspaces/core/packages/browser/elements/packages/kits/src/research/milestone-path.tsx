@@ -4,7 +4,7 @@ import type { TreeNode } from '../../../charts/src/graph/index.ts';
 import { formatValue } from '../../../charts/src/index.ts';
 import type { ChartTone, FigureProps, FigureSelectionProps, ValueFormat } from '../../../charts/src/index.ts';
 import { Details } from '../../../collections/src/index.ts';
-import { Badge, Panel, Row, Stack, Text } from '../../../core/src/index.ts';
+import { Badge, Divider, Row, Stack, Text } from '../../../core/src/index.ts';
 import { EmptyState, Notice } from '../../../feedback/src/index.ts';
 
 export type MilestoneKind = 'baseline' | 'result' | 'breakthrough' | 'counterexample' | 'decision';
@@ -27,7 +27,6 @@ export type MilestonePathLabels = {
   readonly delta: string;
   readonly limitation: string;
   readonly source: string;
-  readonly selectHint: string;
   readonly empty: string;
   readonly kinds: Readonly<Record<MilestoneKind, string>>;
 };
@@ -61,12 +60,11 @@ const kindBadgeTone: Readonly<Record<MilestoneKind, 'neutral' | 'positive' | 'wa
 };
 
 const defaultLabels: MilestonePathLabels = {
-  metric: 'Measured score',
+  metric: 'Score',
   delta: 'Change',
   limitation: 'Limitation',
   source: 'Evidence',
-  selectHint: 'Select any milestone node to inspect its claim, delta, and limitation.',
-  empty: 'No research milestones recorded yet.',
+  empty: 'No milestones recorded.',
   kinds: {
     baseline: 'Baseline',
     result: 'Result',
@@ -78,7 +76,7 @@ const defaultLabels: MilestonePathLabels = {
 
 /**
  * A branching progression of research milestones: baselines, breakthroughs, falsified counterexamples, and decisions
- * composed from `TreeDiagram` with a linked evidence inspection panel. Draws no SVG of its own.
+ * composed from `TreeDiagram` with a flat inline evidence readout when a node is selected. Draws no SVG of its own.
  */
 export function MilestonePath({
   milestones,
@@ -127,7 +125,7 @@ export function MilestonePath({
   const active = milestones.find((item) => item.id === selected) ?? null;
 
   return (
-    <Stack isCompact>
+    <Stack>
       <TreeDiagram
         {...figure}
         nodes={nodes}
@@ -139,50 +137,46 @@ export function MilestonePath({
         selected={selected}
         onSelectedChange={onSelectedChange}
       />
-      {active === null ? (
-        <Text variant="caption" tone="muted">
-          {labels.selectHint}
-        </Text>
-      ) : (
-        <Panel
-          title={active.label}
-          index={active.wave}
-          meta={
+      {active !== null && (
+        <Stack isCompact>
+          <Divider />
+          <Row shouldSpaceBetween>
             <Row>
-              <Badge tone={kindBadgeTone[active.kind]}>{labels.kinds[active.kind]}</Badge>
+              {active.wave !== undefined && <Badge tone="neutral">{active.wave}</Badge>}
+              <Text>
+                <strong>{active.label}</strong>
+              </Text>
             </Row>
-          }
-        >
-          <Stack isCompact>
-            <Text>{active.claim}</Text>
-            <Details
-              items={[
-                ...(active.metric === undefined
-                  ? []
-                  : [
-                      {
-                        label: labels.metric,
-                        value: formatValue({ value: active.metric, locale: figure.locale, format: valueFormat }),
-                      },
-                    ]),
-                ...(active.delta === undefined
-                  ? []
-                  : [
-                      {
-                        label: labels.delta,
-                        value: formatValue({
-                          value: active.delta,
-                          locale: figure.locale,
-                          format: deltaFormat ?? valueFormat,
-                        }),
-                      },
-                    ]),
-                ...(active.limitation === undefined ? [] : [{ label: labels.limitation, value: active.limitation }]),
-                ...(active.source === undefined ? [] : [{ label: labels.source, value: active.source }]),
-              ]}
-            />
-          </Stack>
-        </Panel>
+            <Badge tone={kindBadgeTone[active.kind]}>{labels.kinds[active.kind]}</Badge>
+          </Row>
+          <Text tone="muted">{active.claim}</Text>
+          <Details
+            items={[
+              ...(active.metric === undefined
+                ? []
+                : [
+                    {
+                      label: labels.metric,
+                      value: formatValue({ value: active.metric, locale: figure.locale, format: valueFormat }),
+                    },
+                  ]),
+              ...(active.delta === undefined
+                ? []
+                : [
+                    {
+                      label: labels.delta,
+                      value: formatValue({
+                        value: active.delta,
+                        locale: figure.locale,
+                        format: deltaFormat ?? valueFormat,
+                      }),
+                    },
+                  ]),
+              ...(active.limitation === undefined ? [] : [{ label: labels.limitation, value: active.limitation }]),
+              ...(active.source === undefined ? [] : [{ label: labels.source, value: active.source }]),
+            ]}
+          />
+        </Stack>
       )}
     </Stack>
   );

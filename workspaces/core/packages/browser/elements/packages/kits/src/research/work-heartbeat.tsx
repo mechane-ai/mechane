@@ -1,8 +1,10 @@
+import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
 import { formatValue } from '../../../charts/src/index.ts';
 import { Timestamp } from '../../../collections/src/index.ts';
-import { Badge, Identifier, Panel, Row, Stack, Status, Text } from '../../../core/src/index.ts';
+import { Badge, Identifier, Row, Stack, Status, Text } from '../../../core/src/index.ts';
 import { Progress } from '../../../feedback/src/index.ts';
+import { colors, spacing } from '../../../foundations/src/tokens.stylex.ts';
 
 export type WorkHeartbeatState = 'running' | 'completed' | 'blocked' | 'overdue' | 'stopped';
 
@@ -54,6 +56,27 @@ const stateTone: Readonly<Record<WorkHeartbeatState, 'positive' | 'warning' | 'n
   stopped: 'neutral',
 };
 
+const styles = stylex.create({
+  list: {
+    listStyle: 'none',
+    margin: 0,
+    padding: 0,
+    borderTopWidth: 1,
+    borderTopStyle: 'solid',
+    borderTopColor: colors.line,
+  },
+  row: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: spacing.sm,
+    paddingBlock: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomStyle: 'solid',
+    borderBottomColor: colors.line,
+  },
+  empty: { paddingBlock: spacing.md },
+});
+
 function validProgress(progress: WorkProgress | undefined): WorkProgress | null {
   if (progress === undefined) {
     return null;
@@ -65,10 +88,11 @@ function validProgress(progress: WorkProgress | undefined): WorkProgress | null 
 }
 
 /**
- * Displays reported execution checkpoints with explicit freshness and optional finite batch progress. The application
- * owns the state (including when an expired report becomes `'overdue'`); the kit never infers failure from staleness.
+ * Displays reported execution checkpoints as flat hairline-separated rows with explicit freshness and optional finite
+ * batch progress. The application owns the state (including when an expired report becomes `'overdue'`); the kit never
+ * infers failure from staleness.
  */
-export function WorkHeartbeat({ reports, locale, title, labels: given }: WorkHeartbeatProps): ReactNode {
+export function WorkHeartbeat({ reports, locale, labels: given }: WorkHeartbeatProps): ReactNode {
   const labels: WorkHeartbeatLabels = {
     ...defaultLabels,
     ...given,
@@ -77,72 +101,71 @@ export function WorkHeartbeat({ reports, locale, title, labels: given }: WorkHea
 
   if (reports.length === 0) {
     return (
-      <Panel title={title ?? labels.title}>
+      <div {...stylex.props(styles.empty)}>
         <Text variant="caption" tone="muted">
           {labels.empty}
         </Text>
-      </Panel>
+      </div>
     );
   }
 
   return (
-    <Stack isCompact>
+    <ul {...stylex.props(styles.list)}>
       {reports.map((report) => {
         const progress = validProgress(report.progress);
         const pct = progress === null ? null : Math.max(0, Math.min(100, (progress.completed / progress.total) * 100));
+        const hasFooter = report.nextCheckpoint !== undefined || report.executionRef !== undefined;
 
         return (
-          <Panel
-            key={report.id}
-            title={report.title}
-            meta={
+          <li key={report.id} {...stylex.props(styles.row)}>
+            <Row shouldSpaceBetween>
+              <Text>
+                <strong>{report.title}</strong>
+              </Text>
               <Row>
                 <Status tone={stateTone[report.state]}>{labels.states[report.state]}</Status>
                 <Timestamp dateTime={report.observedAt} label={report.observedLabel} />
               </Row>
-            }
-          >
-            <Stack isCompact>
-              {progress !== null && pct !== null && (
-                <Stack isCompact>
-                  <Row shouldSpaceBetween>
-                    <Text variant="caption" tone="muted">
-                      {formatValue({ value: progress.completed, locale, format: { maximumFractionDigits: 0 } })} /{' '}
-                      {formatValue({ value: progress.total, locale, format: { maximumFractionDigits: 0 } })}{' '}
-                      {progress.unit}
-                    </Text>
-                    <Badge tone="neutral">
-                      {formatValue({
-                        value: pct / 100,
-                        locale,
-                        format: { style: 'percent', maximumFractionDigits: 0 },
-                      })}
-                    </Badge>
-                  </Row>
-                  <Progress
-                    label={report.title}
-                    value={progress.completed}
-                    max={progress.total}
-                    valueLabel={formatValue({
-                      value: pct / 100,
-                      locale,
-                      format: { style: 'percent', maximumFractionDigits: 0 },
-                    })}
-                  />
-                </Stack>
-              )}
+            </Row>
+            {progress !== null && pct !== null && (
+              <Stack isCompact>
+                <Row shouldSpaceBetween>
+                  <Text variant="caption" tone="muted">
+                    {formatValue({ value: progress.completed, locale, format: { maximumFractionDigits: 0 } })} /{' '}
+                    {formatValue({ value: progress.total, locale, format: { maximumFractionDigits: 0 } })}{' '}
+                    {progress.unit}
+                  </Text>
+                  <Badge tone="neutral">
+                    {formatValue({ value: pct / 100, locale, format: { style: 'percent', maximumFractionDigits: 0 } })}
+                  </Badge>
+                </Row>
+                <Progress
+                  label={report.title}
+                  value={progress.completed}
+                  max={progress.total}
+                  valueLabel={formatValue({
+                    value: pct / 100,
+                    locale,
+                    format: { style: 'percent', maximumFractionDigits: 0 },
+                  })}
+                />
+              </Stack>
+            )}
+            {hasFooter && (
               <Row shouldSpaceBetween>
-                {report.nextCheckpoint !== undefined && (
+                {report.nextCheckpoint === undefined ? (
+                  <span />
+                ) : (
                   <Text variant="caption" tone="muted">
                     {labels.nextCheckpoint}: {report.nextCheckpoint}
                   </Text>
                 )}
                 {report.executionRef !== undefined && <Identifier>{report.executionRef}</Identifier>}
               </Row>
-            </Stack>
-          </Panel>
+            )}
+          </li>
         );
       })}
-    </Stack>
+    </ul>
   );
 }

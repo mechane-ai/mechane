@@ -116,5 +116,19 @@ and its readout.
   overlap, the readout stays in view, and the plot does not scroll the page sideways.
 - **No statistic in the chart.** The app computed every quantile, density, bin and fit, with a named transform.
 
+## 9. Editorial restraint & layout defaults
+
+- **Zero floating clutter on hover.** Hovering table rows must not pop tooltips over adjacent rows, and hovering charts
+  must use inline readouts that never obscure curves or clip at container edges.
+- **Aligned gutters.** Every section heading aligns vertically with its body content (`PageSection` insets `summary` and
+  `children` automatically; `breakdown` and `CollectionPage` tables span full width edge-to-edge).
+- **Zero card bloat.** Metrics use flat `MetricGrid`, lists use full-width `CollectionPage` / `DataTable`, and
+  documentation renders flat—not inside stacked bordered `Panel` cards.
+- **Zero instructional slop.** Remove chart `description` text that explains how to hover/click or repeats the
+  title/legend/axes. Keep Overview focused on one glanceable metric strip and one primary visual.
+- **Pinned shell & area-forking rail.** Scrolling `<main>` keeps the rail and sidebar fixed; rail icons fork top-level
+  areas rather than duplicating sidebar links; theme/environment controls live behind `railFooter` Settings with zero
+  `Sync` / `Refresh` clutter.
+
 Not covered by this review: a real screen reader, a physical touch device and right-to-left text. Say so in the report
 unless you ran them.

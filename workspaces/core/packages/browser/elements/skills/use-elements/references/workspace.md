@@ -1,15 +1,21 @@
 # Workspace layout
 
-Mount one `AppShell` around the authenticated router outlet. Keep its rail, secondary pane, collapse state and toolbar
-in the same positions across destinations. Change the selected link and the secondary links for the active workspace. A
-workspace with one page can name that page in the pane. On a phone use the shell's drawer and its navigation callback.
+Mount one `AppShell` around the router outlet. `AppShell` locks the viewport at `100dvh` with an independent scrolling
+`<main>` column so the rail and sidebar stay pinned without custom CSS. Put top-level areas in `rail`, swap `sidebar` to
+show only the active area's pages, and put Settings/account controls in `railFooter`. On a phone use the shell's drawer
+and its navigation callback.
 
-Use `DetailPage isWide` for a working surface such as a ledger, calendar, or chart dashboard. Give the pane one
-responsive gutter. Constrain prose and individual forms locally. Keep a wide plot's horizontal scroll inside its figure.
-At a wide desktop viewport, compare the right edge of a report header with its table and the edge of the pane.
+Use `PageSection` for report sections: both `summary` and `children` receive the standard inset gutter automatically
+(without double-padding if wrapped in `PageContent`), while `breakdown` renders edge-to-edge full width for a
+`DataTable`. Use `DetailPage isWide` for a wide standalone working surface (it keeps the standard inset gutter by
+default; pass `isBleed` only for an intentional zero-gutter canvas). Constrain prose and individual forms locally. Keep
+a wide plot's horizontal scroll inside its figure. At a wide desktop viewport, compare the right edge of a report header
+with its table and the edge of the pane.
 
-Give repeatable tasks such as reviewing a queue a named navigation link with deep-link and Back support. Put filters in
-the toolbar. Keep drill-down on the data mark or row it explains.
+Use `CollectionPage` from `/kits/research` for full-width searchable/filterable table pages. It wires `PageLayout`,
+top-bar search & filter controls (`/` and `⌘F`), `CollectionToolbar` filter chips, full-width `DataTable`, and an
+optional resizable `Workbench` inspector in one component. Never put inline search inputs or filter dropdowns in the
+page body.
 
 Use `SegmentedControl` from `/forms` to switch between a few views; one item is always checked. Use `ToggleGroup` for
 independent pressed choices. Both size to their content. Put either beside an Elements field and select, compare their

@@ -4,7 +4,11 @@ import { Tooltip } from '../../overlays/src/index.ts';
 import { tableStyles as styles } from './data-table-styles.ts';
 import { TableRowButton, TableRowLink } from './table-results.tsx';
 
-export type DataTableRowAction<Row> = { readonly label?: (row: Row) => string } & (
+export type DataTableRowAction<Row> = {
+  readonly label?: (row: Row) => string;
+  /** Show a hover tooltip repeating `label`. Defaults to false; `label` always provides `aria-label`. */
+  readonly showTooltip?: boolean;
+} & (
   | { readonly href: (row: Row) => string; readonly onActivate?: (row: Row) => void; readonly disabled?: never }
   | ({ readonly href?: never; readonly onActivate: (row: Row) => void } & Pick<ComponentProps<'button'>, 'disabled'>)
 );
@@ -78,7 +82,7 @@ export function RowTrigger<Row>({ index, recordId, row, action, isActive, childr
       </TableRowLink>
     );
 
-  if (label === undefined) {
+  if (label === undefined || action.showTooltip !== true) {
     return trigger;
   }
 

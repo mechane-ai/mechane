@@ -61,6 +61,8 @@ export type LeaderboardProps = FigureProps & {
     | ((selected: ReadonlyArray<string>, details: DataTableSelectionDetails) => void)
     | undefined;
   readonly labels?: Partial<LeaderboardLabels> | undefined;
+  /** Show the generated direction/bolding footnote below the table. Defaults to false. */
+  readonly showLegendNote?: boolean | undefined;
 };
 
 /** The most models and measure columns a leaderboard shows. Larger input is refused. */
@@ -173,7 +175,19 @@ function ModelName({ model }: { readonly model: EvaluationModel }): ReactNode {
  * readers, and inside a `ChartLink`, resting on a row marks it in the linked figures.
  */
 export function Leaderboard(props: LeaderboardProps): ReactNode {
-  const { models, columns, rows, sort, onSortChange, selected, onSelectedChange, labels: custom, ...figure } = props;
+  const {
+    models,
+    columns,
+    rows,
+    sort,
+    onSortChange,
+    selected,
+    onSelectedChange,
+    labels: custom,
+    showLegendNote = false,
+    ...figure
+  } = props;
+
   const { emptyLabel = 'No models have results yet.', ...frame } = figure;
   const labels = { ...defaultLabels, ...custom };
   const onRowHighlightChange = useLinkedRows(rows.map((row) => row.model));
@@ -279,7 +293,7 @@ export function Leaderboard(props: LeaderboardProps): ReactNode {
       ids={models.map((model) => model.id)}
       tones={Object.fromEntries(models.flatMap((model) => (model.tone === undefined ? [] : [[model.id, model.tone]])))}
     >
-      <FigureFrame {...frame} footer={note}>
+      <FigureFrame {...frame} footer={showLegendNote ? note : undefined}>
         {onSortChange === undefined ? (
           <DataTable
             {...table}
