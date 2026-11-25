@@ -1,7 +1,7 @@
 import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
 import type { ChartTone } from '../../../foundations/src/chart-tones.ts';
-import { colors, radii, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
+import { colors, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import type { ValueFormat } from '../figure/figure-format.ts';
 import { useTones } from '../figure/tone-scope.tsx';
 import { usePlotWidth } from '../plot-width.ts';
@@ -75,9 +75,12 @@ const styles = stylex.create({
   width: (characters: number) => ({ minWidth: `${characters}ch` }),
   filled: (color: string) => ({
     flexGrow: 1,
+    display: 'block',
+    width: '100%',
     boxSizing: 'border-box',
+    paddingBlock: spacing.sm,
     paddingInline: spacing.sm,
-    borderRadius: radii.sm,
+    borderRadius: 0,
     backgroundColor: color,
   }),
 });

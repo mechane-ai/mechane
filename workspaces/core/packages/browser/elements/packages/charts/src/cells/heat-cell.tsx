@@ -16,6 +16,8 @@ export type HeatCellProps = CellProps &
      * domain must hold a negative and a positive bound.
      */
     readonly palette: HeatmapScale['palette'];
+    /** Optional tighter range for color intensity so clustered high values keep clear contrast. */
+    readonly colorDomain?: CellDomainProps['domain'] | undefined;
   };
 
 /**
@@ -24,16 +26,22 @@ export type HeatCellProps = CellProps &
  */
 const HUE_SHARE_MAX = 55;
 
+function clampUnit(value: number): number {
+  return Math.max(0, Math.min(1, value));
+}
+
 function heatBackground({ value, domain, palette }: HeatmapScale & { readonly value: number }): string {
   const isNegative = value < 0;
 
   const hue =
     palette === 'sequential' ? chartToneColors.series1 : chartToneColors[isNegative ? 'negative' : 'positive'];
 
-  const fraction =
+  const rawFraction =
     palette === 'sequential'
       ? (value - domain[0]) / (domain[1] - domain[0])
       : Math.abs(value) / Math.abs(isNegative ? domain[0] : domain[1]);
+
+  const fraction = clampUnit(rawFraction);
 
   return `color-mix(in srgb, ${hue} ${fraction * HUE_SHARE_MAX}%, ${colors.surface})`;
 }
@@ -44,19 +52,30 @@ function heatBackground({ value, domain, palette }: HeatmapScale & { readonly va
  * score per task. Pass the column's `domain` and `palette` to every row so all rows share one ramp, lighter than the
  * `Matrix` heatmap so the ink text stays readable in both themes.
  */
-export function HeatCell({ value, domain, palette, locale, format, align, textWidth }: HeatCellProps): ReactNode {
+export function HeatCell({
+  value,
+  domain,
+  colorDomain,
+  palette,
+  locale,
+  format,
+  align,
+  textWidth,
+}: HeatCellProps): ReactNode {
   const problem = heatmapScaleProblem({ domain, palette }) ?? cellProblem({ domain, values: [value] });
 
   if (problem !== undefined) {
     return <InvalidCell message={problem} align={align} textWidth={textWidth} />;
   }
 
+  const rampDomain = colorDomain ?? domain;
+
   return (
     <CellLayout
       align={align}
       textWidth={textWidth}
       state={value === null ? 'missing' : 'value'}
-      background={value === null ? undefined : heatBackground({ value, domain, palette })}
+      background={value === null ? undefined : heatBackground({ value, domain: rampDomain, palette })}
     >
       {formatValue({ value, locale, format })}
     </CellLayout>

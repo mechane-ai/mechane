@@ -69,7 +69,7 @@ type LinkedRelation = { readonly edge: RelationEdge; readonly source: RelationNo
 
 const VIEWPORT_BORDER_PX = 2;
 /** The narrowest a node gets as the graph narrows to fit, so its label stays readable. Below it the graph scrolls. */
-const NODE_WIDTH_MIN_PX = 80;
+const NODE_WIDTH_MIN_PX = 136;
 
 /** A box moved across by the fit: its center keeps its share of the width, and it narrows but never widens. */
 function fitAcross<T extends { readonly x: number; readonly width: number }>(box: T, scale: number): T {

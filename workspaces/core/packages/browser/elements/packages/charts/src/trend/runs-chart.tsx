@@ -218,9 +218,7 @@ export function RunsChart(props: RunsChartProps): ReactNode {
     return {
       id: run.id,
       label:
-        last === undefined
-          ? `${run.label}: no recorded values`
-          : `${run.label}: last recorded ${x.label} ${xText(last.x)}, ${yText(last.y)}`,
+        last === undefined ? `${run.label}: no recorded values` : `${run.label} · ${xText(last.x)}: ${yText(last.y)}`,
     };
   });
 
@@ -228,7 +226,7 @@ export function RunsChart(props: RunsChartProps): ReactNode {
     const point = drawn.find((run) => run.id === id)?.points.find((candidate) => candidate.x === pointer?.x);
 
     return pointer !== undefined && pointer.id === id && point !== undefined
-      ? ` · At ${x.label} ${xText(point.x)}: ${yText(point.y)}`
+      ? ` (at ${xText(point.x)}: ${yText(point.y)})`
       : '';
   }
 

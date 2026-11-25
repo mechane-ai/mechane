@@ -123,12 +123,15 @@ const styles = stylex.create({
   readout: {
     margin: 0,
     minWidth: 0,
+    height: typography.captionLineHeight,
     minHeight: typography.captionLineHeight,
     color: colors.ink,
     fontSize: typography.captionSize,
     lineHeight: typography.captionLineHeight,
     fontVariantNumeric: 'tabular-nums',
-    overflowWrap: 'anywhere',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
   },
 });
 

@@ -17,8 +17,12 @@ export type LineageNode = {
   readonly label: string;
   readonly kind: LineageNodeKind;
   readonly lane?: string | undefined;
+  /** Optional explicit column index to align parallel swimlanes cleanly without empty gaps. */
+  readonly column?: number | undefined;
   readonly metric?: number | null | undefined;
   readonly delta?: number | null | undefined;
+  /** Optional short subtitle shown inside the node card. Falls back to metric or summary. */
+  readonly caption?: string | undefined;
   readonly summary?: string | undefined;
   readonly detail?: string | undefined;
   readonly source?: string | undefined;
@@ -50,14 +54,15 @@ export type LineageGraphProps = Pick<
     readonly labels?: Partial<LineageGraphLabels> | undefined;
   };
 
-const NODE_WIDTH = 176;
+const NODE_WIDTH = 152;
 const NODE_HEIGHT = 56;
-const COLUMN_GAP = 48;
-const ROW_GAP = 14;
-const CANVAS_PADDING = 20;
-const LANE_HEADER_HEIGHT = 24;
-const LANE_PADDING = 14;
-const LANE_GAP = 16;
+const COLUMN_GAP = 32;
+const ROW_GAP = 12;
+const CANVAS_PADDING = 16;
+const LANE_TOP_PADDING = 32;
+const LANE_BOTTOM_PADDING = 16;
+const LANE_PADDING_X = 16;
+const LANE_GAP = 12;
 const LOADING_WIDTH = 640;
 const LOADING_HEIGHT = 240;
 const MAX_DEPTH_PASSES = 64;
@@ -204,11 +209,26 @@ function formatNodeMetric({
     }
   }
 
+  if (node.caption !== undefined) {
+    return node.caption;
+  }
+
   if (parts.length > 0) {
     return parts.join(' · ');
   }
 
   return node.summary;
+}
+
+function resolveColumns(nodes: ReadonlyArray<LineageNode>): ReadonlyMap<string, number> {
+  const depthById = computeDepths(nodes);
+  const columnById = new Map<string, number>();
+
+  for (const node of nodes) {
+    columnById.set(node.id, node.column ?? depthById.get(node.id) ?? 0);
+  }
+
+  return columnById;
 }
 
 function layoutLineageGraph({
@@ -228,7 +248,7 @@ function layoutLineageGraph({
   readonly width: number;
   readonly height: number;
 } {
-  const depthById = computeDepths(nodes);
+  const depthById = resolveColumns(nodes);
   const maxDepth = Math.max(0, ...Array.from(depthById.values()));
   const hasLanes = nodes.some((node) => node.lane !== undefined);
   const laneOrder: Array<string> = [];
@@ -266,11 +286,11 @@ function layoutLineageGraph({
     const maxRows = Math.max(1, ...Array.from(byColumn.values(), (columnNodes) => columnNodes.length));
     const innerHeight = maxRows * NODE_HEIGHT + (maxRows - 1) * ROW_GAP;
     const laneTop = cursorY;
-    const nodesTop = hasLanes ? laneTop + LANE_HEADER_HEIGHT + LANE_PADDING : laneTop;
-    const laneHeight = hasLanes ? LANE_HEADER_HEIGHT + LANE_PADDING * 2 + innerHeight : innerHeight;
+    const nodesTop = hasLanes ? laneTop + LANE_TOP_PADDING : laneTop;
+    const laneHeight = hasLanes ? LANE_TOP_PADDING + innerHeight + LANE_BOTTOM_PADDING : innerHeight;
 
     for (const [col, columnNodes] of byColumn.entries()) {
-      const nodeX = CANVAS_PADDING + (hasLanes ? LANE_PADDING : 0) + col * columnSpan;
+      const nodeX = CANVAS_PADDING + (hasLanes ? LANE_PADDING_X : 0) + col * columnSpan;
 
       for (const [rowIndex, node] of columnNodes.entries()) {
         const nodeY = nodesTop + rowIndex * (NODE_HEIGHT + ROW_GAP);
@@ -294,7 +314,7 @@ function layoutLineageGraph({
         label: laneName,
         x: CANVAS_PADDING,
         y: laneTop,
-        width: contentWidth + LANE_PADDING * 2,
+        width: contentWidth + LANE_PADDING_X * 2,
         height: laneHeight,
         nodeIds: laneNodes.map((node) => node.id),
       });
@@ -320,7 +340,7 @@ function layoutLineageGraph({
     }
   }
 
-  const width = contentWidth + CANVAS_PADDING * 2 + (hasLanes ? LANE_PADDING * 2 : 0);
+  const width = contentWidth + CANVAS_PADDING * 2 + (hasLanes ? LANE_PADDING_X * 2 : 0);
   const height = Math.max(LOADING_HEIGHT, cursorY + CANVAS_PADDING - (hasLanes ? LANE_GAP : ROW_GAP));
 
   return { relationNodes, relationEdges, relationGroups, width, height };
