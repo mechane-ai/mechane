@@ -11,3 +11,7 @@
 [data-streamdown-paused] [data-sd-animate-marker]::marker {
   animation-play-state: paused;
 }
+
+:root:is(:fullscreen, :has(:fullscreen)) [data-mechane-shell-bottom-bar] {
+  display: none;
+}

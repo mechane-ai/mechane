@@ -4,6 +4,7 @@ import { useId, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Button, Row } from '../../../core/src/index.ts';
 import type { ChartTone } from '../../../foundations/src/chart-tones.ts';
+import { colors } from '../../../foundations/src/tokens.stylex.ts';
 import { ChartCursor } from '../chart-cursor.tsx';
 import { ChartData } from '../chart-data.tsx';
 import { ChartReadout } from '../chart-frame.tsx';
@@ -17,7 +18,6 @@ import type { TimeFormat } from '../figure/figure-format.ts';
 import { FigureEmpty, FigureFrame, FigureInvalid, FigureLoading } from '../figure/figure-frame.tsx';
 import type { FigureProps, FigureSelectionProps } from '../figure/figure-props.ts';
 import { useTones } from '../figure/tone-scope.tsx';
-import { locateNearest } from '../plot/locate.ts';
 import { PlotAxes } from '../plot/plot-axes.tsx';
 import { plotBox, plotMargins, timeAxisTicks } from '../plot/plot-layout.ts';
 import type { PlotTick } from '../plot/plot-layout.ts';
@@ -78,6 +78,8 @@ export type EventStripProps = FigureProps &
     /** Optional time-window presets rendered in the figure header. */
     readonly windows?: ReadonlyArray<EventStripWindow> | undefined;
     readonly defaultWindowId?: string | undefined;
+    readonly windowId?: string | undefined;
+    readonly onWindowChange?: ((id: string) => void) | undefined;
     /**
      * The lane-label gutter's width in pixels, which strips stacked in a column pass the same from `eventStripGutter`
      * over all their lanes so their time axes line up. A label longer than the gutter is cut with an ellipsis and keeps
@@ -88,15 +90,16 @@ export type EventStripProps = FigureProps &
 
 export const eventStripLimits = { lanes: 12, events: 1000 } as const;
 
-const ROW_HEIGHT = 22;
-const LANE_PADDING = 6;
+const ROW_HEIGHT = 24;
+const LANE_PADDING = 8;
 const BAR_HEIGHT = 14;
-const BAR_WIDTH_MIN = 3;
+const BAR_WIDTH_MIN = 4;
 const POINT_RADIUS = 5;
 const POINT_EXTENT = 14;
-const HIT_SLOP = 4;
+const HIT_SLOP = 5;
 const MARKER_BAND = 18;
-const MARKER_LABEL_GAP = 4;
+const MARKER_LABEL_GAP = 5;
+const MARKER_FLIP_RATIO = 0.65;
 const CHARACTER_WIDTH = 6.5;
 const CURSOR_WIDTH = 12;
 const HALF = 0.5;
@@ -115,7 +118,10 @@ const durationUnits = [
   secondUnit,
 ] as const;
 
-const styles = stylex.create({ separator: { pointerEvents: 'none' } });
+const styles = stylex.create({
+  separator: { pointerEvents: 'none' },
+  laneBand: { fill: colors.canvas, fillOpacity: 0.65, pointerEvents: 'none' },
+});
 
 /**
  * The lane-label gutter that holds every listed label, in pixels. Pass the result as `gutterWidth` to each strip of a
@@ -218,6 +224,8 @@ export function EventStrip(props: EventStripProps): ReactNode {
     markers: rawMarkers = [],
     windows,
     defaultWindowId,
+    windowId: controlledWindowId,
+    onWindowChange,
     gutterWidth,
     timeFormat,
     timeZone,
@@ -233,7 +241,16 @@ export function EventStrip(props: EventStripProps): ReactNode {
   const tones = useTones();
   const link = useLinkedInspection();
   const firstWindowId = windows?.[0]?.id ?? '';
-  const [activeWindowId, setActiveWindowId] = useState<string>(() => defaultWindowId ?? firstWindowId);
+  const [uncontrolledWindowId, setUncontrolledWindowId] = useState<string>(() => defaultWindowId ?? firstWindowId);
+  const activeWindowId = controlledWindowId ?? uncontrolledWindowId;
+
+  function selectWindow(nextId: string): void {
+    if (controlledWindowId === undefined) {
+      setUncontrolledWindowId(nextId);
+    }
+
+    onWindowChange?.(nextId);
+  }
 
   if (frame.status === 'loading') {
     return <FigureLoading {...frame} height="compact" />;
@@ -299,7 +316,7 @@ export function EventStrip(props: EventStripProps): ReactNode {
               density="compact"
               variant={isCurrent ? 'outline' : 'ghost'}
               aria-pressed={isCurrent}
-              onClick={() => setActiveWindowId(windowOption.id)}
+              onClick={() => selectWindow(windowOption.id)}
             >
               {windowOption.label}
             </Button>
@@ -327,11 +344,12 @@ export function EventStrip(props: EventStripProps): ReactNode {
 
   const markerLabels = markers.map((marker) => {
     const at = scale.position(marker.at);
-    const text = `${marker.label} ${timeText(marker.at)}`;
+    const text = marker.label;
+    const tooltip = `${marker.label} · ${timeText(marker.at)}`;
     const width = text.length * CHARACTER_WIDTH + MARKER_LABEL_GAP * 2;
-    const isEnd = at > margins.left + innerWidth * HALF;
+    const isEnd = at > margins.left + innerWidth * MARKER_FLIP_RATIO;
 
-    return { marker, at, text, isEnd, start: isEnd ? at - width : at, end: isEnd ? at : at + width };
+    return { marker, at, text, tooltip, isEnd, start: isEnd ? at - width : at, end: isEnd ? at : at + width };
   });
 
   const markerStacks = stackSpans(
@@ -421,23 +439,28 @@ export function EventStrip(props: EventStripProps): ReactNode {
 
   const laneStep = 1 / (lanes.length * 2 + 1);
 
-  const nearest = locateNearest({
-    marks: placed.map((mark) => ({ id: mark.event.id, x: (mark.x1 + mark.x2) * HALF, y: mark.y })),
-    width: box.width,
-    height: box.height,
-  });
-
   function locate(point: ChartPoint): string | undefined {
     const x = (point.x / point.width) * box.width;
     const y = (point.y / point.height) * box.height;
 
-    const hit = placed.findLast((mark) => {
+    let bestId: string | undefined = undefined;
+    let bestDist = Number.POSITIVE_INFINITY;
+
+    for (const mark of placed) {
       const isAcross = x >= mark.x1 - POINT_RADIUS - HIT_SLOP && x <= mark.x2 + POINT_RADIUS + HIT_SLOP;
 
-      return isAcross && Math.abs(y - mark.y) <= ROW_HEIGHT * HALF;
-    });
+      if (isAcross && Math.abs(y - mark.y) <= ROW_HEIGHT * HALF) {
+        const cx = Math.max(mark.x1, Math.min(mark.x2, x));
+        const dist = Math.hypot(x - cx, y - mark.y);
 
-    return hit?.event.id ?? nearest(point);
+        if (dist <= bestDist) {
+          bestDist = dist;
+          bestId = mark.event.id;
+        }
+      }
+    }
+
+    return bestId;
   }
 
   return (
@@ -478,6 +501,18 @@ export function EventStrip(props: EventStripProps): ReactNode {
                   label={plotLabel({ title, marks: 'events', isSelectable: onSelectedChange !== undefined })}
                   readoutId={readoutId}
                 >
+                  {bands.map((band, index) =>
+                    index % 2 === 1 ? (
+                      <rect
+                        key={`band-${band.lane.id}`}
+                        x={box.left}
+                        y={band.start}
+                        width={box.innerWidth}
+                        height={band.end - band.start}
+                        {...stylex.props(styles.laneBand)}
+                      />
+                    ) : null,
+                  )}
                   <PlotAxes box={box} xTicks={ticks} yTicks={laneTicks} xTitle={`Time (${zone})`} grid="x" />
                   {bands.slice(1).map((band) => (
                     <line
@@ -515,18 +550,20 @@ export function EventStrip(props: EventStripProps): ReactNode {
                       ),
                     )}
                   </PlotClip>
-                  {markerLabels.map(({ marker, at, text, isEnd }) => {
+                  {markerLabels.map(({ marker, at, text, tooltip, isEnd }) => {
                     const row = markerStacks.get(marker.id)?.lane ?? 0;
                     const y = box.top - MARKER_LABEL_GAP * 2 - row * MARKER_BAND;
 
+                    const labelX = Math.max(
+                      box.left + MARKER_LABEL_GAP,
+                      Math.min(box.right - MARKER_LABEL_GAP, isEnd ? at - MARKER_LABEL_GAP : at + MARKER_LABEL_GAP),
+                    );
+
                     return (
                       <g key={marker.id}>
+                        <title>{tooltip}</title>
                         <RuleMark x1={at} x2={at} y1={y + MARKER_LABEL_GAP} y2={box.bottom} stroke="dashed" />
-                        <LabelMark
-                          x={isEnd ? at - MARKER_LABEL_GAP : at + MARKER_LABEL_GAP}
-                          y={y}
-                          anchor={isEnd ? 'end' : 'start'}
-                        >
+                        <LabelMark x={labelX} y={y} anchor={isEnd ? 'end' : 'start'}>
                           {text}
                         </LabelMark>
                       </g>

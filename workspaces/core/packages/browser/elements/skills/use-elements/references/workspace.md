@@ -5,6 +5,12 @@ Mount one `AppShell` around the router outlet. `AppShell` locks the viewport at 
 show only the active area's pages, and put Settings/account controls in `railFooter`. On a phone use the shell's drawer
 and its navigation callback.
 
+Place workspace-wide bottom controls in `AppShell.bottomBar`. The row takes its content's actual height, including the
+bottom safe area. Nested pages fill the remaining space. Bottom toasts clear the row even when its height changes. For
+DevTools, call `useDevToolsBar` once in the signed-in shell with an app-specific local storage key and pass
+`isVisible ? <DevToolsBar /> : null` to the slot. The shortcut is Command–Option–Shift–Backslash. The bar uses the
+toolbar height by default. Set `--mechane-devtools-bar-height` on the shell's ancestor to change its minimum height.
+
 Compose `PageSection` directly inside `PageLayout`. Its `summary` and `children` slots supply the standard inset gutter,
 and `breakdown` spans the pane for a `DataTable` or `EventMonth`. The `calendar-workspace` recipe uses the grid as a
 breakdown and shows the selected day's full event names in the inset body of a sibling section. `PageContent` inside an

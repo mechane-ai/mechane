@@ -9,6 +9,7 @@ import { NavigationRailMenu } from './navigation-rail-menu.tsx';
 import type { NavigationRailMenuProps } from './navigation-rail-menu.tsx';
 import { NavigationRailContext, RailFooterGroup, RailGroup, RailPlaceholderItem } from './navigation-rail.tsx';
 import type { NavigationRailProps } from './navigation-rail.tsx';
+import { ShellBottomBar } from './shell-bottom-bar.tsx';
 import { Sidebar, SidebarClose, SidebarContext } from './sidebar.tsx';
 
 const styles = stylex.create({
@@ -16,7 +17,9 @@ const styles = stylex.create({
     boxSizing: 'border-box',
     height: '100dvh',
     overflow: 'hidden',
-    display: 'flex',
+    display: 'grid',
+    gridTemplateRows: 'minmax(0, 1fr) auto',
+    gridTemplateColumns: 'minmax(0, 1fr)',
     backgroundColor: colors.surface,
     color: colors.ink,
     fontFamily: typography.fontFamily,
@@ -24,6 +27,8 @@ const styles = stylex.create({
     lineHeight: typography.bodyLineHeight,
     WebkitFontSmoothing: 'antialiased',
   },
+  workspace: { display: 'flex', minWidth: 0, minHeight: 0 },
+  aboveBar: { '--mechane-workspace-safe-area-bottom': '0px' },
   sidebar: {
     boxSizing: 'border-box',
     display: { default: 'flex', [frameConditions.sidebarMobile]: 'none' },
@@ -31,7 +36,6 @@ const styles = stylex.create({
     backgroundColor: colors.surface,
     position: 'sticky',
     top: 0,
-    height: '100dvh',
     width: frame.sidebarWidth,
     flexShrink: 0,
     minHeight: 0,
@@ -41,7 +45,10 @@ const styles = stylex.create({
   secondary: { width: `calc(${frame.sidebarWidth} - ${pageGeometry.toolbarHeight})` },
   rail: { width: pageGeometry.toolbarHeight },
   railBody: { flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehaviorY: 'contain' },
-  railFooter: { flexShrink: 0, paddingBottom: 'env(safe-area-inset-bottom, 0px)' },
+  railFooter: {
+    flexShrink: 0,
+    paddingBottom: 'var(--mechane-workspace-safe-area-bottom, env(safe-area-inset-bottom, 0px))',
+  },
   hidden: { display: 'none' },
   main: {
     minWidth: 0,
@@ -87,6 +94,7 @@ type AppShellProps = {
   readonly sidebarHeader?: ReactNode;
   readonly sidebar: ReactNode;
   readonly footer?: ReactNode;
+  readonly bottomBar?: ReactNode;
   readonly children: ReactNode;
   readonly mainId?: string;
   readonly shouldFocus?: boolean;
@@ -98,10 +106,12 @@ export function AppShell({
   sidebarHeader,
   sidebar,
   footer,
+  bottomBar,
   children,
   mainId = 'main',
   shouldFocus = false,
 }: AppShellProps): ReactNode {
+  const hasBottomBar = bottomBar !== undefined && bottomBar !== null && typeof bottomBar !== 'boolean';
   const hasRail = rail !== undefined && rail !== null;
   const [isExpanded, setIsExpanded] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
@@ -144,34 +154,37 @@ export function AppShell({
       }}
     >
       <div {...stylex.props(styles.shell)}>
-        {hasRail && (
-          <div
-            hidden={shouldFocus}
-            {...stylex.props(styles.sidebar, headerStyles.inlineEnd, styles.rail, shouldFocus && styles.hidden)}
-          >
-            <div {...stylex.props(styles.railBody)}>{rail}</div>
-            {railFooter !== undefined && <ShellRailFooter footer={railFooter} />}
-          </div>
-        )}
-        <aside
-          id={sidebarId}
-          aria-label="Navigation"
-          hidden={shouldHideSidebar}
-          {...stylex.props(
-            styles.sidebar,
-            headerStyles.inlineEnd,
-            hasRail && styles.secondary,
-            !hasRail && !isExpanded && styles.collapsed,
-            shouldHideSidebar && styles.hidden,
+        <div {...stylex.props(styles.workspace, hasBottomBar && styles.aboveBar)}>
+          {hasRail && (
+            <div
+              hidden={shouldFocus}
+              {...stylex.props(styles.sidebar, headerStyles.inlineEnd, styles.rail, shouldFocus && styles.hidden)}
+            >
+              <div {...stylex.props(styles.railBody)}>{rail}</div>
+              {railFooter !== undefined && <ShellRailFooter footer={railFooter} />}
+            </div>
           )}
-        >
-          <Sidebar header={sidebarHeader} footer={footer}>
-            {sidebar}
-          </Sidebar>
-        </aside>
-        <main id={mainId} tabIndex={-1} {...stylex.props(styles.main)}>
-          {children}
-        </main>
+          <aside
+            id={sidebarId}
+            aria-label="Navigation"
+            hidden={shouldHideSidebar}
+            {...stylex.props(
+              styles.sidebar,
+              headerStyles.inlineEnd,
+              hasRail && styles.secondary,
+              !hasRail && !isExpanded && styles.collapsed,
+              shouldHideSidebar && styles.hidden,
+            )}
+          >
+            <Sidebar header={sidebarHeader} footer={footer}>
+              {sidebar}
+            </Sidebar>
+          </aside>
+          <main id={mainId} tabIndex={-1} {...stylex.props(styles.main)}>
+            {children}
+          </main>
+        </div>
+        {hasBottomBar && <ShellBottomBar>{bottomBar}</ShellBottomBar>}
       </div>
       {/* Screen dialogs must not inherit the navigation drawer's modal context. */}
       <Drawer.Root controller={drawerController} open={isOpen && !shouldFocus} onOpenChange={setIsOpen}>

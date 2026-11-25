@@ -1,4 +1,5 @@
 export { PageLayout, PageSection } from './page-layout.tsx';
+export { DevToolsBar, useDevToolsBar } from './devtools-bar.tsx';
 export { AppShell } from './app-shell.tsx';
 export { NavigationRail, NavigationRailPlaceholder } from './navigation-rail.tsx';
 export type { NavigationRailLink, NavigationRailProps } from './navigation-rail.tsx';

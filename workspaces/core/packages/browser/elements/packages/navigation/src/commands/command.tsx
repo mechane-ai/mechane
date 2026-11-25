@@ -50,6 +50,7 @@ const styles = stylex.create({
 
 export type CommandShortcut = {
   readonly key: string;
+  readonly code?: string;
   readonly mod?: boolean;
   readonly ctrl?: boolean;
   readonly alt?: boolean;
@@ -86,6 +87,27 @@ function shortcutKeys(shortcut: CommandShortcut): string {
     .join('+');
 }
 
+function matchesCommand(event: KeyboardEvent, shortcut: CommandShortcut): boolean {
+  if (shortcut.code === undefined) {
+    return matchesShortcut(event, shortcutKeys(shortcut));
+  }
+
+  if (event.code !== shortcut.code) {
+    return false;
+  }
+
+  // The physical key matched. Let the SDK check modifiers using the binding's display key.
+  const key = new KeyboardEvent('keydown', {
+    key: shortcut.key,
+    metaKey: event.metaKey,
+    ctrlKey: event.ctrlKey,
+    altKey: event.altKey,
+    shiftKey: event.shiftKey,
+  });
+
+  return matchesShortcut(key, shortcutKeys(shortcut));
+}
+
 export function useCommandShortcuts({ commands, target, isEnabled }: CommandShortcutsOptions): void {
   const handleKey = useEffectEvent((event: KeyboardEvent, region: HTMLElement) => {
     if (event.defaultPrevented || event.repeat || event.isComposing) {
@@ -104,7 +126,7 @@ export function useCommandShortcuts({ commands, target, isEnabled }: CommandShor
         return false;
       }
 
-      return matchesShortcut(event, shortcutKeys(action.shortcut)) && action.shouldRun?.(event) !== false;
+      return matchesCommand(event, action.shortcut) && action.shouldRun?.(event) !== false;
     });
 
     if (command === undefined) {

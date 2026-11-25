@@ -21,6 +21,10 @@ const styles = stylex.create({
       [conditions.compactText]: `min(356px, calc(100% - 2 * ${spacing.lg}))`,
     },
     'marginBlock': { default: spacing.xl, [conditions.compactText]: spacing.lg },
+    ':is([data-side="bottom"])': {
+      bottom:
+        'calc(var(--keyboard-inset, 0px) + max(env(safe-area-inset-bottom, 0px), var(--mechane-shell-bottom-inset, 0px)))',
+    },
     ':not([data-align="center"])': { marginInline: { default: spacing.xl, [conditions.compactText]: spacing.lg } },
     'height': 'var(--toast-front-height, 0px)',
     'zIndex': layers.popup,

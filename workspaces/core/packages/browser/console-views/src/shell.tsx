@@ -1,6 +1,13 @@
 import { Avatar, Muted } from '@mechane-ai/elements';
 import { Select } from '@mechane-ai/elements/forms';
-import { AppShell, Navigation, SidebarFooter, SidebarLabel } from '@mechane-ai/elements/layout';
+import {
+  AppShell,
+  DevToolsBar,
+  Navigation,
+  SidebarFooter,
+  SidebarLabel,
+  useDevToolsBar,
+} from '@mechane-ai/elements/layout';
 import type { Workspace } from '@mechane/protocol';
 import * as stylex from '@stylexjs/stylex';
 import { Check, ChevronDown } from 'lucide-react';
@@ -87,8 +94,11 @@ export function ConsoleShell({
   readonly children: ReactNode;
   readonly shouldFocus?: boolean;
 }): ReactNode {
+  const isDevToolsVisible = useDevToolsBar('mechane.devtools.visible');
+
   return (
     <AppShell
+      bottomBar={isDevToolsVisible ? <DevToolsBar /> : null}
       sidebarHeader={<WorkspaceSwitcher workspaces={workspaces} workspaceId={workspaceId} onWorkspace={onWorkspace} />}
       sidebar={homeLink}
       shouldFocus={shouldFocus}

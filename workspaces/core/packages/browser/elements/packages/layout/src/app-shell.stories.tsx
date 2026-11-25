@@ -19,6 +19,7 @@ import { Select } from '../../forms/src/index.ts';
 import { Menu } from '../../overlays/src/index.ts';
 import { AppShell } from './app-shell.tsx';
 import { DetailPage } from './detail-page.tsx';
+import { DevToolsBar } from './devtools-bar.tsx';
 import { NavigationRail } from './navigation-rail.tsx';
 import type { NavigationRailLink } from './navigation-rail.tsx';
 import { PageLayout } from './page-layout.tsx';
@@ -93,11 +94,18 @@ function WorkspaceHeader(): ReactNode {
   );
 }
 
-function CollectionShell({ hasHeaderControl = false }: { readonly hasHeaderControl?: boolean }): ReactNode {
+function CollectionShell({
+  hasHeaderControl = false,
+  bottomBar,
+}: {
+  readonly hasHeaderControl?: boolean;
+  readonly bottomBar?: ReactNode;
+}): ReactNode {
   const [view, setView] = useState('Release notes');
 
   return (
     <AppShell
+      bottomBar={bottomBar}
       sidebarHeader={hasHeaderControl ? <WorkspaceHeader /> : <SidebarLabel>Example collection</SidebarLabel>}
       sidebar={
         <Navigation label="Collection">
@@ -336,3 +344,5 @@ export const PersistentNavigation: Story = {
     </AppShell>
   ),
 };
+
+export const WithBottomBar: Story = { render: () => <CollectionShell bottomBar={<DevToolsBar />} /> };
