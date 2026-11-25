@@ -92,6 +92,7 @@ export function ContentReveal({ shouldEnter, presentation = 'content', children 
 export type AsyncRegionState = 'pending' | 'ready' | 'failed';
 
 export type AsyncRegionProps = {
+  readonly placeholderDelayMs?: number;
   readonly label: string;
   readonly placeholder: ReactNode;
   readonly presentation?: 'content' | 'image';
@@ -101,26 +102,33 @@ export type AsyncRegionProps = {
 );
 
 type PendingContentProps = {
+  readonly placeholderDelayMs: number;
   readonly label: string;
   readonly placeholder: ReactNode;
   readonly startedAt: number;
   readonly presentation: 'content' | 'image';
 };
 
-function PendingContent({ label, placeholder, startedAt, presentation }: PendingContentProps): ReactNode {
+function PendingContent({
+  label,
+  placeholder,
+  startedAt,
+  placeholderDelayMs,
+  presentation,
+}: PendingContentProps): ReactNode {
   const [shownFor, setShownFor] = useState<number | undefined>(() =>
-    Date.now() - startedAt >= PLACEHOLDER_DELAY_MS ? startedAt : undefined,
+    Date.now() - startedAt >= placeholderDelayMs ? startedAt : undefined,
   );
 
   const isVisible = shownFor === startedAt;
   const isImage = presentation === 'image';
 
   useEffect(() => {
-    const remaining = Math.max(0, PLACEHOLDER_DELAY_MS - (Date.now() - startedAt));
+    const remaining = Math.max(0, placeholderDelayMs - (Date.now() - startedAt));
     const timer = setTimeout(() => setShownFor(startedAt), remaining);
 
     return () => clearTimeout(timer);
-  }, [startedAt]);
+  }, [startedAt, placeholderDelayMs]);
 
   return (
     <>
@@ -183,6 +191,7 @@ export function AsyncRegion(props: AsyncRegionProps): ReactNode {
     <div {...stylex.props(styles.region)}>
       {props.state === 'pending' ? (
         <PendingContent
+          placeholderDelayMs={props.placeholderDelayMs ?? PLACEHOLDER_DELAY_MS}
           label={props.label}
           placeholder={props.placeholder}
           startedAt={current.startedAt}
