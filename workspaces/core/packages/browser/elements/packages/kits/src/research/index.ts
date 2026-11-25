@@ -1,5 +1,5 @@
-export type { CollectionPageProps } from './collection-page.tsx';
-export { CollectionPage } from './collection-page.tsx';
+export type { CollectionPageProps, CollectionSectionProps, CollectionStatus } from './collection-page.tsx';
+export { CollectionPage, CollectionSection } from './collection-page.tsx';
 export type {
   FindingCardLabels,
   FindingCardProps,

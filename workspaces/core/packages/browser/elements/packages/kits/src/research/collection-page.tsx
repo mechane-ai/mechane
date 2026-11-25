@@ -4,6 +4,7 @@ import type { ComponentProps, ReactNode } from 'react';
 import {
   CollectionToolbar,
   DataTable,
+  DataTablePlaceholder,
   TableQueryFrame,
   useCollectionControls,
   useLocalTableQuery,
@@ -16,13 +17,17 @@ import type {
   TableFilterDimension,
   TableQueryException,
 } from '../../../collections/src/index.ts';
+import { SectionHeading } from '../../../core/src/index.ts';
+import { AsyncRegion, Notice } from '../../../feedback/src/index.ts';
 import { CollectionLayout, PageContent, PageLayout, Workbench } from '../../../layout/src/index.ts';
 
 const styles = stylex.create({
   frame: { flex: '1 1 auto', minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' },
+  section: { minWidth: 0, display: 'flex', flexDirection: 'column' },
 });
 
 const editableTags = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
+const DEFAULT_PLACEHOLDER_ROWS = 8;
 
 function isEditableElement(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) {
@@ -31,6 +36,8 @@ function isEditableElement(target: EventTarget | null): boolean {
 
   return target.isContentEditable || editableTags.has(target.tagName);
 }
+
+export type CollectionStatus = 'loading' | 'ready' | 'failed';
 
 type SortableColumns<Row> =
   | {
@@ -44,7 +51,7 @@ type SortableColumns<Row> =
       readonly onSortChange?: never;
     };
 
-export type CollectionPageProps<Row extends object> = SortableColumns<Row> & {
+type SharedCollectionProps<Row extends object> = SortableColumns<Row> & {
   readonly title: string;
   readonly caption?: string;
   readonly rows: ReadonlyArray<Row>;
@@ -55,7 +62,6 @@ export type CollectionPageProps<Row extends object> = SortableColumns<Row> & {
   readonly filters: ReadonlyArray<TableFilterDimension<Row>> | TableQueryException;
   /** Optional custom row transformer (e.g. sorting) applied after local search and filtering. */
   readonly transformRows?: (rows: ReadonlyArray<Row>) => ReadonlyArray<Row>;
-  readonly navigation?: ComponentProps<typeof PageLayout>['navigation'];
   readonly actions?: ReactNode;
   readonly notice?: ReactNode;
   readonly rowAction?: DataTableRowAction<Row> | undefined;
@@ -63,16 +69,25 @@ export type CollectionPageProps<Row extends object> = SortableColumns<Row> & {
   readonly rowSizing?: 'fixed' | 'content' | undefined;
   readonly empty: ReactNode;
   readonly filteredEmpty?: ReactNode;
+  /** Read lifecycle state: `'loading'` reserves geometry with `DataTablePlaceholder` inside `AsyncRegion`. */
+  readonly status?: CollectionStatus;
+  readonly failure?: ReactNode;
+  readonly placeholderRows?: number;
+};
+
+export type CollectionPageProps<Row extends object> = SharedCollectionProps<Row> & {
+  readonly navigation?: ComponentProps<typeof PageLayout>['navigation'];
   /** Optional right-hand inspector pane rendered inside a resizable Workbench split when open. */
   readonly inspector?: { readonly label: string; readonly content: ReactNode } | undefined;
   readonly inspectorInitialPercent?: number | undefined;
 };
 
-/**
- * Full-width collection page Lego block: wires `PageLayout`, top-bar search and filter controls (`/` and `⌘F`), active
- * filter chips, edge-to-edge `CollectionLayout` + `DataTable`, and an optional resizable `Workbench` inspector.
- */
-export function CollectionPage<Row extends object>({
+export type CollectionSectionProps<Row extends object> = SharedCollectionProps<Row> & {
+  readonly id?: string;
+  readonly meta?: ReactNode;
+};
+
+function useCollectionFrame<Row extends object>({
   title,
   caption,
   rows,
@@ -83,17 +98,20 @@ export function CollectionPage<Row extends object>({
   search,
   filters,
   transformRows,
-  navigation,
-  actions,
-  notice,
   rowAction,
   activeRowId,
   rowSizing,
   empty,
   filteredEmpty,
-  inspector,
-  inspectorInitialPercent = 40,
-}: CollectionPageProps<Row>): ReactNode {
+  status = 'ready',
+  failure,
+  placeholderRows = DEFAULT_PLACEHOLDER_ROWS,
+  hasGlobalShortcuts,
+}: SharedCollectionProps<Row> & { readonly hasGlobalShortcuts: boolean }) {
+  const isLoading = status === 'loading';
+  const isFailed = status === 'failed';
+  const isReady = status === 'ready';
+
   const query = useLocalTableQuery(rows, { mode: 'local', search, filters });
 
   const {
@@ -105,13 +123,14 @@ export function CollectionPage<Row extends object>({
     label: `${title} controls`,
     ...(query.search !== undefined && { search: query.search }),
     filters: query.filters,
-    isReady: true,
+    isPlaceholder: isLoading,
+    isReady,
   });
 
-  const hasSearch = query.search !== undefined;
+  const shouldBindShortcuts = hasGlobalShortcuts && isReady && query.search !== undefined;
 
   useEffect(() => {
-    if (!hasSearch) {
+    if (!shouldBindShortcuts) {
       return;
     }
 
@@ -128,20 +147,12 @@ export function CollectionPage<Row extends object>({
     globalThis.addEventListener('keydown', handleKeyDown);
 
     return () => globalThis.removeEventListener('keydown', handleKeyDown);
-  }, [hasSearch, openSearch]);
+  }, [shouldBindShortcuts, openSearch]);
 
   const visibleRows = transformRows === undefined ? query.rows : transformRows(query.rows);
   const tableCaption = caption ?? title;
   const hasSearchCapability = typeof search === 'function';
   const hasFilterCapability = !('reason' in filters);
-  const hasNotice = notice !== undefined && notice !== null;
-
-  const headerActions = (
-    <>
-      {navigation === undefined && controlActions}
-      {actions}
-    </>
-  );
 
   const sharedTableProps = {
     caption: tableCaption,
@@ -163,6 +174,65 @@ export function CollectionPage<Row extends object>({
       <DataTable {...sharedTableProps} columns={columns} sort={sort} onSortChange={onSortChange} />
     );
 
+  const placeholder = (
+    <DataTablePlaceholder
+      caption={tableCaption}
+      hideCaption
+      columns={columns}
+      rows={placeholderRows}
+      {...(rowSizing !== undefined && { rowSizing })}
+    />
+  );
+
+  const failureContent = failure ?? (
+    <PageContent>
+      <Notice hasError>Could not load {title.toLowerCase()}.</Notice>
+    </PageContent>
+  );
+
+  const content = isLoading ? (
+    <AsyncRegion state="pending" label={title} placeholder={placeholder} />
+  ) : (
+    <AsyncRegion state={isFailed ? 'failed' : 'ready'} label={title} placeholder={placeholder}>
+      {isFailed ? failureContent : table}
+    </AsyncRegion>
+  );
+
+  return {
+    controlActions,
+    chips,
+    onKeyDown,
+    content,
+    frameProps: {
+      search: hasSearchCapability ? (true as const) : search,
+      filters: hasFilterCapability ? (true as const) : filters,
+      isFiltered: query.isFiltered,
+    },
+  };
+}
+
+/**
+ * Full-width collection page Lego block: wires `PageLayout`, top-bar search and filter controls (`/` and `⌘F`), active
+ * filter chips, `AsyncRegion` + `DataTablePlaceholder` loading states, edge-to-edge `CollectionLayout`, and an optional
+ * resizable `Workbench` inspector.
+ */
+export function CollectionPage<Row extends object>(props: CollectionPageProps<Row>): ReactNode {
+  const { title, navigation, actions, notice, inspector, inspectorInitialPercent = 40 } = props;
+
+  const { controlActions, chips, onKeyDown, content, frameProps } = useCollectionFrame({
+    ...props,
+    hasGlobalShortcuts: true,
+  });
+
+  const hasNotice = notice !== undefined && notice !== null;
+
+  const headerActions = (
+    <>
+      {navigation === undefined && controlActions}
+      {actions}
+    </>
+  );
+
   const body = (
     <CollectionLayout
       header={
@@ -172,16 +242,12 @@ export function CollectionPage<Row extends object>({
         </>
       }
     >
-      {table}
+      {content}
     </CollectionLayout>
   );
 
   return (
-    <TableQueryFrame
-      search={hasSearchCapability ? true : search}
-      filters={hasFilterCapability ? true : filters}
-      isFiltered={query.isFiltered}
-    >
+    <TableQueryFrame {...frameProps}>
       <section {...stylex.props(styles.frame)} onKeyDown={onKeyDown}>
         <PageLayout title={title} actions={headerActions} navigation={navigation}>
           {inspector === undefined ? (
@@ -192,6 +258,42 @@ export function CollectionPage<Row extends object>({
             </Workbench>
           )}
         </PageLayout>
+      </section>
+    </TableQueryFrame>
+  );
+}
+
+/**
+ * Full-width collection section for tabbed or multi-section views. Wires `SectionHeading`, top-bar search and filters,
+ * active filter chips, `AsyncRegion` loading placeholders, and edge-to-edge `DataTable`.
+ */
+export function CollectionSection<Row extends object>(props: CollectionSectionProps<Row>): ReactNode {
+  const { id, title, meta, actions, notice } = props;
+
+  const { controlActions, chips, onKeyDown, content, frameProps } = useCollectionFrame({
+    ...props,
+    hasGlobalShortcuts: false,
+  });
+
+  const hasNotice = notice !== undefined && notice !== null;
+
+  return (
+    <TableQueryFrame {...frameProps}>
+      <section aria-label={title} {...stylex.props(styles.section)} onKeyDown={onKeyDown}>
+        <SectionHeading
+          {...(id !== undefined && { id })}
+          title={title}
+          meta={meta}
+          actions={
+            <>
+              {controlActions}
+              {actions}
+            </>
+          }
+        />
+        {hasNotice && <PageContent>{notice}</PageContent>}
+        {chips !== false && <CollectionToolbar label="Applied filters">{chips}</CollectionToolbar>}
+        {content}
       </section>
     </TableQueryFrame>
   );
