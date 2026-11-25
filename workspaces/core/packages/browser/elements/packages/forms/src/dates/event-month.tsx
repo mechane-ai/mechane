@@ -1,10 +1,13 @@
 import * as stylex from '@stylexjs/stylex';
 import * as Calendar from '@ui-sdk/react/calendar';
 import type { ReactNode } from 'react';
-import { conditions } from '../../../foundations/src/constants.stylex.ts';
+import { accessibility } from '../../../foundations/src/accessibility.ts';
+import { conditions, loading } from '../../../foundations/src/constants.stylex.ts';
 import { colors, controls, radii, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { formatDate, parseCalendarDate, serializeCalendarDate, serializeCalendarMonth } from './civil.ts';
 import type { CalendarDate } from './civil.ts';
+
+const reveal = stylex.keyframes({ from: { opacity: 0 }, to: { opacity: 1 } });
 
 const styles = stylex.create({
   grid: {
@@ -59,6 +62,12 @@ const styles = stylex.create({
     backgroundColor: colors.canvas,
     borderRadius: radii.sm,
   },
+  placeholder: {
+    animationName: { default: reveal, [conditions.reducedMotion]: 'none' },
+    animationDelay: `${loading.placeholderMs}ms`,
+    animationDuration: `${loading.revealMs}ms`,
+    animationFillMode: 'backwards',
+  },
   overflow: { fontSize: typography.captionSize, color: colors.muted, whiteSpace: 'nowrap', overflow: 'hidden' },
 });
 
@@ -67,6 +76,7 @@ export type EventMonthItem = { readonly id: string; readonly label: string };
 export type EventMonthProps = {
   readonly label: string;
   readonly locale: string;
+  readonly loading?: { readonly label: string; readonly placeholder: ReactNode } | undefined;
   readonly timeZone: string;
   readonly today: CalendarDate;
   readonly selected: CalendarDate;
@@ -79,6 +89,7 @@ const visibleItems = 2;
 
 export function EventMonth({
   label,
+  loading: pendingItems,
   locale,
   timeZone,
   today,
@@ -121,7 +132,7 @@ export function EventMonth({
         }
       }}
     >
-      <Calendar.CalendarGrid {...stylex.props(styles.grid)}>
+      <Calendar.CalendarGrid aria-busy={pendingItems !== undefined} {...stylex.props(styles.grid)}>
         <Calendar.CalendarWeekdays>
           {(index) => <Calendar.CalendarWeekday index={index} {...stylex.props(styles.weekday)} />}
         </Calendar.CalendarWeekdays>
@@ -134,6 +145,7 @@ export function EventMonth({
             }
 
             const items = itemsByDate.get(cell.date) ?? [];
+            const needsPlaceholder = items.length === 0 && date.month === selected.month;
             const more = items.length - visibleItems;
             const visible = items.slice(0, visibleItems);
 
@@ -157,6 +169,9 @@ export function EventMonth({
               >
                 <div {...stylex.props(styles.content)} aria-hidden="true">
                   <span {...stylex.props(styles.number, cell.date === todayDate && styles.today)}>{date.day}</span>
+                  {pendingItems !== undefined && needsPlaceholder && (
+                    <span {...stylex.props(styles.placeholder)}>{pendingItems.placeholder}</span>
+                  )}
                   {visible.map((item) => (
                     <span key={item.id} {...stylex.props(styles.event)}>
                       {item.label}
@@ -169,6 +184,11 @@ export function EventMonth({
           }}
         </Calendar.CalendarWeeks>
       </Calendar.CalendarGrid>
+      {pendingItems !== undefined && (
+        <span role="status" {...stylex.props(accessibility.hidden)}>
+          {pendingItems.label}
+        </span>
+      )}
     </Calendar.Calendar>
   );
 }

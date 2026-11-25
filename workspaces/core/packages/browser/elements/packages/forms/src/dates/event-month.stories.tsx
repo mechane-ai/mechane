@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
+import { SkeletonText } from '../../../feedback/src/index.ts';
 import { EventMonth } from './event-month.tsx';
 import type { EventMonthItem } from './event-month.tsx';
 
@@ -17,13 +18,22 @@ const items = new Map<string, ReadonlyArray<EventMonthItem>>([
   ['2026-12-01', [{ id: '4', label: 'Library pickup' }]],
 ]);
 
-function Example({ hasEvents = true, isNarrow = false }: { hasEvents?: boolean; isNarrow?: boolean }) {
+function Example({
+  hasEvents = true,
+  isNarrow = false,
+  isPending = false,
+}: {
+  hasEvents?: boolean;
+  isNarrow?: boolean;
+  isPending?: boolean;
+}) {
   const [selected, setSelected] = useState(today);
 
   return (
     <div style={{ inlineSize: isNarrow ? 360 : '100%', maxInlineSize: '100%' }}>
       <EventMonth
         label="Events"
+        loading={isPending ? { label: 'Loading events', placeholder: <SkeletonText width="65%" /> } : undefined}
         locale="en-US"
         timeZone="America/Los_Angeles"
         today={today}
@@ -41,3 +51,4 @@ type Story = StoryObj<typeof meta>;
 export const Populated: Story = {};
 export const Empty: Story = { args: { hasEvents: false } };
 export const Narrow: Story = { args: { isNarrow: true } };
+export const Pending: Story = { args: { hasEvents: false, isPending: true } };

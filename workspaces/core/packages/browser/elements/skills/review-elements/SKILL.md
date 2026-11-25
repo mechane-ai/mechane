@@ -27,7 +27,8 @@ Put the pointer away and complete the page's main task.
 
 Hold a slow read, fail one, and return an empty result.
 
-- Pending reserves the result's geometry with a matching placeholder. Nothing jumps when the content arrives.
+- A slow first read shows a shape-matched skeleton. Check that its loading announcement is available to a screen reader
+  and visually hidden. Dates, filters and other usable controls keep their positions when data arrives.
 - A refresh keeps the last result, its focus and any draft on screen, with progress or the failure beside it.
 - A failed first read shows a `Notice` with Retry in place. A successful empty result shows an `EmptyState`.
 - Each failure has one presentation. Not a banner and a toast for the same error.

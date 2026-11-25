@@ -10,6 +10,12 @@ values a reader compares together. Keep available filters usable and preserve us
 selection. Use the component's delay and reduced-motion behavior. On a cold document, wait for session resolution before
 showing account navigation or sign-in.
 
+For a first read, use a visual skeleton in the space the result will occupy. Keep “Loading events” or an equivalent
+short label in the accessible status. For a month view, pass a `loading` label and `SkeletonText` placeholder to
+`EventMonth` while the visible range is unknown. Dates and keyboard navigation stay usable while event rows show
+skeletons. Omit `loading` when that range has resolved, including an empty result. Keep existing events visible during a
+background refresh.
+
 For a custom plot, start with `ChartFrame` and chart tones from `/charts`. Outline filled marks with
 `chartToneOutlines`, draw the zero baseline and axes in ink, and set tick text in the mono face, as the shared charts
 do. Keep data meaning in the caller. For a calendar heatmap, give each date a square cell, align week columns and day
