@@ -42,24 +42,30 @@ function lineDistance(point: Spot, points: ReadonlyArray<LocatedPoint>): number 
   return Math.min(Infinity, ...distances);
 }
 
+const HIT_RADIUS_PX = 10;
+
 /**
- * A chart `locate` for lines: the pointer inspects the line whose drawn path is nearest, between its vertices as well
- * as at them. A line is never a target where it has no value.
+ * A chart `locate` for lines: the pointer inspects the nearest drawn path within `maxDistance` pixels. Open whitespace
+ * returns undefined, so hovering only fires on a line.
  */
 export function locateNearestLine({
   lines,
   width,
   height,
+  maxDistance = HIT_RADIUS_PX,
 }: {
   readonly lines: ReadonlyArray<LocatedLine>;
   /** The size the lines were laid out in. The pointer arrives in rendered pixels and is rescaled to it. */
   readonly width: number;
   readonly height: number;
+  /** Farthest a pointer may sit from a line and still inspect it, in plot pixels. */
+  readonly maxDistance?: number | undefined;
 }): (point: ChartPoint) => string | undefined {
   return (point) => {
     const spot = { x: (point.x / point.width) * width, y: (point.y / point.height) * height };
     const distances = lines.map((line) => lineDistance(spot, line.points));
+    const best = Math.min(...distances);
 
-    return lines[distances.indexOf(Math.min(...distances))]?.id;
+    return best > maxDistance ? undefined : lines[distances.indexOf(best)]?.id;
   };
 }

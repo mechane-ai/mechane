@@ -340,6 +340,10 @@ const chart = definePrimitive({
           show(id, { reason, event });
 
           isHovering = event.pointerType === 'mouse';
+        } else if (reason === 'item-hover' && isHovering) {
+          show(null, { reason, event });
+
+          isHovering = false;
         }
       },
       enter(id: string, event: PointerEvent): void {
