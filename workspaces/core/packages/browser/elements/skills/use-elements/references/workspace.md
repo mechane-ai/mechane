@@ -5,12 +5,14 @@ Mount one `AppShell` around the router outlet. `AppShell` locks the viewport at 
 show only the active area's pages, and put Settings/account controls in `railFooter`. On a phone use the shell's drawer
 and its navigation callback.
 
-Use `PageSection` for report sections: both `summary` and `children` receive the standard inset gutter automatically
-(without double-padding if wrapped in `PageContent`), while `breakdown` renders edge-to-edge full width for a
-`DataTable`. Use `DetailPage isWide` for a wide standalone working surface (it keeps the standard inset gutter by
-default; pass `isBleed` only for an intentional zero-gutter canvas). Constrain prose and individual forms locally. Keep
-a wide plot's horizontal scroll inside its figure. At a wide desktop viewport, compare the right edge of a report header
-with its table and the edge of the pane.
+Compose `PageSection` directly inside `PageLayout`. Its `summary` and `children` slots supply the standard inset gutter,
+and `breakdown` spans the pane for a `DataTable` or `EventMonth`. The `calendar-workspace` recipe uses the grid as a
+breakdown and shows the selected day's full event names in the inset body of a sibling section. `PageContent` inside an
+already inset slot adds no second gutter.
+
+Use `DetailPage isWide` for a wide standalone working surface with the standard inset. Use `isBleed` when the entire
+detail fills the pane. Constrain prose and individual forms locally. Keep a wide plot's horizontal scroll inside its
+figure. At a wide desktop viewport, compare the right edge of a report header with its table and the edge of the pane.
 
 Use `CollectionPage` from `/kits/research` for full-width searchable/filterable table pages. It wires `PageLayout`,
 top-bar search & filter controls (`/` and `⌘F`), `CollectionToolbar` filter chips, full-width `DataTable`, and an

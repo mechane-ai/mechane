@@ -16,6 +16,7 @@ const styles = stylex.create({
     borderColor: colors.line,
     backgroundColor: colors.surface,
     color: colors.ink,
+    fontFamily: typography.fontFamily,
   },
   weekday: {
     paddingBlock: spacing.sm,
