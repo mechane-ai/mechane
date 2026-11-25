@@ -4,6 +4,7 @@ import { createParts } from '@ui-sdk/react/primitive';
 import { File } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { ContentLink } from '../../content/src/link.ts';
+import { Markdown } from '../../content/src/markdown/index.ts';
 import { conditions } from '../../foundations/src/constants.stylex.ts';
 import { colors, controls, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 
@@ -155,7 +156,9 @@ export function Message({
       {...stylex.props(styles.root, kinds[kind], isChat && chatKinds[kind], stylex.defaultMarker())}
     >
       {header}
-      <MessageText {...stylex.props(styles.content)}>{children}</MessageText>
+      <MessageText {...stylex.props(styles.content)}>
+        {isChat && kind === 'assistant' && typeof children === 'string' ? <Markdown>{children}</Markdown> : children}
+      </MessageText>
       {attachments !== undefined && <div {...stylex.props(styles.attachments)}>{attachments}</div>}
       {(actions !== undefined || shouldReserveActions) && (
         <footer

@@ -21,6 +21,13 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+export const AssistantReply: Story = {
+  args: {
+    children: '1. **Review the report** at [Records](/records).\n2. *Follow up* on Friday.',
+    renderLink: ({ href, children }) => (href === '/records' ? <TextLink href={href}>{children}</TextLink> : children),
+  },
+};
+
 export const EmbeddedDocument: Story = {
   render: () => (
     <Stack>

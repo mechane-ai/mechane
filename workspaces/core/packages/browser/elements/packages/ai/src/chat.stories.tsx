@@ -104,7 +104,7 @@ function Chat({ scenario }: { scenario: Scenario }) {
           <Conversation.Content isStreaming={active}>
             <Conversation.Item messageId="earlier">
               <Message author="Assistant" variant="chat">
-                <Markdown>{'## Ready to help\n\nSelect text in this answer while the next reply streams.'}</Markdown>
+                {'## Ready to help\n\nSelect **text in this answer** while the next reply streams.'}
               </Message>
             </Conversation.Item>
             {turn === undefined ? null : (

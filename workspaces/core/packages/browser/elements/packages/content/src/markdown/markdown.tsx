@@ -1,13 +1,14 @@
 import * as stylex from '@stylexjs/stylex';
-import { Children, createContext, createElement, memo, useContext } from 'react';
+import { Children, createContext, createElement, memo, useContext, useMemo } from 'react';
 import type { ComponentProps, ReactNode } from 'react';
 import { Streamdown, useIsCodeFenceIncomplete } from 'streamdown';
-import type { Components } from 'streamdown';
+import type { Components, StreamdownProps } from 'streamdown';
 import { colors, radii, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { useScrollTabIndex } from '../../../foundations/src/use-scroll-tab-index.ts';
 import { useVisibleMotion } from '../../../foundations/src/visible-motion.ts';
 import { CodeBlock } from '../code/code-block.tsx';
 import { ContentLink } from '../content-link.tsx';
+import type { ContentLinkProps } from '../content-link.tsx';
 import { viewerStyles } from '../viewer-styles.ts';
 import { markdownOptions } from './markdown-options.ts';
 
@@ -99,7 +100,11 @@ const weightStyles = { regular: null, strong: styles.strong };
 
 type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
 
+type MarkdownLinkProps = ContentLinkProps & { readonly kind: 'link' | 'image' };
+
 export type MarkdownProps = {
+  readonly renderLink?: (props: MarkdownLinkProps) => ReactNode;
+  readonly remarkPlugins?: StreamdownProps['remarkPlugins'];
   readonly children: string;
   readonly isStreaming?: boolean;
   readonly label?: string;
@@ -161,6 +166,22 @@ function MarkdownTable({ children }: { readonly children?: ReactNode }): ReactNo
   );
 }
 
+const LinkRenderer = createContext<MarkdownProps['renderLink']>(undefined);
+
+function MarkdownLink(props: MarkdownLinkProps): ReactNode {
+  const renderLink = useContext(LinkRenderer);
+
+  if (renderLink !== undefined) {
+    return renderLink(props);
+  }
+
+  return (
+    <ContentLink href={props.href} title={props.title}>
+      {props.children}
+    </ContentLink>
+  );
+}
+
 const components: Components = {
   h1: (props) => <MarkdownHeading {...props} level={1} />,
   h2: (props) => <MarkdownHeading {...props} level={2} />,
@@ -180,14 +201,14 @@ const components: Components = {
   code: ({ children, className }) => <CodeFence className={className}>{children}</CodeFence>,
   inlineCode: ({ children }) => <code {...stylex.props(styles.inlineCode)}>{children}</code>,
   a: ({ href, children, title }) => (
-    <ContentLink href={href} title={title}>
+    <MarkdownLink kind="link" href={href} title={title}>
       {children}
-    </ContentLink>
+    </MarkdownLink>
   ),
   img: ({ src, alt, title }) => (
-    <ContentLink href={typeof src === 'string' ? src : undefined} title={title}>
+    <MarkdownLink kind="image" href={typeof src === 'string' ? src : undefined} title={title}>
       {alt !== undefined && alt.length > 0 ? `Open image: ${alt}` : 'Open image'}
-    </ContentLink>
+    </MarkdownLink>
   ),
   table: ({ children }) => <MarkdownTable>{children}</MarkdownTable>,
   thead: ({ children }) => <thead>{children}</thead>,
@@ -256,28 +277,38 @@ export const Markdown = memo(
     headingLevel = 1,
     tone = 'default',
     weight = 'regular',
+    renderLink,
+    remarkPlugins,
   }: MarkdownProps): ReactNode => {
     const { ref, isActive } = useVisibleMotion(isStreaming);
 
+    const plugins = useMemo(
+      () => [...(markdownOptions.remarkPlugins ?? []), ...(remarkPlugins ?? [])],
+      [remarkPlugins],
+    );
+
     return (
-      <HeadingContext value={headingLevel}>
-        <div ref={ref} data-streamdown-paused={isStreaming && !isActive ? '' : undefined}>
-          <Streamdown
-            {...markdownOptions}
-            {...stylex.props(styles.root, toneStyles[tone], weightStyles[weight])}
-            aria-label={label}
-            components={components}
-            mode={isStreaming ? 'streaming' : 'static'}
-            isAnimating={isStreaming}
-            animated={isStreaming ? textMotion : false}
-            controls={false}
-            linkSafety={{ enabled: false }}
-            allowedElements={allowedElements}
-          >
-            {children}
-          </Streamdown>
-        </div>
-      </HeadingContext>
+      <LinkRenderer value={renderLink}>
+        <HeadingContext value={headingLevel}>
+          <div ref={ref} data-streamdown-paused={isStreaming && !isActive ? '' : undefined}>
+            <Streamdown
+              {...markdownOptions}
+              remarkPlugins={plugins}
+              {...stylex.props(styles.root, toneStyles[tone], weightStyles[weight])}
+              aria-label={label}
+              components={components}
+              mode={isStreaming ? 'streaming' : 'static'}
+              isAnimating={isStreaming}
+              animated={isStreaming ? textMotion : false}
+              controls={false}
+              linkSafety={{ enabled: false }}
+              allowedElements={allowedElements}
+            >
+              {children}
+            </Streamdown>
+          </div>
+        </HeadingContext>
+      </LinkRenderer>
     );
   },
 );
