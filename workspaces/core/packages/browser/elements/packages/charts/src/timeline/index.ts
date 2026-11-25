@@ -4,6 +4,7 @@ export type {
   EventStripMarker,
   EventStripProps,
   EventStripTime,
+  EventStripWindow,
 } from './event-strip.tsx';
 export { EventStrip, eventStripGutter, eventStripLimits } from './event-strip.tsx';
 export type {

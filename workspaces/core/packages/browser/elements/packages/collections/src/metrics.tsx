@@ -122,10 +122,11 @@ export type MetricProps = Omit<ComponentProps<'div'>, 'children' | 'dangerouslyS
   readonly change?: MetricChange | undefined;
   /** Optional target or ceiling reference shown quietly below the detail line. */
   readonly target?: string | undefined;
-} & (
-    | { readonly isLoading?: false; readonly value: string; readonly detail?: string; readonly hasDetail?: never }
-    | { readonly isLoading: true; readonly value?: never; readonly detail?: never; readonly hasDetail?: boolean }
-  );
+  readonly isLoading?: boolean | undefined;
+  readonly value?: string | undefined;
+  readonly detail?: string | undefined;
+  readonly hasDetail?: boolean | undefined;
+};
 
 export function MetricGrid({ layout = 'inline', ...props }: MetricGridProps): ReactNode {
   return <dl {...mergeProps(stylex.props(layouts[layout]), props)} />;
@@ -144,6 +145,7 @@ export function Metric({
   ...props
 }: MetricProps): ReactNode {
   const appearance = variants[variant];
+  const shouldShowDetail = isLoading ? hasDetail || detail !== undefined : detail !== undefined;
 
   const changeTone =
     change?.tone === 'positive'
@@ -157,13 +159,13 @@ export function Metric({
       <dt {...stylex.props(styles.label, appearance.label)}>{label}</dt>
       <dd {...stylex.props(styles.value, appearance.value)}>
         <span {...stylex.props(styles.valueRow)}>
-          <span>{isLoading ? <SkeletonText width={appearance.valueWidth} /> : value}</span>
+          <span>{isLoading ? <SkeletonText width={appearance.valueWidth} /> : (value ?? '—')}</span>
           {!isLoading && change !== undefined && (
             <span {...stylex.props(styles.change, changeTone)}>{change.value}</span>
           )}
         </span>
       </dd>
-      {(isLoading ? hasDetail : detail !== undefined) && (
+      {shouldShowDetail && (
         <dd {...stylex.props(styles.detail, appearance.detail)}>
           {isLoading ? <SkeletonText width="24ch" /> : detail}
         </dd>

@@ -94,6 +94,19 @@ export function MilestonePath({
     kinds: { ...defaultLabels.kinds, ...given?.kinds },
   };
 
+  if (figure.status === 'loading') {
+    return (
+      <TreeDiagram
+        {...figure}
+        nodes={[]}
+        direction="right"
+        link="elbow"
+        valueLabel={valueLabel}
+        valueFormat={valueFormat}
+      />
+    );
+  }
+
   if (milestones.length === 0) {
     return <EmptyState title={figure.title}>{labels.empty}</EmptyState>;
   }

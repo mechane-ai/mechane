@@ -1,5 +1,5 @@
 import * as stylex from '@stylexjs/stylex';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { ComponentProps, ReactNode } from 'react';
 import {
   CollectionToolbar,
@@ -19,6 +19,7 @@ import type {
 } from '../../../collections/src/index.ts';
 import { SectionHeading } from '../../../core/src/index.ts';
 import { AsyncRegion, Notice } from '../../../feedback/src/index.ts';
+import { SegmentedControl } from '../../../forms/src/index.ts';
 import { CollectionLayout, PageContent, PageLayout, Workbench } from '../../../layout/src/index.ts';
 
 const styles = stylex.create({
@@ -38,6 +39,13 @@ function isEditableElement(target: EventTarget | null): boolean {
 }
 
 export type CollectionStatus = 'loading' | 'ready' | 'failed';
+
+/** A named scope partition shown as a segmented switcher in the collection header with live item counts. */
+export type CollectionScope<Row> = {
+  readonly id: string;
+  readonly label: string;
+  readonly match: (row: Row) => boolean;
+};
 
 type SortableColumns<Row> =
   | {
@@ -62,6 +70,9 @@ type SharedCollectionProps<Row extends object> = SortableColumns<Row> & {
   readonly filters: ReadonlyArray<TableFilterDimension<Row>> | TableQueryException;
   /** Optional custom row transformer (e.g. sorting) applied after local search and filtering. */
   readonly transformRows?: (rows: ReadonlyArray<Row>) => ReadonlyArray<Row>;
+  /** Optional segmented scopes (e.g. Active / All) that partition rows before local search and filtering. */
+  readonly scopes?: ReadonlyArray<CollectionScope<Row>> | undefined;
+  readonly defaultScopeId?: string | undefined;
   readonly actions?: ReactNode;
   readonly notice?: ReactNode;
   readonly rowAction?: DataTableRowAction<Row> | undefined;
@@ -98,6 +109,8 @@ function useCollectionFrame<Row extends object>({
   search,
   filters,
   transformRows,
+  scopes,
+  defaultScopeId,
   rowAction,
   activeRowId,
   rowSizing,
@@ -111,8 +124,32 @@ function useCollectionFrame<Row extends object>({
   const isLoading = status === 'loading';
   const isFailed = status === 'failed';
   const isReady = status === 'ready';
+  const firstScopeId = scopes?.[0]?.id ?? '';
+  const [selectedScopeId, setSelectedScopeId] = useState<string>(() => defaultScopeId ?? firstScopeId);
 
-  const query = useLocalTableQuery(rows, { mode: 'local', search, filters });
+  const activeScope =
+    scopes === undefined || scopes.length === 0
+      ? undefined
+      : (scopes.find((scope) => scope.id === selectedScopeId) ?? scopes[0]);
+
+  const scopedRows = activeScope === undefined ? rows : rows.filter(activeScope.match);
+
+  const scopeControl =
+    scopes === undefined || scopes.length <= 1 ? null : (
+      <SegmentedControl.Root
+        aria-label={`${title} scope`}
+        value={activeScope?.id ?? firstScopeId}
+        onValueChange={(value) => setSelectedScopeId(value)}
+      >
+        {scopes.map((scope) => (
+          <SegmentedControl.Item key={scope.id} value={scope.id}>
+            {isLoading ? scope.label : `${scope.label} (${rows.filter(scope.match).length})`}
+          </SegmentedControl.Item>
+        ))}
+      </SegmentedControl.Root>
+    );
+
+  const query = useLocalTableQuery(scopedRows, { mode: 'local', search, filters });
 
   const {
     actions: controlActions,
@@ -199,6 +236,7 @@ function useCollectionFrame<Row extends object>({
   );
 
   return {
+    scopeControl,
     controlActions,
     chips,
     onKeyDown,
@@ -219,7 +257,7 @@ function useCollectionFrame<Row extends object>({
 export function CollectionPage<Row extends object>(props: CollectionPageProps<Row>): ReactNode {
   const { title, navigation, actions, notice, inspector, inspectorInitialPercent = 40 } = props;
 
-  const { controlActions, chips, onKeyDown, content, frameProps } = useCollectionFrame({
+  const { scopeControl, controlActions, chips, onKeyDown, content, frameProps } = useCollectionFrame({
     ...props,
     hasGlobalShortcuts: true,
   });
@@ -228,6 +266,7 @@ export function CollectionPage<Row extends object>(props: CollectionPageProps<Ro
 
   const headerActions = (
     <>
+      {scopeControl}
       {navigation === undefined && controlActions}
       {actions}
     </>
@@ -270,7 +309,7 @@ export function CollectionPage<Row extends object>(props: CollectionPageProps<Ro
 export function CollectionSection<Row extends object>(props: CollectionSectionProps<Row>): ReactNode {
   const { id, title, meta, actions, notice } = props;
 
-  const { controlActions, chips, onKeyDown, content, frameProps } = useCollectionFrame({
+  const { scopeControl, controlActions, chips, onKeyDown, content, frameProps } = useCollectionFrame({
     ...props,
     hasGlobalShortcuts: false,
   });
@@ -286,6 +325,7 @@ export function CollectionSection<Row extends object>(props: CollectionSectionPr
           meta={meta}
           actions={
             <>
+              {scopeControl}
               {controlActions}
               {actions}
             </>

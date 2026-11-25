@@ -571,6 +571,46 @@ export function BarChart({
 
         const notes = [...compositionNotes, ...placedAnnotations];
 
+        const barObstacles = categories.flatMap((category, categoryIndex) => {
+          if (composition !== undefined) {
+            const top = annotationPeak(categoryIndex, undefined);
+            const start = y(0);
+            const end = y(top);
+
+            return [
+              {
+                left: categoryStart(category.id),
+                right: categoryStart(category.id) + band.bandwidth,
+                top: Math.min(start, end),
+                bottom: Math.max(start, end),
+              },
+            ];
+          }
+
+          return series.flatMap((item, seriesIndex) => {
+            const value = item.values[categoryIndex];
+
+            if (value === null || value === undefined) {
+              return [];
+            }
+
+            if (mode === 'stacked' && value === 0) {
+              return [];
+            }
+
+            const base =
+              mode === 'stacked'
+                ? series.slice(0, seriesIndex).reduce((sum, previous) => sum + (previous.values[categoryIndex] ?? 0), 0)
+                : 0;
+
+            const start = y(base);
+            const end = y(base + value);
+            const bar = span(category.id, item.id);
+
+            return [{ left: bar.x, right: bar.x + bar.width, top: Math.min(start, end), bottom: Math.max(start, end) }];
+          });
+        });
+
         return (
           <BarChartFrame
             {...frame}
@@ -683,6 +723,7 @@ export function BarChart({
                   position={y}
                   valueText={text}
                   avoid={clearLabels(notes)}
+                  marks={barObstacles}
                 />
                 <BarAnnotations annotations={notes} left={box.left} right={box.right} />
                 {cursor !== null && (

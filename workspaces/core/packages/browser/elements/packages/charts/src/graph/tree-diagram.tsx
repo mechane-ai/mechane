@@ -46,7 +46,7 @@ export type TreeDiagramProps = FigureProps &
     readonly toneLegend?: ReadonlyArray<ChartLegendItem> | undefined;
   };
 
-export const treeLimits = { nodes: 300, depth: 12 } as const;
+export const treeLimits = { nodes: 300, depth: 32 } as const;
 
 const PATH_SEPARATOR = ' › ';
 const DOT_RADIUS = 4;

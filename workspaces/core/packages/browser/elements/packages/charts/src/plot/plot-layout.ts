@@ -270,6 +270,16 @@ export function ticksMinimum(length: number): number {
  * and highest marks never sit beyond the outer ticks. Every kernel layout labels its axes with it; a chart that draws
  * an axis of its own calls it too.
  */
+function wantsIntegerTicks(axis: PlotAxis): boolean {
+  const fmt = axis.tickFormat ?? axis.format;
+
+  if (typeof fmt === 'function' || axis.scale === 'log') {
+    return false;
+  }
+
+  return fmt.maximumFractionDigits === 0 && fmt.style !== 'percent';
+}
+
 export function axisTicks({ axis, domain, length, spacing, locale, hasTitle }: AxisTicksInput): AxisTicks {
   const minimum = ticksMinimum(length);
   const count = Math.max(minimum, Math.round(length / spacing));
@@ -282,9 +292,16 @@ export function axisTicks({ axis, domain, length, spacing, locale, hasTitle }: A
 
   const spanning = enough.find((ticks) => ticks[0] === domain[0] && ticks.at(-1) === domain[1]);
   const fallback = enough[0] ?? attempts[0] ?? [];
-  const values = spanning ?? fallback;
+  const rawValues = spanning ?? fallback;
 
-  return { values, labels: tickTexts({ values, axis, locale, hasTitle }) };
+  if (wantsIntegerTicks(axis)) {
+    const ints = rawValues.filter((value) => Number.isInteger(value));
+    const values = ints.length >= TICKS_MIN ? ints : rawValues;
+
+    return { values, labels: tickTexts({ values, axis, locale, hasTitle }) };
+  }
+
+  return { values: rawValues, labels: tickTexts({ values: rawValues, axis, locale, hasTitle }) };
 }
 
 function positioned(scale: ContinuousScale, ticks: AxisTicks): ReadonlyArray<PlotTick> {

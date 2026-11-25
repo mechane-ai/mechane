@@ -1,7 +1,8 @@
 import * as stylex from '@stylexjs/stylex';
 import { stackSpans } from '@ui-sdk/core';
-import { useId } from 'react';
+import { useId, useState } from 'react';
 import type { ReactNode } from 'react';
+import { Button, Row } from '../../../core/src/index.ts';
 import type { ChartTone } from '../../../foundations/src/chart-tones.ts';
 import { ChartCursor } from '../chart-cursor.tsx';
 import { ChartData } from '../chart-data.tsx';
@@ -50,6 +51,14 @@ export type EventStripItem = {
 /** An instant drawn as a dashed rule across every lane, such as a release cut or a freeze. */
 export type EventStripMarker = { readonly id: string; readonly label: string; readonly at: number };
 
+/** A quick time-range preset shown in the strip header, such as 6h, 24h, or All. */
+export type EventStripWindow = {
+  readonly id: string;
+  readonly label: string;
+  /** Duration in milliseconds from the end of the strip domain, or `null` for the full span. */
+  readonly durationMs: number | null;
+};
+
 /**
  * How the strip writes instants. Options name their own time zone; a function format needs `timeZone` beside it, so the
  * axis ticks fall on that zone's clock.
@@ -63,9 +72,12 @@ export type EventStripProps = FigureProps &
   EventStripTime & {
     readonly lanes: ReadonlyArray<EventStripLane>;
     readonly events: ReadonlyArray<EventStripItem>;
-    /** The first and last instant the strip spans, in milliseconds since the epoch. */
-    readonly domain: NumericDomain;
+    /** First and last instant the strip spans in epoch ms. Absent fits events and markers automatically. */
+    readonly domain?: NumericDomain | undefined;
     readonly markers?: ReadonlyArray<EventStripMarker> | undefined;
+    /** Optional time-window presets rendered in the figure header. */
+    readonly windows?: ReadonlyArray<EventStripWindow> | undefined;
+    readonly defaultWindowId?: string | undefined;
     /**
      * The lane-label gutter's width in pixels, which strips stacked in a column pass the same from `eventStripGutter`
      * over all their lanes so their time axes line up. A label longer than the gutter is cut with an ellipsis and keeps
@@ -88,6 +100,7 @@ const MARKER_LABEL_GAP = 4;
 const CHARACTER_WIDTH = 6.5;
 const CURSOR_WIDTH = 12;
 const HALF = 0.5;
+const AUTO_DOMAIN_PAD_RATIO = 0.04;
 const SECOND = 1000;
 const MINUTE = 60 * SECOND;
 const HOUR = 60 * MINUTE;
@@ -122,13 +135,35 @@ function durationText(duration: number, locale: string): string {
   });
 }
 
+function autoStripDomain(
+  events: ReadonlyArray<EventStripItem>,
+  markers: ReadonlyArray<EventStripMarker>,
+): NumericDomain {
+  const instants = [
+    ...events.flatMap((event) => (event.end === undefined ? [event.start] : [event.start, event.end])),
+    ...markers.map((marker) => marker.at),
+  ];
+
+  if (instants.length === 0) {
+    return [0, HOUR];
+  }
+
+  const minInstant = Math.min(...instants);
+  const maxInstant = Math.max(...instants);
+  const span = maxInstant - minInstant;
+  const pad = span > 0 ? Math.max(MINUTE, Math.round(span * AUTO_DOMAIN_PAD_RATIO)) : HOUR * HALF;
+
+  return [minInstant - pad, maxInstant + pad];
+}
+
 function eventStripInputError({
   lanes,
   events,
   markers,
   domain,
   zone,
-}: Pick<EventStripProps, 'lanes' | 'events' | 'domain'> & {
+}: Pick<EventStripProps, 'lanes' | 'events'> & {
+  readonly domain: NumericDomain;
   readonly markers: ReadonlyArray<EventStripMarker>;
   readonly zone: string | undefined;
 }): string | undefined {
@@ -178,9 +213,11 @@ function eventStripInputError({
 export function EventStrip(props: EventStripProps): ReactNode {
   const {
     lanes,
-    events,
-    domain,
-    markers = [],
+    events: rawEvents,
+    domain: suppliedDomain,
+    markers: rawMarkers = [],
+    windows,
+    defaultWindowId,
     gutterWidth,
     timeFormat,
     timeZone,
@@ -195,10 +232,50 @@ export function EventStrip(props: EventStripProps): ReactNode {
   const readoutId = useId();
   const tones = useTones();
   const link = useLinkedInspection();
+  const firstWindowId = windows?.[0]?.id ?? '';
+  const [activeWindowId, setActiveWindowId] = useState<string>(() => defaultWindowId ?? firstWindowId);
 
   if (frame.status === 'loading') {
     return <FigureLoading {...frame} height="compact" />;
   }
+
+  const normalizedEvents = rawEvents.map((event) =>
+    event.end !== undefined && event.end <= event.start ? { ...event, end: undefined } : event,
+  );
+
+  const baseDomain = suppliedDomain ?? autoStripDomain(normalizedEvents, rawMarkers);
+
+  const activeWindow =
+    windows === undefined || windows.length === 0
+      ? undefined
+      : (windows.find((candidate) => candidate.id === activeWindowId) ?? windows[0]);
+
+  const activeDurationMs = activeWindow?.durationMs ?? null;
+  const isWindowed = activeDurationMs !== null && activeDurationMs > 0;
+
+  const domain: NumericDomain = isWindowed
+    ? [Math.max(baseDomain[0], baseDomain[1] - activeDurationMs), baseDomain[1]]
+    : baseDomain;
+
+  const events = isWindowed
+    ? normalizedEvents.flatMap((event) => {
+        const eventEnd = event.end ?? event.start;
+
+        if (eventEnd < domain[0] || event.start > domain[1]) {
+          return [];
+        }
+
+        const clampedStart = Math.max(domain[0], event.start);
+        const clampedEnd = event.end === undefined ? undefined : Math.min(domain[1], event.end);
+        const nextEnd = clampedEnd !== undefined && clampedEnd > clampedStart ? clampedEnd : undefined;
+
+        return [{ ...event, start: clampedStart, end: nextEnd }];
+      })
+    : normalizedEvents;
+
+  const markers = isWindowed
+    ? rawMarkers.filter((marker) => marker.at >= domain[0] && marker.at <= domain[1])
+    : rawMarkers;
 
   const zone = typeof timeFormat === 'function' ? timeZone : timeFormat.timeZone;
   const inputError = eventStripInputError({ lanes, events, markers, domain, zone });
@@ -206,6 +283,31 @@ export function EventStrip(props: EventStripProps): ReactNode {
   if (inputError !== undefined || zone === undefined) {
     return <FigureInvalid {...frame} message={inputError ?? 'The strip needs a time zone.'} />;
   }
+
+  const windowActions =
+    windows === undefined || windows.length <= 1 ? (
+      frame.actions
+    ) : (
+      <Row>
+        {windows.map((windowOption) => {
+          const isCurrent = windowOption.id === activeWindow?.id;
+
+          return (
+            <Button
+              key={windowOption.id}
+              type="button"
+              density="compact"
+              variant={isCurrent ? 'outline' : 'ghost'}
+              aria-pressed={isCurrent}
+              onClick={() => setActiveWindowId(windowOption.id)}
+            >
+              {windowOption.label}
+            </Button>
+          );
+        })}
+        {frame.actions}
+      </Row>
+    );
 
   function timeText(timestamp: number): string {
     return formatTime({ timestamp, locale, format: timeFormat });
@@ -358,6 +460,7 @@ export function EventStrip(props: EventStripProps): ReactNode {
         return (
           <FigureFrame
             {...frame}
+            actions={windowActions}
             figure={figureProps}
             footer={
               events.length === 0 ? undefined : (

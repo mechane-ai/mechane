@@ -363,7 +363,7 @@ export const figureRegistry: FigureRegistry = {
     chart: 'EventStrip',
     component: EventStrip,
     family: 'timeline',
-    required: { ...figure, lanes: 'array', events: 'array', domain: 'array', timeFormat: 'object' },
+    required: { ...figure, lanes: 'array', events: 'array', timeFormat: 'object' },
     isSelectable: true,
   },
   CurveChart: {
