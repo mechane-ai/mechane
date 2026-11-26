@@ -346,3 +346,15 @@ export const PersistentNavigation: Story = {
 };
 
 export const WithBottomBar: Story = { render: () => <CollectionShell bottomBar={<DevToolsBar />} /> };
+
+export const ActiveBottomBar: Story = {
+  render: () => (
+    <CollectionShell
+      bottomBar={
+        <DevToolsBar tone="accent" actions="Operator session">
+          Acting as a member
+        </DevToolsBar>
+      }
+    />
+  ),
+};

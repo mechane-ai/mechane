@@ -2,17 +2,29 @@ import * as stylex from '@stylexjs/stylex';
 import { useLayoutEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { headerStyles } from '../../foundations/src/header-styles.ts';
-import { pageGeometry } from '../../foundations/src/tokens.stylex.ts';
+import { colors, pageGeometry, spacing } from '../../foundations/src/tokens.stylex.ts';
 import { useCommandShortcuts } from '../../navigation/src/commands/index.ts';
 
 const styles = stylex.create({
-  bar: { minHeight: `var(--mechane-devtools-bar-height, ${pageGeometry.toolbarHeight})` },
+  bar: { gap: spacing.md, minHeight: `var(--mechane-devtools-bar-height, ${pageGeometry.toolbarHeight})` },
 });
 
-export function DevToolsBar(): ReactNode {
+const toneStyles = stylex.create({ neutral: {}, accent: { backgroundColor: colors.accentSoft, color: colors.accent } });
+
+type DevToolsBarProps = {
+  readonly children?: ReactNode;
+  readonly actions?: ReactNode;
+  readonly tone?: 'neutral' | 'accent';
+};
+
+export function DevToolsBar({ children = 'DevTools', actions, tone = 'neutral' }: DevToolsBarProps): ReactNode {
   return (
-    <aside aria-label="Developer tools" {...stylex.props(headerStyles.row, headerStyles.blockStart, styles.bar)}>
-      DevTools
+    <aside
+      aria-label="Developer tools"
+      {...stylex.props(headerStyles.row, headerStyles.blockStart, styles.bar, toneStyles[tone])}
+    >
+      {children}
+      {actions !== undefined && actions !== null && <div {...stylex.props(headerStyles.trailing)}>{actions}</div>}
     </aside>
   );
 }
